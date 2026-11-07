@@ -134,7 +134,8 @@ Skills marked `requires_staging=true` (most accounting writes) return a staged e
 ## Troubleshooting
 
 - **401** — missing or expired `Authorization: Bearer fwk_...`
-- **403** — skill exists but isn't `mcp_exposed`, or module is disabled. Check `/admin/skills → Manage`.
+- **403** — skill exists but isn't `mcp_exposed`. Check `/admin/skills → Manage`.
+- **`MODULE_DISABLED`** (a refusal, `status: "refused"`) — the skill's module is off on this instance. An admin switches it on under Modules, or ask with `manage_modules` (action enable, approval required). Its tools are not listed while it is off.
 - **406** — your client isn't sending `Accept: application/json, text/event-stream`
 - **Empty tool list** — no modules enabled, or your `?groups=` filter matched nothing. Try `GET /rest/groups` to see available groups.
 

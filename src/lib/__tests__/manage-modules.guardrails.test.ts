@@ -177,7 +177,8 @@ describe('manage_modules wiring', () => {
     const exec = read('supabase/functions/agent-execute/index.ts');
     const sync = exec.slice(exec.indexOf('async function executeSyncSkillsFromCode'));
     expect(sync).toMatch(/\.in\('key', \['skills_artifact_sha', 'modules', 'module_teardowns'\]\)/);
-    expect(sync).toMatch(/const decidedOff = Object\.keys\([\s\S]*?\.filter\(\(id\) => !isEnabled\(id\)\)/);
+    // Since 2026-11-06 every off module is healed (module-gate.ts), guarded by the row being present.
+    expect(sync).toMatch(/const decidedOff = modulesRowPresent\s+\? ARTIFACT_MODULES\.map\(\(m\) => m\.moduleId\)\.filter\(\(id\) => id !== 'platform' && !isEnabled\(id\)\)\s+: \[\];/);
     expect(sync).toMatch(/skillsToDisable\(ARTIFACT_MODULES, decidedOff, isEnabled\)/);
     // Before the fast path, or an instance that carries this deploy never heals.
     expect(sync.indexOf('const teardownHeal = await hideSkills')).toBeLessThan(sync.indexOf("status: 'unchanged'"));
