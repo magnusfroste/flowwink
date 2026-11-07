@@ -71,4 +71,21 @@ describe('an order is invoiced at what the customer paid', () => {
     expect(body).not.toMatch(/subtotal \* effectiveTaxRate/);
     expect(body).toMatch(/status: orderPaid \? 'paid' : 'sent'/);
   });
+
+  // The cancelled 15,63 kr invoice was still found through its legacy
+  // `order:<id>` note and reused, so the order could never be invoiced again.
+  it('a cancelled invoice is never the order\'s invoice — neither lookup reuses it', () => {
+    const core = readFileSync('supabase/functions/_shared/execute/core.ts', 'utf8');
+    const fn = core.slice(core.indexOf('async function executeSendInvoiceForOrder'));
+    const body = fn.slice(0, fn.indexOf('\n}\n'));
+    const lookups = body.split(".from('invoices')").slice(1)
+      .map((q) => q.slice(0, q.indexOf(';')))
+      .filter((q) => /order_id|order:\$\{order_id\}/.test(q) && q.includes('.select('));
+    expect(lookups.length).toBeGreaterThanOrEqual(2);
+    for (const q of lookups) expect(q).toContain(".neq('status', 'cancelled')");
+
+    const view = readFileSync('src/pages/admin/OrdersPage.tsx', 'utf8');
+    const q = view.slice(view.indexOf(".select('id, invoice_number, notes, order_id')"));
+    expect(q.slice(0, q.indexOf(';'))).toContain(".neq('status', 'cancelled')");
+  });
 });
