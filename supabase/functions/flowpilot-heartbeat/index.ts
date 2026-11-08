@@ -270,7 +270,7 @@ async function runCronHealthGate(supabase: any): Promise<string> {
     const summary = formatCronHealthSummary(enriched);
     if (!summary) return '';
 
-    return `\n\nSCHEDULED-JOB HEALTH (deterministic check — ${enriched.flags.jobs_red} unhealthy job(s)${enriched.pulse.starving ? ', database pulse starving' : ''}, evidence from cron.job_run_details):\n${summary}\nROUTING: this is OPS telemetry. It is already surfaced in the Daily Briefing and /admin/system → Observability. Do NOT post it to River (post_to_river) — River is for positive/informative team posts only. If a root-cause fix is within your skills, work it as an objective. If the platform itself is at fault (a job pointing at another instance, a platform function failing on every run), report it once with submit_feedback (board bug) so it is fixed upstream; otherwise leave it for the admin surfaces.`;
+    return `\n\nSCHEDULED-JOB HEALTH (deterministic check — ${enriched.flags.jobs_red} unhealthy job(s)${enriched.pulse.starving ? ', database pulse starving' : ''}, evidence from cron.job_run_details):\n${summary}\nROUTING: this is OPS telemetry. It is already surfaced in /admin/system → Observability, and the daily feedback_ping files what is the platform's fault upstream. Do NOT post it to River (post_to_river) — River is for positive/informative team posts only. If a root-cause fix is within your skills, work it as an objective. If the platform itself is at fault (a job pointing at another instance, a platform function failing on every run), report it once with submit_feedback (board bug) so it is fixed upstream; otherwise leave it for the admin surfaces.`;
   } catch (chErr) {
     console.warn('[heartbeat] Cron-health gate failed (non-fatal):', chErr);
     return '';

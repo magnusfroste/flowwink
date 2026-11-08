@@ -13,7 +13,8 @@
  * The same endpoint takes a daily ping (feedback_ping): instance id, site URL,
  * skills sha, migration head, enabled modules — no business data — switched off with
  * feedback.share_usage. That is how the project knows how many run the
- * platform without a licence portal.
+ * platform without a licence portal. The same run files what is the platform's
+ * fault on the board (machine-room-reports.ts), under the same switch.
  *
  * Skills:
  *   - submit_feedback   send a post to the endpoint (or store it here when the
@@ -79,7 +80,7 @@ const FEEDBACK_SKILLS: SkillSeed[] = [
   {
     name: 'feedback_ping',
     description:
-      'The daily ping to the feedback endpoint: this instance\'s id (minted on the first ping), site URL and name (Branding → organisation name), skills sha, migration head and enabled modules — no business data. Runs by the "Feedback ping" automation; switched off with feedback.share_usage = false. Use when: the automation runs; the owner asks whether the instance is counted. NOT for: sending feedback (submit_feedback).',
+      'The daily ping to the feedback endpoint: this instance\'s id (minted on the first ping), site URL and name (Branding → organisation name), skills sha, migration head and enabled modules — no business data — and files the platform\'s own defects on the board (an unhealthy scheduled job, a skill failing by itself; never error text). Runs by the "Feedback ping" automation; switched off with feedback.share_usage = false. Use when: the automation runs; the owner asks whether the instance is counted. NOT for: sending feedback (submit_feedback).',
     category: 'system',
     handler: 'module:feedback',
     scope: 'internal',

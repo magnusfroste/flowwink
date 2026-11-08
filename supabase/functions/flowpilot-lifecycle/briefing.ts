@@ -5,13 +5,15 @@ import { getServiceClient } from '../_shared/supabase-clients.ts';
 import { homeFormat, startOfBusinessDay } from '../_shared/locale/home.ts';
 import { briefingReport, DAILY_BRIEFING_SLUG, WEEKLY_DIGEST_SLUG } from '../_shared/reports/scheduled.ts';
 import { loadHomeCached } from '../_shared/locale/load-home.ts';
-import { enrichCronHealth, loadInstanceBornAt, type CronHealthReport } from "../_shared/cron/health.ts";
 import { loadEmailShell, type EmailShell } from "../_shared/email-shell.ts";
 
 /**
  * FlowPilot Morning Briefing
  * 
- * Compiles a daily business health digest from all platform data.
+ * Compiles a daily business health digest from all platform data. How the
+ * BUSINESS is doing, and what a person here can act on: how the platform is
+ * doing is /admin/system → Observability, and what is its fault goes upstream
+ * with the daily feedback_ping (_shared/feedback/machine-room-reports.ts).
  * Called by cron (8 AM daily) or manually from the dashboard.
  * Saves to flowpilot_briefings table for in-app display.
  * Future: sends email via Resend when email domain is configured.
@@ -210,7 +212,6 @@ export async function handler(req: Request): Promise<Response> {
     // FlowChat / external MCP / cron with FlowPilot's autonomous loop.
     const actions = agentActivity.data || [];
     const successActions = actions.filter((a: any) => a.status === "success").length;
-    const failedActions = actions.filter((a: any) => a.status === "failed").length;
     const skillsUsed = [...new Set(actions.map((a: any) => a.skill_name).filter(Boolean))];
 
     // Per-shell counts (defensive: rows missing `agent` are treated as 'flowpilot'
@@ -260,8 +261,6 @@ export async function handler(req: Request): Promise<Response> {
         type: "activity",
         items: [
           { label: "Autonomous actions", value: fpAutonomousActions },
-          { label: "Successful", value: actions.filter((a: any) => (a.agent ?? "flowpilot") === "flowpilot" && a.status === "success").length },
-          { label: "Failed", value: actions.filter((a: any) => (a.agent ?? "flowpilot") === "flowpilot" && a.status === "failed").length },
           { label: "Skills used", value: skillsUsed.join(", ") || "none" },
         ],
       });
@@ -278,7 +277,6 @@ export async function handler(req: Request): Promise<Response> {
           { label: "You (FlowChat)", value: humanActions + fpAutonomousActions },
           { label: "External agents (MCP)", value: mcpActions },
           { label: "Platform (cron)", value: cronActions },
-          { label: "Failed", value: failedActions },
         ],
       });
     }
@@ -358,43 +356,6 @@ export async function handler(req: Request): Promise<Response> {
           { label: "Recovered MRR (7d)", value: recoveredMrr / 100, format: "currency" },
         ],
       });
-    }
-
-    // 6. Scheduled-job health — THE ops channel for drift findings (River
-    // incident, Magnus 2026-08-28: ops warnings go to the Daily Briefing +
-    // /admin/system Observability, never to River). Evidence-based only: each
-    // listed job carries pg_cron's own verdict from cron.job_run_details
-    // (failed run / never ran / foreign host). Non-fatal — a briefing without
-    // this section is better than no briefing.
-    let cronRedJobs: Array<{ jobname: string; reasons: string[]; last_status: string | null; last_run: string | null }> = [];
-    try {
-      const { data: cronRaw, error: cronErr } = await supabase.rpc("cron_health_report");
-      if (!cronErr && cronRaw && (cronRaw as any).cron_available) {
-        const enriched = enrichCronHealth(cronRaw as CronHealthReport, new Date(), { bornAt: await loadInstanceBornAt(supabase) });
-        cronRedJobs = enriched.jobs.filter((j) => j.red);
-        if (cronRedJobs.length > 0 || enriched.pulse.starving) {
-          sections.push({
-            title: "⚙️ Scheduled Jobs",
-            type: "cron_health",
-            items: [
-              // The pulse first: when the database is throttled, the per-job
-              // failures below are symptoms of it, not separate problems.
-              ...(enriched.pulse.starving ? [{
-                label: "Database pulse",
-                value: enriched.pulse.reason ?? "",
-                evidence: { starved_hours_per_day: enriched.pulse.starved_hours_per_day, source: "cron.job_run_details" },
-              }] : []),
-              ...cronRedJobs.slice(0, 8).map((j) => ({
-                label: j.jobname,
-                value: j.reasons.join("; "),
-                evidence: { last_status: j.last_status, last_run: j.last_run, source: "cron.job_run_details" },
-              })),
-            ],
-          });
-        }
-      }
-    } catch (cronCatch: any) {
-      console.warn("[briefing] cron-health section skipped (non-fatal):", cronCatch?.message);
     }
 
     // 6b. The books — the same prioritised fix list an operator reads with
@@ -506,14 +467,6 @@ export async function handler(req: Request): Promise<Response> {
       });
     }
 
-    if (cronRedJobs.length > 0) {
-      actionItems.push({
-        priority: "high",
-        text: `${cronRedJobs.length} scheduled job${cronRedJobs.length > 1 ? "s" : ""} unhealthy (per job_run_details) — check Observability`,
-        link: "/admin/system",
-      });
-    }
-
     if (on("leads") && newLeadsToday > 0) {
       const hotLeads = (leadsToday.data || []).filter((l: any) => (l.score || 0) >= 20);
       if (hotLeads.length > 0) {
@@ -530,14 +483,6 @@ export async function handler(req: Request): Promise<Response> {
         priority: "medium",
         text: `${draftsReady} blog draft${draftsReady > 1 ? "s" : ""} ready for review`,
         link: "/admin/blog",
-      });
-    }
-
-    if (failedActions > 0) {
-      actionItems.push({
-        priority: "high",
-        text: `${failedActions} skill execution${failedActions > 1 ? "s" : ""} failed — check Activities`,
-        link: "/admin/activities",
       });
     }
 
@@ -571,30 +516,32 @@ export async function handler(req: Request): Promise<Response> {
     const summaryParts: string[] = [];
     if (on("analytics") && trafficToday > 0) summaryParts.push(`${trafficToday} visitors today`);
     if (on("leads") && newLeadsToday > 0) summaryParts.push(`${newLeadsToday} new lead${newLeadsToday > 1 ? "s" : ""}`);
-    if (fpEnabled && fpAutonomousActions > 0) {
-      summaryParts.push(`FlowPilot completed ${fpAutonomousActions} action${fpAutonomousActions > 1 ? "s" : ""}`);
-    }
     if (on("blog") && publishedThisWeek > 0) summaryParts.push(`${publishedThisWeek} post${publishedThisWeek > 1 ? "s" : ""} published this week`);
     if (booksFindings.length > 0) summaryParts.push(`${booksFindings.length} bookkeeping item${booksFindings.length > 1 ? "s" : ""} need attention`);
     if (opsFindings.length > 0) summaryParts.push(`${opsFindings.length} operations item${opsFindings.length > 1 ? "s" : ""} need attention`);
-
-    const summary = summaryParts.length > 0
-      ? summaryParts.join(" · ")
-      : "Quiet day — no significant activity to report.";
 
     // A day with nothing to say is written down (the row is the log) and
     // nothing else: no report version, no chat message, no mail. Until
     // 2026-11-06 a fresh instance was mailed "Quiet day" with a yellow 50/100
     // every morning — the alarm clock was the only thing that ran.
+    // The operator's own work is told beside the news, never instead of it:
+    // a heartbeat that ran is not a reason to mail anyone.
     const worthTelling = actionItems.length > 0 || summaryParts.length > 0;
+    if (fpEnabled && fpAutonomousActions > 0) {
+      summaryParts.push(`FlowPilot completed ${fpAutonomousActions} action${fpAutonomousActions > 1 ? "s" : ""}`);
+    }
+
+    const summary = summaryParts.length > 0
+      ? summaryParts.join(" · ")
+      : "Quiet day — no significant activity to report.";
 
     const title = `Daily Briefing — ${fmt.dateTime(now, { weekday: "long", month: "short", day: "numeric" })}`;
 
     // ─── Compute health score (0-100) ───────────────────────────────
-    // A score needs a signal. Without one (no traffic, leads, content,
-    // activity or objectives) there is no score — not a yellow 50 that a
+    // A score needs a signal. Without one (no traffic, leads, content or
+    // objectives — the business's own, not how busy the machinery was) there is no score — not a yellow 50 that a
     // fresh instance wore every morning as if something were half wrong.
-    const hasSignal = trafficWeek > 0 || newLeadsWeek > 0 || publishedThisWeek > 0 || actions.length > 0 || objectives.length > 0 || totalSubscribers > 0;
+    const hasSignal = trafficWeek > 0 || newLeadsWeek > 0 || publishedThisWeek > 0 || objectives.length > 0 || totalSubscribers > 0;
     let healthScore: number | null = null;
     if (hasSignal) {
       healthScore = 50; // the middle, moved by what the week says
@@ -603,7 +550,6 @@ export async function handler(req: Request): Promise<Response> {
       if (newLeadsWeek > 0) healthScore += 10;
       if (publishedThisWeek > 0) healthScore += 10;
       if (totalSubscribers > 10) healthScore += 5;
-      if (failedActions > 2) healthScore -= 10;
       if (trafficTrend < -20) healthScore -= 10;
       if (objectives.some((o: any) => o.completion > 50)) healthScore += 10;
       healthScore = Math.max(0, Math.min(100, healthScore));
@@ -1041,11 +987,6 @@ export function buildBriefingEmail(data: {
         <td style="padding:8px;text-align:center;background:#f9fafb;border-radius:8px;">
           <div style="font-size:24px;font-weight:700;color:#111827;">${data.revenueText ?? metrics.revenue_week}</div>
           <div style="font-size:11px;color:#6b7280;text-transform:uppercase;">Revenue (7d)</div>
-        </td>
-        <td style="width:8px;"></td>
-        <td style="padding:8px;text-align:center;background:#f9fafb;border-radius:8px;">
-          <div style="font-size:24px;font-weight:700;color:#111827;">${metrics.flowpilot_success_rate}%</div>
-          <div style="font-size:11px;color:#6b7280;text-transform:uppercase;">AI Success</div>
         </td>
       </tr>
     </table>

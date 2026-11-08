@@ -28,6 +28,20 @@ change it:
 
 Nothing else. No customers, no content, no amounts, no users, no keys.
 
+## What the ping reports when the platform misbehaves
+
+The same run files what is the platform's fault as a bug post on the endpoint's
+board, so it reaches the people who can fix it instead of the instance's admins:
+
+| Report | Title | Body |
+|---|---|---|
+| A scheduled job that is unhealthy | `Scheduled job unhealthy: <job name>` | Why (failed, never ran, foreign host — without the host), last status, last run. |
+| A throttled database | `Database pulse starving on an instance` | Hours throttled of the last 24. Alone: the jobs are symptoms of it. |
+| A skill failing three or more times in 24 hours, not through its input | `Skill failing: <skill name>` | The count. Never the error text, which can quote your data. |
+
+A post carries the fields above as `origin`. One report per defect per instance
+in 14 days, three a day. The switches below stop these too.
+
 The same endpoint receives what you post under **Admin → Feedback** (a bug
 report, a feature request, a template wish, a question), with the fields above
 attached as `origin` so the report reads with its version. A post carries the
@@ -49,7 +63,7 @@ Either of these stops the ping; neither affects anything else:
   Edge Functions → Secrets) — for an instance nobody opens the admin of. The
   ping answers `skipped` and sends nothing.
 
-Feedback is only ever sent when someone posts it.
+Apart from the reports above, feedback is only ever sent when someone posts it.
 
 ## Running the board for your own product
 

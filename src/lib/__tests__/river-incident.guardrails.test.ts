@@ -12,8 +12,8 @@
  *     (job_run_details evidence), agent_automations by the next-run parser —
  *     never crosswise. Alarm claims are verified against evidence BEFORE
  *     alarming.
- *  2. Channel hierarchy (Magnus, 2026-08-28): ops findings → Daily Briefing +
- *     /admin/system Observability. NEVER post_to_river — River is reserved
+ *  2. Channel hierarchy (Magnus, 2026-08-28; the briefing left it 2026-11-08):
+ *     ops findings → /admin/system Observability. NEVER post_to_river — River is reserved
  *     for positive/informative team posts.
  *  3. System-post dedup: same fingerprint within N days updates the existing
  *     post instead of creating a new one.
@@ -145,7 +145,7 @@ describe('1. pg_cron is judged by its own evidence — never the automation pars
   });
 });
 
-describe('2. channel hierarchy: ops findings → briefing + Observability, never River', () => {
+describe('2. channel hierarchy: ops findings → Observability, never River', () => {
   it('the heartbeat gate forbids River instead of instructing a post there', () => {
     expect(heartbeatSrc).toMatch(/Do NOT post it to River/);
     expect(heartbeatSrc).not.toMatch(/post the alert above to the team via post_to_river/);
@@ -153,12 +153,9 @@ describe('2. channel hierarchy: ops findings → briefing + Observability, never
     expect(heartbeatSrc).not.toMatch(/ilike\('body', '%Scheduled-job health%'\)/);
   });
 
-  it('a real failed job reaches the Daily Briefing with job_run_details evidence', () => {
-    expect(briefingSrc).toMatch(/cron_health_report/);
-    expect(briefingSrc).toMatch(/enrichCronHealth/);
-    expect(briefingSrc).toMatch(/job_run_details/);
-    // ...and lands as a high-priority action item pointing at Observability.
-    expect(briefingSrc).toMatch(/\/admin\/system/);
+  it('a real failed job stays in the machine room: not in the Daily Briefing', () => {
+    expect(briefingSrc).not.toMatch(/cron_health_report|enrichCronHealth|job_run_details/);
+    expect(heartbeatSrc).toMatch(/already surfaced in \/admin\/system → Observability/);
   });
 
   it('the heartbeat protocol carries the hierarchy as a hard rule', () => {
@@ -170,7 +167,8 @@ describe('2. channel hierarchy: ops findings → briefing + Observability, never
   it('post_to_river is self-describing about the rule (Law 2 — behaviour in the description)', () => {
     const skill = riverModule.skillSeeds!.find((s) => s.name === 'post_to_river')!;
     expect(skill.description).toMatch(/NOT for: operational alerts/);
-    expect(skill.description).toMatch(/Daily Briefing/);
+    expect(skill.description).toMatch(/\/admin\/system Observability/);
+    expect(skill.description).not.toMatch(/Daily Briefing/);
     expect(skill.instructions).toMatch(/Channel hierarchy/);
   });
 });
