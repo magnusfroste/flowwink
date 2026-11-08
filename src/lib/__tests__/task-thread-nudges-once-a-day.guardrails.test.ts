@@ -463,7 +463,7 @@ describe('round 3 — the fallback names the migration’s own objects, and says
 });
 
 describe('round 3 — a refused nudge with nothing done leaves no journal row on any unattended path', () => {
-  const index = read('supabase/functions/agent-execute/index.ts');
+  const index = read('supabase/functions/_shared/execute/core.ts');
   const refused = cadenceRefusalAnswer(refusal(decide([fp('comment', 1)], 'comment'))!, { id: 't1', title: 'x' });
 
   it('the refusal declares work_done 0', () => {
@@ -487,10 +487,12 @@ describe('round 3 — a refused nudge with nothing done leaves no journal row on
 
 describe('round 3 — a refusal kept as success (enum lagging) is neither cadence nor usage', () => {
   const reason = read('supabase/functions/_shared/pilot/reason.ts');
+  // The cadence quota lives in cadence.ts since it was shared with the handlers.
+  const cadenceSrc = read('supabase/functions/_shared/pilot/cadence.ts');
 
   it('partitionByCadence reads the answer’s own status beside the row’s', () => {
-    const at = reason.indexOf('export async function partitionByCadence(');
-    const fn = reason.slice(at, reason.indexOf('\nexport ', at + 10));
+    const at = cadenceSrc.indexOf('export async function partitionByCadence');
+    const fn = cadenceSrc.slice(at, cadenceSrc.indexOf('\nexport ', at + 10));
     expect(fn).toMatch(/\.select\('skill_name, status, created_at, answer:output->>status'\)/);
     expect(fn).toMatch(/a\.answer !== 'refused'/);
   });
