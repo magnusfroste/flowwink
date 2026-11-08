@@ -10,12 +10,17 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { executeSkillRequest, type ExecuteRequest } from '../_shared/execute/core.ts';
+import { backgroundErrorText, isRunReportTo, runOutcomeError } from '../_shared/execute/run-outcome.ts';
 
 // Supabase edge runtime: keeps a promise alive after the response is sent.
 declare const EdgeRuntime: { waitUntil?: (p: Promise<unknown>) => void } | undefined;
 
-/** The wire's own flag: `async: true` asks for the 202 handoff. Never part of the request the core runs. */
-type WireRequest = ExecuteRequest & { async?: boolean };
+/**
+ * The wire's own fields, never part of the request the core runs: `async: true`
+ * asks for the 202 handoff; `report_to: { automation_id, event_id }` (service
+ * callers) names the automation a background failure is written back to.
+ */
+type WireRequest = ExecuteRequest & { async?: boolean; report_to?: unknown };
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -71,7 +76,7 @@ serve(async (req) => {
       return json({ error: 'Unauthorized' }, 401);
     }
 
-    const body: WireRequest = await req.json();
+    const { report_to: reportTo, ...body }: WireRequest = await req.json();
     // ─── ASYNC HANDOFF ──────────────────────────────────────────────────────
     // A dispatcher must not sit on a 20-second skill (the responder, a send)
     // for every event in its batch: on Resta the event-dispatcher died mid-
@@ -81,13 +86,33 @@ serve(async (req) => {
     // result. Only for callers already authenticated above.
     if (body.async === true) {
       const { async: _async, ...rest } = body;
+      // The caller got 202 and wrote last_error: null. A failure in the
+      // background used to end in the activity log only, so an automation
+      // that failed on every event read as healthy (allocate_picking on
+      // order.paid, 2026-11-02). With report_to (a service caller's), the
+      // failure is written back to the automation that fired the run.
+      const report = isServiceCaller && isRunReportTo(reportTo) ? reportTo : null;
+      const recordFailure = async (err: string) => {
+        if (!report) return;
+        const { error: writeErr } = await supabase.from('agent_automations')
+          .update({ last_error: backgroundErrorText(err, report) })
+          .eq('id', report.automation_id);
+        if (writeErr) console.error('[agent-execute] could not record background failure:', writeErr.message);
+      };
       const run = fetch(`${supabaseUrl}/functions/v1/agent-execute`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: authHeader },
         body: JSON.stringify(rest),
-      }).then((r) => r.text()).catch((e) => console.error('[agent-execute] async handoff failed:', e));
+      }).then(async (r) => {
+        const out = await r.json().catch(() => ({ error: `no JSON answer (HTTP ${r.status})` }));
+        const err = runOutcomeError(r.ok, r.status, out);
+        if (err) await recordFailure(err);
+      }).catch(async (e) => {
+        console.error('[agent-execute] async handoff failed:', e);
+        await recordFailure(`background run ended without an answer: ${(e as Error)?.message ?? String(e)}`);
+      });
       if (typeof EdgeRuntime !== 'undefined') EdgeRuntime?.waitUntil?.(run);
-      return json({ accepted: true, async: true, skill: rest.skill_name ?? rest.skill_id ?? null, note: 'Running in the background — the activity log carries the result.' }, 202);
+      return json({ accepted: true, async: true, skill: rest.skill_name ?? rest.skill_id ?? null, note: 'Running in the background — the activity log carries the result, and a failure lands on the automation named in report_to.' }, 202);
     }
 
     const out = await executeSkillRequest(body, { isServiceCaller, gateUserId, gateIsAdmin });

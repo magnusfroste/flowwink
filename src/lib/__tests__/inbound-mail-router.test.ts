@@ -129,8 +129,11 @@ describe('one filing path for every provider', () => {
   });
 
   it('the event dispatcher surfaces a failed skill as last_error', () => {
+    // The reading moved to the one shared reader (2026-11-08): a 200
+    // { status: 'failed' } is a failure, for the inline path and the async one.
     const d = read('supabase/functions/event-dispatcher/index.ts');
-    expect(d).toMatch(/out\?\.status === "failed"/);
+    expect(d).toMatch(/runOutcomeError\(resp\.ok, resp\.status, out\)/);
+    expect(read('supabase/functions/_shared/execute/run-outcome.ts')).toMatch(/out\.status === 'failed'/);
   });
 
   it('the /inbound route fails closed without its secret', () => {

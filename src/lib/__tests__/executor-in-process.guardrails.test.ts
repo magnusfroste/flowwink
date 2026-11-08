@@ -98,6 +98,20 @@ describe('the executor runs in-process for callers inside the Deno project', () 
     }
   });
 
+  it('the async handoff writes a background failure back to the automation (report_to)', () => {
+    // 2026-11-08: the 202 said nothing about the skill, the dispatcher wrote
+    // last_error: null, and an automation failing on every event read healthy.
+    const branch = fn.slice(fn.indexOf('if (body.async === true) {'), fn.indexOf('const out = await executeSkillRequest('));
+    expect(branch).toMatch(/runOutcomeError\(r\.ok, r\.status, out\)/);
+    expect(branch).toMatch(/from\('agent_automations'\)\s*\.update\(\{ last_error: backgroundErrorText/);
+    // A run that dies without an answer is a failure too.
+    expect(branch).toMatch(/\.catch\(async[\s\S]*recordFailure\(/);
+    // Only a service caller may name the automation to write to …
+    expect(branch).toMatch(/isServiceCaller && isRunReportTo\(reportTo\)/);
+    // … and report_to is the wire's, never part of the request the core runs.
+    expect(fn).toMatch(/const \{ report_to: reportTo, \.\.\.body \}: WireRequest = await req\.json\(\);/);
+  });
+
   it('FlowPilot’s ReAct loop runs a skill through the runner its config carries, keeping the non-2xx envelope', () => {
     // The loop never imports the core: the app's tsc reaches reason.ts through
     // its tests, and the core is Deno's (the deno ratchet). It carries the
