@@ -20,6 +20,7 @@ import { AskAboutProduct } from '@/components/public/AskAboutProduct';
 import { useCustomerFormat } from '@/hooks/useCustomerFormat';
 import { useShopLanguage } from '@/hooks/useShopLanguage';
 import NotFound from './NotFound';
+import { usePricePeriodText } from '@/lib/price-period-text';
 
 export default function ShopPage() {
   const { formatPrice } = useCustomerFormat();
@@ -39,6 +40,7 @@ export default function ShopPage() {
   const { data: seoSettings } = useSeoSettings();
   const [search, setSearch] = useState('');
   const t = useUiText();
+  const periodText = usePricePeriodText();
   const { catalogOnly } = useStorefront();
   const pageTitle = catalogOnly ? t('shop.catalogTitle', 'Products') : t('shop.title', 'Shop');
 
@@ -195,6 +197,9 @@ export default function ShopPage() {
                     <div className="flex items-center justify-between pt-1">
                       <span className="text-lg font-bold">
                         {formatPrice(product.price_cents, product.currency)}
+                        {periodText(product, { short: true }) && (
+                          <span className="text-sm font-normal text-muted-foreground">{periodText(product, { short: true })}</span>
+                        )}
                       </span>
                       {variantProductIds?.has(product.id) ? (
                         // Variant products: options are picked on the product page
