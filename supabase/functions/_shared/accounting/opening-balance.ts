@@ -14,10 +14,10 @@
  * voucher on the first day of the year — every balance-sheet account twice.
  */
 
+import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { readAllRows } from '../read-all-rows.ts';
 
-// deno-lint-ignore no-explicit-any
-type Db = any;
+type Db = SupabaseClient;
 
 export interface FiscalYearOf {
   fiscal_year: number;
