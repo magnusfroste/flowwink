@@ -78,14 +78,17 @@ async function run(s: Scenario): Promise<void> {
   const pnl = await s.must('the income statement of the month is read', 'accounting_reports', { type: 'income_statement', from_date: day(1), to_date: day(28) });
   const result = Number(pnl.net_result_cents ?? pnl.result_cents ?? pnl.net_income_cents ?? (pnl.totals as { net_result_cents?: number } | undefined)?.net_result_cents ?? NaN);
   s.check('the result of the month is 1 100 − 400 = 700 kr', result === 70_000, `income statement answered ${JSON.stringify(pnl).slice(0, 400)}`);
-  const allTime = await s.must('the trial balance of the whole ledger is read', 'accounting_reports', { type: 'trial_balance' });
+  // Since #947 a trial balance without dates is the current fiscal year's (it starts
+  // where an opening balance is known); the whole ledger is asked for by its window.
+  const wholeLedger = { type: 'trial_balance', from_date: '1900-01-01', to_date: '2999-12-31' };
+  const allTime = await s.must('the trial balance of the whole ledger is read', 'accounting_reports', wholeLedger);
   // `allTime.balanced` is NOT asserted: on a truncated read it is luck, and it flipped between runs.
   // FINDING 2026-09-19: the report reads journal lines without paging, so PostgREST cuts it at 1 000
   // rows — with 2 322 posted lines it reported 3.3 M where the ledger holds 7.95 M, and "balanced"
   // was luck (it flipped between runs depending on where the cut fell). Totals are the assertion.
   const ledger = await s.one<{ debit: string }>(
     `select coalesce(sum(l.debit_cents), 0) as debit from journal_entry_lines l join journal_entries e on e.id = l.journal_entry_id where e.status = 'posted'`);
-  const after = await s.must('…and read again, against the ledger itself', 'accounting_reports', { type: 'trial_balance' });
+  const after = await s.must('…and read again, against the ledger itself', 'accounting_reports', wholeLedger);
   s.check('the trial balance of the whole ledger covers every posted line, not the first thousand',
     Math.abs(Number(after.total_debit_cents) - Number(ledger?.debit)) <= Number(ledger?.debit) * 0.001,
     `report says ${after.total_debit_cents} (balanced: ${allTime.balanced}), the ledger holds ${ledger?.debit}`);
