@@ -140,6 +140,8 @@ import { handler as hExtractReceipt } from '../handlers/extract-receipt.ts';
 import { handler as hAnalyzeBrand } from '../handlers/analyze-brand.ts';
 import { handler as hDocsSync } from '../handlers/docs-sync.ts';
 import { loadOrgName } from '../org-name.ts';
+import { renderTemplate } from '../template-render.ts';
+import { escapeHtml } from '../email/mail-template.ts';
 import { handler as hGithubContentSync } from '../handlers/github-content-sync.ts';
 import { handler as hUnsplashSearch } from '../handlers/unsplash-search.ts';
 import { handler as hFetchImage } from '../handlers/fetch-image.ts';
@@ -11463,6 +11465,7 @@ async function executeSendInvoiceForOrder(
     notes,
     payment_terms,
     dry_run = false,
+    receipt = false,
   } = args as any;
 
   if (!order_id) throw new Error('order_id is required');
@@ -11470,12 +11473,25 @@ async function executeSendInvoiceForOrder(
   // 1. Fetch order + items
   const { data: order, error: orderErr } = await supabase
     .from('orders')
-    .select('id, customer_email, customer_name, currency, total_cents, status, metadata, user_id, shipping_cost_cents')
+    .select('id, customer_email, customer_name, currency, total_cents, status, metadata, user_id, shipping_cost_cents, lang, partner_id')
     .eq('id', order_id)
     .maybeSingle();
   if (orderErr) throw new Error(`Order lookup failed: ${orderErr.message}`);
   if (!order) throw new Error(`Order ${order_id} not found`);
   if (!order.customer_email) throw new Error(`Order ${order_id} has no customer_email`);
+
+  // The order.paid automation's call: a receipt, for a paid order, where the
+  // page it links to exists. Each "no" is a refusal, not a failure.
+  if (receipt) {
+    if (!(await isModuleEnabled(supabase, 'invoicing'))) {
+      return { status: 'refused', code: 'MODULE_DISABLED', retryable: false, order_id,
+        hint: 'A receipt is a paid invoice, and the Invoicing module is off — its page would answer 404. No receipt was created.' };
+    }
+    if (!orderIsPaid(order.status)) {
+      return { status: 'refused', code: 'INVALID_INPUT', retryable: false, order_id,
+        hint: `Order is ${order.status}: only a paid order gets a receipt. Call without receipt to invoice it.` };
+    }
+  }
 
   const { data: items, error: itemsErr } = await supabase
     .from('order_items')
@@ -11573,6 +11589,14 @@ async function executeSendInvoiceForOrder(
     }
   }
 
+  // An order the business already invoiced has its document: the receipt must
+  // not mail it a second time.
+  if (receipt && existingInvoice) {
+    return { status: 'refused', code: 'ALREADY_EXISTS', retryable: false, order_id,
+      invoice_number: existingInvoice.invoice_number,
+      hint: `Order already has invoice ${existingInvoice.invoice_number}. No second document was created or sent.` };
+  }
+
   // 4. Dry-run preview
   if (dry_run) {
     return {
@@ -11630,8 +11654,9 @@ async function executeSendInvoiceForOrder(
         currency: order.currency || undefined,
         due_date: dueDate,
         payment_terms: payment_terms || `Net ${due_days}`,
-        // The note stays for human readability; it is no longer load-bearing.
-        notes: `${notes ? notes + '\n' : ''}order:${order_id}`,
+        // The customer reads the notes on the page and the PDF. The link is the
+        // order_id column; the prose marker only where the column is missing.
+        notes: orderIdColumn ? (notes || null) : `${notes ? notes + '\n' : ''}order:${order_id}`,
         ...(orderIdColumn ? { order_id } : {}),
         status: orderPaid ? 'paid' : 'sent',
         sent_at: new Date().toISOString(),
@@ -11689,22 +11714,51 @@ async function executeSendInvoiceForOrder(
       publicToken = inv?.public_token;
     }
     const invoiceUrl = origin && publicToken ? `${origin.replace(/\/$/, '')}/invoice/${publicToken}` : '';
-    // English mail, the business's way of writing money.
-    const home = homeFormat(await loadHome(supabase), 'en');
+    // A paid order's mail is its receipt, and the words are site content: the
+    // language the customer ordered in, else their party's, else the site's.
+    // The built-in English below is the fallback (Law 4).
+    type ReceiptTemplate = { ok?: boolean; html?: string; subject?: string; locale?: string };
+    let tpl: ReceiptTemplate | null = null;
+    if (orderPaid) {
+      let recipientLang: string | null = (order as { lang?: string | null }).lang ?? null;
+      if (!recipientLang && (order as { partner_id?: string | null }).partner_id) {
+        const { data: langRow, error: langErr } = await supabase.rpc('partner_language', { p_partner_id: (order as { partner_id: string }).partner_id });
+        if (langErr) console.warn('[send_invoice_for_order] could not read the recipient language:', langErr.message);
+        recipientLang = (langRow as { lang?: string } | null)?.lang ?? null;
+      }
+      const { data: resolved, error: tplErr } = await supabase.rpc('resolve_email_template', { p_name: 'order_receipt', p_locale: recipientLang });
+      if (tplErr) console.warn('[send_invoice_for_order] template lookup failed — using built-in fallback:', tplErr.message);
+      tpl = resolved as ReceiptTemplate | null;
+    }
+    // The mail's language, the business's way of writing money.
+    const home = homeFormat(await loadHome(supabase), tpl?.ok && tpl.html ? tpl.locale : 'en');
     const fmt = (cents: number) => home.money(cents, order.currency);
 
     // A FRAGMENT, not a document — email-send wraps it in the operator's
     // branded shell, so the invoice mail finally looks like the company's other
     // mail instead of like this function's own idea of an email.
-    const html = `
-      <h2 style="margin:0 0 12px">Invoice ${invoice.invoice_number}</h2>
+    let html = `
+      <h2 style="margin:0 0 12px">${orderPaid ? 'Receipt' : 'Invoice'} ${invoice.invoice_number}</h2>
       <p>Hi ${order.customer_name || 'there'},</p>
       <p>Thank you for your order. ${orderPaid
         ? `It is paid in full — this invoice for <strong>${fmt(totalCents)}</strong> is your receipt${invoiceUrl ? ' below' : ''}.`
         : `Please find your invoice for <strong>${fmt(totalCents)}</strong>${invoiceUrl ? ' below' : ''}.`}</p>
       ${invoiceUrl ? `<p><a href="${invoiceUrl}" style="display:inline-block;background:#2563eb;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none">View invoice &amp; download PDF</a></p>` : ''}
       <p style="color:#666;font-size:13px">If you have any questions, just reply to this email.</p>`;
-    const subject = `Invoice ${invoice.invoice_number}`;
+    let subject = `${orderPaid ? 'Receipt' : 'Invoice'} ${invoice.invoice_number}`;
+    if (tpl?.ok && tpl.html) {
+      const vars: Record<string, string> = {
+        customer_name: escapeHtml(order.customer_name || ''),
+        invoice_number: escapeHtml(invoice.invoice_number),
+        total: fmt(totalCents),
+        tax: fmt(taxCents),
+        order_ref: String(order_id).slice(0, 8),
+        receipt_url: invoiceUrl,
+        site_name: escapeHtml(await loadOrgName(supabase, '')),
+      };
+      html = renderTemplate(tpl.html, vars);
+      subject = tpl.subject ? renderTemplate(tpl.subject, vars) : subject;
+    }
 
     const { data: sendData, error: sendErr } = await supabase.functions.invoke('email-send', {
       body: {

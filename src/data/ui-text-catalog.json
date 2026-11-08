@@ -1191,6 +1191,101 @@
       "fallback": "Hi {name}, pick a time for your interview"
     },
     {
+      "key": "invoice.cancelled",
+      "group": "invoice",
+      "fallback": "This invoice has been cancelled."
+    },
+    {
+      "key": "invoice.downloadPdf",
+      "group": "invoice",
+      "fallback": "Download PDF"
+    },
+    {
+      "key": "invoice.due",
+      "group": "invoice",
+      "fallback": "Due"
+    },
+    {
+      "key": "invoice.items",
+      "group": "invoice",
+      "fallback": "Items"
+    },
+    {
+      "key": "invoice.linkInvalid",
+      "group": "invoice",
+      "fallback": "This invoice link is invalid or has expired."
+    },
+    {
+      "key": "invoice.noItems",
+      "group": "invoice",
+      "fallback": "No items"
+    },
+    {
+      "key": "invoice.notes",
+      "group": "invoice",
+      "fallback": "Notes"
+    },
+    {
+      "key": "invoice.notFound",
+      "group": "invoice",
+      "fallback": "Invoice not found"
+    },
+    {
+      "key": "invoice.paidReceipt",
+      "group": "invoice",
+      "fallback": "Paid in full. This is your receipt — thank you!"
+    },
+    {
+      "key": "invoice.pay",
+      "group": "invoice",
+      "fallback": "Pay"
+    },
+    {
+      "key": "invoice.paymentConfirming",
+      "group": "invoice",
+      "fallback": "Payment received — confirming…"
+    },
+    {
+      "key": "invoice.receipt",
+      "group": "invoice",
+      "fallback": "Receipt"
+    },
+    {
+      "key": "invoice.statusCancelled",
+      "group": "invoice",
+      "fallback": "Cancelled"
+    },
+    {
+      "key": "invoice.statusOpen",
+      "group": "invoice",
+      "fallback": "Open"
+    },
+    {
+      "key": "invoice.statusPaid",
+      "group": "invoice",
+      "fallback": "Paid"
+    },
+    {
+      "key": "invoice.subtotal",
+      "group": "invoice",
+      "fallback": "Subtotal"
+    },
+    {
+      "key": "invoice.tax",
+      "group": "invoice",
+      "fallback": "Tax"
+    },
+    {
+      "key": "invoice.title",
+      "group": "invoice",
+      "fallback": "Invoice"
+    },
+    {
+      "key": "invoice.total",
+      "group": "invoice",
+      "fallback": "Total"
+    },
+    {
       "key": "kb.allCategories",
       "group": "kb",
       "fallback": "All"

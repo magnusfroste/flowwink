@@ -419,9 +419,11 @@ export function InvoiceDetailSheet({ invoiceId, open, onOpenChange }: Props) {
                 {action.label}
               </Button>
             ))}
-            <Button variant="ghost" size="sm" onClick={handleDelete} className="ml-auto text-destructive">
-              <Trash2 className="h-4 w-4" />
-            </Button>
+            {invoice.status === 'draft' && (
+              <Button variant="ghost" size="sm" onClick={handleDelete} className="ml-auto text-destructive">
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         </div>
       </SheetContent>

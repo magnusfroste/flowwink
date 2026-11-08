@@ -294,8 +294,11 @@ export function useDeleteInvoice() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('invoices').delete().eq('id', id);
+      // An issued invoice is a voucher, and its link lives in the customer's
+      // mail: only a draft goes. The filter is the rule, not the button.
+      const { data, error } = await supabase.from('invoices').delete().eq('id', id).eq('status', 'draft').select('id');
       if (error) throw error;
+      if (!data?.length) throw new Error('Only a draft can be deleted. Cancel or credit an issued invoice.');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
