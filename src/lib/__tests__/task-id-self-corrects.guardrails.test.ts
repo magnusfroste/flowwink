@@ -213,15 +213,17 @@ describe('task-id self-corrects — no silent action on a guess', () => {
   });
 
   it('the handler writes the comment only on the resolver\'s ok branch, and the bare `no task ${id}` is gone', () => {
-    const start = HANDLER.indexOf("handler === 'internal:comment_on_task'");
+    expect(HANDLER).toContain("'internal:comment_on_task': (ctx) => executeCommentOnTask(ctx)");
+    const start = HANDLER.indexOf('async function executeCommentOnTask(');
     expect(start).toBeGreaterThan(0);
-    const block = HANDLER.slice(start, HANDLER.indexOf("} else if (handler === '", start + 50));
+    const block = HANDLER.slice(start, HANDLER.indexOf('\n}\n', start));
     expect(block).toMatch(/resolveProjectTask\(supabase, args as any, \{ allowTitle: true \}\)/);
     expect(block).not.toMatch(/`no task \$\{taskId\}`/);
-    // The write is the paced insert (task-thread-nudges-once-a-day): still only on the ok branch.
+    // The write is the paced insert (task-thread-nudges-once-a-day): still only past the resolver's refusal.
     const insertAt = block.indexOf('writePacedComment(supabase');
-    const okBranchAt = block.indexOf('} else {', block.indexOf('if (!resolved.ok)'));
-    expect(insertAt).toBeGreaterThan(okBranchAt);
+    const refusedAt = block.indexOf('return { success: false, ...failure }', block.indexOf('if (!resolved.ok)'));
+    expect(refusedAt).toBeGreaterThan(0);
+    expect(insertAt).toBeGreaterThan(refusedAt);
     expect(block).toMatch(/project_id: resolved\.task\.project_id/);
   });
 

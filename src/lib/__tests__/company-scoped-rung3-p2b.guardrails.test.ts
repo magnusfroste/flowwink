@@ -26,7 +26,7 @@ describe('rung 3 (B2B) P2b guardrails', () => {
 
   it('all three handlers are wired and gated at buyer', () => {
     for (const name of ['reorder_company_order', 'request_company_quote', 'initiate_company_invoice_payment']) {
-      expect(agentExec).toContain(`handler === 'internal:${name}'`);
+      expect(agentExec).toContain(`'internal:${name}': (`);
     }
     expect(fnBody('executeReorderCompanyOrder').slice(0, 400)).toMatch(/companyScopeGuard\(args, 'buyer'\)/);
     expect(fnBody('executeRequestCompanyQuote').slice(0, 400)).toMatch(/companyScopeGuard\(args, 'buyer'\)/);

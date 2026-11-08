@@ -312,8 +312,8 @@ const COMMENT: PacedComment = {
 
 describe('the write is a locked compare-and-set', () => {
   const index = read('supabase/functions/_shared/execute/core.ts');
-  const start = index.indexOf("handler === 'internal:comment_on_task'");
-  const block = index.slice(start, index.indexOf("} else if (handler === '", start + 50));
+  const start = index.indexOf('async function executeCommentOnTask(');
+  const block = index.slice(start, index.indexOf('\n}\n', start));
   const migration = readdirSync(join(process.cwd(), 'supabase/migrations'))
     .filter((f) => f.endsWith('.sql'))
     .map((f) => read(`supabase/migrations/${f}`))
@@ -349,7 +349,7 @@ describe('the write is a locked compare-and-set', () => {
     expect(new Date(r.next_comment_at!).getTime()).toBeGreaterThan(NOW.getTime());
     expect(block).toMatch(/const lastAt = written\.last_at \?\? new Date\(\)\.toISOString\(\);/);
     // …and describes the thread as it IS after the winner wrote, not as it was before the lock.
-    expect(block).toMatch(/const reread = await readTaskThreadComments\(supabase, taskId\);\s*const current = reread\.error \? state : readTaskThread\(reread\.comments, author, movedAt\);\s*result = cadenceRefusalAnswer\(nudgedTodayRefusal\(current, lastAt\)/);
+    expect(block).toMatch(/const reread = await readTaskThreadComments\(supabase, taskId\);\s*const current = reread\.error \? state : readTaskThread\(reread\.comments, author, movedAt\);\s*(?:result =|return) cadenceRefusalAnswer\(nudgedTodayRefusal\(current, lastAt\)/);
   });
 
   it('success carries the thread state', () => {

@@ -31,7 +31,7 @@ describe('it is a PLATFORM primitive, not a pages-module feature', () => {
 
   it('is wired as an internal handler in agent-execute', () => {
     expect(seed).toMatch(/handler: 'internal:describe_blocks'/);
-    expect(agentExecute).toMatch(/handler === 'internal:describe_blocks'/);
+    expect(agentExecute).toMatch(/'internal:describe_blocks': \(/);
     expect(agentExecute).toMatch(/import \{ executeDescribeBlocks \}/);
   });
 

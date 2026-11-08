@@ -141,8 +141,8 @@ describe('manage_modules wiring', () => {
 
   it('agent-execute dispatches both skills, and a switched-off module is not woken by a write', () => {
     const exec = read('supabase/functions/_shared/execute/core.ts');
-    expect(exec).toMatch(/handler === 'internal:module_usage_report'/);
-    expect(exec).toMatch(/handler === 'internal:manage_modules'/);
+    expect(exec).toMatch(/'internal:module_usage_report': \(/);
+    expect(exec).toMatch(/'internal:manage_modules': \(/);
     // The switch itself is the shared one (module-switch.ts, 2026-11-06).
     expect(exec).toMatch(/switchModules\(supabase, MODULE_CATALOG, ARTIFACT_MODULES, \{\s+action, modules: requested, by, reason, attended: ctx\.attended === true, via: 'manage_modules',/);
     expect(exec).toMatch(/attended: Boolean\(attendedUserId\)/);

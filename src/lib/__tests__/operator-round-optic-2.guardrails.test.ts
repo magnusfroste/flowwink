@@ -25,7 +25,7 @@ describe('4. a skill that needs a portal session is not offered to MCP callers',
       .filter(([, , body]) => /companyScopeGuard\(args/.test(body))
       .map(([, fn]) => fn),
   );
-  const handlers = [...ae.matchAll(/handler === '(internal:\w+)'\) \{\s*result = await (\w+)\(/g)]
+  const handlers = [...ae.matchAll(/'(internal:\w+)':\s*\([^)]*\)\s*=>\s*(\w+)\(/g)]
     .filter(([, , fn]) => guarded.has(fn))
     .map(([, h]) => h);
 
