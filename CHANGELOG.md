@@ -10,6 +10,15 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Fixed
 
+- **Meeting polls says when it is off, and has a place in the sidebar.** The
+  Meeting polls tab under Bookings rendered its full desk with the module off
+  (the default) — `/poll/<token>` answered 404 and every poll skill was
+  refused, so the feature looked present and failed, or was never found. The
+  tab now says it is switched off, with a door to Modules for an admin; the
+  sidebar carries **Meeting polls** (`/admin/bookings/polls`) under its own
+  module, so it appears when the module is on and the route gate agrees with
+  it. A role that may use Bookings may use its meeting polls
+  (`20261108200000`, insert-if-absent).
 - **One service client per isolate.** `getServiceClient()` in
   `_shared/supabase-clients.ts` memoises the service-role client instead of
   running `createClient` on each of its 118 call sites (some inside per-row
