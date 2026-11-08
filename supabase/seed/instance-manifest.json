@@ -2985,15 +2985,15 @@
       ]
     },
     "skills": {
-      "seed_hash": "sha256:319e255cd747649e54411715719c6d9bbb8e941221b7a8383e9de43665228ce0",
+      "seed_hash": "sha256:6190bd20b15559881b54c578faa7112794853af65e2bfc31ce8cca20f23a00ea",
       "skill_count": 670,
       "module_count": 70
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:250e377f54a58557a6f19e759da44fcd88b1ba6894048dbc626dbad24b104b11",
+      "shared_hash": "sha256:c3023abd2342db64238fb62213e0a112f8591faadd9b2a43873f7c62518d73b3",
       "functions": {
-        "agent-execute": "sha256:b6890ab856dc37b796f9d583fbf0c8c1751ac987658658727e683aa216472712",
+        "agent-execute": "sha256:d2f1fb1556de41983618533704c3154169edb5299dc812f9118e60c42a914e9a",
         "agent-operate": "sha256:4320e02dd3e6a0a1706b42dc1905b631c61e6a4cbe3556c701f474c278c89e1a",
         "ai-task": "sha256:ce3aacdef625bba758f4323da3e49104a1b94a3d3d77d800e89dacd0b803d65e",
         "automation-dispatcher": "sha256:c7862e942bb9fbfcb847d236cd7fece01ad934f354ac038d03f9128e4f2e006a",
@@ -3026,8 +3026,8 @@
         "event-dispatcher": "sha256:daa075ab3ac24df598506a9ed5232426b5dd2a1911cede5a9d432e8de05de5d9",
         "extract-pdf-text": "sha256:fb2e1a10f79fb0b150cd547a08fc3b1e11b79c09771f2d13d748c08b4e93f34c",
         "federation-invite-peer": "sha256:475817522c4d1b7a2faed2a0a4fbe03ac5f340479eb246febe0456f3d0596b21",
-        "flowpilot-heartbeat": "sha256:d15c8b16bfad937e5da274612502d308d2e5ba3121c7fc207c0f615aebda84b6",
-        "flowpilot-lifecycle": "sha256:31117a5086304c40c97d102f126b355dd0ed5da6d446e4e0da5dc0fc645a5bab",
+        "flowpilot-heartbeat": "sha256:64ee03b84cd0c4bb1e636a19631fbea973533a283c84e8c8dad1825fb8ce7fc0",
+        "flowpilot-lifecycle": "sha256:31af7a9f62a186583de549553af43e06a601fd3452893dc920f17d1ecfcf6649",
         "gatewayapi-ingest": "sha256:d6f74c384f0baac936737762d330c470636502afcc9af418b1c43db26134e4fe",
         "generate-invoice-pdf": "sha256:788baea5630795df69dd7b69f4177b12fd1432a061dca2e0bf2cc562fb6ffb2d",
         "get-page": "sha256:3e42751911164c9d6c350b931a4e64a4824166a6bef8d02e526ad378c8f3921b",
