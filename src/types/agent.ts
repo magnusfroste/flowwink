@@ -7,7 +7,7 @@
 
 export type AgentScope = 'internal' | 'external' | 'both';
 export type AgentSkillCategory = 'content' | 'crm' | 'communication' | 'automation' | 'search' | 'analytics' | 'growth';
-export type AgentActivityStatus = 'success' | 'failed' | 'pending_approval' | 'approved' | 'rejected';
+export type AgentActivityStatus = 'success' | 'failed' | 'pending_approval' | 'approved' | 'rejected' | 'refused';
 export type SkillTrustLevel = 'auto' | 'notify' | 'approve';
 export type AgentType = 'flowpilot' | 'chat' | 'mcp' | 'cron' | 'automation' | 'system';
 export type AgentMemoryCategory = 'preference' | 'context' | 'fact';

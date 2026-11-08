@@ -17,7 +17,7 @@ type Cadence = { max?: unknown; per?: unknown; every?: unknown; counts?: unknown
 type CadenceSubject = { goal?: unknown; constraints?: unknown };
 const cadenceOf = (o: CadenceSubject): Cadence | undefined =>
   ((o.constraints ?? undefined) as { cadence?: Cadence | null } | undefined)?.cadence ?? undefined;
-type ActivityRow = { skill_name: string; created_at: string };
+type ActivityRow = { skill_name: string; created_at: string; answer?: string | null };
 
 /**
  * Structural cadence limit for objectives that deliver on a rhythm.
@@ -74,9 +74,12 @@ export async function partitionByCadence<T extends CadenceSubject>(
   const earliest = Math.min(...withCadence.map((o) => windowStartOf(cadenceOf(o) ?? {}).getTime()));
   const since = new Date(earliest).toISOString();
 
+  // `answer`: the output's own status. A refusal is journaled 'refused' — but
+  // on an instance whose enum lags the deploy it is kept as 'success' with
+  // output.status 'refused', and a refusal never delivered anything.
   const { data: acts, error: actsError } = await (supabase as SupabaseClient)
     .from('agent_activity')
-    .select('skill_name, status, created_at')
+    .select('skill_name, status, created_at, answer:output->>status')
     .in('skill_name', skills)
     .eq('agent', 'flowpilot')
     .eq('status', 'success')
@@ -98,7 +101,7 @@ export async function partitionByCadence<T extends CadenceSubject>(
     }
     const windowStart = windowStartOf(c);
     const done = ((acts ?? []) as unknown as ActivityRow[]).filter(
-      (a) => a.skill_name === c.counts && new Date(a.created_at) >= windowStart,
+      (a) => a.skill_name === c.counts && a.answer !== 'refused' && new Date(a.created_at) >= windowStart,
     ).length;
 
     if (done >= Number(c.max)) {

@@ -40,16 +40,23 @@ export function declaredWorkDone(result: unknown): number | null {
  * Should this run be left out of the journal?
  *
  * Three conditions, all required — the two guards matter as much as the count:
- *  - `scheduled`: only an unattended tick. A human or an agent that asked for
- *    this skill gets its receipt, even when the answer is "nothing to do".
+ *  - unattended: a `scheduled` tick, or a REFUSAL on any path with no person
+ *    at the keyboard (`unattended` + `refused`). A human who asked for this
+ *    skill gets their receipt, even when the answer is "nothing to do"; so
+ *    does an agent that asked and got work, or a failure. A refusal is the
+ *    platform saying no before anything ran — the caller holds the answer in
+ *    its own turn, and a row per refused nudge per task per heartbeat is the
+ *    incident it refuses, relocated (review round 3 of #799).
  *  - `!failed`: a failure is always worth a row. That is the whole point of
  *    keeping one.
  *  - a DECLARED zero. Undeclared is unknown, and unknown keeps its row.
  */
 export function isIdleScheduledRun(
   result: unknown,
-  opts: { scheduled: boolean; failed: boolean },
+  opts: { scheduled: boolean; failed: boolean; refused?: boolean; unattended?: boolean },
 ): boolean {
-  if (!opts.scheduled || opts.failed) return false;
+  if (opts.failed) return false;
+  const unattendedRefusal = opts.refused === true && opts.unattended === true;
+  if (!opts.scheduled && !unattendedRefusal) return false;
   return declaredWorkDone(result) === 0;
 }
