@@ -20,8 +20,10 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const root = process.cwd();
+// The pipeline is executeSkillRequest in _shared/execute/core.ts (2026-11-07);
+// the agent-execute function is the HTTP wrapper around it.
 const INDEX = readFileSync(join(root, 'supabase/functions/_shared/execute/core.ts'), 'utf8');
-const serveAt = INDEX.indexOf('export async function handleAgentExecute(');
+const serveAt = INDEX.indexOf('export async function executeSkillRequest(');
 const SERVE = INDEX.slice(serveAt, INDEX.indexOf('\n}\n', serveAt));
 
 describe('agent-execute pays for its own statements once', () => {

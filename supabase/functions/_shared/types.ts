@@ -36,6 +36,13 @@ export interface PromptCompilerInput {
 }
 
 export interface ReasonConfig {
+  /**
+   * The executor, in-process: executeSkillRequest from _shared/execute/core.ts,
+   * which every entrypoint that runs the loop passes (2026-11-07). The loop
+   * does not import the core itself — see _shared/execute/types.ts for why —
+   * and without a runner falls back to the HTTP hop (a test harness).
+   */
+  runSkill?: import('./execute/types.ts').SkillRunner;
   scope: 'internal' | 'external';
   maxIterations?: number;
   systemPromptOverride?: string;

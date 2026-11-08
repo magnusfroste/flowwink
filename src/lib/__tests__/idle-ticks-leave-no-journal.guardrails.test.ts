@@ -100,7 +100,8 @@ describe('agent-execute suppresses the row at the one place it writes it', () =>
     // `scheduled` is an explicit request field, not inferred from agent_type:
     // a flowpilot-executor automation and a FlowPilot chat turn carry the same
     // tag, and only one of them is unattended.
-    expect(agentExecute).toMatch(/scheduled\?: boolean;/);
+    // The request contract lives beside the core (_shared/execute/types.ts).
+    expect(read('supabase/functions/_shared/execute/types.ts')).toMatch(/scheduled\?: boolean;/);
     expect(agentExecute).toMatch(/agent_type, conversation_id, scheduled, objective_context/);
     expect(agentExecute).toMatch(/scheduled: scheduled === true,/);
     expect(agentExecute).toMatch(/failed: handlerFailed,/);

@@ -14,7 +14,7 @@
  */
 import { describe, expect, it } from 'vitest';
 
-/** Mirror of the rpc-arg mapping logic in agent-execute/index.ts */
+/** Mirror of the rpc-arg mapping logic in _shared/execute/core.ts */
 function mapRpcArgs(args: Record<string, unknown>): Record<string, unknown> {
   const rpcArgs: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(args || {})) {

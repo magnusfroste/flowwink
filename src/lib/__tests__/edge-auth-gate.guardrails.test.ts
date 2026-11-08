@@ -56,8 +56,8 @@ describe('Privileged edge functions authenticate the caller (edge-auth gate)', (
     expect(helper).toContain('SUPABASE_SERVICE_ROLE_KEY');
   });
 
-  // A door may delegate to a shared module (agent-execute/index.ts is
-  // `serve(handleAgentExecute)` over _shared/execute/core.ts since 2026-11-07):
+  // A door may delegate to a shared module (agent-execute/index.ts runs
+  // executeSkillRequest from _shared/execute/core.ts since 2026-11-07):
   // the gate then lives in what the door imports from _shared, one level down.
   function withDelegates(src: string): string {
     const parts = [src];

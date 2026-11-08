@@ -1,5 +1,13 @@
 // agent-execute v2026-04-20-stale-deals-with-contact (lead/company in deal_stale_check)
+// The executor's request pipeline (2026-11-07). Everything that was the body of
+// agent-execute's serve() — the gates in order, the handler dispatch, the
+// envelope, the journal — is executeSkillRequest below, so a caller inside the
+// same Deno project (FlowPilot's ReAct loop, the MCP gateway) runs a skill
+// in-process. The HTTP function (agent-execute/index.ts) is a thin wrapper:
+// parse the auth header → this → wrap in a Response. The JSON bundles stay in
+// agent-execute/ (scripts/generated-artifacts.ts writes them there).
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import type { ExecuteAuth, ExecuteOutcome, ExecuteRequest } from './types.ts';
 import { blocksShapeError, normalizeBlockData, normalizeBlocks, validateBlockData } from '../normalize-blocks.ts';
 import { planImport, readImageHeader, isGlb } from '../media/import-plan.ts';
 import { normalizeSkillArgs } from '../skill-aliases.ts';
@@ -204,9 +212,6 @@ import { businessToday, loadHomeCached } from '../locale/load-home.ts';
 import { handleGetBusinessHome, handleSetBusinessHome, type SetBusinessHomeArgs } from '../handlers/business-home.ts';
 import { loadHome } from '../locale/load-home.ts';
 import { isExtractable } from '../documents/extractable.ts';
-// Supabase edge runtime: keeps a promise alive after the response is sent.
-// deno-lint-ignore no-explicit-any
-declare const EdgeRuntime: any;
 
 // ─── Skill → owning module (rollsvepet #102) ─────────────────────────────
 // The auth gate below authorizes non-admin staff per the skill's OWNING
@@ -231,10 +236,6 @@ for (const [name, moduleId] of Object.entries(SKILL_OWNER_MODULE_OVERRIDES)) {
   SKILL_OWNER_MODULE[name] = moduleId;
 }
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
-};
 
 // ─── Agentic bookkeeping: shared template scoring + expansion ───────────────
 // These mirror the inline logic in the manage_journal_entry create path
@@ -485,52 +486,6 @@ const UNDERSCORE_PARAM_RPCS = new Set<string>([
   'utm_attribution_report',
 ]);
 
-interface ExecuteRequest {
-  skill_id?: string;
-  skill_name?: string;
-  arguments: Record<string, unknown>;
-  agent_type: 'flowpilot' | 'chat' | 'mcp';
-  conversation_id?: string;
-  /** Trace ID from the parent reason() loop for end-to-end observability */
-  trace_id?: string;
-  /** When called via MCP, the user who owns the api_key. Used for ownership/created_by. */
-  caller_user_id?: string;
-  /** When called via MCP, the connected agent's name (a2a_peers.name). Stamps *_by_agent columns so a row says WHICH agent, not just "mcp". */
-  caller_agent_name?: string;
-  /** When called via MCP, the api_key id (and inbound peer) that initiated the call. */
-  caller_api_key_id?: string;
-  /** Run only if the call is a READ (read-surface classifyCall) — a live report block. */
-  read_only?: boolean;
-  /**
-   * The VERIFIED email of a signed-in customer (identity ladder rung 2). Set by
-   * chat-completion from the resolved JWT — NEVER from model output. Customer-
-   * scoped skills (e.g. request_return) use it to enforce "acts on the caller's
-   * own records only". Injected into args as `_caller_email`.
-   */
-  caller_email?: string;
-  /**
-   * Identity ladder rung 3 (B2B): the ACTIVE company + role of a signed-in
-   * B2B contact, resolved by chat-completion from the verified JWT →
-   * company_contacts membership — NEVER from model output. Company-scoped
-   * skills use them to enforce "acts only within the caller's own company".
-   * Injected into args as `_company_id` / `_company_role`. (P0 plumbing — no
-   * company-scoped skill consumes them yet; wired in P1.)
-   */
-  company_id?: string;
-  company_role?: string;
-  objective_context?: {
-    goal: string;
-    step: string;
-    why: string;
-  };
-  /**
-   * The caller declares this run is an unattended scheduled tick (the
-   * automation-dispatcher's cron lane), not something a human or an agent
-   * asked for just now. Only such a run may have its journal row suppressed
-   * when the skill declares it did nothing — see _shared/activity/work-done.ts.
-   */
-  scheduled?: boolean;
-}
 
 // normalizeSkillArgs is now imported from ../_shared/skill-aliases.ts
 
@@ -541,19 +496,27 @@ interface ExecuteRequest {
 // executeLeadAction) call it from outside serve()'s closure.
 const sanitizeOrTerm = (v: unknown): string => String(v ?? '').replace(/[,()\\]/g, ' ').trim();
 
-/**
- * agent-execute's request pipeline: every gate in order (retired names, the
- * lookup, authorization, the module gate, scope, staging, trust and approval,
- * the claim, handler dispatch, the envelope, the journal, objective
- * tracking), then the handlers it dispatches to. The HTTP function
- * (agent-execute/index.ts) is a thin caller of this; a caller inside the same
- * project can import it and skip the HTTP hop.
- */
-export async function handleAgentExecute(req: Request): Promise<Response> {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
 
+export type { ExecuteAuth, ExecuteOutcome, ExecuteRequest, SkillRunner } from './types.ts';
+export { SERVICE_CALLER } from './types.ts';
+
+/**
+ * Run one skill: the whole pipeline agent-execute's HTTP function ran — in
+ * this order: retired names, lookup, authorization (JWT callers), the module
+ * gate, scope, staging, trust/approval, the approval claim, handler dispatch,
+ * the agent envelope, the journal, objective tracking. Behaviour is the
+ * function's; only the transport is gone. Every return is the HTTP status
+ * and body the function answered, so a caller that read the wire reads this.
+ *
+ * The request is taken through one JSON round trip first — exactly what the
+ * HTTP hop did — so a handler that mutates `arguments` (the server-stamped
+ * `_caller_*` keys, the stripped `_approved`) never writes into the caller's
+ * own object, and `undefined` values vanish the way they did on the wire.
+ *
+ * `async: true` (the 202 handoff) is the HTTP function's: a dispatcher that
+ * relies on it keeps calling over HTTP until it is converted.
+ */
+export async function executeSkillRequest(input: ExecuteRequest, auth: ExecuteAuth): Promise<ExecuteOutcome> {
   const startTime = Date.now();
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -562,66 +525,15 @@ export async function handleAgentExecute(req: Request): Promise<Response> {
   // capture `supabase` and `serviceKey` from this scope. When we extract
   // handlers/* in phase 2b, swap to getServiceClient() from _shared/supabase-clients.
   const supabase = createClient(supabaseUrl, serviceKey);
+  const { isServiceCaller, gateUserId, gateIsAdmin } = auth;
+  // The HTTP function answers 401 before the body is read; the same rule here
+  // keeps an in-process caller from running a skill as nobody.
+  if (!isServiceCaller && !gateUserId) {
+    return { status: 401, body: { error: 'Unauthorized' } };
+  }
 
   try {
-    // ─── AUTH GATE ───────────────────────────────────────────────────────
-    // agent-execute runs any enabled skill with the service-role client (RLS
-    // off) and is deployed --no-verify-jwt, so it MUST authenticate in-body or
-    // it is an unauthenticated universal skill executor reachable from the
-    // internet. Legitimate callers are exactly two: internal edge functions
-    // (mcp-server, voice-ingest, automation-dispatcher, send-webhook,
-    // run-autonomy-tests) which send Bearer <service_role key>, and the admin
-    // UI which sends the logged-in user's JWT via functions.invoke.
-    //
-    // AUTHENTICATION happens here (who are you); AUTHORIZATION for JWT callers
-    // happens after the skill lookup (may you run THIS skill) — admins run
-    // everything, other staff run skills whose owning module their role is
-    // granted in role_module_access. Before #102 this gate required admin for
-    // every JWT caller, which 401'd module-granted staff out of every skill-
-    // backed surface (accounting tabs, staged FlowWork actions, order actions).
-    const authHeader = req.headers.get('Authorization') ?? '';
-    const bearer = authHeader.replace(/^Bearer\s+/i, '').trim();
-    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
-    const anonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
-    let gateUserId: string | null = null;
-    let gateIsAdmin = false;
-    let isServiceCaller = false;
-    if (bearer && serviceKey && bearer === serviceKey) {
-      isServiceCaller = true; // trusted internal edge caller
-    } else if (bearer && bearer !== anonKey) {
-      const { data: userData } = await supabase.auth.getUser(bearer);
-      if (userData?.user) {
-        gateUserId = userData.user.id;
-        const { data: isAdmin } = await supabase.rpc('has_role', { _user_id: gateUserId, _role: 'admin' });
-        gateIsAdmin = isAdmin === true;
-      }
-    }
-    if (!isServiceCaller && !gateUserId) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    const body: ExecuteRequest = await req.json();
-    // ─── ASYNC HANDOFF ──────────────────────────────────────────────────────
-    // A dispatcher must not sit on a 20-second skill (the responder, a send)
-    // for every event in its batch: on Resta the event-dispatcher died mid-
-    // batch, left events unmarked, re-ran the same ones every minute and never
-    // reached new mail (2026-09-04). With async:true the caller gets 202 at
-    // once and the skill runs here in the background; the activity log is the
-    // result. Only for callers already authenticated above.
-    if ((body as any).async === true) {
-      const { async: _async, ...rest } = body as any;
-      const run = fetch(`${supabaseUrl}/functions/v1/agent-execute`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: authHeader },
-        body: JSON.stringify(rest),
-      }).then((r) => r.text()).catch((e) => console.error('[agent-execute] async handoff failed:', e));
-      if (typeof EdgeRuntime !== 'undefined' && (EdgeRuntime as any)?.waitUntil) (EdgeRuntime as any).waitUntil(run);
-      return new Response(JSON.stringify({ accepted: true, async: true, skill: rest.skill_name ?? rest.skill_id ?? null, note: 'Running in the background — the activity log carries the result.' }), {
-        status: 202, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
+    const body: ExecuteRequest = JSON.parse(JSON.stringify(input));
     const { skill_id, skill_name, arguments: rawArgs = {}, agent_type, conversation_id, scheduled, objective_context, trace_id, caller_user_id: bodyCallerUserId, caller_api_key_id, caller_agent_name: bodyCallerAgentName, caller_email, company_id: callerCompanyId, company_role: callerCompanyRole } = body;
     // A live report block runs read-only (see the READ_ONLY_RUN check below).
     const readOnlyRun = body.read_only === true;
@@ -668,9 +580,7 @@ export async function handleAgentExecute(req: Request): Promise<Response> {
     }
 
     if (!skill_id && !skill_name) {
-      return new Response(JSON.stringify({ error: 'skill_id or skill_name required' }), {
-        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return { status: 400, body: { error: 'skill_id or skill_name required' } };
     }
 
     // 0. Retired names answer with a direction, not a wall. Checked BEFORE the
@@ -682,9 +592,7 @@ export async function handleAgentExecute(req: Request): Promise<Response> {
     //    410 would throw away the very pointer this exists to deliver.
     const retired = skill_name ? retiredSkillResult(String(skill_name)) : null;
     if (retired) {
-      return new Response(JSON.stringify(retired), {
-        status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return { status: 200, body: retired };
     }
 
     // The modules row, read ONCE per call and only when a module's skill is
@@ -719,14 +627,10 @@ export async function handleAgentExecute(req: Request): Promise<Response> {
       if (missingName && owner && owner !== 'platform') {
         const active = await activeModules();
         if (!skillModuleOn(missingName, active)) {
-          return new Response(JSON.stringify(moduleDisabledRefusal(missingName, owner)), {
-            status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
+          return { status: 200, body: moduleDisabledRefusal(missingName, owner) };
         }
       }
-      return new Response(JSON.stringify({ error: `Skill not found: ${skill_id || skill_name}` }), {
-        status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return { status: 404, body: { error: `Skill not found: ${skill_id || skill_name}` } };
     }
 
     const skill = skills;
@@ -765,9 +669,7 @@ export async function handleAgentExecute(req: Request): Promise<Response> {
       });
       if (!decision.allowed) {
         const why = decision.reason;
-        return new Response(JSON.stringify({ error: `Forbidden: "${skill.name}" — ${why}` }), {
-          status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
+        return { status: 403, body: { error: `Forbidden: "${skill.name}" — ${why}` } };
       }
     }
 
@@ -801,7 +703,7 @@ export async function handleAgentExecute(req: Request): Promise<Response> {
               input: args, output: refusal, trace_id: trace_id || undefined,
               status: 'refused', conversation_id, duration_ms: Date.now() - startTime,
             });
-            return new Response(JSON.stringify(refusal), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+            return { status: 200, body: refusal };
           }
         }
       }
@@ -817,9 +719,7 @@ export async function handleAgentExecute(req: Request): Promise<Response> {
         status: 'failed', conversation_id, duration_ms: Date.now() - startTime,
         error_message: `Skill '${skill.name}' is internal-only, cannot run from public chat`,
       });
-      return new Response(JSON.stringify({ error: 'This action is not available' }), {
-        status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return { status: 403, body: { error: 'This action is not available' } };
     }
 
     // 3a. STAGING ENVELOPE — preview-first MCP protocol for high-impact writes.
@@ -892,7 +792,7 @@ export async function handleAgentExecute(req: Request): Promise<Response> {
       const doubleGateNote = isDoubleGated
         ? ` This skill also requires human approval: that re-invoke answers status="pending_approval" with an approval_request_id. Do NOT pass _approved=true yet — it is refused until the request is approved in /admin/approvals. Once it is, re-call ONCE with the same arguments plus _approved_operation_id, _approved=true and _approval_request_id.`
         : '';
-      return new Response(JSON.stringify({
+      return { status: 202, body: {
         staged: true,
         operation_id: opRow?.id,
         skill: skill.name,
@@ -908,9 +808,7 @@ export async function handleAgentExecute(req: Request): Promise<Response> {
           ...(isDoubleGated ? { after_human_approval: { _approved_operation_id: opRow?.id, _approved: true, _approval_request_id: '<from the pending_approval answer>' } } : {}),
           reject: { skill: 'reject_pending_operation', args: { p_id: opRow?.id, p_reason: '<reason>' } },
         },
-      }), {
-        status: 202, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      } };
     }
 
     // Who the journal credits. Normally the caller's agent_type — but an
@@ -929,10 +827,10 @@ export async function handleAgentExecute(req: Request): Promise<Response> {
         .maybeSingle();
       if (op?.created_by_agent) effectiveAgent = op.created_by_agent as string;
       if (!op || op.status !== 'approved' || op.skill_name !== skill.name) {
-        return new Response(JSON.stringify({
+        return { status: 403, body: {
           error: 'pending operation not approved or skill mismatch',
           operation_id: approvedOpId,
-        }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        } };
       }
       // Approval windows are finite: an approved-but-unexecuted operation past
       // expires_at must NOT execute with stale context (sweep finding #B5).
@@ -940,10 +838,10 @@ export async function handleAgentExecute(req: Request): Promise<Response> {
         await supabase.from('pending_operations')
           .update({ status: 'expired' })
           .eq('id', approvedOpId);
-        return new Response(JSON.stringify({
+        return { status: 403, body: {
           error: `pending operation expired at ${op.expires_at} — re-stage the skill call to get a fresh approval`,
           operation_id: approvedOpId,
-        }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        } };
       }
       // NOT marked executed here. A DOUBLE-GATED skill (requires_staging AND
       // trust_level='approve' — install_template, the accounting closers) still
@@ -985,10 +883,10 @@ export async function handleAgentExecute(req: Request): Promise<Response> {
     // or nothing runs. Opening a report can never send, book or change
     // anything, whatever the report's author wrote into it.
     if (readOnlyRun === true && classifyCall(skill.name, args as Record<string, unknown>) !== 'read') {
-      return new Response(JSON.stringify({
+      return { status: 200, body: {
         status: 'refused', code: 'READ_ONLY_RUN', retryable: false,
         hint: `"${skill.name}" changes data, and a read-only run (a live report block) only reads. Use a list_/get_/check_ skill, or manage_* with a read action.`,
-      }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      } };
     }
 
     // A dry run of a skill whose contract makes it a read (DRY_RUN_READS in
@@ -1039,7 +937,7 @@ export async function handleAgentExecute(req: Request): Promise<Response> {
         console.error('[agent-execute] request_skill_approval threw:', e);
       }
 
-      return new Response(JSON.stringify({
+      return { status: 202, body: {
         status: 'pending_approval',
         activity_id: activityId,
         approval_request_id: approvalRequestId,
@@ -1047,9 +945,7 @@ export async function handleAgentExecute(req: Request): Promise<Response> {
         trust_level: 'approve',
         message: `Action '${skill.name}' requires approval. Decision page: /admin/approvals${approvalRequestId ? `?request=${approvalRequestId}` : ''}. Poll agent_activity for status='approved' then re-call ONCE with the same arguments plus _approved=true${approvalRequestId ? ` and _approval_request_id="${approvalRequestId}"` : ''}. The approval is consumable exactly once: if the approver's UI (or the follow-through sweep) already ran it, the re-call is refused with 409 already_executed — that is not an error to retry.`,
         input: args,
-      }), {
-        status: 202, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      } };
     }
 
     // 3b. CONSUME THE APPROVAL — exactly once, whichever executor got here.
@@ -1090,16 +986,18 @@ export async function handleAgentExecute(req: Request): Promise<Response> {
           input: args, output: { refused: verdict.reason, approval_request_id: verdict.requestId ?? null, claim: claimResult },
           trace_id: trace_id || undefined,
           status: 'failed', conversation_id, duration_ms: Date.now() - startTime,
-          error_message: verdict.message.slice(0, 500),
+          error_message: (verdict.message ?? '').slice(0, 500),
         });
-        return new Response(JSON.stringify({
+        // A Response built with `status: undefined` answered 200; the verdict's
+        // refusals always carry 403 or 409, so the fallback is never reached.
+        return { status: verdict.httpStatus ?? 200, body: {
           status: 'refused',
           reason: verdict.reason,
           approval_request_id: verdict.requestId ?? null,
           skill: skill.name,
           error: verdict.message,
           message: verdict.message,
-        }), { status: verdict.httpStatus, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        } };
       }
       claimedApprovalRequestId = verdict.requestId;
       claimedApprovalActivityId = verdict.activityId;
@@ -1857,15 +1755,11 @@ export async function handleAgentExecute(req: Request): Promise<Response> {
     // exists for. Known consumers (callSkill, the pilot's step evaluator) already
     // check result.error as well, so honesty here breaks nobody and fixes the
     // ones that only read status.
-    return new Response(JSON.stringify({ status: handlerFailed ? 'failed' : handlerRefused ? 'refused' : 'success', result, trust_level: trustLevel, work_done: workDone, activity_logged: !idleTick }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    return { status: 200, body: { status: handlerFailed ? 'failed' : handlerRefused ? 'refused' : 'success', result, trust_level: trustLevel, work_done: workDone, activity_logged: !idleTick } };
 
   } catch (err) {
     console.error('agent-execute error:', err);
-    return new Response(JSON.stringify({ error: (err as Error).message || 'Internal error' }), {
-      status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    return { status: 500, body: { error: (err as Error).message || 'Internal error' } };
   }
 }
 

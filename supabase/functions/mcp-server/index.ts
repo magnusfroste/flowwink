@@ -24,6 +24,7 @@ import { skillModuleOn } from "../_shared/skills/module-gate.ts";
 import { scoreSkillsByIntent, loadRecentUsageCounts, rankableDef, DISCOVERY_STEPS } from "../_shared/skills/intent-scorer.ts";
 import { ownerModuleOf } from "../_shared/skills/owner-module.ts";
 import { buildSkillCatalog } from "../_shared/skills/dispatch.ts";
+import { executeSkillRequest, SERVICE_CALLER } from "../_shared/execute/core.ts";
 
 // Per-request context propagated through MCP handlers (cached transport bypasses Hono ctx)
 const requestContext = new AsyncLocalStorage<{ callerUserId: string | null; callerApiKeyId: string | null; peerGroups?: string[]; ownerUserId?: string | null; agentName?: string | null; readOnly?: boolean; scopes?: string[] }>();
@@ -636,7 +637,6 @@ async function executeSkill(
   callerApiKeyId?: string | null,
   callerAgentName?: string | null,
 ): Promise<string> {
-  const url = `${Deno.env.get("SUPABASE_URL")}/functions/v1/agent-execute`;
   // A read-only key: a READ passes, a write that declares `dry_run` is forced
   // into it, any other write is refused here — before anything reaches
   // agent-execute. The verdict is the platform's own read rule
@@ -668,28 +668,26 @@ async function executeSkill(
       }
     }
   }
-  const res = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
-    },
-    body: JSON.stringify({
-      skill_name: skillName,
-      arguments: args,
-      agent_type: "mcp",
-      caller_user_id: callerUserId ?? undefined,
-      caller_api_key_id: callerApiKeyId ?? undefined,
-      // WHICH agent, not just which transport: rows the skill writes say
-      // "Peter via Hermes_peter", not "Peter via external agent". A wiki page a
-      // colleague is deciding whether to trust needs both halves.
-      caller_agent_name: callerAgentName ?? undefined,
-    }),
-  });
+  // The executor, in-process (2026-11-07). This was a fetch of
+  // `${SUPABASE_URL}/functions/v1/agent-execute` with the service key: a
+  // second invocation per tool call, a second auth gate, the JSON twice. The
+  // gateway already is the service role inside the same Deno project, so it
+  // runs the same pipeline (_shared/execute/core.ts) as that caller did.
+  const out = await executeSkillRequest({
+    skill_name: skillName,
+    arguments: args,
+    agent_type: "mcp",
+    caller_user_id: callerUserId ?? undefined,
+    caller_api_key_id: callerApiKeyId ?? undefined,
+    // WHICH agent, not just which transport: rows the skill writes say
+    // "Peter via Hermes_peter", not "Peter via external agent". A wiki page a
+    // colleague is deciding whether to trust needs both halves.
+    caller_agent_name: callerAgentName ?? undefined,
+  }, SERVICE_CALLER);
 
-  const body = await res.text();
-  if (!res.ok) {
-    return JSON.stringify({ error: `Execution failed (${res.status}): ${body}` });
+  const body = JSON.stringify(out.body ?? null);
+  if (out.status < 200 || out.status >= 300) {
+    return JSON.stringify({ error: `Execution failed (${out.status}): ${body}` });
   }
   if (forcedDryRun) {
     // Say so in the answer: a dry run that reads like a write is how an

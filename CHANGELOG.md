@@ -95,6 +95,25 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
   gate, not two). The 169 guards, scripts and docs that read the pipeline's
   source read the new path; the edge type-check baseline carries the file under
   its new name.
+- **The executor runs in-process for FlowPilot and the gateway.** The step
+  after the move: the core answers `executeSkillRequest(body, auth)` →
+  `{ status, body }` instead of `handleAgentExecute(req)` → `Response`, and
+  the HTTP door keeps only what the wire needs (the auth header, CORS, the
+  `async: true` handoff). The request contract is `_shared/execute/types.ts`
+  (no imports). The MCP
+  gateway's `executeSkill` calls it directly, and the ReAct loop runs it
+  through `ReasonConfig.runSkill`, which the heartbeat, workspace-chat and
+  agent-operate pass, instead of `fetch(.../functions/v1/agent-execute)`:
+  one fewer edge invocation per tool call (a heartbeat with ten tool calls
+  was eleven invocations on a 500K/month budget), no second auth gate, the
+  JSON once. Measured on a local stack (`browse_blog`, n=40): through the
+  gateway p50 68 ms before, 59 ms after — the hop's ~10 ms gone; direct
+  unchanged at ~20 ms; what remains above direct is the gateway's own
+  per-call work (key lookup, catalog). Behaviour is a move,
+  not a change — the request still takes one JSON round trip at the door, so
+  a handler never mutates the caller's own arguments. The dispatchers that
+  rely on `async: true` and the other HTTP callers are unchanged. The 165
+  guards that read the executor as text read the core.
 
 ### Fixed
 

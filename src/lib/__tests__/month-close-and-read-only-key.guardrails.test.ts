@@ -90,8 +90,8 @@ describe('the read-only API key', () => {
     expect(fn).toContain('retryable: false');
     // A forced dry run says so in the answer.
     expect(fn).toContain('read_only_key: true, forced_dry_run: true');
-    // The refusal happens before the fetch to agent-execute.
-    expect(fn.indexOf('code: "READ_ONLY_KEY"')).toBeLessThan(fn.indexOf('const res = await fetch(url'));
+    // The refusal happens before the executor runs (in-process since 2026-11-07).
+    expect(fn.indexOf('code: "READ_ONLY_KEY"')).toBeLessThan(fn.indexOf('const out = await executeSkillRequest({'));
   });
 
   it('the request context is opened in the auth middleware, so REST and native share the verdict', () => {
