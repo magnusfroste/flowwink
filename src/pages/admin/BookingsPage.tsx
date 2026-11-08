@@ -9,6 +9,9 @@ import BookingServicesTab from '@/components/admin/booking/BookingServicesTab';
 import BookingWaitlistTab from '@/components/admin/booking/BookingWaitlistTab';
 import BookingAvailabilityTab from '@/components/admin/booking/BookingAvailabilityTab';
 import MeetingPollsPanel from '@/components/admin/booking/MeetingPollsPanel';
+import { MeetingPollsOff } from '@/components/admin/booking/MeetingPollsOff';
+import { useModules } from '@/hooks/useModules';
+import { useAuth } from '@/hooks/useAuth';
 import StaffCalendarsTab from '@/components/admin/booking/StaffCalendarsTab';
 import { StatCard } from '@/components/admin/StatCard';
 import { useBookings, useBookingServices, useAvailability, useBlockedDates, useUpdateBooking, useDeleteBooking, useBookingStats, type Booking, type BookingAvailability } from '@/hooks/useBookings';
@@ -57,6 +60,13 @@ export default function BookingsPage() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
   const location = useLocation();
+  const { isAdmin } = useAuth();
+  // Meeting polls is its own module (off by default) living under Bookings. The
+  // tab stays visible so the capability can be found, but it only works when the
+  // module is on — the same rule as moduleOffForRoute: a modules row that is
+  // present and does not carry the module as enabled means off.
+  const { data: modules } = useModules();
+  const pollsOff = !!modules && Object.keys(modules).length > 0 && !modules.meetingPolls?.enabled;
   const PATH_TO_TAB: Record<string, string> = {
     '/admin/bookings': 'calendar',
     '/admin/bookings/services': 'services',
@@ -189,7 +199,9 @@ export default function BookingsPage() {
               <TabsTrigger value="availability">Availability</TabsTrigger>
               <TabsTrigger value="staff">Staff</TabsTrigger>
               <TabsTrigger value="waitlist">Waiting list</TabsTrigger>
-              <TabsTrigger value="polls">Meeting polls</TabsTrigger>
+              <TabsTrigger value="polls" data-module-off={pollsOff ? 'meetingPolls' : undefined} className={pollsOff ? 'text-muted-foreground' : undefined}>
+                Meeting polls
+              </TabsTrigger>
             </TabsList>
           </div>
 
@@ -714,7 +726,7 @@ export default function BookingsPage() {
           </TabsContent>
 
           <TabsContent value="polls" className="mt-0">
-            <MeetingPollsPanel />
+            {pollsOff ? <MeetingPollsOff isAdmin={isAdmin} /> : <MeetingPollsPanel />}
           </TabsContent>
         </Tabs>
       </AdminPageContainer>

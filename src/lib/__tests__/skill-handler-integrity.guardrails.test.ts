@@ -127,7 +127,7 @@ describe('Skill handler integrity guardrails', () => {
         expect(
           exact || prefix,
           `Handler ${s.handler} (skill "${s.name}") has no ` +
-            `handler === '${s.handler}' branch (nor a startsWith prefix branch) ` +
+            `'${s.handler}' registry entry (INTERNAL_HANDLERS / RESPONSE_HANDLERS, nor a startsWith prefix branch) ` +
             `in agent-execute — the skill is dead.`,
         ).toBe(true);
       });

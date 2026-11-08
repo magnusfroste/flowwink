@@ -50,7 +50,7 @@ describe('skill curator guardrails', () => {
   });
 
   it('the write-path handler exists and audits before overwriting', () => {
-    expect(agentExecute).toContain("handler === 'internal:update_skill_instructions'");
+    expect(agentExecute).toContain("'internal:update_skill_instructions': (");
     const fn = agentExecute.slice(
       agentExecute.indexOf('async function executeUpdateSkillInstructions'),
       agentExecute.indexOf('async function executeLintSkill'),

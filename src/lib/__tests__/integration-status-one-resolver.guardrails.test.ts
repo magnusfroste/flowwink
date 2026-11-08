@@ -148,7 +148,7 @@ describe('the ad ledger has a feed', () => {
     expect(growth).toMatch(/name: 'sync_ad_metrics'/);
     expect(growth).toMatch(/handler: 'internal:sync_ad_metrics'/);
     expect(growth).toMatch(/skill_name: 'sync_ad_metrics'/);
-    expect(edge).toMatch(/handler === 'internal:sync_ad_metrics'/);
+    expect(edge).toMatch(/'internal:sync_ad_metrics': \(/);
   });
 
   it('the handler goes through composio-proxy with toolkit metaads and never writes on dry_run', () => {
