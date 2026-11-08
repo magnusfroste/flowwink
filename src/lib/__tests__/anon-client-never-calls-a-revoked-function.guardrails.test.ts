@@ -84,4 +84,18 @@ describe('an anon client only calls what anon may run', () => {
     expect(src).toMatch(/const admin = getServiceClient\(\);/);
     expect(src).not.toMatch(/const admin = supabase;/);
   });
+
+  it('the feedback board is the only thing in content-api that holds the service key', () => {
+    // content-api is classified public-by-design for this one branch. A second
+    // service client would ride on a reason that does not cover it.
+    const src = readFileSync(join(fnDir, 'content-api', 'index.ts'), 'utf8');
+    const calls = [...src.matchAll(/getServiceClient\(\)/g)].map((m) => m.index as number);
+    expect(calls).toHaveLength(1);
+    expect(src).not.toMatch(/SUPABASE_SERVICE_ROLE_KEY/);
+    const from = src.indexOf("if (pathParts[0] === 'feedback')");
+    const to = src.indexOf('REST: POST /form/submit');
+    expect(from).toBeGreaterThan(-1);
+    expect(calls[0]).toBeGreaterThan(from);
+    expect(calls[0]).toBeLessThan(to);
+  });
 });
