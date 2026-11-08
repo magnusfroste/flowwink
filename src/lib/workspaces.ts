@@ -239,6 +239,7 @@ export const SALES_WORKSPACE: WorkspaceDef = {
         { id: 'quotes', label: 'Quotes', href: '/admin/quotes', moduleId: 'invoicing', icon: ScrollText },
         { id: 'contracts', label: 'Contracts', href: '/admin/contracts', moduleId: 'contracts', icon: FileSignature },
         { id: 'bookings', label: 'Bookings', href: '/admin/bookings', moduleId: 'bookings', icon: CalendarDays },
+        { id: 'meeting_polls', label: 'Meeting polls', href: '/admin/bookings/polls', moduleId: 'meetingPolls', icon: CalendarCheck },
         { id: 'calendar', label: 'Calendar', href: '/admin/calendar', moduleId: 'calendar', icon: CalendarClock },
         { id: 'consultants', label: 'Consultants', href: '/admin/consultants', moduleId: 'consultants', icon: FileUser },
       ],
