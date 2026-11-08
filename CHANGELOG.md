@@ -10,6 +10,12 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Fixed
 
+- **The feedback board and the daily ping write again.** #922 took anon's write
+  policies and its EXECUTE on `feedback_record_ping` on the belief that content-api
+  writes as the service role; it wrote with the anon client under the name `admin`,
+  so every instance's ping answered 500 from 2026-11-08. It now is the service
+  client, and a guard scans every edge function for an anon client calling an RPC
+  anon has lost.
 - **Meeting polls says when it is off, and has a place in the sidebar.** The
   Meeting polls tab under Bookings rendered its full desk with the module off
   (the default) — `/poll/<token>` answered 404 and every poll skill was
