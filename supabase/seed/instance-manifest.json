@@ -2985,15 +2985,15 @@
       ]
     },
     "skills": {
-      "seed_hash": "sha256:6190bd20b15559881b54c578faa7112794853af65e2bfc31ce8cca20f23a00ea",
+      "seed_hash": "sha256:20c76ec87d2582f85d0ade737ae38b24478be7e9e13d9bfe694844e4d8de8772",
       "skill_count": 670,
       "module_count": 70
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:c3b33024e492834d7fdb0848295263d4b9e03653a771d3890ad57cec1dba8274",
+      "shared_hash": "sha256:51fec8576476d421a0e020735fe95cf361bdfaba58b8e34caeb03845c1fd5aa9",
       "functions": {
-        "agent-execute": "sha256:d2f1fb1556de41983618533704c3154169edb5299dc812f9118e60c42a914e9a",
+        "agent-execute": "sha256:ccd3114abc4c53d1b13043cfa5a9478ec07d18380876e11fd6a70bda0437c584",
         "agent-operate": "sha256:4320e02dd3e6a0a1706b42dc1905b631c61e6a4cbe3556c701f474c278c89e1a",
         "ai-task": "sha256:ce3aacdef625bba758f4323da3e49104a1b94a3d3d77d800e89dacd0b803d65e",
         "automation-dispatcher": "sha256:c7862e942bb9fbfcb847d236cd7fece01ad934f354ac038d03f9128e4f2e006a",
