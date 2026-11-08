@@ -10,6 +10,12 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Fixed
 
+- **An alarm means something is wrong now.** The bell was amber every day on every
+  instance, because any agent run on notify trust painted it; it is amber now for
+  a person being needed or something still broken, and a healed integration stops
+  warning. A read is no longer "an agent acted on its own". An automation is
+  `stale` against its own schedule, not after 48 hours (a monthly job was dead 29
+  days of 30), and warns while its own newest run failed, not for a week after.
 - **Meeting polls says when it is off, and has a place in the sidebar.** The
   Meeting polls tab under Bookings rendered its full desk with the module off
   (the default) — `/poll/<token>` answered 404 and every poll skill was

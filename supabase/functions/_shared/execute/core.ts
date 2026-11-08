@@ -1605,9 +1605,11 @@ export async function executeSkillRequest(input: ExecuteRequest, auth: ExecuteAu
       trace_id: trace_id || undefined,
       // 'notify' used to run exactly like 'auto' with nothing anywhere telling a
       // person. A notify run that did something (not failed, not refused, not a
-      // human-approved redemption) is marked so the cockpit and the bell show it
-      // until an admin acknowledges it.
-      ...(trustLevel === 'notify' && !handlerFailed && !handlerRefused && !bypassApproval ? { log_type: 'notify' } : {}),
+      // human-approved redemption, not a read) is marked so the cockpit and the
+      // bell show it until an admin acknowledges it. Notify is the default
+      // trust level, so without the read test a report someone opened counted
+      // as the agent having acted: 100 of liteit's 254 open rows, 2026-11-08.
+      ...(trustLevel === 'notify' && !handlerFailed && !handlerRefused && !bypassApproval && classifyCall(skill.name, args as Record<string, unknown>) !== 'read' ? { log_type: 'notify' } : {}),
     });
 
     // 5a. Close the staged operation's loop. The row carried status='executed'

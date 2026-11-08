@@ -19,6 +19,7 @@ import {
   useAcknowledgeIntegrationHealth,
   useUnacknowledgedIntegrationNotices,
 } from '@/hooks/useIntegrationHealth';
+import { noticesStillBroken } from '@/lib/alarm-rules';
 
 /**
  * NotificationsBell — aggregates admin-facing "needs attention" signals
@@ -68,11 +69,16 @@ export function NotificationsBell() {
   const notified = isAdmin ? (notifiedData?.total ?? 0) : 0;
 
   // A recovery is news too, and it is the nicer kind — it must not paint the
-  // badge red. Only an open notice about something BREAKING warns.
-  const integrationDegraded = healthNotices.some((n) => n.kind !== 'recovered');
+  // badge. Only an open notice about something STILL broken warns: searxng
+  // failed one morning on optic, healed the next, and the unread failure kept
+  // the bell amber for days.
+  const integrationDegraded = noticesStillBroken(healthNotices).length > 0;
 
   const total = approvals + staged + notified + paused + tickets + integrationChanges;
-  const hasWarning = paused > 0 || approvals > 0 || staged > 0 || notified > 0 || integrationDegraded;
+  // Amber is "a person is needed" or "something is broken". An agent doing its
+  // work is neither: it counts, in the calm colour, or the bell is amber every
+  // day on every instance and says nothing when it does matter.
+  const hasWarning = paused > 0 || approvals > 0 || staged > 0 || integrationDegraded;
 
   return (
     <DropdownMenu>
@@ -119,10 +125,9 @@ export function NotificationsBell() {
         />
         <NotificationRow
           href="/admin/flowpilot"
-          label="FlowPilot acted on its own"
+          label="An agent acted on its own"
           count={notified}
-          hint="Notify-level actions nobody has looked at"
-          warning
+          hint="Changes made by FlowPilot or a connected agent, not yet looked at"
         />
         <NotificationRow
           href="/admin/flowpilot?tab=log"
