@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'fs';
-import { join } from 'path';
+import { readFileSync, readdirSync, statSync } from 'fs';
+import { join, relative } from 'path';
 
 /**
  * UB blir IB — and the opening balance is never stored twice.
@@ -88,5 +88,70 @@ describe('one piece of state, one control', () => {
     // below showed a year the control could not represent.
     expect(tab).not.toMatch(/currentYear\s*[-+]\s*\d/);
     expect(tab).not.toMatch(/setFiscalYear/);
+  });
+});
+
+/**
+ * Every reader, not the one that bit us. The August fix moved useAccounting to
+ * the derived rule and this file pinned useAccounting — so the agent report in
+ * core.ts went on reading `opening_balances` for the report's year. On LiteIT
+ * (2026-11-08) it showed 2026 opening at zero, the agent booked 2025's closing
+ * balance as a voucher on 2026-01-01, and every balance-sheet account counted
+ * twice. The scan below reads the whole tree; the table is touched only by the
+ * bridge's two editors.
+ */
+describe('only the bridge is stored, and every reader derives', () => {
+  const SCAN = ['src', 'supabase/functions'];
+  const touch = /\.from\(\s*['"]opening_balances['"]\s*\)/g;
+
+  function files(dir: string): string[] {
+    return readdirSync(dir).flatMap((name) => {
+      const p = join(dir, name);
+      if (statSync(p).isDirectory()) return name === 'node_modules' || name === '__tests__' ? [] : files(p);
+      return /\.(ts|tsx)$/.test(name) && !/\.test\.tsx?$/.test(name) ? [p] : [];
+    });
+  }
+
+  const core = readFileSync(join(ROOT, 'supabase/functions/_shared/execute/core.ts'), 'utf8');
+  const crudStart = core.indexOf("case 'opening_balances': {");
+  const crudEnd = core.indexOf('Unknown opening_balances action', crudStart);
+
+  it('no file outside the bridge editors touches the table', () => {
+    const offenders: string[] = [];
+    for (const root of SCAN) {
+      for (const f of files(join(ROOT, root))) {
+        const rel = relative(ROOT, f);
+        const src = readFileSync(f, 'utf8');
+        for (const m of src.matchAll(touch)) {
+          if (rel === 'src/hooks/useOpeningBalances.ts') continue; // the admin tab's editor
+          if (rel === 'supabase/functions/_shared/execute/core.ts' && m.index! > crudStart && m.index! < crudEnd) continue; // manage_opening_balances
+          offenders.push(`${rel}:${src.slice(0, m.index).split('\n').length}`);
+        }
+      }
+    }
+    expect(offenders, 'read a year\'s opening balance with opening_balances_for_year() (or _shared/accounting/opening-balance.ts) — never the stored rows').toEqual([]);
+  });
+
+  it('the agent report derives the opening balance at its window', () => {
+    const report = core.slice(core.indexOf('Merge OPENING BALANCES'), core.indexOf('Calculate balances based on normal_balance'));
+    expect(report).toContain('openingBalancesAt(');
+    const helper = readFileSync(join(ROOT, 'supabase/functions/_shared/accounting/opening-balance.ts'), 'utf8');
+    expect(helper).toContain("rpc('opening_balances_for_year'");
+  });
+
+  it('a later year is refused — by the handler and by the database', () => {
+    const crud = core.slice(crudStart, crudEnd);
+    expect(crud).toMatch(/code: 'IB_IS_DERIVED'/);
+    expect(crud).toContain("rpc('opening_balances_for_year'");
+    const trigger = readFileSync(join(ROOT, 'supabase/migrations/20261108090000_ub-blir-ib-bara-bryggan-lagras.sql'), 'utf8');
+    expect(trigger).toMatch(/BEFORE INSERT OR UPDATE[^;]*ON public\.opening_balances/);
+    expect(trigger).toMatch(/NEW\.fiscal_year > v_first/);
+    expect(trigger).toMatch(/entry_date < v_start/);
+  });
+
+  it('the SIE reader calls a later file\'s #IB a control, not an input', () => {
+    const sie = readFileSync(join(ROOT, 'supabase/functions/_shared/sie-reader.ts'), 'utf8');
+    expect(sie).not.toMatch(/one fiscal year at a time/);
+    expect(sie).toMatch(/CONTROL/);
   });
 });

@@ -23,6 +23,7 @@ import { stampAgentError } from '../agent-errors.ts';
 import { fetchPublic } from '../net/outbound-url.ts';
 import { classifySkillModule } from '../mcp/groups.ts';
 import { readAllRows } from '../read-all-rows.ts';
+import { fiscalYearOf, fiscalYearStart, openingBalancesAt } from '../accounting/opening-balance.ts';
 import { claimIsRequired, interpretApprovalClaim, type ClaimResult } from '../approval-claim.ts';
 import { applyIdentityPolicy, installIdentityPolicy } from '../site-identity.ts';
 import {
@@ -13267,6 +13268,19 @@ async function executeDbAction(
           sinceDate = since.toISOString();
         }
 
+        // A balance-sheet account's figure is its opening balance plus a window's
+        // movement, so the window has to start where an opening balance is known.
+        // The balance sheet is as-of: its window is the fiscal year of to_date,
+        // whatever from_date/period say. The ledger and the trial balance take
+        // the window they are given and default to that same year — 'all' used
+        // to mean every year ever posted, on top of an opening balance for one
+        // of them. The income statement keeps its window as given.
+        const asOfDate = String(untilDate || (await businessToday(supabase))).slice(0, 10);
+        if (report_type !== 'profit_loss') {
+          const fy = await fiscalYearOf(supabase, asOfDate);
+          if (report_type === 'balance_sheet' || !sinceDate) sinceDate = fy.date_from;
+        }
+
         // Fetch posted lines with optional filters
         // EVERY posted line, page by page. This was one unbounded select, and PostgREST
         // cuts that at 1 000 rows without a word: with 2 322 posted lines the trial
@@ -13323,25 +13337,26 @@ async function executeDbAction(
         }
 
         // Merge OPENING BALANCES (IB) for balance-sheet accounts. IB is a
-        // STATE (opening_balances table, per fiscal_year), not a journal
-        // transaction — this is the single IB mechanism (2026-07-07 decision;
-        // the verifikat-IB approach was rejected: it pollutes the journal and
-        // makes the IB|movement|UB three-column report impossible).
-        // Fiscal year = year of the report's end date (BR is an as-of report).
-        const { data: ibYear, error: ibYearErr } = await supabase.rpc('fiscal_year_of', { p_date: String(untilDate || (await businessToday(supabase))).slice(0, 10) });
-        if (ibYearErr) console.warn('[agent-execute] fiscal year lookup failed — falling back to the calendar year:', ibYearErr.message);
-        const fiscalYearForIB = Number(ibYear ?? new Date(untilDate || new Date().toISOString()).getFullYear());
-        const { data: ibRows } = await supabase.from('opening_balances')
-          .select('account_code, account_name, amount_cents, balance_type')
-          .eq('fiscal_year', fiscalYearForIB);
+        // STATE, not a journal transaction (2026-07-07 decision; a verifikat-IB
+        // pollutes the journal and makes IB|movement|UB impossible) — and it is
+        // DERIVED: the bridge plus everything posted since, at the window's
+        // start (_shared/accounting/opening-balance.ts). Reading the stored rows
+        // for the report's year opened every year but the first at zero.
         const ibByAccount = new Map<string, number>();
-        for (const ib of (ibRows || []) as any[]) {
-          // signed in the account's NORMAL direction: debit-normal accounts
-          // count debit-IB as +, credit-normal count credit-IB as +.
-          const normal = chartMap.get(ib.account_code)?.normal_balance
-            || (ib.balance_type === 'debit' ? 'debit' : 'credit');
-          const signed = ib.balance_type === normal ? Number(ib.amount_cents) : -Number(ib.amount_cents);
-          ibByAccount.set(ib.account_code, (ibByAccount.get(ib.account_code) || 0) + signed);
+        const ibRows: Array<{ account_code: string; account_name?: string }> = [];
+        if (sinceDate && report_type !== 'profit_loss') {
+          for (const [code, net] of await openingBalancesAt(supabase, String(sinceDate).slice(0, 10))) {
+            const type = chartMap.get(code)?.account_type;
+            if (net === 0 || (account_code && code !== account_code)) continue;
+            if (type !== 'asset' && type !== 'liability' && type !== 'equity') continue;
+            // signed in the account's NORMAL direction: debit-normal accounts
+            // count a debit balance as +, credit-normal a credit balance.
+            const normal = chartMap.get(code)?.normal_balance || 'debit';
+            ibByAccount.set(code, normal === 'credit' ? -net : net);
+            ibRows.push({ account_code: code });
+          }
+        }
+        for (const ib of ibRows) {
           if (!balanceMap.has(ib.account_code)) {
             balanceMap.set(ib.account_code, {
               account_code: ib.account_code,
@@ -13378,14 +13393,14 @@ async function executeDbAction(
         const stmtClassification = await loadStatementClassification(supabase);
 
         if (report_type === 'ledger') {
-          return { report_type: 'general_ledger', period, accounts: balances, total_accounts: balances.length };
+          return { report_type: 'general_ledger', period, from_date: sinceDate, to_date: asOfDate, accounts: balances, total_accounts: balances.length };
         }
 
         if (report_type === 'trial_balance') {
           const totalDebit = balances.reduce((s, b) => s + b.debit_total, 0);
           const totalCredit = balances.reduce((s, b) => s + b.credit_total, 0);
           return {
-            report_type: 'trial_balance', period,
+            report_type: 'trial_balance', period, from_date: sinceDate, to_date: asOfDate,
             accounts: balances,
             total_debit_cents: totalDebit,
             total_credit_cents: totalCredit,
@@ -13429,7 +13444,7 @@ async function executeDbAction(
             );
           }
           return {
-            report_type: 'balance_sheet', period,
+            report_type: 'balance_sheet', period, from_date: sinceDate, as_of: asOfDate,
             assets, liabilities, equity,
             unclassified,
             unclassified_cents: unclassifiedCents,
@@ -14037,7 +14052,25 @@ async function executeDbAction(
         
         const totalDebit = (data || []).filter((r: any) => r.balance_type === 'debit').reduce((s: number, r: any) => s + r.amount_cents, 0);
         const totalCredit = (data || []).filter((r: any) => r.balance_type === 'credit').reduce((s: number, r: any) => s + r.amount_cents, 0);
-        return { balances: data, count: (data || []).length, total_debit_cents: totalDebit, total_credit_cents: totalCredit, balanced: totalDebit === totalCredit };
+        // The stored rows are the bridge only. A year's opening balance is
+        // DERIVED — the bridge plus everything posted since — and that is what
+        // a year's question is answered with: a later year has no stored rows,
+        // and reading their absence as "no opening balance" is how an agent
+        // booked a year's closing balance a second time (LiteIT, 2026-11-08).
+        const { data: firstRow, error: firstErr } = await supabase.from('opening_balances')
+          .select('fiscal_year').order('fiscal_year', { ascending: true }).limit(1).maybeSingle();
+        if (firstErr) throw new Error(`Could not read the bridge year: ${firstErr.message}`);
+        let derived: unknown = undefined;
+        if (fiscal_year) {
+          const { data: d, error: dErr } = await supabase.rpc('opening_balances_for_year', { p_year: Number(fiscal_year) });
+          derived = dErr ? { error: dErr.message } : d;
+        }
+        return {
+          balances: data, count: (data || []).length, total_debit_cents: totalDebit, total_credit_cents: totalCredit, balanced: totalDebit === totalCredit,
+          bridge_year: firstRow?.fiscal_year ?? null,
+          ...(fiscal_year ? { derived_opening_balances: derived } : {}),
+          rule: 'Only the first fiscal year the books carry stores an opening balance (the bridge). Every later year is derived — derived_opening_balances, net_cents signed against the debit side. Never book an opening balance as a journal entry.',
+        };
       }
 
       if (action === 'set') {
@@ -14055,6 +14088,27 @@ async function executeDbAction(
             .select('account_name').eq('account_code', account_code).maybeSingle();
           account_name = coa?.account_name;
           if (!account_name) throw new Error(`account_name is required (account ${account_code} not found in chart_of_accounts)`);
+        }
+
+        // The bridge belongs to the first year the books carry; every later
+        // year is derived from it (opening_balances_for_year). A stored row for
+        // a later year is never read — storing one only looks like it worked.
+        const yearStart = await fiscalYearStart(supabase, Number(fiscal_year));
+        const { data: firstRow, error: firstErr } = await supabase.from('opening_balances')
+          .select('fiscal_year').order('fiscal_year', { ascending: true }).limit(1).maybeSingle();
+        if (firstErr) throw new Error(`Could not read the bridge year: ${firstErr.message}`);
+        const { count: earlier, error: earlierErr } = await supabase.from('journal_entries')
+          .select('id', { count: 'exact', head: true })
+          .eq('status', 'posted').lt('entry_date', yearStart);
+        if (earlierErr) throw new Error(`Could not check for entries before ${yearStart}: ${earlierErr.message}`);
+        if ((firstRow && Number(fiscal_year) > Number(firstRow.fiscal_year)) || (earlier ?? 0) > 0) {
+          return {
+            status: 'refused', code: 'IB_IS_DERIVED', retryable: false,
+            fiscal_year, bridge_year: firstRow?.fiscal_year ?? null, entries_before_year: earlier ?? 0,
+            hint: `The opening balance of ${fiscal_year} is derived — the bridge plus everything posted before ${yearStart} — not stored. ` +
+              `Read it with manage_opening_balances action=list fiscal_year=${fiscal_year} (derived_opening_balances). ` +
+              'If it differs from the closing balance you expected, the difference is in an earlier year: book a correction there, or fix the bridge (the first year\'s opening balances). Never book it as a journal entry.',
+          };
         }
 
         // Upsert by fiscal_year + account_code + locale

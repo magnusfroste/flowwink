@@ -289,7 +289,7 @@ export function readSieFile(bytes: Uint8Array, include: string[] = []): Record<s
     _contract: SIE_CONTRACT,
     _next: {
       accounts: `${c.accounts.length} accounts — this is the customer's EXISTING chart, not a standard. It will not match FlowWink's locale pack account for account; that is a mapping job, not an import. Do not feed it to import_accounting_standard, which is for published standards only.`,
-      opening_balances: `${c.opening_balances.length} #IB rows — manage_opening_balances, one fiscal year at a time. Note #IB year 0 is the year in #RAR 0.`,
+      opening_balances: `${c.opening_balances.length} #IB rows. #IB year 0 is the year in #RAR 0. Only the FIRST year the books carry stores its #IB 0 rows (manage_opening_balances set, the bridge); every later year is derived from it, and manage_opening_balances refuses a later year (IB_IS_DERIVED). In a later year's file the #IB rows are a CONTROL: compare them with manage_opening_balances list fiscal_year=<year> (derived_opening_balances) — a difference means an earlier year is incomplete. Never book them as a journal entry.`,
       verifications: `${c.verifications.length} verifications / ${c.verifications.reduce((a, v) => a + v.lines.length, 0)} lines — this is what the company ACTUALLY books. Group the recurring patterns and send them to propose_posting_templates; that is the one thing FlowWink can never guess on its own.`,
       full_lists: include.length
         ? undefined
