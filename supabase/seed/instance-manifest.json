@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261107150000",
-      "migrations_count": 741,
+      "migration_head": "20261108090000",
+      "migrations_count": 742,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2969,19 +2969,23 @@
         {
           "version": "20261107150000",
           "name": "investerarrummet-vet-vem-som-last-vad"
+        },
+        {
+          "version": "20261108090000",
+          "name": "ub-blir-ib-bara-bryggan-lagras"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:c8ad912c4447345b8950ddf24b6c339410654edeababd65d15969f5d32d13290",
+      "seed_hash": "sha256:0c1f7932cc98e38f4a77603dd6535f2e13bd51f5bcf823ef45c267fdb1ff4a14",
       "skill_count": 670,
       "module_count": 70
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:6fc3bb6454bf8041e17d5a27c4a88ba6b17f6c0018c95fddb017f31366a4624a",
+      "shared_hash": "sha256:18fbb8736bbc06f4d8e1bdeff5dd4048c53e5d372f72e8b7b75824d3f43d2346",
       "functions": {
-        "agent-execute": "sha256:ba8fd52e59b9d4e9ae52d8074fce1011486d3412b297d4122835da330283ec45",
+        "agent-execute": "sha256:a8fe4779f78fe82d98f247a65dade27bbe10d527cef155ea64e994b258d0d08e",
         "agent-operate": "sha256:9ecfb8b3a76c28526af8c796fdfa0561ebb3b802b65f03275874f93b14369a0c",
         "ai-task": "sha256:ce3aacdef625bba758f4323da3e49104a1b94a3d3d77d800e89dacd0b803d65e",
         "automation-dispatcher": "sha256:c7862e942bb9fbfcb847d236cd7fece01ad934f354ac038d03f9128e4f2e006a",

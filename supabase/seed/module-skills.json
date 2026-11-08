@@ -566,7 +566,7 @@
               }
             }
           },
-          "instructions": "Read-only. income_statement returns the annual-report shape: total_income_cents − total_expenses_cents = result_before_tax_cents, minus tax_cents = net_result_cents. total_expenses_cents EXCLUDES tax (its own `tax` block) and excludes the account the closing entry carries the result on — that account is named per locale in account_statement_sections/section=year_result, never assumed. Check result_carrier.source: \"unmapped\" means no carrier is mapped, so if this chart closes the year onto a P&L account the net result will read as zero — say so rather than reporting the zero. result_carrier.agrees_with_net_result=false means the closing entry does not hold the result the ledger computes (partial closing, or an account classified wrongly) — investigate before quoting the figure. balance_sheet returns current_year_result_cents as the part of the result NOT yet closed to equity; after a closing entry it is 0 because equity already holds it."
+          "instructions": "Read-only. income_statement returns the annual-report shape: total_income_cents − total_expenses_cents = result_before_tax_cents, minus tax_cents = net_result_cents. total_expenses_cents EXCLUDES tax (its own `tax` block) and excludes the account the closing entry carries the result on — that account is named per locale in account_statement_sections/section=year_result, never assumed. Check result_carrier.source: \"unmapped\" means no carrier is mapped, so if this chart closes the year onto a P&L account the net result will read as zero — say so rather than reporting the zero. result_carrier.agrees_with_net_result=false means the closing entry does not hold the result the ledger computes (partial closing, or an account classified wrongly) — investigate before quoting the figure. balance_sheet returns current_year_result_cents as the part of the result NOT yet closed to equity; after a closing entry it is 0 because equity already holds it. OPENING BALANCES: every balance-sheet account carries opening_cents (derived — the bridge plus everything posted before the window, UB becomes IB) + movement_cents = balance. balance_sheet is as-of to_date over its fiscal year; general_ledger and trial_balance default to the fiscal year of to_date (from_date/to_date in the answer say which). An opening_cents of 0 on a year after the first is a real zero, not a missing opening balance — never book an opening balance as a journal entry."
         },
         {
           "name": "manage_accounting_template",
@@ -1116,7 +1116,7 @@
         },
         {
           "name": "manage_opening_balances",
-          "description": "Create, list, update, or delete opening balances (IB) for a fiscal year. Use when: admin wants to set initial account balances, migrating from another system, starting a new fiscal year. NOT for: journal entries (use manage_journal_entry), reports (use accounting_reports).",
+          "description": "Set the bridge — the opening balances (IB) of the FIRST fiscal year the books carry — and read any year's opening balance, which is derived from the bridge plus everything posted since (UB becomes IB). Use when: migrating books from another system (the first SIE file's #IB 0 rows), checking a year's opening balance, comparing a later SIE file's #IB rows against the books. NOT for: a later year's opening balance (derived, refused with IB_IS_DERIVED), booking an opening balance as a journal entry (never), journal entries (use manage_journal_entry), reports (use accounting_reports).",
           "category": "commerce",
           "handler": "db:opening_balances",
           "scope": "internal",
@@ -1179,7 +1179,7 @@
               }
             }
           },
-          "instructions": "Opening balances must balance (total debit = total credit). Each account should have only one IB per fiscal year. Use the chart_of_accounts to validate account codes."
+          "instructions": "UB blir IB. Only the first fiscal year the books carry stores opening balances (the bridge); a year is the first when no posted entry is dated before it. Every later year's opening balance is DERIVED (opening_balances_for_year: the bridge plus everything posted before the year) — set refuses a later year with IB_IS_DERIVED, and booking an opening balance as a journal entry counts every balance-sheet account twice. READ a year with action=list fiscal_year=<year>: derived_opening_balances (net_cents signed against the debit side) is the answer; the stored rows are the bridge only. A later SIE file's #IB rows are a control against derived_opening_balances — a difference lives in an earlier year: correct that year, or the bridge. The bridge must balance (total debit = total credit); set amount_cents positive with balance_type debit|credit."
         },
         {
           "name": "manage_chart_of_accounts",
