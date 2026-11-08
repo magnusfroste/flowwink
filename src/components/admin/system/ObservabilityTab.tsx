@@ -17,6 +17,16 @@ import { InstanceReadinessChecklist } from '@/components/admin/InstanceReadiness
 import { IntegrationHealthCard } from '@/components/admin/system/IntegrationHealthCard';
 import { PerformanceModeCard } from '@/components/admin/system/PerformanceModeCard';
 import { PLATFORM_SKILL_NAMES } from '@/lib/platform-seeds';
+import { useActiveModules, skillShown, moduleShown } from '@/lib/module-visibility';
+
+/** The module whose content a knowledge source is — a source of a module that is off is not listed. */
+const SOURCE_MODULE: Partial<Record<string, string>> = {
+  kb_articles: 'knowledgeBase',
+  wiki_pages: 'wiki',
+  docs_pages: 'docs',
+  handbook_chapters: 'handbook',
+  documents: 'documents',
+};
 
 function timeAgo(iso: string | null) {
   if (!iso) return '—';
@@ -157,6 +167,8 @@ function Stat({
 }
 
 function SkillAuditCard() {
+  // A failure of a module that is off is that module's history, not a problem to fix.
+  const active = useActiveModules();
   const { data, isLoading } = useQuery({
     queryKey: ['system-skill-audit'],
     queryFn: async () => {
@@ -166,7 +178,7 @@ function SkillAuditCard() {
           .select('id, skill_name, success, error_message, occurred_at')
           .eq('success', false)
           .order('occurred_at', { ascending: false })
-          .limit(5),
+          .limit(25),
       ]);
       const skills = (skillsRes.data ?? []) as any[];
       return {
@@ -174,10 +186,11 @@ function SkillAuditCard() {
         enabled: skills.filter((s: any) => s.enabled).length,
         mcpExposed: skills.filter((s: any) => s.mcp_exposed && s.enabled).length,
         staged: skills.filter((s: any) => s.requires_staging).length,
-        recentFailures: failuresRes.data ?? [],
+        recentFailures: (failuresRes.data ?? []) as Array<{ id: string; skill_name: string | null; occurred_at: string }>,
       };
     },
     refetchInterval: 60_000,
+    select: (d) => ({ ...d, recentFailures: d.recentFailures.filter((f) => skillShown(f.skill_name, active)).slice(0, 5) }),
   });
 
   return (
@@ -527,6 +540,7 @@ function InstanceSyncCard() {
  * said so. This card says so.
  */
 function KnowledgeIndexCard() {
+  const active = useActiveModules();
   const { data, isLoading } = useKnowledgeIndexHealth();
   const runIndexer = useRunKnowledgeIndexer();
   const { toast } = useToast();
@@ -635,7 +649,7 @@ function KnowledgeIndexCard() {
                 reports it as absent. Say it out loud instead. */}
             {(() => {
               const w = data?.documentsAwaitingText;
-              if (!w) return null;
+              if (!w || !moduleShown('documents', active)) return null;
               const queued = w.pending + w.processing;
               return (
                 <>
@@ -661,7 +675,7 @@ function KnowledgeIndexCard() {
               );
             })()}
             <ul className="space-y-1">
-              {KNOWLEDGE_SOURCES.map((src) => (
+              {KNOWLEDGE_SOURCES.filter((src) => !SOURCE_MODULE[src] || moduleShown(SOURCE_MODULE[src]!, active)).map((src) => (
                 <li key={src} className="flex items-center justify-between text-sm py-0.5">
                   <span className="text-muted-foreground">{SOURCE_LABELS[src] ?? src}</span>
                   <span className="font-mono text-xs">{data?.bySource?.[src] ?? 0}</span>

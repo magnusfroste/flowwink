@@ -6,6 +6,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { usePerformanceModeStatus, useApplyPerformanceMode } from '@/hooks/usePerformanceMode';
 import { PERFORMANCE_MODES, pulseVerdict, startupTimeoutShare, driftedJobs } from '@/lib/performance-mode';
+import { useActiveModules, moduleShown } from '@/lib/module-visibility';
+import { CRON_JOB_MODULE } from '../../../../supabase/functions/_shared/cron/health';
 
 /**
  * Performance mode — one dial for how often the instance pulses.
@@ -22,7 +24,9 @@ export function PerformanceModeCard() {
 
   const verdict = data ? pulseVerdict(data) : null;
   const share = data ? startupTimeoutShare(data) : 0;
-  const drifted = data ? driftedJobs(data) : [];
+  // A job of a module that is off is not this mode's business (CRON_JOB_MODULE).
+  const active = useActiveModules();
+  const drifted = (data ? driftedJobs(data) : []).filter((j) => !CRON_JOB_MODULE[j.jobname] || moduleShown(CRON_JOB_MODULE[j.jobname], active));
 
   return (
     <Card>

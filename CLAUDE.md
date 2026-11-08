@@ -509,6 +509,22 @@ beside its payload, so an operator branches instead of guessing:
   Modules for an admin) for everyone, admins included. Routes without a
   module (`/admin`, `/admin/modules`, personal pages) and a missing row never
   block.
+- **A module that is off is quiet everywhere that only looks (2026-11-08).**
+  Observability, the notifications bell, the dashboard and analytics read
+  automations, runs, cron jobs and skills directly, so a module the operator
+  chose not to run kept raising warnings there. One rule now, the server's
+  own: `src/lib/module-visibility.ts` (`useActiveModules`, `skillShown`,
+  `moduleShown`) wraps `skillModuleOn` and the generated owner map; a skill is
+  judged by the module that owns it, platform skills always show, a missing
+  modules row shows everything. pg_cron jobs carry their module in
+  `CRON_JOB_MODULE` (`_shared/cron/health.ts`): a job of an off module is never
+  red (`module_off`), is not a required job on the readiness checklist, and is
+  not a drifted job on the pulse card; every `enrichCronHealth` caller passes
+  `moduleOn: await loadEnabledModules(supabase)`. A new surface that shows
+  agent or cron data asks the same rule (`off-modules-stay-quiet` pins the
+  surfaces). A tab or panel of ANOTHER module mounted on a page asks whether
+  that module is on — `foreign-module-panels-ask` discovers them from the
+  router, the module tables and the hooks, and ratchets the ones left.
 - **One module switch (2026-11-06).** `_shared/modules/module-switch.ts`
   is the only code that switches a module on or off: the row, the skills
   (both flags in one write, via `hideSkills`), every automation that runs one

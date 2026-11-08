@@ -1,3 +1,4 @@
+import { loadEnabledModules } from '../_shared/modules.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { getServiceClient } from '../_shared/supabase-clients.ts';
 import { computeSkillHash, runIntegrityChecks } from '../_shared/integrity.ts';
@@ -43,7 +44,7 @@ Deno.serve(async (req) => {
             status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           });
         }
-        const enriched = enrichCronHealth((data ?? {}) as CronHealthReport, new Date(), { bornAt: await loadInstanceBornAt(supabase) });
+        const enriched = enrichCronHealth((data ?? {}) as CronHealthReport, new Date(), { bornAt: await loadInstanceBornAt(supabase), moduleOn: await loadEnabledModules(supabase) });
         return new Response(JSON.stringify(enriched), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });

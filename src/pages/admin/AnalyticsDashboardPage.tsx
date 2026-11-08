@@ -178,28 +178,6 @@ function EmptyState() {
   );
 }
 
-function ModulePrompt({
-  icon: Icon,
-  title,
-  description,
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  title: string;
-  description: string;
-}) {
-  return (
-    <Card className="border-dashed">
-      <CardContent className="py-8 text-center">
-        <Icon className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-        <p className="text-sm text-muted-foreground mb-3">{description}</p>
-        <Button variant="outline" size="sm" asChild>
-          <Link to="/admin/modules">{title}</Link>
-        </Button>
-      </CardContent>
-    </Card>
-  );
-}
-
 export default function AnalyticsDashboardPage() {
   const { formatCurrency, formatNumber, formatDateTime } = usePlatformFormat();
   const [tab, setTab] = useTabParam('overview');
@@ -367,9 +345,10 @@ export default function AnalyticsDashboardPage() {
           <TabsList>
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="traffic">Traffic</TabsTrigger>
-            <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
+            {/* A tab whose every module is off is not offered (src/lib/module-visibility.ts). */}
+            {(leadsEnabled || dealsEnabled) && <TabsTrigger value="pipeline">Pipeline</TabsTrigger>}
             <TabsTrigger value="conversions">Conversions</TabsTrigger>
-            <TabsTrigger value="marketing">Marketing</TabsTrigger>
+            {(newsletterEnabled || bookingsEnabled) && <TabsTrigger value="marketing">Marketing</TabsTrigger>}
           </TabsList>
 
           {/* ---------- Overview ---------- */}
@@ -587,13 +566,7 @@ export default function AnalyticsDashboardPage() {
                     )}
                   </CardContent>
                 </Card>
-              ) : (
-                <ModulePrompt
-                  icon={Users}
-                  title="Enable Leads"
-                  description="Enable the Leads module to see source distribution"
-                />
-              )}
+              ) : null}
 
               {dealsEnabled ? (
                 <Card>
@@ -642,13 +615,7 @@ export default function AnalyticsDashboardPage() {
                     )}
                   </CardContent>
                 </Card>
-              ) : (
-                <ModulePrompt
-                  icon={Briefcase}
-                  title="Enable Deals"
-                  description="Enable the Deals module to see pipeline statistics"
-                />
-              )}
+              ) : null}
             </div>
 
             {leadsEnabled && leadsByStatus && leadsByStatus.length > 0 && (
@@ -741,13 +708,7 @@ export default function AnalyticsDashboardPage() {
                   )}
                 </CardContent>
               </Card>
-            ) : (
-              <ModulePrompt
-                icon={Mail}
-                title="Enable Newsletter"
-                description="Enable the Newsletter module to track campaign performance"
-              />
-            )}
+            ) : null}
 
             {bookingsEnabled && (
               <Card>

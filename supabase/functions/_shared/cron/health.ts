@@ -49,6 +49,8 @@ export interface CronJobEnriched extends CronJobRaw {
   last_failed: boolean;   // pg_cron's own verdict: latest run in job_run_details ended 'failed'
   red: boolean;           // any actionable problem, evidence-backed
   reasons: string[];
+  /** The module this job serves, when that module is off — the job is then never red. */
+  module_off?: string;
 }
 
 export interface PulseStarvation {
@@ -140,7 +142,36 @@ export const NEVER_RAN_GRACE_HOURS = 24;
 export interface CronHealthOptions {
   /** When the instance was born (`loadInstanceBornAt`): the grace for an instance whose pg_cron has no run on record yet. */
   bornAt?: string | Date | null;
+  /**
+   * Which modules are on (`loadEnabledModules`). A job that serves a module
+   * that is off is never red: it is reported `module_off` and alarms nobody —
+   * a module the operator chose not to run is not a fault (2026-11-08).
+   * Without it, no job is judged by its module (as before).
+   */
+  moduleOn?: (moduleId: string) => boolean;
 }
+
+/**
+ * The pg_cron jobs that exist for ONE module — by jobname, as the migrations
+ * schedule them. Platform jobs (dispatchers, health, purges, the indexer) are
+ * absent and always judged. A job for a module that is off still ticks (its
+ * target answers MODULE_DISABLED or does nothing); its failures are that
+ * module's, and the module is off.
+ */
+export const CRON_JOB_MODULE: Readonly<Record<string, string>> = Object.freeze({
+  'booking-reminders': 'bookings',
+  'calendar-reminders': 'calendar',
+  'enqueue-contract-billing-tasks': 'contracts',
+  'enqueue-subscription-billing-tasks': 'subscriptions',
+  'flowpilot-daily-briefing': 'flowpilot',
+  'flowpilot-heartbeat': 'flowpilot',
+  'flowpilot-heartbeat-12h': 'flowpilot',
+  'flowpilot-learn': 'flowpilot',
+  'newsletter-dispatch-scheduled': 'newsletter',
+  'service-recurring-orders': 'fieldService',
+  'voice-calls-sweep-stale': 'voice',
+  'weekly-knowledge-river': 'river',
+});
 
 /** The instance's birth by its own first row: site_settings is written by the first migration. */
 // deno-lint-ignore no-explicit-any -- the query builder's generics differ between the browser and Deno clients
@@ -169,6 +200,10 @@ export function enrichCronHealth(report: CronHealthReport, now: Date = new Date(
   const instanceAge = Number.isFinite(bornMs) ? Math.max(0, (now.getTime() - bornMs) / 3600_000) : null;
   const newborn = (age !== null && age < NEVER_RAN_GRACE_HOURS) || (instanceAge !== null && instanceAge < NEVER_RAN_GRACE_HOURS);
   const jobs: CronJobEnriched[] = (report.jobs || []).map((j) => {
+    const owner = CRON_JOB_MODULE[j.jobname];
+    if (owner && opts.moduleOn && !opts.moduleOn(owner)) {
+      return { ...j, last_failed: j.last_status === 'failed', red: false, module_off: owner, reasons: [`module ${owner} is off`] };
+    }
     const reasons: string[] = [];
     if (j.foreign_host) reasons.push(`targets a foreign host (${j.target_host})`);
     const stranded = j.never_ran && j.active && !newborn;
