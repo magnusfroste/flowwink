@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261108160000",
-      "migrations_count": 744,
+      "migration_head": "20261108200000",
+      "migrations_count": 745,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2981,6 +2981,10 @@
         {
           "version": "20261108160000",
           "name": "order-paid-bar-order-id"
+        },
+        {
+          "version": "20261108200000",
+          "name": "motesomrostningen-foljer-bokningen"
         }
       ]
     },
