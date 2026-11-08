@@ -25,7 +25,7 @@ import { BLOCK_REFERENCE } from '@/lib/block-reference';
 
 const root = join(__dirname, '../../..');
 const read = (p: string) => readFileSync(join(root, p), 'utf8');
-const edge = read('supabase/functions/agent-execute/index.ts');
+const edge = read('supabase/functions/_shared/execute/core.ts');
 
 type Seed = { name: string; handler: string; tool_definition: { function: { parameters: { properties: Record<string, unknown> } } } };
 const artifact = JSON.parse(read('supabase/seed/module-skills.json')) as { modules: Array<{ skills: Seed[] }> };

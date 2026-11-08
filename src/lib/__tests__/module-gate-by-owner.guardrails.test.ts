@@ -50,7 +50,7 @@ describe('the three consumers', () => {
   });
 
   it('the executor refuses MODULE_DISABLED after authorization and before scope, logs it as refused, and lets the one waking write through', () => {
-    const exec = read('supabase/functions/agent-execute/index.ts');
+    const exec = read('supabase/functions/_shared/execute/core.ts');
     const gate = exec.indexOf('// 1c. THE MODULE GATE');
     expect(gate).toBeGreaterThan(exec.indexOf('// 1b. AUTHORIZATION'));
     expect(gate).toBeLessThan(exec.indexOf('// 2. Validate scope'));
@@ -63,7 +63,7 @@ describe('the three consumers', () => {
   });
 
   it('a hidden row of an off module answers MODULE_DISABLED, not "Skill not found"', () => {
-    const exec = read('supabase/functions/agent-execute/index.ts');
+    const exec = read('supabase/functions/_shared/execute/core.ts');
     const miss = exec.slice(exec.indexOf('if (skillError || !skills) {'), exec.indexOf('const skill = skills;'));
     expect(miss).toMatch(/const owner = missingName \? ownerModuleOf\(missingName\) : null;/);
     expect(miss).toMatch(/if \(!skillModuleOn\(missingName, active\)\) \{/);
@@ -71,7 +71,7 @@ describe('the three consumers', () => {
   });
 
   it('the sync heals leaked rows for every off module — only when the modules row is present', () => {
-    const exec = read('supabase/functions/agent-execute/index.ts');
+    const exec = read('supabase/functions/_shared/execute/core.ts');
     expect(exec).toMatch(/const decidedOff = modulesRowPresent\s+\? ARTIFACT_MODULES\.map\(\(m\) => m\.moduleId\)\.filter\(\(id\) => id !== 'platform' && !isEnabled\(id\)\)\s+: \[\];/);
   });
 });

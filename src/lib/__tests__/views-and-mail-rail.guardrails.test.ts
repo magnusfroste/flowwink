@@ -14,7 +14,7 @@ import { join } from 'node:path';
 
 const root = join(__dirname, '../../..');
 const read = (p: string) => readFileSync(join(root, p), 'utf8');
-const agentExecute = read('supabase/functions/agent-execute/index.ts');
+const agentExecute = read('supabase/functions/_shared/execute/core.ts');
 const migrations = readdirSync(join(root, 'supabase/migrations')).filter((f) => f.endsWith('.sql')).sort()
   .map((f) => read(`supabase/migrations/${f}`)).join('\n');
 

@@ -16,7 +16,7 @@ const root = join(__dirname, '../../..');
 const migrations = readdirSync(join(root, 'supabase/migrations')).filter((f) => f.endsWith('.sql')).sort()
   .map((f) => readFileSync(join(root, 'supabase/migrations', f), 'utf8')).join('\n');
 const migration = readFileSync(join(root, 'supabase/migrations/20260919200000_innehallet-och-leadsen-haller-sina-loften.sql'), 'utf8');
-const agentExecute = readFileSync(join(root, 'supabase/functions/agent-execute/index.ts'), 'utf8');
+const agentExecute = readFileSync(join(root, 'supabase/functions/_shared/execute/core.ts'), 'utf8');
 
 function latestFunctionBody(fnName: string): string {
   const re = new RegExp(`CREATE OR REPLACE FUNCTION public\\.${fnName}\\(`, 'g');

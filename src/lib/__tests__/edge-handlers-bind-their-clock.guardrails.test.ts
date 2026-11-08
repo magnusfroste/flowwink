@@ -101,7 +101,7 @@ describe('every `now.` in an edge function has a `now` bound above it', () => {
   });
 
   it('contract_renewal_check counts days on the business calendar, not the runtime clock', () => {
-    const ae = readFileSync(join(FUNCTIONS, 'agent-execute', 'index.ts'), 'utf8');
+    const ae = readFileSync(join(FUNCTIONS, '_shared', 'execute', 'core.ts'), 'utf8');
     const handler = ae.slice(ae.indexOf("if (skillName === 'contract_renewal_check')"), ae.indexOf('horizon_days: days_ahead'));
     expect(handler).toMatch(/const today = Date\.parse\(dateInZone\(tz\)\);/);
     expect(handler).not.toMatch(/now\.getTime\(\)/);

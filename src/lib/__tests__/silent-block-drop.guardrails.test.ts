@@ -47,7 +47,7 @@ describe('silent block drops are banned', () => {
   });
 
   it('manage_page create refuses (does not save) when blocks are dropped', () => {
-    const src = readFileSync(join(process.cwd(), 'supabase/functions/agent-execute/index.ts'), 'utf-8');
+    const src = readFileSync(join(process.cwd(), 'supabase/functions/_shared/execute/core.ts'), 'utf-8');
     // "if (action === 'create')" appears in ~20 skills — anchor on the one
     // line unique to manage_page create's write path instead. (It reads
     // `effectiveBlocks`, not `blocks`, since 2026-08-22: create used to ignore
@@ -59,7 +59,7 @@ describe('silent block drops are banned', () => {
   });
 
   it('manage_page update refuses (does not save) when blocks are dropped, and takes content_json as alias', () => {
-    const src = readFileSync(join(process.cwd(), 'supabase/functions/agent-execute/index.ts'), 'utf-8');
+    const src = readFileSync(join(process.cwd(), 'supabase/functions/_shared/execute/core.ts'), 'utf-8');
     const upd = src.slice(src.indexOf("if (action === 'update' && page_id)"), src.indexOf("if (action === 'publish' && page_id)"));
     expect(upd).toContain('content_json');           // alias accepted
     expect(upd).toMatch(/dropped.*throw|throw[\s\S]{0,200}dropped/i); // loud refusal

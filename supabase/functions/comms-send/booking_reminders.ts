@@ -15,11 +15,6 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-interface EmailConfig {
-  fromEmail: string;
-  fromName: string;
-}
-
 export const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -38,13 +33,11 @@ export const handler = async (req: Request): Promise<Response> => {
     if (generalErr) console.warn('[booking-reminders] general settings read failed:', generalErr.message);
     const siteUrl = String((generalRow?.value as { siteUrl?: string } | null)?.siteUrl ?? '').replace(/\/+$/, '');
 
-    const [siteSettingsRes, integrationSettingsRes, moduleSettingsRes] = await Promise.all([
+    const [siteSettingsRes, moduleSettingsRes] = await Promise.all([
       supabase.from("site_settings").select("value").eq("key", "general").maybeSingle(),
-      supabase.from("site_settings").select("value").eq("key", "integrations").maybeSingle(),
       supabase.from("site_settings").select("value").eq("key", "modules").maybeSingle(),
     ]);
 
-    const integrationSettings = integrationSettingsRes.data;
     const moduleSettings = moduleSettingsRes.data;
 
     const bookingsConfig = (moduleSettings?.value as any)?.bookings;
@@ -57,11 +50,6 @@ export const handler = async (req: Request): Promise<Response> => {
     }
 
     const siteName = await loadOrgName(supabase, "Our Website");
-    const resendSettings = (integrationSettings?.value as any)?.resend;
-    const emailConfig: EmailConfig = resendSettings?.config?.emailConfig || {
-      fromEmail: "onboarding@resend.dev",
-      fromName: siteName,
-    };
 
     // Window: confirmed bookings starting between now and now+24h, never reminded.
     const now = new Date();
@@ -157,7 +145,6 @@ export const handler = async (req: Request): Promise<Response> => {
             to: booking.customer_email,
             subject: fromTemplate?.subject ?? `Reminder: Your appointment on ${formattedDate}`,
             html: emailHtml,
-            fromOverride: `${emailConfig.fromName} <${emailConfig.fromEmail}>`,
             tags: { source: 'send-booking-reminders', booking_id: booking.id },
           },
         });

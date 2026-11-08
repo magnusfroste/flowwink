@@ -10,6 +10,11 @@
  *   ?priority= and ?id= on Tickets; ?id= and ?contact= on Deals — every
  *   dashboard tile that promised a filtered view opened the unfiltered page.
  *
+ * 2026-11-07: /admin/invoicing (Orders' "View invoice" and its toast) passed
+ * because the public `/:lang/:slug` route matched it — the app showed the
+ * public 404. An admin address is judged against routes that start with a
+ * literal segment only.
+ *
  * Discover, don't enumerate: every literal /admin|/account address in the app
  * and the edge functions against the router's paths, and every `?param=`
  * against the target page (or a component it imports) reading that param.
@@ -29,6 +34,8 @@ const routes = routePaths.map((p) => ({
   path: p,
   re: new RegExp(`^${p.replace(/\/\*$/, '(/.*)?').replace(/:\w+\??/g, '[^/]+')}/?$`),
 }));
+
+const adminRoutes = routes.filter((r) => !r.path.startsWith('/:'));
 
 const elementOf = new Map<string, string>();
 for (const m of app.matchAll(/\{\s*path:\s*"([^"]+)",\s*element:\s*(?:withPageFallback\()?<(\w+)/g)) elementOf.set(m[1], m[2]);
@@ -90,7 +97,10 @@ describe('admin links land where they say', () => {
       const src = readFileSync(f, 'utf8');
       for (const m of src.matchAll(/(['"`])(\/(?:admin|account)(?:\/[^'"`\s?#)]*)?)(?:[?#][^'"`]*)?\1/g)) {
         const target = m[2].replace(/\$\{[^}]*\}/g, 'X').replace(/\/$/, '');
-        if (target.includes('${') || routes.some((r) => r.re.test(target))) continue;
+        // Only a route of its own: the public `/:lang/:slug` matches any
+        // two-segment address, so `/admin/invoicing` (no such page) passed here
+        // while the app rendered the public 404 on it (2026-11-07, Orders).
+        if (target.includes('${') || adminRoutes.some((r) => r.re.test(target))) continue;
         if (!wrong.has(target)) wrong.set(target, `${f}:${src.slice(0, m.index).split('\n').length}`);
       }
     }

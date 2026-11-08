@@ -39,7 +39,7 @@ describe('check_operations — the operations twin of check_books', () => {
 
 describe('a renewal window has an answer', () => {
   it('manage_contract decide_renewal records it and the radar lists decided contracts apart', () => {
-    const src = read('supabase/functions/agent-execute/index.ts');
+    const src = read('supabase/functions/_shared/execute/core.ts');
     expect(src).toMatch(/action === 'decide_renewal'/);
     expect(src).toMatch(/\['renew', 'terminate', 'renegotiate'\]\.includes\(d\)/);
     expect(src).toMatch(/if \(c\.renewal_decision && !include_decided\) \{ decided\.push/);
@@ -54,7 +54,7 @@ describe('a renewal window has an answer', () => {
 
 describe('manage_site_settings update merges', () => {
   it('flipping one flag never wipes the rest of an object setting', () => {
-    const src = read('supabase/functions/agent-execute/index.ts');
+    const src = read('supabase/functions/_shared/execute/core.ts');
     expect(src).toMatch(/nextValue = \{ \.\.\.\(cur\.value as Record<string, unknown>\), \.\.\.\(value as Record<string, unknown>\) \}/);
     expect(src).toMatch(/\.upsert\(\{ key, value: nextValue \}, \{ onConflict: 'key' \}\)/);
     const seed = PLATFORM_SKILLS.find((s) => s.name === 'manage_site_settings')!;

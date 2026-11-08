@@ -1191,6 +1191,101 @@
       "fallback": "Hi {name}, pick a time for your interview"
     },
     {
+      "key": "invoice.cancelled",
+      "group": "invoice",
+      "fallback": "This invoice has been cancelled."
+    },
+    {
+      "key": "invoice.downloadPdf",
+      "group": "invoice",
+      "fallback": "Download PDF"
+    },
+    {
+      "key": "invoice.due",
+      "group": "invoice",
+      "fallback": "Due"
+    },
+    {
+      "key": "invoice.items",
+      "group": "invoice",
+      "fallback": "Items"
+    },
+    {
+      "key": "invoice.linkInvalid",
+      "group": "invoice",
+      "fallback": "This invoice link is invalid or has expired."
+    },
+    {
+      "key": "invoice.noItems",
+      "group": "invoice",
+      "fallback": "No items"
+    },
+    {
+      "key": "invoice.notes",
+      "group": "invoice",
+      "fallback": "Notes"
+    },
+    {
+      "key": "invoice.notFound",
+      "group": "invoice",
+      "fallback": "Invoice not found"
+    },
+    {
+      "key": "invoice.paidReceipt",
+      "group": "invoice",
+      "fallback": "Paid in full. This is your receipt — thank you!"
+    },
+    {
+      "key": "invoice.pay",
+      "group": "invoice",
+      "fallback": "Pay"
+    },
+    {
+      "key": "invoice.paymentConfirming",
+      "group": "invoice",
+      "fallback": "Payment received — confirming…"
+    },
+    {
+      "key": "invoice.receipt",
+      "group": "invoice",
+      "fallback": "Receipt"
+    },
+    {
+      "key": "invoice.statusCancelled",
+      "group": "invoice",
+      "fallback": "Cancelled"
+    },
+    {
+      "key": "invoice.statusOpen",
+      "group": "invoice",
+      "fallback": "Open"
+    },
+    {
+      "key": "invoice.statusPaid",
+      "group": "invoice",
+      "fallback": "Paid"
+    },
+    {
+      "key": "invoice.subtotal",
+      "group": "invoice",
+      "fallback": "Subtotal"
+    },
+    {
+      "key": "invoice.tax",
+      "group": "invoice",
+      "fallback": "Tax"
+    },
+    {
+      "key": "invoice.title",
+      "group": "invoice",
+      "fallback": "Invoice"
+    },
+    {
+      "key": "invoice.total",
+      "group": "invoice",
+      "fallback": "Total"
+    },
+    {
       "key": "kb.allCategories",
       "group": "kb",
       "fallback": "All"
@@ -1936,6 +2031,11 @@
       "fallback": "This room is closed"
     },
     {
+      "key": "room.contents",
+      "group": "room",
+      "fallback": "Contents"
+    },
+    {
       "key": "room.download",
       "group": "room",
       "fallback": "Download"
@@ -1944,6 +2044,11 @@
       "key": "room.empty",
       "group": "room",
       "fallback": "Nothing has been placed in this room yet."
+    },
+    {
+      "key": "room.firstVisit",
+      "group": "room",
+      "fallback": "Your first visit — everything here is new to you."
     },
     {
       "key": "room.footer",
@@ -1966,6 +2071,11 @@
       "fallback": "Document room"
     },
     {
+      "key": "room.lastVisit",
+      "group": "room",
+      "fallback": "Your last visit"
+    },
+    {
       "key": "room.loading",
       "group": "room",
       "fallback": "Opening the room…"
@@ -1981,9 +2091,29 @@
       "fallback": "you may view in the browser"
     },
     {
+      "key": "room.new",
+      "group": "room",
+      "fallback": "New"
+    },
+    {
+      "key": "room.newSince",
+      "group": "room",
+      "fallback": "new since then"
+    },
+    {
       "key": "room.openedFor",
       "group": "room",
       "fallback": "Opened for"
+    },
+    {
+      "key": "room.otherFolder",
+      "group": "room",
+      "fallback": "Other documents"
+    },
+    {
+      "key": "room.seenByYou",
+      "group": "room",
+      "fallback": "You have opened this"
     },
     {
       "key": "room.until",
@@ -2119,6 +2249,16 @@
       "key": "shop.perMonthShort",
       "group": "shop",
       "fallback": "/mo"
+    },
+    {
+      "key": "shop.perYear",
+      "group": "shop",
+      "fallback": "/year"
+    },
+    {
+      "key": "shop.perYearShort",
+      "group": "shop",
+      "fallback": "/yr"
     },
     {
       "key": "shop.preOrder",

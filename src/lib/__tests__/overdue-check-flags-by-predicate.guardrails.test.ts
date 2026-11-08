@@ -10,7 +10,7 @@ import { join } from 'node:path';
  * (process battery, 2026-09-30). The UPDATE must carry the predicate itself,
  * the count must be exact, and a capped listing must say so.
  */
-const src = readFileSync(join(__dirname, '../../../supabase/functions/agent-execute/index.ts'), 'utf8');
+const src = readFileSync(join(__dirname, '../../../supabase/functions/_shared/execute/core.ts'), 'utf8');
 const start = src.indexOf("if (action === 'overdue') {");
 const block = src.slice(start, src.indexOf("if (action === 'create') {", start));
 

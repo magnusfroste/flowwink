@@ -27,6 +27,7 @@ import { resolveAiConfig, isAnthropicProvider } from '../_shared/ai-config.ts';
 import { isOpenAiReasoningModel } from '../_shared/ai-providers.ts';
 import { logAiUsage } from '../_shared/ai-usage-logger.ts';
 import { reason } from '../_shared/pilot/reason.ts';
+import { executeSkillRequest } from '../_shared/execute/core.ts';
 import { generateTraceId } from '../_shared/trace.ts';
 import type { SurfaceToolOutcome } from '../_shared/types.ts';
 import { knowledgeChunksSource, flowtableSource, type SourceCtx } from '../_shared/retrieval/sources.ts';
@@ -1521,6 +1522,7 @@ Deno.serve(async (req) => {
     try {
       const run = await reason(supabaseAdmin, conversation, {
         scope: 'internal',
+        runSkill: executeSkillRequest,
         tier: 'fast',
         // 6 rounds: locate→read→write against a wiki/page costs three tool
         // rounds before the staged write — a QA run died holding the full page

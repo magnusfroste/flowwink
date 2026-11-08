@@ -24,7 +24,7 @@ import type { SkillSeed, AutomationSeed } from '@/lib/module-bootstrap';
 
 const contractsInputSchema = z.object({
   action: z.enum(['create', 'update', 'list', 'get']),
-  id: z.string().uuid().optional(),
+  id: z.guid().optional(),
   title: z.string().optional(),
   counterparty_name: z.string().optional(),
   counterparty_email: z.string().email().optional(),

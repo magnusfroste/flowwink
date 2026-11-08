@@ -30,7 +30,7 @@ describe('dry_run is a read — for skills whose contract says so', () => {
   });
 
   it('the agent-execute approval gate consults it', () => {
-    const src = readFileSync(join(process.cwd(), 'supabase/functions/agent-execute/index.ts'), 'utf8');
+    const src = readFileSync(join(process.cwd(), 'supabase/functions/_shared/execute/core.ts'), 'utf8');
     const at = src.indexOf('const planOnly = isDryRunRead(');
     const gateAt = src.indexOf("if (trustLevel === 'approve' && !bypassApproval) {");
     expect(at).toBeGreaterThan(-1);

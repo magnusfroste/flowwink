@@ -98,7 +98,7 @@ describe('reconciliation sub-path routing', () => {
   });
 
   it('agent-execute dispatches on the suffix, and the handler covers every route', () => {
-    const ae = readFileSync(join(root, 'supabase/functions/agent-execute/index.ts'), 'utf8');
+    const ae = readFileSync(join(root, 'supabase/functions/_shared/execute/core.ts'), 'utf8');
     expect(ae).toMatch(/handler\.startsWith\('internal:reconciliation\/'\)/);
     expect(ae).toMatch(/executeReconciliation\(handler\.split\('\/'\)\[1\]/);
 

@@ -21,7 +21,7 @@ const artifact = JSON.parse(readFileSync(join(root, 'supabase/seed/module-skills
 const seeds = artifact.modules.flatMap((m) => m.skills);
 const byName = new Map(seeds.map((s) => [s.name, s]));
 const props = (name: string) => Object.keys(byName.get(name)?.tool_definition?.function?.parameters?.properties ?? {});
-const agentExecute = readFileSync(join(root, 'supabase/functions/agent-execute/index.ts'), 'utf8');
+const agentExecute = readFileSync(join(root, 'supabase/functions/_shared/execute/core.ts'), 'utf8');
 const migrations = readdirSync(join(root, 'supabase/migrations')).filter((f) => f.endsWith('.sql')).sort()
   .map((f) => readFileSync(join(root, 'supabase/migrations', f), 'utf8')).join('\n');
 

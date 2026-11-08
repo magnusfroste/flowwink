@@ -566,7 +566,7 @@
               }
             }
           },
-          "instructions": "Read-only. income_statement returns the annual-report shape: total_income_cents − total_expenses_cents = result_before_tax_cents, minus tax_cents = net_result_cents. total_expenses_cents EXCLUDES tax (its own `tax` block) and excludes the account the closing entry carries the result on — that account is named per locale in account_statement_sections/section=year_result, never assumed. Check result_carrier.source: \"unmapped\" means no carrier is mapped, so if this chart closes the year onto a P&L account the net result will read as zero — say so rather than reporting the zero. result_carrier.agrees_with_net_result=false means the closing entry does not hold the result the ledger computes (partial closing, or an account classified wrongly) — investigate before quoting the figure. balance_sheet returns current_year_result_cents as the part of the result NOT yet closed to equity; after a closing entry it is 0 because equity already holds it."
+          "instructions": "Read-only. income_statement returns the annual-report shape: total_income_cents − total_expenses_cents = result_before_tax_cents, minus tax_cents = net_result_cents. total_expenses_cents EXCLUDES tax (its own `tax` block) and excludes the account the closing entry carries the result on — that account is named per locale in account_statement_sections/section=year_result, never assumed. Check result_carrier.source: \"unmapped\" means no carrier is mapped, so if this chart closes the year onto a P&L account the net result will read as zero — say so rather than reporting the zero. result_carrier.agrees_with_net_result=false means the closing entry does not hold the result the ledger computes (partial closing, or an account classified wrongly) — investigate before quoting the figure. balance_sheet returns current_year_result_cents as the part of the result NOT yet closed to equity; after a closing entry it is 0 because equity already holds it. OPENING BALANCES: every balance-sheet account carries opening_cents (derived — the bridge plus everything posted before the window, UB becomes IB) + movement_cents = balance. balance_sheet is as-of to_date over its fiscal year; general_ledger and trial_balance default to the fiscal year of to_date (from_date/to_date in the answer say which). An opening_cents of 0 on a year after the first is a real zero, not a missing opening balance — never book an opening balance as a journal entry."
         },
         {
           "name": "manage_accounting_template",
@@ -1116,7 +1116,7 @@
         },
         {
           "name": "manage_opening_balances",
-          "description": "Create, list, update, or delete opening balances (IB) for a fiscal year. Use when: admin wants to set initial account balances, migrating from another system, starting a new fiscal year. NOT for: journal entries (use manage_journal_entry), reports (use accounting_reports).",
+          "description": "Set the bridge — the opening balances (IB) of the FIRST fiscal year the books carry — and read any year's opening balance, which is derived from the bridge plus everything posted since (UB becomes IB). Use when: migrating books from another system (the first SIE file's #IB 0 rows), checking a year's opening balance, comparing a later SIE file's #IB rows against the books. NOT for: a later year's opening balance (derived, refused with IB_IS_DERIVED), booking an opening balance as a journal entry (never), journal entries (use manage_journal_entry), reports (use accounting_reports).",
           "category": "commerce",
           "handler": "db:opening_balances",
           "scope": "internal",
@@ -1179,7 +1179,7 @@
               }
             }
           },
-          "instructions": "Opening balances must balance (total debit = total credit). Each account should have only one IB per fiscal year. Use the chart_of_accounts to validate account codes."
+          "instructions": "UB blir IB. Only the first fiscal year the books carry stores opening balances (the bridge); a year is the first when no posted entry is dated before it. Every later year's opening balance is DERIVED (opening_balances_for_year: the bridge plus everything posted before the year) — set refuses a later year with IB_IS_DERIVED, and booking an opening balance as a journal entry counts every balance-sheet account twice. READ a year with action=list fiscal_year=<year>: derived_opening_balances (net_cents signed against the debit side) is the answer; the stored rows are the bridge only. A later SIE file's #IB rows are a control against derived_opening_balances — a difference lives in an earlier year: correct that year, or the bridge. The bridge must balance (total debit = total credit); set amount_cents positive with balance_type debit|credit."
         },
         {
           "name": "manage_chart_of_accounts",
@@ -7220,11 +7220,11 @@
         },
         {
           "name": "manage_document_room",
-          "description": "A document room: a named set of documents and who may see it, without copying anything — a board room, legal counsel, a partner. Members get a PERSONAL link (view or download, optional expiry) and the access log names who opened what. Use when: an outside party should see a set of documents and nothing else; checking who opened a room; closing or revoking access. NOT for: one document to one person (manage_document_share_link), internal visibility by role (manage_document visibility), uploading (upload_document).",
+          "description": "A document room: a named set of documents and who may see it, without copying anything — a board room, legal counsel, a partner, an investor. Members get a PERSONAL link (view or download, optional expiry), each member sees the whole room or a chosen subset, and the access log names who opened, viewed or downloaded what — per document (who has not read it yet) and per member (member_history). Use when: an outside party should see a set of documents and nothing else; checking who opened a room; closing or revoking access. NOT for: one document to one person (manage_document_share_link), internal visibility by role (manage_document visibility), uploading (upload_document).",
           "category": "content",
           "handler": "rpc:manage_document_room",
           "scope": "internal",
-          "instructions": "list → rooms with counts. get {room_id} → documents, members (each with its token — the link is /room/<token> on the site), the last 50 access entries. create {name, description?, document_ids?}; update {room_id, name?, description?, is_active?} — is_active false closes the room for every member at once. add_documents {room_id, document_ids | document_id} points at existing documents (the ids from manage_document list); remove_document unlinks, never deletes. add_member {room_id, member_name, member_email?, permission: view|download (default view), expires_at?} answers the personal path — give it to that person only, nothing is sent by this skill; revoke_member {room_id, member_id} stops the link now. A deleted room leaves every document untouched. Prefer one member per person over one shared link: the log is only worth something when it names someone.",
+          "instructions": "list → rooms with counts. get {room_id} → documents, members (each with its token — the link is /room/<token> on the site), the last 50 access entries. create {name, description?, document_ids?}; update {room_id, name?, description?, is_active?} — is_active false closes the room for every member at once. add_documents {room_id, document_ids | document_id} points at existing documents (the ids from manage_document list); remove_document unlinks, never deletes. add_member {room_id, member_name, member_email?, permission: view|download (default view), expires_at?, document_ids?} answers the personal path — give it to that person only, nothing is sent by this skill; document_ids narrows what this member sees to those documents (they must already be in the room), omitted = the whole room. set_member_documents {room_id, member_id, document_ids} changes that later (no ids = the whole room; to show someone nothing, revoke them). revoke_member {room_id, member_id} stops the link now. member_history {room_id, member_id} is one person's record: per document (views, downloads, first and last time), what they have not opened yet, every entry. get carries per document seen_by / unseen_by — \"has the investor read the term sheet?\" is answered there without a query of your own. A deleted room leaves every document untouched. Prefer one member per person over one shared link: the log is only worth something when it names someone.",
           "tool_definition": {
             "type": "function",
             "risk": "medium",
@@ -7232,7 +7232,7 @@
             "reversal": "revoke_member stops a link; remove_document unlinks a document; update is_active=false closes the room; delete removes the room and its links, never a document.",
             "function": {
               "name": "manage_document_room",
-              "description": "Create and run document rooms (document_rooms / _items / _members / _access): list, get, create, update, delete, add_documents, remove_document, add_member, revoke_member.",
+              "description": "Create and run document rooms (document_rooms / _items / _members / _access): list, get, create, update, delete, add_documents, remove_document, add_member, set_member_documents, revoke_member, member_history.",
               "parameters": {
                 "type": "object",
                 "required": [
@@ -7250,7 +7250,9 @@
                       "add_documents",
                       "remove_document",
                       "add_member",
-                      "revoke_member"
+                      "set_member_documents",
+                      "revoke_member",
+                      "member_history"
                     ]
                   },
                   "room_id": {
@@ -7278,11 +7280,11 @@
                     "items": {
                       "type": "string"
                     },
-                    "description": "create / add_documents: several documents at once"
+                    "description": "create / add_documents: several documents at once. add_member / set_member_documents: the subset this member sees (must be in the room); omitted = the whole room"
                   },
                   "member_id": {
                     "type": "string",
-                    "description": "revoke_member"
+                    "description": "set_member_documents / revoke_member / member_history"
                   },
                   "member_name": {
                     "type": "string",
@@ -8016,7 +8018,7 @@
         },
         {
           "name": "send_invoice_for_order",
-          "description": "Convert an existing order into a sent invoice and email the customer a link. Closes the quote-to-cash loop. Use when: order is fulfilled or ready to bill, \"fakturera order X\", \"send invoice for order\". NOT for: creating manual invoices (use manage_invoice), draft invoices only, or invoicing time entries (use invoice_from_timesheets). Idempotent on invoices.order_id — an order that already has an invoice reuses it and reports reused_existing_invoice, so calling twice never creates a second receivable.",
+          "description": "Convert an existing order into a sent invoice and email the customer a link. Closes the quote-to-cash loop. Use when: order is fulfilled or ready to bill, \"fakturera order X\", \"send invoice for order\". NOT for: creating manual invoices (use manage_invoice), draft invoices only, or invoicing time entries (use invoice_from_timesheets). Idempotent on invoices.order_id — an order that already has an invoice reuses it and reports reused_existing_invoice, so calling twice never creates a second receivable. The invoice total is the ORDER total (shop prices include VAT; the net and VAT are split out of it the way the books split the paid order), and a paid order's invoice is born paid — a receipt, never a second request to pay.",
           "category": "commerce",
           "handler": "module:orders",
           "scope": "internal",
@@ -8041,7 +8043,7 @@
                   },
                   "tax_rate": {
                     "type": "number",
-                    "description": "Tax rate as decimal e.g. 0.25 for 25%. Omit it: an order converted from a quote carries the accepted rate on the order (metadata.tax_rate) and it is used automatically; otherwise 0.25."
+                    "description": "VAT rate as decimal e.g. 0.25, used to split every line's gross price into net + VAT. Omit it: each line's own rate is used (the product's, else the shop default), and an order converted from a quote keeps its accepted amounts. The invoice total is always the order total."
                   },
                   "payment_terms": {
                     "type": "string",
@@ -8059,7 +8061,7 @@
               }
             }
           },
-          "instructions": "Builds an invoice from order_items (qty × price_cents), applies the tax rate (explicit tax_rate → the order's own metadata.tax_rate when it came from a quote → 0.25), marks status=sent, and emails the customer a link. IDEMPOTENCY: keyed on the invoices.order_id column — one invoice per order. It used to key on the text \"order:<id>\" inside invoices.notes, which an edited note silently defeated: the next call issued a SECOND live invoice for an already-paid order. Pre-migration invoices are still found by the old note and are repaired to use the column. The reply carries reused_existing_invoice — if it is true, no new invoice was created and total_cents is the existing document's. Use dry_run=true to preview totals (and whether an invoice already exists) before sending. Logs invoice_sent to audit_logs.\n\nREAD THE RESULT, do not assume it: `invoice_created` and `sent` are two different facts. `sent:false` means the EMAIL did not leave — either no email provider is configured (email.simulated) or the outbound allowlist withheld the recipient (email.blocked_by_allowlist). The invoice still exists and is marked sent in the ledger. When sent is false, tell the user the invoice was created but NOT emailed, and say why from the `email` object."
+          "instructions": "Builds an invoice from order_items the way book_order_paid booked the order: line prices are GROSS (incl. VAT), each line's net is split out at its own rate (order_line_vat_rate), shipping at the default rate, and the invoice total is the order total. An order from a quote keeps its accepted net lines and amounts (metadata.total_includes_tax). A paid or completed order's invoice is born status=paid (a receipt); otherwise status=sent. Then the customer is emailed a link. IDEMPOTENCY: keyed on the invoices.order_id column — one live invoice per order; a cancelled invoice does not count, so a wrongly issued invoice is cancelled with manage_invoice and the order invoiced again. It used to key on the text \"order:<id>\" inside invoices.notes, which an edited note silently defeated: the next call issued a SECOND live invoice for an already-paid order. Pre-migration invoices are still found by the old note and are repaired to use the column. The reply carries reused_existing_invoice — if it is true, no new invoice was created and total_cents is the existing document's. Use dry_run=true to preview totals (and whether an invoice already exists) before sending. Logs invoice_sent to audit_logs.\n\nREAD THE RESULT, do not assume it: `invoice_created` and `sent` are two different facts. `sent:false` means the EMAIL did not leave — either no email provider is configured (email.simulated) or the outbound allowlist withheld the recipient (email.blocked_by_allowlist). The invoice still exists and is marked sent in the ledger. When sent is false, tell the user the invoice was created but NOT emailed, and say why from the `email` object."
         },
         {
           "name": "fulfill_order_line",

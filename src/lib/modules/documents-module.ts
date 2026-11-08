@@ -18,12 +18,12 @@ import type { SkillSeed } from '@/lib/module-bootstrap';
 
 const documentsInputSchema = z.object({
   action: z.enum(['create', 'list', 'get', 'update']),
-  id: z.string().uuid().optional(),
+  id: z.guid().optional(),
   title: z.string().optional(),
   category: z.string().optional(),
   file_url: z.string().optional(),
   related_entity_type: z.string().optional(),
-  related_entity_id: z.string().uuid().optional(),
+  related_entity_id: z.guid().optional(),
   notes: z.string().optional(),
 });
 
@@ -150,11 +150,11 @@ For non-resume PDFs, return the extracted text directly to the user.`,
   },
   {
     name: 'manage_document_room',
-    description: 'A document room: a named set of documents and who may see it, without copying anything — a board room, legal counsel, a partner. Members get a PERSONAL link (view or download, optional expiry) and the access log names who opened what. Use when: an outside party should see a set of documents and nothing else; checking who opened a room; closing or revoking access. NOT for: one document to one person (manage_document_share_link), internal visibility by role (manage_document visibility), uploading (upload_document).',
+    description: 'A document room: a named set of documents and who may see it, without copying anything — a board room, legal counsel, a partner, an investor. Members get a PERSONAL link (view or download, optional expiry), each member sees the whole room or a chosen subset, and the access log names who opened, viewed or downloaded what — per document (who has not read it yet) and per member (member_history). Use when: an outside party should see a set of documents and nothing else; checking who opened a room; closing or revoking access. NOT for: one document to one person (manage_document_share_link), internal visibility by role (manage_document visibility), uploading (upload_document).',
     category: 'content',
     handler: 'rpc:manage_document_room',
     scope: 'internal',
-    instructions: 'list → rooms with counts. get {room_id} → documents, members (each with its token — the link is /room/<token> on the site), the last 50 access entries. create {name, description?, document_ids?}; update {room_id, name?, description?, is_active?} — is_active false closes the room for every member at once. add_documents {room_id, document_ids | document_id} points at existing documents (the ids from manage_document list); remove_document unlinks, never deletes. add_member {room_id, member_name, member_email?, permission: view|download (default view), expires_at?} answers the personal path — give it to that person only, nothing is sent by this skill; revoke_member {room_id, member_id} stops the link now. A deleted room leaves every document untouched. Prefer one member per person over one shared link: the log is only worth something when it names someone.',
+    instructions: 'list → rooms with counts. get {room_id} → documents, members (each with its token — the link is /room/<token> on the site), the last 50 access entries. create {name, description?, document_ids?}; update {room_id, name?, description?, is_active?} — is_active false closes the room for every member at once. add_documents {room_id, document_ids | document_id} points at existing documents (the ids from manage_document list); remove_document unlinks, never deletes. add_member {room_id, member_name, member_email?, permission: view|download (default view), expires_at?, document_ids?} answers the personal path — give it to that person only, nothing is sent by this skill; document_ids narrows what this member sees to those documents (they must already be in the room), omitted = the whole room. set_member_documents {room_id, member_id, document_ids} changes that later (no ids = the whole room; to show someone nothing, revoke them). revoke_member {room_id, member_id} stops the link now. member_history {room_id, member_id} is one person\'s record: per document (views, downloads, first and last time), what they have not opened yet, every entry. get carries per document seen_by / unseen_by — "has the investor read the term sheet?" is answered there without a query of your own. A deleted room leaves every document untouched. Prefer one member per person over one shared link: the log is only worth something when it names someone.',
     tool_definition: {
       type: 'function',
       risk: 'medium',
@@ -162,19 +162,19 @@ For non-resume PDFs, return the extracted text directly to the user.`,
       reversal: 'revoke_member stops a link; remove_document unlinks a document; update is_active=false closes the room; delete removes the room and its links, never a document.',
       function: {
         name: 'manage_document_room',
-        description: 'Create and run document rooms (document_rooms / _items / _members / _access): list, get, create, update, delete, add_documents, remove_document, add_member, revoke_member.',
+        description: 'Create and run document rooms (document_rooms / _items / _members / _access): list, get, create, update, delete, add_documents, remove_document, add_member, set_member_documents, revoke_member, member_history.',
         parameters: {
           type: 'object',
           required: ['action'],
           properties: {
-            action: { type: 'string', enum: ['list', 'get', 'create', 'update', 'delete', 'add_documents', 'remove_document', 'add_member', 'revoke_member'] },
+            action: { type: 'string', enum: ['list', 'get', 'create', 'update', 'delete', 'add_documents', 'remove_document', 'add_member', 'set_member_documents', 'revoke_member', 'member_history'] },
             room_id: { type: 'string', description: 'The room (every action but list and create)' },
             name: { type: 'string', description: 'create/update: the room\'s name, 2–120 characters — who it is for' },
             description: { type: 'string', description: 'create/update: the purpose, shown to the recipients' },
             is_active: { type: 'boolean', description: 'update: false closes the room for everyone' },
             document_id: { type: 'string', description: 'add_documents (one) / remove_document' },
-            document_ids: { type: 'array', items: { type: 'string' }, description: 'create / add_documents: several documents at once' },
-            member_id: { type: 'string', description: 'revoke_member' },
+            document_ids: { type: 'array', items: { type: 'string' }, description: 'create / add_documents: several documents at once. add_member / set_member_documents: the subset this member sees (must be in the room); omitted = the whole room' },
+            member_id: { type: 'string', description: 'set_member_documents / revoke_member / member_history' },
             member_name: { type: 'string', description: 'add_member: the person the link is for' },
             member_email: { type: 'string', description: 'add_member: for the record; nothing is sent' },
             permission: { type: 'string', enum: ['view', 'download'], description: 'add_member: default view' },

@@ -16,7 +16,7 @@ import { join } from 'node:path';
 
 const root = join(__dirname, '../../..');
 const migration = readFileSync(join(root, 'supabase/migrations/20260919170000_lagret-foljer-ordern.sql'), 'utf8');
-const agentExecute = readFileSync(join(root, 'supabase/functions/agent-execute/index.ts'), 'utf8');
+const agentExecute = readFileSync(join(root, 'supabase/functions/_shared/execute/core.ts'), 'utf8');
 
 describe('the in-place patches fail closed', () => {
   it('every patched function has an anchor check that aborts the migration', () => {

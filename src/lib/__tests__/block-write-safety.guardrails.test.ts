@@ -679,7 +679,7 @@ describe('block write safety — normalize runs BEFORE validate', () => {
   });
 
   it('agent-execute normalizes before it validates on all three write paths', () => {
-    const src = readFileSync(join(process.cwd(), 'supabase/functions/agent-execute/index.ts'), 'utf-8');
+    const src = readFileSync(join(process.cwd(), 'supabase/functions/_shared/execute/core.ts'), 'utf-8');
     const region = src.slice(src.indexOf("case 'manage_page_blocks'"), src.indexOf("case 'generate_meta_description'"));
     // Every validateBlockData call in the block-write region must be preceded by
     // a normalizeBlockData call — the ordering bug was invisible in review.

@@ -47,14 +47,14 @@ interface DraftLine extends CreateBomLineInput {
 }
 
 const lineSchema = z.object({
-  component_product_id: z.string().uuid({ message: 'Pick a component' }),
+  component_product_id: z.guid({ message: 'Pick a component' }),
   quantity: z.number().positive({ message: 'Quantity must be > 0' }),
   unit: z.string().max(20).optional(),
   scrap_pct: z.number().min(0).max(100).optional(),
 });
 
 const headerSchema = z.object({
-  product_id: z.string().uuid({ message: 'Pick a finished product' }),
+  product_id: z.guid({ message: 'Pick a finished product' }),
   version: z.string().trim().max(50).optional(),
   quantity_produced: z.number().positive({ message: 'Must be > 0' }),
   routing_notes: z.string().max(1000).optional(),

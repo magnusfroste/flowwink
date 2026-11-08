@@ -140,7 +140,7 @@ describe('manage_modules wiring', () => {
   });
 
   it('agent-execute dispatches both skills, and a switched-off module is not woken by a write', () => {
-    const exec = read('supabase/functions/agent-execute/index.ts');
+    const exec = read('supabase/functions/_shared/execute/core.ts');
     expect(exec).toMatch(/handler === 'internal:module_usage_report'/);
     expect(exec).toMatch(/handler === 'internal:manage_modules'/);
     // The switch itself is the shared one (module-switch.ts, 2026-11-06).
@@ -157,10 +157,10 @@ describe('manage_modules wiring', () => {
   // refused by trg_enforce_mcp_exposure_invariant for an exposed skill, one
   // refused row fails the statement, and nobody read the error.
   it('a switch-off takes the skills out of the catalog — both flags in one write, the result read', () => {
-    const exec = read('supabase/functions/agent-execute/index.ts');
+    const exec = read('supabase/functions/_shared/execute/core.ts');
     // hideSkills moved to _shared/skills/skill-visibility.ts (2026-11-05) so
     // self-healing and the integrity repair write the same way.
-    expect(exec).toMatch(/import \{ hideSkills[^}]*\} from '\.\.\/_shared\/skills\/skill-visibility\.ts'/);
+    expect(exec).toMatch(/import \{ hideSkills[^}]*\} from '\.\.\/skills\/skill-visibility\.ts'/);
     const shared = read('supabase/functions/_shared/skills/skill-visibility.ts');
     const hide = shared.slice(shared.indexOf('export async function hideSkills'), shared.indexOf('export function isQuarantined'));
     expect(hide).toMatch(/\.update\(\{ enabled: false, mcp_exposed: false[^}]*\}\)\s*\.in\(column, chunk\)\.select\('name'\)/);
@@ -174,7 +174,7 @@ describe('manage_modules wiring', () => {
   });
 
   it('the skill sync heals a module switched off before the fix: its skills leave the catalog on the next admin visit', () => {
-    const exec = read('supabase/functions/agent-execute/index.ts');
+    const exec = read('supabase/functions/_shared/execute/core.ts');
     const sync = exec.slice(exec.indexOf('async function executeSyncSkillsFromCode'));
     expect(sync).toMatch(/\.in\('key', \['skills_artifact_sha', 'modules', 'module_teardowns'\]\)/);
     // Since 2026-11-06 every off module is healed (module-gate.ts), guarded by the row being present.
@@ -185,7 +185,7 @@ describe('manage_modules wiring', () => {
   });
 
   it('the report reads the keeps and dates the module; a keep lives outside module_teardowns, which autoActivate reads as "off"', () => {
-    const exec = read('supabase/functions/agent-execute/index.ts');
+    const exec = read('supabase/functions/_shared/execute/core.ts');
     const report = exec.slice(exec.indexOf('async function executeModuleUsageReport'), exec.indexOf('async function executeManageModules'));
     expect(report).toMatch(/'module_keeps'\]/);
     expect(report).toMatch(/suggestOff\(evidence, \{ age_days: ageDays, kept \}\)/);

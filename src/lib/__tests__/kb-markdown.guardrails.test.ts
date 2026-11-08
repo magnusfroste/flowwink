@@ -16,7 +16,7 @@ import { markdownToTiptap } from '../../../supabase/functions/_shared/markdown-t
  */
 
 const handler = readFileSync(
-  resolve(__dirname, '../../../supabase/functions/agent-execute/index.ts'), 'utf-8',
+  resolve(__dirname, '../../../supabase/functions/_shared/execute/core.ts'), 'utf-8',
 );
 
 describe('KB answers keep the structure the author wrote', () => {

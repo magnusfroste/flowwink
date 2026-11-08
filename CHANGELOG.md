@@ -18,6 +18,152 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
   stays per-request since it carries the caller's JWT. Measured: 1000
   constructions ≈ 26 ms (bun, supabase-js 2.119) — small per call, paid on
   every hot path.
+- **A recurring price says its own period — on the site and at checkout
+  (#941).** `products.billing_interval` (month | year) was set in admin and
+  read by quotes, but every visitor surface printed "/mo" or "/month" for every
+  recurring product, and Stripe checkout created every recurring price with
+  interval `month`. A service contract at 14 900 kr per year read
+  "14 900 kr/mo" on the site and, bought online, was charged 14 900 kr every
+  month. Now one rule (`src/lib/price-period.ts`, `usePricePeriodText`) serves
+  the shop page, the products block, the featured product, the product page and
+  its related products, the pricing page and two admin previews, with `/year` and `/yr`
+  visitor texts beside `/month` and `/mo`; checkout bills on the product's
+  period (`stripeInterval`) and replaces a stored Stripe price whose interval
+  does not match instead of reusing it (subscriptions already on the old price
+  keep it). Guard `price-period-from-the-product` scans every file for the
+  shape `type === 'recurring'` beside a hard-coded month.
+### Security
+
+- **react-router 7.** `react-router-dom` 6.30 → 7.18 closes the two
+  moderate react-router advisories (open redirect via a backslash in `<Link>` /
+  `useNavigate`, constructor injection via `deserializeErrors`). The app runs
+  one data router (`createBrowserRouter` in `App.tsx`) with absolute paths only
+  — no splat routes, no relative links — so v7's one behavioural change
+  (relative paths inside splat routes) has nothing to move. `npm audit
+  --omit=dev`: 2 moderate left, both satori under `@vercel/og`.
+
+- **zod 4.** The last high advisory in the production tree (zod `<4.6.6`:
+  memory exhaustion validating oversized constrained collections) is gone:
+  `zod` 3.25 → 4.6, `@hookform/resolvers` 3 → 5, and the edge `ai-task`
+  schemas from esm.sh 3.23 → 4.6. What zod 4 changed, applied: `z.record`
+  takes its key schema (22 sites), `ZodError.errors` is `.issues` (5), a form
+  whose schema carries defaults types its input and output apart. And one
+  change no test would have caught: zod 4's `.uuid()` checks the RFC version
+  bits and refuses ids the baseline seeds into every database
+  (`aaaaaaa1-0000-0000-0000-000000000001`, `11111111-…`, `…00c0de`) — all 70
+  id checks use `z.guid()`, zod 3's rule exactly, and the guard
+  `ids-are-guids` keeps the strict form out. `npm audit --omit=dev`: 4
+  moderate left (react-router 7, satori under @vercel/og).
+
+- **Production dependencies without a known high or critical advisory but two.**
+  `npm audit --omit=dev` went from 18 (1 critical, 7 high) to 5 (1 high, 4
+  moderate). `vitest` and `jsdom` were in `dependencies` and dragged the whole
+  vite / esbuild / rollup tool chain into the production tree — they are
+  `devDependencies` now, and the critical one left with them. `pdfjs-dist` 5 → 6
+  (arbitrary JavaScript on opening a malicious PDF; the chat attachment reader,
+  text extraction proved on a two-page PDF), `react-router-dom` 6.30.6, and
+  patched copies of `lodash`, `ws`, `yaml`, `picomatch`, `fflate` and
+  `postcss-selector-parser` pinned through `overrides`. Left, each its own
+  change: `zod` 4 (high; 62 files), `react-router` 7 (moderate; a router major),
+  and `satori` under `@vercel/og` — 1.0.3 requires `fs` in its edge build, which
+  the edge runtime does not have, so the OG cards stay on 0.6.8 until a release
+  that runs there.
+
+- **The method that should have caught it, repaired.** The weekly security
+  scan had been red since its first run (2026-10-26) on `npm audit`, before the
+  guardrails step ever ran, and nothing watched the workflow; the five tool
+  functions sat in the public-functions guard's known-debt list for 40 days
+  with a green badge beside them. Now the scan is two jobs (advisories and
+  guardrails — one never hides the other), the guardrails job runs EVERY
+  guardrail test instead of a hand list of nine (40 security-shaped guards were
+  outside it), and each job that fails opens or updates one issue (label
+  `security-red`) and closes it when green. The known-debt list carries a
+  clock: a name may stay `KNOWN_UNGATED` for 60 days, then the guard is red with
+  the two ways out named — gate it or prove it visitor-facing by design. A
+  CodeQL workflow (javascript-typescript, security-extended) runs on every PR
+  and weekly; it is one more reader, not the method — Deno's request sources
+  are not modelled there, which is why the repo's own guards exist.
+- **Outbound URLs are judged before they are fetched (SSRF, CWE-918).** An
+  independent researcher (Riddhish Lichade) reported that `extract-pdf-text`,
+  `web-scrape` and `browser-fetch` were reachable without a caller check and
+  fetched a caller-supplied URL as given, returning the body — and an edge
+  function runs inside the project's network, where `SUPABASE_URL` is the
+  internal gateway on a self-hosted instance. Confirmed on a local stack: the
+  runtime fetched `http://kong:8000/rest/v1/` with a 200. Now one rule,
+  `_shared/net/outbound-url.ts`: http(s) only, no credentials, no single-label
+  or local hostname, every resolved address outside the private, loopback,
+  link-local, CGNAT, multicast and reserved ranges (IPv4 and IPv6, mapped forms
+  included), redirects followed by hand and re-judged, at most five; a name that
+  cannot be resolved is refused (`URL_NOT_ALLOWED`). Applied at every
+  content-URL sink: the web layer's reader (so Firecrawl and Jina never read a
+  private target on our behalf either), web-scrape's sitemap and site detection,
+  extract-pdf-text, browser-fetch, process-image, the image and résumé
+  handlers, media import from URL, site-scrape and migrate-page. The five tool
+  functions on paid keys (`web-scrape`, `browser-fetch`, `web-search`,
+  `extract-pdf-text`, `process-image`) now verify their caller
+  (`requireServiceOrStaff`: the service key or a staff session) and left the
+  public-functions ratchet. An admin's own configured endpoints (webhooks, A2A
+  peers, a local STT server) are not judged — they are the operator's network by
+  design; `OUTBOUND_FETCH_ALLOW_PRIVATE=true` lifts the address check for an
+  intranet deployment. Guard `outbound-urls-are-public` holds the rule and scans
+  every `fetch` of a caller-URL identifier. `SECURITY.md` is new.
+### Changed
+
+- **agent-execute's pipeline is importable.** The 20 500-line executor moved
+  from `agent-execute/index.ts` to `_shared/execute/core.ts` as
+  `handleAgentExecute(req)`, byte-identical but for the import prefixes and the
+  wrapper; `index.ts` is the HTTP door, `serve(handleAgentExecute)`. Nothing
+  behaves differently. It is the first step toward running a skill in-process
+  from the ReAct loop, the gateway and the dispatchers instead of over an HTTP
+  hop inside the same project (one invocation per tool call, not two; one auth
+  gate, not two). The 169 guards, scripts and docs that read the pipeline's
+  source read the new path; the edge type-check baseline carries the file under
+  its new name.
+- **The executor runs in-process for FlowPilot and the gateway.** The step
+  after the move: the core answers `executeSkillRequest(body, auth)` →
+  `{ status, body }` instead of `handleAgentExecute(req)` → `Response`, and
+  the HTTP door keeps only what the wire needs (the auth header, CORS, the
+  `async: true` handoff). The request contract is `_shared/execute/types.ts`
+  (no imports). The MCP
+  gateway's `executeSkill` calls it directly, and the ReAct loop runs it
+  through `ReasonConfig.runSkill`, which the heartbeat, workspace-chat and
+  agent-operate pass, instead of `fetch(.../functions/v1/agent-execute)`:
+  one fewer edge invocation per tool call (a heartbeat with ten tool calls
+  was eleven invocations on a 500K/month budget), no second auth gate, the
+  JSON once. Measured on a local stack (`browse_blog`, n=40): through the
+  gateway p50 68 ms before, 59 ms after — the hop's ~10 ms gone; direct
+  unchanged at ~20 ms; what remains above direct is the gateway's own
+  per-call work (key lookup, catalog). Behaviour is a move,
+  not a change — the request still takes one JSON round trip at the door, so
+  a handler never mutates the caller's own arguments. The dispatchers that
+  rely on `async: true` and the other HTTP callers are unchanged. The 165
+  guards that read the executor as text read the core.
+
+### Fixed
+
+- **The gateway pays for its own work once.** `/rest/execute` measured 220 ms
+  where native `tools/call` measured 32 ms for the same skill on a local stack,
+  and the database explained ten of those milliseconds: every REST call and
+  every dispatch tool (`search_skills`, `read_skill`, `execute_skill`) re-read
+  the whole exposed register (650 rows with schemas) to find one name, and the
+  owner filter built a Supabase client per skill — 648 `createClient` calls —
+  before asking whether the owner is an admin. The exposed list is remembered a
+  minute per (groups, peer ceiling) — the same minute the native handler cache
+  gives, and the run is still judged by agent-execute's own gate on every call;
+  one service client per isolate; the admin verdict first and once per filter;
+  a non-admin owner's module verdicts remembered a minute (`gateway-pays-once`
+  guard).
+- **The executor pays for its own statements once.** Measured on a local
+  stack with pg_stat_statements: of a skill call's 5–8 SQL statements, 4–6 were
+  agent-execute's own — the lookup of the whole skill row (`instructions`
+  included), the modules row, FlowPilot's trust RPC, an objectives select on
+  every call though 9 in 10 skills have no objective keywords, and the journal
+  insert; the handler was the minority. Now the lookup names its eight
+  columns, the modules row is read once per call and started beside the lookup,
+  the trust RPC overlaps the module gate, and objective tracking asks the map
+  before the database. One statement fewer on most calls, two serial round
+  trips overlapped; locally −17 % p50 on an RPC read (`executor-round-trips`
+  guard).
 - **Open doors without visitors (security pass).** With the advisor's own
   questions against a local database: the public feedback board's anon write
   policies (the board writes through content-api; the DELETE policy's `true`

@@ -51,8 +51,10 @@ describe('the ReAct loop', () => {
     expect(r).toMatch(/if \(result\?\.retryable !== true\) \{[\s\S]{0,900}break;/);
   });
   it('keeps the body of a non-2xx from agent-execute and never retries it', () => {
+    // In-process since 2026-11-07: the outcome's body IS the envelope; the HTTP fallback parses its text.
+    expect(r).toMatch(/return failed\(out\.status, out\.body && typeof out\.body === 'object' && !Array\.isArray\(out\.body\)/);
     expect(r).toMatch(/let parsed: Record<string, unknown> = \{\};[\s\S]{0,200}JSON\.parse\(errText\)/);
-    expect(r).toMatch(/http_status: response\.status,\s*retryable: false,/);
+    expect(r).toMatch(/http_status: status,\s*retryable: false,/);
   });
   it('a pending approval or a staged operation is not a success', () => {
     expect(r).toMatch(/status: failed \? 'failed' : refused \? 'refused' : pending \? 'pending' : 'success'/);

@@ -268,7 +268,7 @@ export async function recordIntegrationHealth(
 //        "innan jag skickar nyhetsbrevet — Resend har inte loggat en leverans
 //         på tre dagar, vill du att jag kollar först?"
 //
-// VAR KROKEN SITTER: i `agent-execute/index.ts`, i förgrinden precis före
+// VAR KROKEN SITTER: i `_shared/execute/core.ts` (exekutorns pipeline), i förgrinden precis före
 // dispatch — bredvid staging-grinden (~rad 585-640), FÖRE den. En
 // beroende-preflight: skill → vilka integrationer den hänger på → läs
 // `integration_health` → felar någon av dem, returnera en BOUNCE, inte en

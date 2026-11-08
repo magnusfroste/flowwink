@@ -221,7 +221,7 @@ describe('the classification lives in data, not in the engine', () => {
 
   it('the report handler asks the map instead of filtering by account type alone', () => {
     const index = readFileSync(
-      join(process.cwd(), 'supabase/functions/agent-execute/index.ts'),
+      join(process.cwd(), 'supabase/functions/_shared/execute/core.ts'),
       'utf8',
     );
     expect(index).toMatch(/loadStatementClassification\(supabase\)/);

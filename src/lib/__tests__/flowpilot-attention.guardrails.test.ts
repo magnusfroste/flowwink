@@ -11,7 +11,7 @@ const read = (p: string) => readFileSync(join(root, p), 'utf8');
 
 describe("'notify' means someone is told", () => {
   it('agent-execute marks a notify run that did something', () => {
-    const src = read('supabase/functions/agent-execute/index.ts');
+    const src = read('supabase/functions/_shared/execute/core.ts');
     expect(src).toMatch(/trustLevel === 'notify' && !handlerFailed && !handlerRefused && !bypassApproval \? \{ log_type: 'notify' \}/);
     expect(src).toMatch(/\.\.\.\(activity\.log_type \? \{ log_type: activity\.log_type \} : \{\}\)/);
   });

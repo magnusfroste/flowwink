@@ -107,7 +107,7 @@ describe('Retrieval Engine confidentiality guardrails', () => {
     for (const surface of [
       'supabase/functions/chat-completion/index.ts',
       'supabase/functions/workspace-chat/index.ts',
-      'supabase/functions/agent-execute/index.ts',
+      'supabase/functions/_shared/execute/core.ts',
     ]) {
       expect(read(surface), `${surface} must not use retrieveVendorDocs`).not.toContain('retrieveVendorDocs');
     }

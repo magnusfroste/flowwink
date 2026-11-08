@@ -11,7 +11,7 @@ const read = (p: string) => readFileSync(join(process.cwd(), p), 'utf8');
  * calendar. A job's verdict is read against ITS schedule, in the answer.
  */
 describe('manage_automations list — a job is judged by its schedule, not the calendar', () => {
-  const src = read('supabase/functions/agent-execute/index.ts');
+  const src = read('supabase/functions/_shared/execute/core.ts');
   it('returns the run evidence and a state per automation', () => {
     expect(src).toMatch(/select\('id, name, description, trigger_type, trigger_config, skill_name, enabled, executor, created_at, last_triggered_at, next_run_at, last_work_at, run_count, idle_run_count, last_error'\)/);
     expect(src).toMatch(/const state = !r\.enabled \? 'disabled'/);

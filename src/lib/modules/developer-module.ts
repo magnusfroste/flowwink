@@ -4,7 +4,7 @@ import type { SkillSeed } from '@/lib/module-bootstrap';
 
 const inputSchema = z.object({
   action: z.enum(['test_api', 'test_webhook', 'generate_mock']),
-  payload: z.record(z.unknown()).optional(),
+  payload: z.record(z.string(), z.unknown()).optional(),
 });
 
 const outputSchema = z.object({

@@ -29,7 +29,7 @@ import * as modules from '@/lib/modules';
 
 const FUNCTIONS_DIR = join(process.cwd(), 'supabase', 'functions');
 const AGENT_EXECUTE_SRC = readFileSync(
-  join(FUNCTIONS_DIR, 'agent-execute', 'index.ts'),
+  join(FUNCTIONS_DIR, '_shared', 'execute', 'core.ts'),
   'utf-8',
 );
 const AI_TASKS_SRC = readFileSync(
@@ -106,7 +106,7 @@ describe('Skill handler integrity guardrails', () => {
             `table is not in agent-execute's GENERIC_CRUD_TABLES allowlist, ` +
             `TABLE_ALIASES, or an explicit switch case — ` +
             `every call returns "Generic CRUD is not enabled". Add '${table}' ` +
-            `to the allowlist or add a case in supabase/functions/agent-execute/index.ts.`,
+            `to the allowlist or add a case in supabase/functions/_shared/execute/core.ts.`,
         ).toBe(true);
       });
     }

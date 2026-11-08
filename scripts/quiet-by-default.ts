@@ -48,7 +48,21 @@ async function counts(c: Client): Promise<Counts> {
   };
 }
 
+// A worker that fails to BOOT is retried: the edge runtime builds the module
+// graph on the first request and fetches every remote import (esm.sh types
+// included) then — on 2026-11-08 the night's run went red because esm.sh
+// refused one stream mid-graph. A boot error in the code itself fails every
+// attempt and stays red; a refused download does not repeat.
 async function call(path: string, body: unknown): Promise<{ status: number; json: Record<string, unknown> }> {
+  for (let attempt = 1; ; attempt++) {
+    const res = await callOnce(path, body);
+    if (res.json.code !== 'BOOT_ERROR' || attempt >= 4) return res;
+    notes.push(`${path}: worker failed to boot (attempt ${attempt}), retrying`);
+    await new Promise((r) => setTimeout(r, 2000 * attempt));
+  }
+}
+
+async function callOnce(path: string, body: unknown): Promise<{ status: number; json: Record<string, unknown> }> {
   const r = await fetch(`${FN}/${path}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${KEY}` },

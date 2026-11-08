@@ -110,7 +110,7 @@ describe('vendor documentation never reaches a customer-facing surface', () => {
     // noise in the results and embeddings the customer paid for without
     // asking — the /docs page has its own search (docs-chat) for the
     // legitimate case. Not a secrecy rule: the docs are public on GitHub.
-    const src = codeOnly(join(ROOT, 'supabase/functions/agent-execute/index.ts'));
+    const src = codeOnly(join(ROOT, 'supabase/functions/_shared/execute/core.ts'));
     const list = src.match(/const SEARCHABLE_KNOWLEDGE_SOURCES = \[[^\]]*\]/)?.[0] ?? '';
     expect(list, 'SEARCHABLE_KNOWLEDGE_SOURCES must exist').not.toBe('');
     expect(list).not.toContain('docs_pages');

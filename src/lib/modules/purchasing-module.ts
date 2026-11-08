@@ -11,10 +11,10 @@ import { getActivePack } from '@/lib/locale-packs';
 
 const purchasingInputSchema = z.object({
   action: z.enum(['create_po', 'list_pos', 'list_vendors', 'get_vendor']),
-  vendor_id: z.string().uuid().optional(),
-  po_id: z.string().uuid().optional(),
+  vendor_id: z.guid().optional(),
+  po_id: z.guid().optional(),
   lines: z.array(z.object({
-    product_id: z.string().uuid(),
+    product_id: z.guid(),
     quantity: z.number().int().positive(),
     unit_cost_cents: z.number().int(),
   })).optional(),

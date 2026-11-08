@@ -60,7 +60,7 @@ export function LiveSupportDashboardWidget() {
           <CardDescription>Human handoff and teammate status</CardDescription>
         </div>
         <Button asChild size="sm" variant="ghost">
-          <Link to="/admin/support">
+          <Link to="/admin/live-support">
             View All
             <ArrowRight className="h-4 w-4 ml-1" />
           </Link>
@@ -141,7 +141,7 @@ export function LiveSupportDashboardWidget() {
             {/* Waiting Conversations Alert */}
             {pendingConversations.length > 0 && (
               <Link 
-                to="/admin/support"
+                to="/admin/live-support"
                 className="flex items-center gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/20 transition-colors"
               >
                 <Clock className="h-4 w-4 text-amber-500" />

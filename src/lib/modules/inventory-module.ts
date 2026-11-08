@@ -6,7 +6,7 @@ import { z } from 'zod';
 
 const inventoryInputSchema = z.object({
   action: z.enum(['check_stock', 'list_low_stock', 'get_movements']),
-  product_id: z.string().uuid().optional(),
+  product_id: z.guid().optional(),
   threshold: z.number().int().optional(),
 });
 

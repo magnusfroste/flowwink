@@ -64,10 +64,23 @@ interface Product {
   name: string;
   description: string | null;
   type: "one_time" | "recurring";
+  /** A recurring product's period: 'month' | 'year' (null/absent → month). */
+  billing_interval?: string | null;
   price_cents: number;
   currency: string;
   image_url: string | null;
   stripe_price_id: string | null;
+}
+
+/**
+ * The Stripe interval a recurring product is billed on — the product's own
+ * billing_interval, never assumed. Until 2026-11-07 every recurring price was
+ * created with interval "month", so a product priced per year was charged its
+ * yearly price every month (src/lib/price-period.ts holds the same rule for
+ * the storefront).
+ */
+function stripeInterval(product: Product): "month" | "year" {
+  return product.billing_interval === "year" ? "year" : "month";
 }
 
 interface Variant {
@@ -529,7 +542,7 @@ serve(async (req: Request) => {
     const productIds = items.map((item) => item.productId);
     const { data: products, error: productsError } = await supabase
       .from("products")
-      .select("id, name, description, type, price_cents, currency, image_url, stripe_price_id")
+      .select("id, name, description, type, billing_interval, price_cents, currency, image_url, stripe_price_id")
       .in("id", productIds);
 
     if (productsError) {
@@ -590,7 +603,7 @@ serve(async (req: Request) => {
           },
         };
         if (product.type === "recurring") {
-          priceData.recurring = { interval: "month" };
+          priceData.recurring = { interval: stripeInterval(product) };
         }
         lineItems.push({ price_data: priceData, quantity: item.quantity });
         continue;
@@ -601,6 +614,26 @@ serve(async (req: Request) => {
       item.priceCents = product.price_cents;
 
       let stripePriceId = product.stripe_price_id;
+
+      // A stored price of a recurring product must bill on the product's own
+      // period. Prices created before 2026-11-07 were all monthly, so a yearly
+      // product would keep charging its yearly price every month. A price
+      // whose interval does not match (or that cannot be read) is replaced;
+      // the old one stays in Stripe for the subscriptions already on it.
+      if (stripePriceId && product.type === "recurring") {
+        try {
+          const stored = await stripe.prices.retrieve(stripePriceId);
+          if (stored.recurring?.interval !== stripeInterval(product)) {
+            logStep("Stored Stripe price bills on the wrong period — replacing it", {
+              productId: product.id, stored: stored.recurring?.interval ?? "one_time", want: stripeInterval(product),
+            });
+            stripePriceId = null;
+          }
+        } catch (e) {
+          logStep("Stored Stripe price unreadable — replacing it", { productId: product.id, error: (e as Error).message });
+          stripePriceId = null;
+        }
+      }
 
       // If no Stripe price ID, create product and price in Stripe
       if (!stripePriceId) {
@@ -626,7 +659,7 @@ serve(async (req: Request) => {
         };
 
         if (product.type === "recurring") {
-          priceData.recurring = { interval: "month" };
+          priceData.recurring = { interval: stripeInterval(product) };
         }
 
         const stripePrice = await stripe.prices.create(priceData);

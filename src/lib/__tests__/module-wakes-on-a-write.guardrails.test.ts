@@ -15,7 +15,7 @@ import {
   moduleWakeNote,
 } from '../../../supabase/functions/_shared/modules/module-wake';
 
-const AGENT_EXECUTE = readFileSync(join(process.cwd(), 'supabase/functions/agent-execute/index.ts'), 'utf8');
+const AGENT_EXECUTE = readFileSync(join(process.cwd(), 'supabase/functions/_shared/execute/core.ts'), 'utf8');
 
 describe('reads never wake a module', () => {
   it.each([

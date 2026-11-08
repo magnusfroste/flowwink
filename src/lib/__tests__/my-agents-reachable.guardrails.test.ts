@@ -52,7 +52,7 @@ describe('one owner-module table for every surface that offers or runs a skill',
   });
 
   it('agent-execute, the gateway and workspace-chat all read it — nobody keeps a private copy', () => {
-    for (const f of ['supabase/functions/agent-execute/index.ts', 'supabase/functions/mcp-server/index.ts', 'supabase/functions/workspace-chat/index.ts']) {
+    for (const f of ['supabase/functions/_shared/execute/core.ts', 'supabase/functions/mcp-server/index.ts', 'supabase/functions/workspace-chat/index.ts']) {
       expect(read(f), f).toMatch(/_shared\/skills\/owner-module\.ts/);
       expect(read(f), f).not.toMatch(/const SKILL_OWNER_MODULE_OVERRIDES/);
       expect(read(f), f).not.toMatch(/from ["']\.\.\/_shared\/skills\/skill-modules\.ts["']/);

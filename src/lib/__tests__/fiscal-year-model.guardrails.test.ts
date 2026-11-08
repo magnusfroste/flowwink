@@ -36,9 +36,10 @@ describe('the fiscal year has one model', () => {
   });
 
   it('agent-execute asks the database which period a date is in', () => {
-    const src = read('supabase/functions/agent-execute/index.ts');
+    const src = read('supabase/functions/_shared/execute/core.ts');
     expect(src).toMatch(/rpc\('period_status_for_date'/);
-    expect(src).toMatch(/rpc\('fiscal_year_of'/);
+    // The report's fiscal year goes through the shared opening-balance helper.
+    expect(src + read('supabase/functions/_shared/accounting/opening-balance.ts')).toMatch(/rpc\('fiscal_year_of'/);
     expect(src).not.toMatch(/\.eq\('fiscal_year', d\.getFullYear\(\)\)/);
   });
 });

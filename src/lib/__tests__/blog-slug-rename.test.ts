@@ -126,7 +126,7 @@ describe('redirectRenamedPost — the 301 is the platform\'s write', () => {
 });
 
 describe('the handler: new_slug is declared, checked before the write, redirected after it', () => {
-  const exec = readFileSync(join(process.cwd(), 'supabase/functions/agent-execute/index.ts'), 'utf8');
+  const exec = readFileSync(join(process.cwd(), 'supabase/functions/_shared/execute/core.ts'), 'utf8');
   const start = exec.indexOf('async function executeBlogPostsManagement(');
   const handler = exec.slice(start, exec.indexOf("if (action === 'publish')", start));
 

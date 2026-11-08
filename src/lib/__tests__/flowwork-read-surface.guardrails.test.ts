@@ -157,7 +157,7 @@ describe('staged writes: propose, never execute', () => {
     const { readFileSync } = await import('fs');
     const { join } = await import('path');
     const src = readFileSync(
-      join(__dirname, '../../../supabase/functions/agent-execute/index.ts'),
+      join(__dirname, '../../../supabase/functions/_shared/execute/core.ts'),
       'utf8',
     );
     expect(src).toMatch(/\(body as any\)\.force_staged === true/);

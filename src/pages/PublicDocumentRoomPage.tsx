@@ -17,7 +17,8 @@ import { Button } from '@/components/ui/button';
 import { useUiText } from '@/lib/ui-text';
 import { useCustomerFormat } from '@/hooks/useCustomerFormat';
 import { documentRoomFileUrl } from '@/hooks/useDocumentRooms';
-import { FileText, Download, Eye, DoorClosed } from 'lucide-react';
+import { FileText, Download, Eye, DoorClosed, Check } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 interface RoomDocument {
   id: string;
@@ -28,12 +29,17 @@ interface RoomDocument {
   folder: string | null;
   description: string | null;
   updated_at: string;
+  added_at: string;
+  /** This member has viewed or downloaded it before. */
+  seen: boolean;
 }
 
 interface OpenedRoom {
   ok: true;
   room: { name: string; description: string | null };
   member: { name: string; permission: 'view' | 'download'; expires_at: string | null };
+  /** The visit before this one — what "new" is measured against; null on the first visit. */
+  last_visit_at: string | null;
   documents: RoomDocument[];
 }
 
@@ -80,13 +86,16 @@ export default function PublicDocumentRoomPage() {
     );
   }
 
-  const { room, member, documents } = opened;
+  const { room, member, documents, last_visit_at } = opened;
   const canDownload = member.permission === 'download';
+  const isNew = (d: RoomDocument) => !!last_visit_at && d.added_at > last_visit_at;
   const folders = new Map<string, RoomDocument[]>();
   for (const d of documents) {
     const key = d.folder ?? '';
     folders.set(key, [...(folders.get(key) ?? []), d]);
   }
+  const newCount = documents.filter(isNew).length;
+  const folderId = (name: string) => `f-${name.replace(/[^\p{L}\p{N}]+/gu, '-').toLowerCase() || 'other'}`;
 
   return (
     <div className="min-h-screen bg-background">
@@ -105,20 +114,43 @@ export default function PublicDocumentRoomPage() {
             {canDownload ? t('room.mayDownload', 'you may view and download') : t('room.mayView', 'you may view in the browser')}
             {member.expires_at && <> · {t('room.until', 'until')} {formatDate(member.expires_at)}</>}
           </p>
+          <p className="text-sm text-muted-foreground">
+            {last_visit_at
+              ? <>{t('room.lastVisit', 'Your last visit')}: {formatDate(last_visit_at)}{newCount > 0 && <> · <span className="font-medium text-foreground">{newCount} {t('room.newSince', 'new since then')}</span></>}</>
+              : t('room.firstVisit', 'Your first visit — everything here is new to you.')}
+          </p>
         </header>
+
+        {folders.size > 1 && (
+          <nav aria-label={t('room.contents', 'Contents')} className="rounded-lg border p-4">
+            <p className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">{t('room.contents', 'Contents')}</p>
+            <ol className="space-y-1 text-sm">
+              {[...folders.entries()].map(([folder, docs]) => (
+                <li key={folder || '_'}>
+                  <a href={`#${folderId(folder)}`} className="hover:underline">{folder || t('room.otherFolder', 'Other documents')}</a>
+                  <span className="text-muted-foreground"> · {docs.length}</span>
+                </li>
+              ))}
+            </ol>
+          </nav>
+        )}
 
         {!documents.length ? (
           <Card><CardContent className="py-10 text-center text-muted-foreground">{t('room.empty', 'Nothing has been placed in this room yet.')}</CardContent></Card>
         ) : (
           [...folders.entries()].map(([folder, docs]) => (
-            <section key={folder || '_'} className="space-y-2">
+            <section key={folder || '_'} id={folderId(folder)} className="space-y-2 scroll-mt-4">
               {folder && <h2 className="text-sm font-medium text-muted-foreground">{folder}</h2>}
               <ul className="divide-y rounded-lg border">
                 {docs.map((d) => (
                   <li key={d.id} className="flex flex-col gap-2 p-3 sm:flex-row sm:items-center sm:gap-4">
                     <FileText className="hidden h-5 w-5 shrink-0 text-muted-foreground sm:block" />
                     <div className="min-w-0 flex-1">
-                      <p className="font-medium">{d.title}</p>
+                      <p className="flex items-center gap-2 font-medium">
+                        {d.title}
+                        {isNew(d) && <Badge className="text-[10px]">{t('room.new', 'New')}</Badge>}
+                        {d.seen && <Check className="h-3.5 w-3.5 text-muted-foreground" aria-label={t('room.seenByYou', 'You have opened this')} />}
+                      </p>
                       <p className="text-xs text-muted-foreground">
                         {d.file_name}{d.file_size_bytes ? ` · ${formatSize(d.file_size_bytes)}` : ''} · {formatDate(d.updated_at)}
                       </p>

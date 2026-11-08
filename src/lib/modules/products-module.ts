@@ -4,6 +4,7 @@ import type { Json } from '@/integrations/supabase/types';
 import { triggerWebhook } from '@/lib/webhook-utils';
 import type { SkillSeed } from '@/lib/module-bootstrap';
 import { defineModule } from '@/lib/module-def';
+import type { AutomationSeed } from '@/lib/module-bootstrap';
 import {
   ProductModuleInput,
   ProductModuleOutput,
@@ -661,7 +662,7 @@ Checks the current status of an order via the order-status edge function.
   },
   {
     name: 'send_invoice_for_order',
-    description: 'Convert an existing order into a sent invoice and email the customer a link. Closes the quote-to-cash loop. Use when: order is fulfilled or ready to bill, "fakturera order X", "send invoice for order". NOT for: creating manual invoices (use manage_invoice), draft invoices only, or invoicing time entries (use invoice_from_timesheets). Idempotent on invoices.order_id — an order that already has an invoice reuses it and reports reused_existing_invoice, so calling twice never creates a second receivable.',
+    description: 'Convert an existing order into a sent invoice and email the customer a link. Closes the quote-to-cash loop. Use when: order is fulfilled or ready to bill, "fakturera order X", "send invoice for order". NOT for: creating manual invoices (use manage_invoice), draft invoices only, or invoicing time entries (use invoice_from_timesheets). Idempotent on invoices.order_id — an order that already has an invoice reuses it and reports reused_existing_invoice, so calling twice never creates a second receivable. The invoice total is the ORDER total (shop prices include VAT; the net and VAT are split out of it the way the books split the paid order), and a paid order\'s invoice is born paid — a receipt, never a second request to pay.',
     category: 'commerce',
     handler: 'module:orders',
     scope: 'internal',
@@ -686,7 +687,7 @@ Checks the current status of an order via the order-status edge function.
             },
             tax_rate: {
               type: 'number',
-              description: "Tax rate as decimal e.g. 0.25 for 25%. Omit it: an order converted from a quote carries the accepted rate on the order (metadata.tax_rate) and it is used automatically; otherwise 0.25.",
+              description: "VAT rate as decimal e.g. 0.25, used to split every line's gross price into net + VAT. Omit it: each line's own rate is used (the product's, else the shop default), and an order converted from a quote keeps its accepted amounts. The invoice total is always the order total.",
             },
             payment_terms: {
               type: 'string',
@@ -700,11 +701,15 @@ Checks the current status of an order via the order-status edge function.
               type: 'boolean',
               description: 'If true, returns preview totals without creating the invoice or sending email',
             },
+            receipt: {
+              type: 'boolean',
+              description: 'The order.paid automation\'s call: create and mail the receipt only if the order is paid, has no invoice yet and Invoicing is on; otherwise a refusal and nothing is sent',
+            },
           },
         },
       },
     },
-    instructions: 'Builds an invoice from order_items (qty × price_cents), applies the tax rate (explicit tax_rate → the order\'s own metadata.tax_rate when it came from a quote → 0.25), marks status=sent, and emails the customer a link. IDEMPOTENCY: keyed on the invoices.order_id column — one invoice per order. It used to key on the text "order:<id>" inside invoices.notes, which an edited note silently defeated: the next call issued a SECOND live invoice for an already-paid order. Pre-migration invoices are still found by the old note and are repaired to use the column. The reply carries reused_existing_invoice — if it is true, no new invoice was created and total_cents is the existing document\'s. Use dry_run=true to preview totals (and whether an invoice already exists) before sending. Logs invoice_sent to audit_logs.\n\nREAD THE RESULT, do not assume it: `invoice_created` and `sent` are two different facts. `sent:false` means the EMAIL did not leave — either no email provider is configured (email.simulated) or the outbound allowlist withheld the recipient (email.blocked_by_allowlist). The invoice still exists and is marked sent in the ledger. When sent is false, tell the user the invoice was created but NOT emailed, and say why from the `email` object.',
+    instructions: 'Builds an invoice from order_items the way book_order_paid booked the order: line prices are GROSS (incl. VAT), each line\'s net is split out at its own rate (order_line_vat_rate), shipping at the default rate, and the invoice total is the order total. An order from a quote keeps its accepted net lines and amounts (metadata.total_includes_tax). A paid or completed order\'s invoice is born status=paid (a receipt); otherwise status=sent. Then the customer is emailed a link. IDEMPOTENCY: keyed on the invoices.order_id column — one live invoice per order; a cancelled invoice does not count, so a wrongly issued invoice is cancelled with manage_invoice and the order invoiced again. It used to key on the text "order:<id>" inside invoices.notes, which an edited note silently defeated: the next call issued a SECOND live invoice for an already-paid order. Pre-migration invoices are still found by the old note and are repaired to use the column. The reply carries reused_existing_invoice — if it is true, no new invoice was created and total_cents is the existing document\'s. Use dry_run=true to preview totals (and whether an invoice already exists) before sending. Logs invoice_sent to audit_logs.\n\nREAD THE RESULT, do not assume it: `invoice_created` and `sent` are two different facts. `sent:false` means the EMAIL did not leave — either no email provider is configured (email.simulated) or the outbound allowlist withheld the recipient (email.blocked_by_allowlist). The invoice still exists and is marked sent in the ledger. When sent is false, tell the user the invoice was created but NOT emailed, and say why from the `email` object.',
   },
   {
     name: 'fulfill_order_line',
@@ -782,6 +787,19 @@ Manages discount codes for the storefront checkout (discount_codes table).
   },
 ];
 
+// A paid order's receipt is its paid invoice, sent when the money arrives.
+// The order.paid payload is { id, data }.
+const PRODUCTS_AUTOMATIONS: AutomationSeed[] = [
+  {
+    name: 'Receipt on paid order',
+    description: 'When an order is paid, create its paid invoice and email the customer the receipt in the language they ordered in. Switch this off if receipts are issued elsewhere.',
+    trigger_type: 'event',
+    trigger_config: { event: 'order.paid' },
+    skill_name: 'send_invoice_for_order',
+    skill_arguments: { order_id: '{{event.payload.id}}', receipt: true },
+  },
+];
+
 export const productsModule = defineModule<ProductModuleInput, ProductModuleOutput>({
   id: 'ecommerce',
   name: 'Products',
@@ -825,6 +843,7 @@ export const productsModule = defineModule<ProductModuleInput, ProductModuleOutp
     ],
   },
   skillSeeds: PRODUCTS_SKILLS,
+  automations: PRODUCTS_AUTOMATIONS,
 
   webhookEvents: [
     { event: 'order.created', description: 'An order was placed' },

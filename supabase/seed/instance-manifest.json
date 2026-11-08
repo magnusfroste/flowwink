@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261107130000",
-      "migrations_count": 740,
+      "migration_head": "20261108090000",
+      "migrations_count": 742,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2965,35 +2965,43 @@
         {
           "version": "20261107130000",
           "name": "oppna-dorrar-utan-besokare"
+        },
+        {
+          "version": "20261107150000",
+          "name": "investerarrummet-vet-vem-som-last-vad"
+        },
+        {
+          "version": "20261108090000",
+          "name": "ub-blir-ib-bara-bryggan-lagras"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:f4b04a91d51d2089c4484cd17ad42010f4c442d5126bc56233f8b07a68417e6c",
+      "seed_hash": "sha256:0c1f7932cc98e38f4a77603dd6535f2e13bd51f5bcf823ef45c267fdb1ff4a14",
       "skill_count": 670,
       "module_count": 70
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:028abdcb748a357228a30aba57a7c5ba3e19d7b26fca4eaae7a00bf9c51f8d69",
+      "shared_hash": "sha256:fb7576b0622dec8fdd0ef2da5f37d1aaeca7fac6e43046d7f898012093c1017c",
       "functions": {
-        "agent-execute": "sha256:e8e22c9680da9886e9abc407b07a49738a23925c3a0be4d0a44ecd7649694a45",
-        "agent-operate": "sha256:9ecfb8b3a76c28526af8c796fdfa0561ebb3b802b65f03275874f93b14369a0c",
-        "ai-task": "sha256:4aefd9f45ede216422b8a75b92c9145f83e4264059194c35be80398be7ed3bef",
+        "agent-execute": "sha256:dc3af0a3c0b1352ff1f61c486023db47a52bbf296625846d77780c5418068663",
+        "agent-operate": "sha256:4320e02dd3e6a0a1706b42dc1905b631c61e6a4cbe3556c701f474c278c89e1a",
+        "ai-task": "sha256:ce3aacdef625bba758f4323da3e49104a1b94a3d3d77d800e89dacd0b803d65e",
         "automation-dispatcher": "sha256:c7862e942bb9fbfcb847d236cd7fece01ad934f354ac038d03f9128e4f2e006a",
         "blog-rss": "sha256:44fac28a8078c06e101df2acac66fbc443542377f7ccec210a40409d090ba283",
-        "browser-fetch": "sha256:762a956222c98ae99b4a361bec94c3d31fcbde6c0d96512755bd50caefa6d652",
+        "browser-fetch": "sha256:5cc150753321f6b63f40fb68b526c015301e857b00528dd1f44652c2a9429e7f",
         "chat-completion": "sha256:5635ba6e71a402cb44524eb507eb8bba24358db7955ad6bf65efbf138a0acc5a",
         "chat-stt": "sha256:b67dd50ab6cad26f061b911a366607620aca8647977b2be8d4331b2ec51c4aa6",
         "check-secrets": "sha256:f902784792b71f22da5df6bbcf0069e27dfad9315a86e06460dd753ee7ab4b54",
-        "comms-send": "sha256:73358939074e5f153df0a5efe42eae78c49d855583e7e685d4027184ebae9231",
+        "comms-send": "sha256:db4b09447e6870f296d3f6b047ace031ef4f924847a09b4d36258cd1be7158d1",
         "composio-proxy": "sha256:6635c3a91cff990bed5a1e68f160c028e346c5c29d69935f496ac5af45f64b8d",
         "composio-webhook": "sha256:27f17b7198bfbab422931ef1c872da083299e095792e43b98b4154ec79c858ca",
         "consultant-match": "sha256:7f891dad970a77c2a72f7c88224f952ce082d8915ec544727a56cdc6b66a61b9",
         "content-api": "sha256:c10d72fe013be6d14a0c39e3c280aa409a0b18f5f64066728ebbe861c8c8f370",
         "contract-billing-cron": "sha256:1786af36bebaa65cf00555d2728d1af85656eee8e5cd1d843ccea4f9ca8ec3c4",
         "contract-sign": "sha256:f4af280386c03f0d21840d528e450208b682c81324e22780a662512eaea7d41f",
-        "create-checkout": "sha256:69da667fdd9aefd97db35b280a53c597e80c8744a1e8940286347ecd0b77c711",
+        "create-checkout": "sha256:b17c5c0461c1adb8c17b3410929dc7db0ebaf84ec8c443ebf20a589bc97afec9",
         "create-invoice-payment": "sha256:5c2f20b501eaf36fa3f0238fb388eaeec734ef5c03abff875a2aed7a927d4ed3",
         "create-user": "sha256:9f6d84e3e07c734a17b261551e1ca825cf84f4238c74d510c9e23de8b3805a61",
         "customer-signup": "sha256:a28e4a612842ca548e8dc645efdea5d9b16e209ceac2fa97177246d392a07724",
@@ -3005,13 +3013,13 @@
         "dunning-processor": "sha256:2edee2050aa3b0e76564c16a76dfdeaaa7b03bf8df69e71ebb883d402a6d35a8",
         "einvoice": "sha256:75eb9e0e1bf84e5fc7130ce8b782ffffab5ef5ec2c5acda0723a2e74664e0d96",
         "elks46-ingest": "sha256:161d6528fed5b76c7d632e7f7ebf762fc3fea89d678092c42fc7d8ab70a6587f",
-        "email-send": "sha256:07ceee6a8b491605d06ddfe2a0ec1e9cded8d61fe8c880390ccc5741c5618567",
+        "email-send": "sha256:72bbe238ccc89a83b7fdaecb14eb8172e79efb60bd189efdaaaf9a75e95d33d4",
         "email-webhook": "sha256:8934c5e9ceaf373ea9f66eb6e9894b7592b41b703208c7abe67c66144a54d4aa",
         "event-dispatcher": "sha256:daa075ab3ac24df598506a9ed5232426b5dd2a1911cede5a9d432e8de05de5d9",
-        "extract-pdf-text": "sha256:9872c2f09ab05adc07eefc3b03aa8efe921a9dcc702a4b78544fb89109556e28",
+        "extract-pdf-text": "sha256:fb2e1a10f79fb0b150cd547a08fc3b1e11b79c09771f2d13d748c08b4e93f34c",
         "federation-invite-peer": "sha256:475817522c4d1b7a2faed2a0a4fbe03ac5f340479eb246febe0456f3d0596b21",
-        "flowpilot-heartbeat": "sha256:e77e3febc5889f0cb2b2b25569a61725d00f3b726c1ca276a45cc7d5029884cf",
-        "flowpilot-lifecycle": "sha256:e222808bb0bc59486a4a222f70edc7b4804adc6656cf277d7fca2f63f9be7be8",
+        "flowpilot-heartbeat": "sha256:d15c8b16bfad937e5da274612502d308d2e5ba3121c7fc207c0f615aebda84b6",
+        "flowpilot-lifecycle": "sha256:31117a5086304c40c97d102f126b355dd0ed5da6d446e4e0da5dc0fc645a5bab",
         "gatewayapi-ingest": "sha256:d6f74c384f0baac936737762d330c470636502afcc9af418b1c43db26134e4fe",
         "generate-invoice-pdf": "sha256:788baea5630795df69dd7b69f4177b12fd1432a061dca2e0bf2cc562fb6ffb2d",
         "get-page": "sha256:3e42751911164c9d6c350b931a4e64a4824166a6bef8d02e526ad378c8f3921b",
@@ -3022,12 +3030,12 @@
         "invite-employee": "sha256:231bbdf7367f710fb487d25101c2ca726a0563e319ca48ec221bed27098146b9",
         "knowledge-indexer": "sha256:9719ea8dfda56ca4fa126907806adef794ae492f44ab6ba9e97884637cb7ba36",
         "llms-txt": "sha256:0a8a132d383590b810617ff9cdcd4893980208233d0c26b65d6c17a80af4f452",
-        "mcp-server": "sha256:a5f4f62b87dad194ab9c6f31173521a43fb02816f960ba043eea6d97bb12d33a",
+        "mcp-server": "sha256:12095a23ba40096b2c1b82ff6ee17bd9abdc8732297c98ff014632fa705fa909",
         "media-optimize": "sha256:ddaa5868b1f154561a900e133ab64c6ffd0ebef9751098b2a42c03684c34d496",
-        "migrate-page": "sha256:1764bd376419d54ac774b07819c65975cba942b847ad53d372584251b1eea9fb",
+        "migrate-page": "sha256:b0b02c434ba4fffd2475d9d2e6abc507b4d6274295d24060594fd1bc9ab4518d",
         "newsletter": "sha256:524490f73afc21291fa4162bf154626eba583bae279b6f79677186b83342896e",
         "openclaw-responses": "sha256:4ad7e760a6dd64626addb30104c7b70fa35df059d3c7dfb96b94d0b6d0218001",
-        "process-image": "sha256:b7a65c7cf8f1b80ec4ae22aec5ab2ec7521ead15ee3f96e08921da90ed41b985",
+        "process-image": "sha256:bf09d628182acb86f5bd2656803bba828ed0897726ac971bbd5597dc4036dcab",
         "process-job-application": "sha256:00dc3927da3901fcad6066cb0b7b965a8cad288733e0c9d4f11519eb41b16856",
         "quote-expiry-reminders": "sha256:2b308da62f53e7c03b3d8477d1ad7ba33fa21fc52b96d192bc69bd28bd9a85a6",
         "quote-pay": "sha256:eac676922cee4e9ebe19650afd1ec708a48c2b3efd8d56d0f77654d21a272c00",
@@ -3050,10 +3058,10 @@
         "twilio-ingest": "sha256:4d6ee5b9c0856a5b0f9a652cd908af2ab657005f9bebf329d902ee2fa2274807",
         "voice-ingest": "sha256:f0de07d9c8bdcccf38835d3d490fdcae5aa1677be63b11203e6349497265a654",
         "voice-recording": "sha256:6c28b70fc05d33375374a380e6a34cc41296ada4aa033dc6fe3825306d3f1bb0",
-        "web-scrape": "sha256:38793eb0e018d01887cbeeeeff5994589aad2601c5ec00a5fbb8907100ebb488",
-        "web-search": "sha256:601bbc6aaaf7f8e02caf32de0e9f3483f159685e420fda50be5f2fbb0eefb2ca",
+        "web-scrape": "sha256:1f3221889b0c278c0934eeb7a1f849a97818ebd2ffe37d9217da33f2b44630fd",
+        "web-search": "sha256:6724b9f96d8c3487597fcf1e3948d043477c85050c7f7d60b7fbbb7a1f978810",
         "webmeet-ice": "sha256:0b8daa42425b9377066f76985be751f4491185d0a17feaee33bf9580c5141365",
-        "workspace-chat": "sha256:c068755f73fb69696b085ce944d161f2433dd9adbd56504dbbeb5d1b773ab1a3"
+        "workspace-chat": "sha256:649bd4b3ab5f77fb76ee1300815b7b5dba5dfd02fd12746efb31009c695ed2e1"
       }
     },
     "frontend": {

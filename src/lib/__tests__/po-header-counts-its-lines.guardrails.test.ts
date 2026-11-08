@@ -9,7 +9,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 
-const exec = readFileSync('supabase/functions/agent-execute/index.ts', 'utf8');
+const exec = readFileSync('supabase/functions/_shared/execute/core.ts', 'utf8');
 const create = exec.slice(exec.indexOf("if (action === 'create' || skillName === 'create_purchase_order') {"));
 const block = create.slice(0, create.indexOf('const poInsert'));
 

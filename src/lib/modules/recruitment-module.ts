@@ -17,7 +17,7 @@ const recruitmentInputSchema = z.object({
     'list_applications',
     'get_pipeline_summary',
   ]),
-  job_id: z.string().uuid().optional(),
+  job_id: z.guid().optional(),
   stage: z.string().optional(),
 });
 

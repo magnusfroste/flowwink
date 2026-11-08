@@ -36,7 +36,7 @@ describe('submit_feedback cadence', () => {
   });
 
   it('submit_feedback judges before it sends, and attended is stamped by the server', () => {
-    const exec = readFileSync(join(__dirname, '../../../supabase/functions/agent-execute/index.ts'), 'utf8');
+    const exec = readFileSync(join(__dirname, '../../../supabase/functions/_shared/execute/core.ts'), 'utf8');
     expect(exec).toMatch(/const refused = judgeFeedback\(sentLog, \{ title, unattended \}\);\s*if \(refused\) return refused;/);
     expect(exec).toMatch(/\(args as Record<string, unknown>\)\._attended = Boolean\(attendedUserId\);/);
   });

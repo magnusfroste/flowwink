@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { fetchPublic } from '../net/outbound-url.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -27,7 +28,7 @@ export async function handler(req: Request): Promise<Response> {
     console.log('Fetching image:', imageUrl);
 
     // Fetch the image
-    const imageResponse = await fetch(imageUrl, {
+    const imageResponse = await fetchPublic(imageUrl, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (compatible; CMSBot/1.0)',
         'Accept': 'image/*',

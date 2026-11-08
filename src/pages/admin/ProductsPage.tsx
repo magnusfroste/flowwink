@@ -32,6 +32,7 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { LoadDemoDataButton } from '@/components/admin/LoadDemoDataButton';
 import { useOpenOnQueryParam } from '@/hooks/useOpenOnQueryParam';
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
+import { pricePeriod } from '@/lib/price-period';
 
 export default function ProductsPage() {
   // Admin view: the business's format and its decimals setting.
@@ -188,8 +189,8 @@ export default function ProductsPage() {
                 <div className="flex items-center gap-6">
                   <div className="text-right">
                     <p className="font-semibold">{formatPrice(product.price_cents, product.currency)}</p>
-                    {product.type === 'recurring' && (
-                      <p className="text-xs text-muted-foreground">/month</p>
+                    {pricePeriod(product) && (
+                      <p className="text-xs text-muted-foreground">/{pricePeriod(product)}</p>
                     )}
                   </div>
                   

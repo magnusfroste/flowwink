@@ -48,4 +48,22 @@ describe('chooseSender', () => {
     expect(s.fromName).toBe('Nordbrygg');
     expect(s.fromEmail).toBe('info@nordbrygg.flowwink.com');
   });
+
+  it("a caller's fallback beats only the placeholder, never the operator's sender", () => {
+    // 2026-11-07, LiteIT on Zoho SMTP: order confirmations forced
+    // `onboarding@resend.dev` and the briefing `flowpilot@flowwink.com` as a
+    // fromOverride over the SMTP card's order@liteit.se — Zoho: "550 5.7.1
+    // Sender is not allowed to relay emails".
+    const fallback = 'LiteIT · FlowPilot <flowpilot@flowwink.com>';
+    expect(chooseSender({
+      active: { fromEmail: 'order@liteit.se', fromName: 'LiteIT' }, router: {}, envFrom: null, fallback,
+    })).toEqual({ fromEmail: 'order@liteit.se', fromName: 'LiteIT', source: 'card' });
+    expect(chooseSender({ active: {}, router: {}, envFrom: 'relay@acme.se', fallback }).source).toBe('env');
+    expect(chooseSender({ active: {}, router: {}, envFrom: null, fallback })).toEqual({
+      fromEmail: 'flowpilot@flowwink.com', fromName: 'LiteIT · FlowPilot', source: 'fallback',
+    });
+    expect(chooseSender({ active: {}, router: {}, envFrom: null, fallback: 'briefing@flowwink.com' })).toMatchObject({
+      fromEmail: 'briefing@flowwink.com', fromName: 'FlowWink', source: 'fallback',
+    });
+  });
 });

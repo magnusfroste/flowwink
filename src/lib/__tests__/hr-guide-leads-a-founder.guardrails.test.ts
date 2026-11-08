@@ -58,7 +58,7 @@ describe('HR guides a founder through a hire', () => {
     expect(seeds.find((s) => s.name === 'hr_process_guide')).toMatchObject({ handler: 'rpc:hr_process_guide', trust_level: 'auto' });
     expect(seeds.find((s) => s.name === 'manage_employment_contract')?.handler).toBe('db:employment_contracts');
     expect(seeds.find((s) => s.name === 'manage_leave_allocation')?.handler).toBe('db:leave_allocations');
-    const exec = readFileSync('supabase/functions/agent-execute/index.ts', 'utf8');
+    const exec = readFileSync('supabase/functions/_shared/execute/core.ts', 'utf8');
     expect(exec).toMatch(/'employment_contracts', 'leave_allocations',/);
   });
 

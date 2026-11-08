@@ -187,7 +187,7 @@ describe('we ship the whole standard, and is_active says who uses it', () => {
 
   it('posting to a dormant account activates it — otherwise it holds a balance nobody can see', () => {
     const handler = readFileSync(
-      resolve(__dirname, '../../../supabase/functions/agent-execute/index.ts'), 'utf-8');
+      resolve(__dirname, '../../../supabase/functions/_shared/execute/core.ts'), 'utf-8');
     expect(handler).toMatch(/Posting to an account activates it/);
     expect(handler).toMatch(/\.update\(\{ is_active: true \}\)\s*\n\s*\.in\('account_code', touched\)/);
   });
@@ -196,7 +196,7 @@ describe('we ship the whole standard, and is_active says who uses it', () => {
     const sync = readFileSync(resolve(__dirname, '../../../scripts/sync-skills.ts'), 'utf-8');
     expect(sync).toMatch(/a\.is_active !== false/);
     const edge = readFileSync(
-      resolve(__dirname, '../../../supabase/functions/agent-execute/index.ts'), 'utf-8');
+      resolve(__dirname, '../../../supabase/functions/_shared/execute/core.ts'), 'utf-8');
     expect(edge).toMatch(/is_active: acc\.is_active !== false/);
   });
 });

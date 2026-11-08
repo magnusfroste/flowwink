@@ -1,3 +1,4 @@
+import { fetchPublic } from './net/outbound-url.ts';
 /**
  * site-scrape — the HTML observation primitives behind site migration.
  *
@@ -475,7 +476,7 @@ export async function fetchSitemap(baseUrl: string): Promise<{ url: string; titl
     
     for (const sitemapUrl of sitemapUrls) {
       try {
-        const response = await fetch(sitemapUrl, { 
+        const response = await fetchPublic(sitemapUrl, { 
           headers: { 'User-Agent': 'FlowPilot-Bot/1.0' },
           signal: AbortSignal.timeout(5000)
         });
@@ -497,7 +498,7 @@ export async function fetchSitemap(baseUrl: string): Promise<{ url: string; titl
           // Fetch first few child sitemaps (limit to avoid timeout)
           for (const childUrl of childSitemaps.slice(0, 3)) {
             try {
-              const childResponse = await fetch(childUrl, { 
+              const childResponse = await fetchPublic(childUrl, { 
                 headers: { 'User-Agent': 'FlowPilot-Bot/1.0' },
                 signal: AbortSignal.timeout(3000)
               });

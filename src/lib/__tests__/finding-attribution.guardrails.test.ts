@@ -1,6 +1,6 @@
 /**
  * Guardrail: finding attribution is derived from the authenticated key, not
- * self-reported (supabase/functions/agent-execute/index.ts, report_finding).
+ * self-reported (supabase/functions/_shared/execute/core.ts, report_finding).
  *
  * OpenClaw's findings landed reported_by=NULL because the handler trusted a
  * `reported_by` arg the agent had to pass itself — and a self-reported
@@ -15,7 +15,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const src = readFileSync(
-  join(__dirname, '../../../supabase/functions/agent-execute/index.ts'),
+  join(__dirname, '../../../supabase/functions/_shared/execute/core.ts'),
   'utf-8',
 );
 

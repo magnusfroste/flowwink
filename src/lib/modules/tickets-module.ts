@@ -11,8 +11,8 @@ const ticketModuleInputSchema = z.object({
   category: z.enum(['bug', 'feature', 'question', 'billing', 'other']).default('other'),
   contact_email: z.string().email().optional(),
   contact_name: z.string().optional(),
-  lead_id: z.string().uuid().optional(),
-  company_id: z.string().uuid().optional(),
+  lead_id: z.guid().optional(),
+  company_id: z.guid().optional(),
   source: z.string().default('manual'),
 });
 

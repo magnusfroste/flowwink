@@ -63,7 +63,7 @@ describe('one surface for the admin and the agent', () => {
   });
 
   it('check_availability passes the person to the one reader', () => {
-    const edge = read('supabase/functions/agent-execute/index.ts');
+    const edge = read('supabase/functions/_shared/execute/core.ts');
     expect(edge).toMatch(/rpc\('booking_free_slots', \{ p_service_id: service_id \?\? null, p_date: date, p_employee_id: employee_id \?\? null \}\)/);
     const check = bookingModule.skillSeeds?.find((s) => s.name === 'check_availability');
     const props = (check?.tool_definition as { function: { parameters: { properties: Record<string, unknown> } } }).function.parameters.properties;

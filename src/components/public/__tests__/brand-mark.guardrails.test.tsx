@@ -84,7 +84,7 @@ describe('BrandMark', () => {
     expect(props.logo_animation.enum).toEqual(['once', 'loop', 'off']);
     expect(seed.instructions).toMatch(/never a header video script in custom_scripts/);
 
-    const ae = readFileSync(join(root, 'supabase/functions/agent-execute/index.ts'), 'utf8');
+    const ae = readFileSync(join(root, 'supabase/functions/_shared/execute/core.ts'), 'utf8');
     expect(ae).toMatch(/videoUrl\('logo_animation_url', logo_animation_url\)/);
     expect(ae).toMatch(/pick\('logo_animation', logo_animation, \['once', 'loop', 'off'\]\)/);
     expect(ae).toMatch(/ct === 'video\/mp4' \|\| ct === 'video\/webm'/);
