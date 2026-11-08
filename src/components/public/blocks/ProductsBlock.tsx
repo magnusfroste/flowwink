@@ -12,6 +12,7 @@ import { ShoppingCart, Plus, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUiText, useUiTextLanguage } from '@/lib/ui-text';
 import { Link } from 'react-router-dom';
+import { usePricePeriodText } from '@/lib/price-period-text';
 
 export interface ProductsBlockData {
   title?: string;
@@ -37,6 +38,7 @@ export function ProductsBlock({ data }: ProductsBlockProps) {
   // in that language, links to /<lang>/shop/<id> (page-translations.md §10).
   const { lang, siteLang } = useUiTextLanguage();
   const t = useUiText();
+  const periodText = usePricePeriodText();
   const listLang = lang && lang !== siteLang ? lang : null;
   const { data: products = [], isLoading } = useProducts({ activeOnly: true, language: listLang, defaultLanguage: siteLang });
   const { data: variantProductIds } = useVariantProductIds();
@@ -234,8 +236,8 @@ export function ProductsBlock({ data }: ProductsBlockProps) {
                     <div className="flex items-center justify-between mt-auto pt-3">
                       <span className="text-xl font-bold">
                         {formatCurrency(product.price_cents, product.currency, { minimumFractionDigits: 0 })}
-                        {product.type === 'recurring' && (
-                          <span className="text-sm font-normal text-muted-foreground">{t('shop.perMonthShort', '/mo')}</span>
+                        {periodText(product, { short: true }) && (
+                          <span className="text-sm font-normal text-muted-foreground">{periodText(product, { short: true })}</span>
                         )}
                       </span>
 

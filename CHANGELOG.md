@@ -8,6 +8,22 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ## [Unreleased]
 
+### Fixed
+
+- **A recurring price says its own period — on the site and at checkout
+  (#941).** `products.billing_interval` (month | year) was set in admin and
+  read by quotes, but every visitor surface printed "/mo" or "/month" for every
+  recurring product, and Stripe checkout created every recurring price with
+  interval `month`. A service contract at 14 900 kr per year read
+  "14 900 kr/mo" on the site and, bought online, was charged 14 900 kr every
+  month. Now one rule (`src/lib/price-period.ts`, `usePricePeriodText`) serves
+  the shop page, the products block, the featured product, the product page and
+  its related products, the pricing page and two admin previews, with `/year` and `/yr`
+  visitor texts beside `/month` and `/mo`; checkout bills on the product's
+  period (`stripeInterval`) and replaces a stored Stripe price whose interval
+  does not match instead of reusing it (subscriptions already on the old price
+  keep it). Guard `price-period-from-the-product` scans every file for the
+  shape `type === 'recurring'` beside a hard-coded month.
 ### Security
 
 - **react-router 7.** `react-router-dom` 6.30 → 7.18 closes the two

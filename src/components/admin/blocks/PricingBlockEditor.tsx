@@ -11,6 +11,7 @@ import { CreditCard, Plus, Trash2, GripVertical, Star, X, Package } from 'lucide
 import { cn } from '@/lib/utils';
 import { useProducts } from '@/hooks/useProducts';
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
+import { pricePeriod } from '@/lib/price-period';
 
 interface PricingBlockEditorProps {
   data: PricingBlockData;
@@ -222,7 +223,7 @@ export function PricingBlockEditor({ data, onChange, isEditing }: PricingBlockEd
                         <span>{p.name}</span>
                         <span className="text-muted-foreground">
                           {formatPrice(p.price_cents, p.currency)}
-                          {p.type === 'recurring' ? '/mo' : ''}
+                          {pricePeriod(p) ? `/${pricePeriod(p)}` : ''}
                         </span>
                       </div>
                     ))
@@ -414,7 +415,7 @@ export function PricingBlockEditor({ data, onChange, isEditing }: PricingBlockEd
                         <SelectItem value="none">No connection (use URL)</SelectItem>
                         {products?.map(p => (
                           <SelectItem key={p.id} value={p.id}>
-                            {p.name} - {formatPrice(p.price_cents, p.currency)}{p.type === 'recurring' ? '/mo' : ''}
+                            {p.name} - {formatPrice(p.price_cents, p.currency)}{pricePeriod(p) ? `/${pricePeriod(p)}` : ''}
                           </SelectItem>
                         ))}
                       </SelectContent>

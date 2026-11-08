@@ -13,6 +13,7 @@ import { Navigate } from 'react-router-dom';
 import { useStorefront } from '@/hooks/useStorefront';
 import { cn } from '@/lib/utils';
 import { useCustomerFormat } from '@/hooks/useCustomerFormat';
+import { usePricePeriodText } from '@/lib/price-period-text';
 
 const features = {
   hosting: [
@@ -36,6 +37,7 @@ const features = {
 export default function PricingPage() {
   const { formatPrice } = useCustomerFormat();
   const { data: products, isLoading } = useProducts({ activeOnly: true });
+  const periodText = usePricePeriodText();
   const { addItem, items } = useCart();
   const { data: seoSettings } = useSeoSettings();
   const { data: brandingSettings } = useBrandingSettings();
@@ -131,7 +133,7 @@ export default function PricingPage() {
                     <CardTitle className="text-2xl font-serif">{hostingProduct.name}</CardTitle>
                     <div className="flex items-baseline gap-1">
                       <span className="text-4xl font-bold">{formatPrice(hostingProduct.price_cents, hostingProduct.currency)}</span>
-                      <span className="text-muted-foreground">/month</span>
+                      <span className="text-muted-foreground">{periodText(hostingProduct)}</span>
                     </div>
                     <CardDescription className="text-base">
                       {hostingProduct.description || 'Everything you need to run your website'}
