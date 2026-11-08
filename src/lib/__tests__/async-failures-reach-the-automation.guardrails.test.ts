@@ -5,11 +5,20 @@ import {
   backgroundErrorText,
   isRunReportTo,
   runOutcomeError,
+  settleRun,
+  STALE_RUN_MS,
+  staleRunErrorText,
+  type RunDb,
 } from '../../../supabase/functions/_shared/execute/run-outcome.ts';
 
 /**
  * Guardrail: a skill that fails in agent-execute's background (async: true)
- * run lands on the automation's last_error.
+ * run lands on the automation's last_error — also when the edge isolate is
+ * shut down before anything could report (2026-10-29: the reply skill died
+ * mid-run, no draft, no reply, no error anywhere). The dispatcher writes an
+ * automation_pending_runs marker before the handoff, the run deletes it when
+ * it answers, and a marker older than every wall clock is swept into
+ * last_error.
  *
  * Live finding (2026-11-02): 'Auto-allocate picking on order paid' failed on
  * every paid order (an unresolved template reached a uuid parameter), but the
@@ -43,6 +52,9 @@ describe('runOutcomeError — one reader of a failed run', () => {
     expect(isRunReportTo({ automation_id: id, event_id: id })).toBe(true);
     expect(isRunReportTo({ automation_id: 'x; drop' })).toBe(false);
     expect(isRunReportTo(null)).toBe(false);
+    expect(isRunReportTo({ automation_id: id, run_id: id })).toBe(true);
+    expect(isRunReportTo({ automation_id: id, run_id: null })).toBe(true);
+    expect(isRunReportTo({ automation_id: id, run_id: "'; delete" })).toBe(false);
     expect(backgroundErrorText('boom', { automation_id: id, event_id: 'e1' })).toBe('boom (background run, event e1)');
     expect(backgroundErrorText('x'.repeat(2000), { automation_id: id }).length).toBeLessThan(1000);
   });
@@ -51,6 +63,78 @@ describe('runOutcomeError — one reader of a failed run', () => {
 // agent-execute's own half (the async branch reads the answer with
 // runOutcomeError and writes agent_automations.last_error) is pinned in
 // executor-in-process.guardrails.test.ts, the wrapper's guard.
+describe('settleRun — the outcome and the marker, idempotent', () => {
+  const id = '0f8fad5b-d9cb-469f-a165-70867728950e';
+  const fakeDb = () => {
+    const writes: Array<[string, string, Record<string, unknown> | null, string]> = [];
+    const db: RunDb = {
+      from: (table) => {
+        const filter = (op: string, values: Record<string, unknown> | null) => {
+          const p = Promise.resolve({ error: null });
+          return Object.assign(p, { eq: (_c: string, v: string) => { writes.push([table, op, values, v]); return p; } });
+        };
+        return { update: (values) => filter('update', values), delete: () => filter('delete', null) };
+      },
+    };
+    return { db, writes };
+  };
+
+  it('a failure writes last_error, then clears the marker; a success only clears it', async () => {
+    const f = fakeDb();
+    await settleRun(f.db, { automation_id: id, event_id: 'e1', run_id: id }, 'boom');
+    expect(f.writes).toEqual([
+      ['agent_automations', 'update', { last_error: 'boom (background run, event e1)' }, id],
+      ['automation_pending_runs', 'delete', null, id],
+    ]);
+    const ok = fakeDb();
+    await settleRun(ok.db, { automation_id: id, run_id: id }, null);
+    expect(ok.writes).toEqual([['automation_pending_runs', 'delete', null, id]]);
+  });
+
+  it('no report_to writes nothing, and a broken client never throws into the run', async () => {
+    const f = fakeDb();
+    await settleRun(f.db, null, 'boom');
+    expect(f.writes).toEqual([]);
+    const broken: RunDb = { from: () => { throw new Error('down'); } };
+    await expect(settleRun(broken, { automation_id: id }, 'boom')).resolves.toBeUndefined();
+  });
+
+  it('a stale marker is past both wall clocks (the handoff and the run, 150 s each) and says so', () => {
+    expect(STALE_RUN_MS).toBeGreaterThanOrEqual(2 * 150_000);
+    expect(staleRunErrorText({ skill_name: 'allocate_picking', event_id: 'e1', started_at: '2026-11-08T22:00:00Z' }))
+      .toMatch(/never answered[\s\S]*allocate_picking[\s\S]*event e1/);
+  });
+});
+
+describe('the dispatcher keeps the marker rail', () => {
+  const d = read('supabase/functions/event-dispatcher/index.ts');
+
+  it('writes the marker before the handoff and hands its id over', () => {
+    const insertAt = d.indexOf('.from("automation_pending_runs")\n            .insert(');
+    const fetchAt = d.indexOf('functions/v1/agent-execute');
+    expect(insertAt, 'no marker insert').toBeGreaterThan(-1);
+    expect(insertAt).toBeLessThan(fetchAt);
+    expect(d).toMatch(/report_to: \{ automation_id: auto\.id, event_id: ev\.id, run_id: runId \}/);
+  });
+
+  it('sweeps markers older than STALE_RUN_MS into last_error, claiming by delete, on every run', () => {
+    const sweepAt = d.indexOf('STALE_RUN_MS');
+    expect(sweepAt).toBeGreaterThan(-1);
+    // Before the early return for an empty batch: a quiet minute still sweeps.
+    expect(sweepAt).toBeLessThan(d.indexOf('if (!events || events.length === 0)'));
+    expect(d).toMatch(/\.from\("automation_pending_runs"\)\s*\.delete\(\)\s*\.lt\("started_at"/);
+    expect(d).toMatch(/last_error: staleRunErrorText\(run\)/);
+  });
+
+  it('the marker table exists, service role only', () => {
+    const dir = join(root, 'supabase/migrations');
+    const sql = readdirSync(dir).filter((f) => f.endsWith('.sql')).map((f) => readFileSync(join(dir, f), 'utf8')).join('\n');
+    expect(sql).toMatch(/CREATE TABLE IF NOT EXISTS public\.automation_pending_runs \([\s\S]*automation_id uuid NOT NULL REFERENCES public\.agent_automations\(id\) ON DELETE CASCADE/);
+    expect(sql).toMatch(/ALTER TABLE public\.automation_pending_runs ENABLE ROW LEVEL SECURITY;/);
+    expect(sql).toMatch(/REVOKE ALL ON public\.automation_pending_runs FROM anon, authenticated;/);
+  });
+});
+
 describe('every async run names the automation its failure belongs to', () => {
   // Discover, don't enumerate: every edge function that hands agent-execute an
   // async run must say which automation the failure belongs to.
@@ -77,7 +161,6 @@ describe('every async run names the automation its failure belongs to', () => {
 
   it('the event-dispatcher reads the outcome with the same reader', () => {
     const d = read('supabase/functions/event-dispatcher/index.ts');
-    expect(d).toMatch(/report_to: \{ automation_id: auto\.id, event_id: ev\.id \}/);
     expect(d).toMatch(/runOutcomeError\(resp\.ok, resp\.status, out\)/);
   });
 });

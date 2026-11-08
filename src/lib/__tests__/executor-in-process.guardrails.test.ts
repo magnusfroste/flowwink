@@ -98,16 +98,20 @@ describe('the executor runs in-process for callers inside the Deno project', () 
     }
   });
 
-  it('the async handoff writes a background failure back to the automation (report_to)', () => {
+  it('a background run settles its outcome on the automation — from either isolate (report_to)', () => {
     // 2026-11-08: the 202 said nothing about the skill, the dispatcher wrote
     // last_error: null, and an automation failing on every event read healthy.
     const branch = fn.slice(fn.indexOf('if (body.async === true) {'), fn.indexOf('const out = await executeSkillRequest('));
-    expect(branch).toMatch(/runOutcomeError\(r\.ok, r\.status, out\)/);
-    expect(branch).toMatch(/from\('agent_automations'\)\s*\.update\(\{ last_error: backgroundErrorText/);
-    // A run that dies without an answer is a failure too.
-    expect(branch).toMatch(/\.catch\(async[\s\S]*recordFailure\(/);
+    // The handoff settles what it hears back, and a run that died without answering …
+    expect(branch).toMatch(/settleRun\(supabase, report, runOutcomeError\(r\.ok, r\.status, out\)\)/);
+    expect(branch).toMatch(/\.catch\(async[\s\S]*settleRun\(supabase, report,/);
+    // … and forwards report_to, so the run settles itself when THIS isolate is gone.
+    expect(branch).toMatch(/JSON\.stringify\(report \? \{ \.\.\.rest, report_to: report \} : rest\)/);
+    const tail = fn.slice(fn.indexOf('const out = await executeSkillRequest('));
+    expect(tail).toMatch(/await settleRun\(supabase, report, runOutcomeError\(/);
+    expect(tail).toMatch(/catch \(err\) \{[\s\S]*await settleRun\(supabase, report,/);
     // Only a service caller may name the automation to write to …
-    expect(branch).toMatch(/isServiceCaller && isRunReportTo\(reportTo\)/);
+    expect(fn).toMatch(/report = isServiceCaller && isRunReportTo\(reportTo\) \? reportTo : null;/);
     // … and report_to is the wire's, never part of the request the core runs.
     expect(fn).toMatch(/const \{ report_to: reportTo, \.\.\.body \}: WireRequest = await req\.json\(\);/);
   });
