@@ -48,7 +48,7 @@ describe('agent Trace read model', () => {
 
   it('the dispatch is wired', () => {
     const ae = read('supabase/functions/_shared/execute/core.ts');
-    expect(ae).toContain("handler === 'internal:get_agent_trace'");
+    expect(ae).toContain("'internal:get_agent_trace': (");
     expect(ae).toContain('executeAgentTrace(supabase');
   });
 });

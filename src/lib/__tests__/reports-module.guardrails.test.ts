@@ -42,7 +42,7 @@ describe('the agent paths', () => {
   });
 
   it('the handler stamps who published and whose roles narrow a read — never from the model\'s args', () => {
-    expect(EXEC).toMatch(/handler === 'internal:reports'[\s\S]{0,200}agent_type, caller_agent_name, attended_user_id: attendedUserId/);
+    expect(EXEC).toMatch(/'internal:reports': [\s\S]{0,200}agent_type, caller_agent_name, attended_user_id: attendedUserId/);
     expect(handlerFn).toMatch(/p_published_by: by, p_published_by_kind: kind/);
     expect(handlerFn).toMatch(/const viewer = ctx\.attended_user_id \?\? null/);
     expect(handlerFn).not.toMatch(/args\.(viewer|published_by|p_viewer)/);

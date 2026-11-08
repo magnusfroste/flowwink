@@ -295,8 +295,8 @@ const COMMENT: PacedComment = {
 
 describe('the write is a locked compare-and-set', () => {
   const index = read('supabase/functions/_shared/execute/core.ts');
-  const start = index.indexOf("handler === 'internal:comment_on_task'");
-  const block = index.slice(start, index.indexOf("} else if (handler === '", start + 50));
+  const start = index.indexOf('async function executeCommentOnTask(');
+  const block = index.slice(start, index.indexOf('\n}\n', start));
   const migration = readdirSync(join(process.cwd(), 'supabase/migrations'))
     .filter((f) => f.endsWith('.sql'))
     .map((f) => read(`supabase/migrations/${f}`))

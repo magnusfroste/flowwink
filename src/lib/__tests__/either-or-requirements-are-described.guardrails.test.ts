@@ -70,7 +70,7 @@ const ae = read('supabase/functions/_shared/execute/core.ts');
 const executors = new Map(
   [...ae.matchAll(/async function (\w+)\([^)]*\)[^{]*\{([\s\S]*?)\n\}/g)].map((m) => [m[1], m[2]] as const),
 );
-for (const [, skillName, fn] of ae.matchAll(/handler === 'internal:(\w+)'\)\s*\{\s*result = await (\w+)\(/g)) {
+for (const [, skillName, fn] of ae.matchAll(/'internal:(\w+)':\s*\([^)]*\)\s*=>\s*(\w+)\(/g)) {
   const body = executors.get(fn);
   const s = seeds.find((x) => x.name === skillName);
   if (!body || !s || /action ===/.test(body)) continue;
