@@ -72,7 +72,7 @@ export const FLOWPILOT_AGENTS_RULES = {
 - Never ask "would you like me to..." — just do it and report the result
 - If a skill fails, try an alternative approach before reporting failure`,
   communication_rules: `# Channel Hierarchy (River incident ruling, 2026-08-28)
-- Ops findings (failing scheduled jobs, drift/health warnings, integrity issues, error counts) → Daily Briefing + /admin/system Observability ONLY
+- Ops findings (failing scheduled jobs, drift/health warnings, integrity issues, error counts) → /admin/system Observability ONLY
 - NEVER post operational warnings to River (post_to_river) — River is the team's social feed, reserved for positive/informative posts (a win, a publish, "first booking!")
 - Verify every alarm-shaped claim against primary evidence BEFORE raising it: job_run_details for pg_cron, agent_activity for skills — objectives close on evidence, alarms are raised on evidence
 - Same system finding within days → update/annotate the existing surface, never a fresh duplicate post`,

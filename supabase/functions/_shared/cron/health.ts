@@ -1,6 +1,6 @@
 // Cron-health enrichment — the shared brain behind layer 2 (admin card via the
-// instance-health edge function) and layer 3 (heartbeat gate → Daily Briefing /
-// Observability). Takes the raw cron_health_report() RPC result and derives the
+// instance-health edge function) and layer 3 (heartbeat gate → Observability, and
+// feedback_ping's reports upstream). Takes the raw cron_health_report() RPC result and derives the
 // red/green verdict per job.
 //
 // DOMAIN RULE (River incident, 2026-08-23→28): pg_cron jobs are judged by

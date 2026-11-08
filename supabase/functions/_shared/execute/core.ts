@@ -19,6 +19,7 @@ import { switchModules, withParents } from '../modules/module-switch.ts';
 import { moduleDisabledRefusal, ownerModuleOf, skillModuleOn } from '../skills/module-gate.ts';
 import { loadActiveModuleIds } from '../mcp/groups.ts';
 import { appendSent, feedbackKey, judgeFeedback, type SentFeedback } from '../feedback/feedback-cadence.ts';
+import { fileMachineRoomReports } from '../feedback/machine-room-reports.ts';
 import { clusterReports, type BoardPost } from '../feedback/feedback-clusters.ts';
 import { bounceManagePageArgs, collectPageUpdateFields, parseMenuFields, resolveCreateLocale, type SiteLanguagesDeclaration } from '../pages/manage-page-contract.ts';
 import { extractTextFromBlock } from '../chat-context.ts';
@@ -5784,16 +5785,17 @@ async function executeFeedbackAction(
       // "Nordbrygg", not a host, and three localhost rows tell apart. No setting.
       const site_name = (await loadOrgName(supabase, '')) || null;
       const payload = { instance_id, site_url: siteUrl || null, site_name, ...version };
+      const machine_room = await fileMachineRoomReports(supabase, (report) => executeFeedbackAction(supabase, 'submit_feedback', report));
       if (receiveHere) {
         const { error } = await supabase.from('feedback_instances').upsert({
           instance_id, site_url: payload.site_url, site_name, app: version.app, skills_sha: version.skills_sha, migration_head: version.migration_head,
           modules_enabled: version.modules_enabled, module_count: version.module_count, last_seen_at: new Date().toISOString(),
         }, { onConflict: 'instance_id' });
         if (error) throw new Error(`Ping record failed: ${error.message}`);
-        return { sent_to: 'this instance', instance_id, ...version };
+        return { sent_to: 'this instance', instance_id, ...version, machine_room };
       }
       const r = await postTo('feedback/ping', payload);
-      return { sent_to: endpoint, instance_id, ...version, endpoint_url: r.url };
+      return { sent_to: endpoint, instance_id, ...version, endpoint_url: r.url, machine_room };
     }
 
     case 'manage_feedback': {

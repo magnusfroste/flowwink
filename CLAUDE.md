@@ -433,6 +433,15 @@ beside its payload, so an operator branches instead of guessing:
   nightly fresh install proves it first (`npm run qa:quiet` before `qa:prep`,
   `scripts/quiet-by-default.ts`): a red run means something alarms a virgin
   instance again.
+- **The briefing is the business, Observability is the machine room
+  (2026-11-08).** The Daily Briefing reads no platform health: a failing
+  pg_cron job or skill was an action item its admins could do nothing about,
+  and enough to send the mail. An action item is something a person on the
+  instance can act on; the operator's own work is told, never a reason to
+  send. What is the platform's fault goes upstream with the daily
+  `feedback_ping` (`_shared/feedback/machine-room-reports.ts`, behind
+  `share_usage`, under `submit_feedback`'s cadence); titles name the defect,
+  bodies never carry error text.
 - **A module that is off is off for agents (2026-11-06).** The gate is the
   skill's OWNING module (`skillModuleOn` in `_shared/skills/module-gate.ts`,
   from the generated owner map), not its category: the gateway's discovery
