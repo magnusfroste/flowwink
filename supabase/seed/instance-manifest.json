@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261108090000",
-      "migrations_count": 742,
+      "migration_head": "20261108160000",
+      "migrations_count": 744,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2973,19 +2973,27 @@
         {
           "version": "20261108090000",
           "name": "ub-blir-ib-bara-bryggan-lagras"
+        },
+        {
+          "version": "20261108120000",
+          "name": "kvittot-foljer-betalningen"
+        },
+        {
+          "version": "20261108160000",
+          "name": "order-paid-bar-order-id"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:0c1f7932cc98e38f4a77603dd6535f2e13bd51f5bcf823ef45c267fdb1ff4a14",
+      "seed_hash": "sha256:319e255cd747649e54411715719c6d9bbb8e941221b7a8383e9de43665228ce0",
       "skill_count": 670,
       "module_count": 70
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:fb7576b0622dec8fdd0ef2da5f37d1aaeca7fac6e43046d7f898012093c1017c",
+      "shared_hash": "sha256:250e377f54a58557a6f19e759da44fcd88b1ba6894048dbc626dbad24b104b11",
       "functions": {
-        "agent-execute": "sha256:dc3af0a3c0b1352ff1f61c486023db47a52bbf296625846d77780c5418068663",
+        "agent-execute": "sha256:b6890ab856dc37b796f9d583fbf0c8c1751ac987658658727e683aa216472712",
         "agent-operate": "sha256:4320e02dd3e6a0a1706b42dc1905b631c61e6a4cbe3556c701f474c278c89e1a",
         "ai-task": "sha256:ce3aacdef625bba758f4323da3e49104a1b94a3d3d77d800e89dacd0b803d65e",
         "automation-dispatcher": "sha256:c7862e942bb9fbfcb847d236cd7fece01ad934f354ac038d03f9128e4f2e006a",

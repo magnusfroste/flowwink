@@ -8056,6 +8056,10 @@
                   "dry_run": {
                     "type": "boolean",
                     "description": "If true, returns preview totals without creating the invoice or sending email"
+                  },
+                  "receipt": {
+                    "type": "boolean",
+                    "description": "The order.paid automation's call: create and mail the receipt only if the order is paid, has no invoice yet and Invoicing is on; otherwise a refusal and nothing is sent"
                   }
                 }
               }
