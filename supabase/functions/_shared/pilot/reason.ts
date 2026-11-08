@@ -535,9 +535,10 @@ export async function loadSkillTools(
   if (budgetTier === 'drop') {
     const weekAgo = new Date();
     weekAgo.setDate(weekAgo.getDate() - 14);
+    // A refusal kept as 'success' (enum lagging the deploy) is not usage.
     const { data: recentUsage } = await supabase
       .from('agent_activity')
-      .select('skill_name')
+      .select('skill_name, answer:output->>status')
       .gte('created_at', weekAgo.toISOString())
       .eq('status', 'success')
       .order('created_at', { ascending: false })
@@ -545,7 +546,7 @@ export async function loadSkillTools(
 
     const usageCounts: Record<string, number> = {};
     for (const a of (recentUsage || [])) {
-      if (a.skill_name) usageCounts[a.skill_name] = (usageCounts[a.skill_name] || 0) + 1;
+      if (a.skill_name && a.answer !== 'refused') usageCounts[a.skill_name] = (usageCounts[a.skill_name] || 0) + 1;
     }
 
     const scored = gatedSkills.map((s: any) => ({
