@@ -88,4 +88,51 @@ describe('an order is invoiced at what the customer paid', () => {
     const q = view.slice(view.indexOf(".select('id, invoice_number, notes, order_id')"));
     expect(q.slice(0, q.indexOf(';'))).toContain(".neq('status', 'cancelled')");
   });
+
+  // 2026-11-08, LiteIT: the test invoice was deleted in the admin view, and the
+  // link in the customer's mail answered "Invoice not found". The mail is a
+  // sent fact; the receipt arrives by itself and only an unsent draft can go.
+  describe('a paid order gets its receipt by itself', () => {
+    const fnBody = () => {
+      const core = readFileSync('supabase/functions/_shared/execute/core.ts', 'utf8');
+      const fn = core.slice(core.indexOf('async function executeSendInvoiceForOrder'));
+      return fn.slice(0, fn.indexOf('\n}\n'));
+    };
+
+    it('order.paid runs the receipt, addressed by the id the event carries', () => {
+      const mod = readFileSync('src/lib/modules/products-module.ts', 'utf8');
+      const seed = mod.slice(mod.indexOf('PRODUCTS_AUTOMATIONS: AutomationSeed[]'));
+      expect(seed).toContain("trigger_config: { event: 'order.paid' }");
+      expect(seed).toContain("skill_name: 'send_invoice_for_order'");
+      expect(seed).toContain("order_id: '{{event.payload.id}}'");
+      expect(seed).toContain('receipt: true');
+      expect(mod).toContain('automations: PRODUCTS_AUTOMATIONS');
+    });
+
+    it('the receipt is refused rather than sent twice, unpaid, or with a dead link', () => {
+      const body = fnBody();
+      expect(body).toMatch(/if \(receipt\) \{[\s\S]*isModuleEnabled\(supabase, 'invoicing'\)[\s\S]*code: 'MODULE_DISABLED'/);
+      expect(body).toMatch(/!orderIsPaid\(order\.status\)[\s\S]*status: 'refused'/);
+      expect(body).toMatch(/receipt && existingInvoice[\s\S]*code: 'ALREADY_EXISTS'/);
+    });
+
+    it('a paid order\'s mail is the template, in the customer\'s language', () => {
+      const body = fnBody();
+      expect(body).toMatch(/if \(orderPaid\) \{[\s\S]*resolve_email_template', \{ p_name: 'order_receipt', p_locale: recipientLang \}/);
+      const sql = readFileSync('supabase/migrations/20261108120000_kvittot-foljer-betalningen.sql', 'utf8');
+      for (const locale of ["'en'", "'sv'"]) expect(sql).toContain(`('order_receipt', ${locale}`);
+      expect(sql).toContain('{{receipt_url}}');
+    });
+
+    it('the customer never reads the internal order marker', () => {
+      expect(fnBody()).toContain('notes: orderIdColumn ? (notes || null)');
+    });
+
+    it('only a draft can be deleted, in the write and on the button', () => {
+      const hook = readFileSync('src/hooks/useInvoices.ts', 'utf8');
+      expect(hook).toContain(".delete().eq('id', id).eq('status', 'draft')");
+      const sheet = readFileSync('src/components/admin/invoices/InvoiceDetailSheet.tsx', 'utf8');
+      expect(sheet).toMatch(/invoice\.status === 'draft' && \(\s*<Button[^>]*onClick=\{handleDelete\}/);
+    });
+  });
 });

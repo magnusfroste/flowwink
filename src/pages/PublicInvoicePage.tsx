@@ -11,10 +11,12 @@ import { Badge } from '@/components/ui/badge';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useCustomerFormat } from '@/hooks/useCustomerFormat';
+import { useUiText } from '@/lib/ui-text';
 import { toast } from 'sonner';
 
 export default function PublicInvoicePage() {
   const { token } = useParams<{ token: string }>();
+  const t = useUiText();
   const { formatCurrency, formatDate } = useCustomerFormat();
   const [searchParams] = useSearchParams();
   const justPaid = searchParams.get('paid') === '1';
@@ -102,9 +104,9 @@ export default function PublicInvoicePage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Card className="max-w-md">
-          <CardHeader><CardTitle>Invoice not found</CardTitle></CardHeader>
+          <CardHeader><CardTitle>{t('invoice.notFound', 'Invoice not found')}</CardTitle></CardHeader>
           <CardContent>
-            <p className="text-muted-foreground">This invoice link is invalid or has expired.</p>
+            <p className="text-muted-foreground">{t('invoice.linkInvalid', 'This invoice link is invalid or has expired.')}</p>
           </CardContent>
         </Card>
       </div>
@@ -120,7 +122,7 @@ export default function PublicInvoicePage() {
   return (
     <div className="min-h-screen bg-muted/20 py-8 px-4">
       <Helmet>
-        <title>{`Invoice ${invoice.invoice_number}`}</title>
+        <title>{`${isPaid ? t('invoice.receipt', 'Receipt') : t('invoice.title', 'Invoice')} ${invoice.invoice_number}`}</title>
         <meta name="robots" content="noindex" />
       </Helmet>
       <div className="max-w-3xl mx-auto space-y-6">
@@ -128,7 +130,7 @@ export default function PublicInvoicePage() {
           <Card className="border-primary">
             <CardContent className="pt-6 flex items-center gap-3">
               <Loader2 className="h-5 w-5 animate-spin text-primary" />
-              <p className="text-sm">Payment received — confirming…</p>
+              <p className="text-sm">{t('invoice.paymentConfirming', 'Payment received — confirming…')}</p>
             </CardContent>
           </Card>
         )}
@@ -139,23 +141,23 @@ export default function PublicInvoicePage() {
               <div className="flex items-center gap-3">
                 <FileText className="h-6 w-6 text-primary" />
                 <div>
-                  <CardTitle className="text-2xl">Invoice {invoice.invoice_number}</CardTitle>
+                  <CardTitle className="text-2xl">{isPaid ? t('invoice.receipt', 'Receipt') : t('invoice.title', 'Invoice')} {invoice.invoice_number}</CardTitle>
                   {invoice.customer_name && (
                     <p className="text-muted-foreground mt-1">{invoice.customer_name}</p>
                   )}
                 </div>
               </div>
               <Badge variant={isPaid ? 'default' : isCancelled ? 'secondary' : 'outline'}>
-                {invoice.status}
+                {isPaid ? t('invoice.statusPaid', 'Paid') : isCancelled ? t('invoice.statusCancelled', 'Cancelled') : t('invoice.statusOpen', 'Open')}
               </Badge>
             </div>
           </CardHeader>
           <CardContent className="pt-6 space-y-6">
             <div className="space-y-2">
-              <h3 className="font-medium">Items</h3>
+              <h3 className="font-medium">{t('invoice.items', 'Items')}</h3>
               <div className="border rounded-md divide-y">
                 {items.length === 0 ? (
-                  <p className="p-4 text-sm text-muted-foreground">No items</p>
+                  <p className="p-4 text-sm text-muted-foreground">{t('invoice.noItems', 'No items')}</p>
                 ) : (
                   items.map((it, i) => {
                     const qty = Number(it.qty ?? it.quantity ?? 1);
@@ -175,22 +177,22 @@ export default function PublicInvoicePage() {
             </div>
 
             <div className="space-y-1 text-sm border-t pt-3">
-              <div className="flex justify-between"><span>Subtotal</span><span className="font-mono">{fmt(invoice.subtotal_cents)}</span></div>
-              <div className="flex justify-between"><span>Tax</span><span className="font-mono">{fmt(invoice.tax_cents)}</span></div>
+              <div className="flex justify-between"><span>{t('invoice.subtotal', 'Subtotal')}</span><span className="font-mono">{fmt(invoice.subtotal_cents)}</span></div>
+              <div className="flex justify-between"><span>{t('invoice.tax', 'Tax')}</span><span className="font-mono">{fmt(invoice.tax_cents)}</span></div>
               <div className="flex justify-between font-medium text-base border-t pt-1">
-                <span>Total</span><span className="font-mono">{fmt(invoice.total_cents)}</span>
+                <span>{t('invoice.total', 'Total')}</span><span className="font-mono">{fmt(invoice.total_cents)}</span>
               </div>
             </div>
 
-            {invoice.due_date && (
+            {invoice.due_date && !isPaid && (
               <p className="text-xs text-muted-foreground">
-                Due {formatDate(invoice.due_date)}
+                {t('invoice.due', 'Due')} {formatDate(invoice.due_date)}
               </p>
             )}
 
             {invoice.notes && (
               <div className="border-t pt-4 space-y-1">
-                <h3 className="text-xs font-medium uppercase text-muted-foreground">Notes</h3>
+                <h3 className="text-xs font-medium uppercase text-muted-foreground">{t('invoice.notes', 'Notes')}</h3>
                 <p className="text-xs whitespace-pre-wrap">{invoice.notes}</p>
               </div>
             )}
@@ -199,19 +201,19 @@ export default function PublicInvoicePage() {
               {isPaid ? (
                 <div className="flex items-center gap-2 text-primary">
                   <CheckCircle2 className="h-5 w-5" />
-                  <span className="font-medium">This invoice has been paid. Thank you!</span>
+                  <span className="font-medium">{t('invoice.paidReceipt', 'Paid in full. This is your receipt — thank you!')}</span>
                 </div>
               ) : isCancelled ? (
-                <p className="text-sm text-muted-foreground">This invoice has been cancelled.</p>
+                <p className="text-sm text-muted-foreground">{t('invoice.cancelled', 'This invoice has been cancelled.')}</p>
               ) : (
                 <Button onClick={handlePay} disabled={paying} className="gap-2">
                   {paying ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />}
-                  Pay {fmt(invoice.total_cents)}
+                  {t('invoice.pay', 'Pay')} {fmt(invoice.total_cents)}
                 </Button>
               )}
               <Button variant="outline" onClick={handleDownloadPdf} disabled={downloading} className="gap-2">
                 {downloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-                Download PDF
+                {t('invoice.downloadPdf', 'Download PDF')}
               </Button>
             </div>
           </CardContent>

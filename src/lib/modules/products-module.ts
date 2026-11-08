@@ -4,6 +4,7 @@ import type { Json } from '@/integrations/supabase/types';
 import { triggerWebhook } from '@/lib/webhook-utils';
 import type { SkillSeed } from '@/lib/module-bootstrap';
 import { defineModule } from '@/lib/module-def';
+import type { AutomationSeed } from '@/lib/module-bootstrap';
 import {
   ProductModuleInput,
   ProductModuleOutput,
@@ -700,6 +701,10 @@ Checks the current status of an order via the order-status edge function.
               type: 'boolean',
               description: 'If true, returns preview totals without creating the invoice or sending email',
             },
+            receipt: {
+              type: 'boolean',
+              description: 'The order.paid automation\'s call: create and mail the receipt only if the order is paid, has no invoice yet and Invoicing is on; otherwise a refusal and nothing is sent',
+            },
           },
         },
       },
@@ -782,6 +787,19 @@ Manages discount codes for the storefront checkout (discount_codes table).
   },
 ];
 
+// A paid order's receipt is its paid invoice, sent when the money arrives.
+// The order.paid payload is { id, data }.
+const PRODUCTS_AUTOMATIONS: AutomationSeed[] = [
+  {
+    name: 'Receipt on paid order',
+    description: 'When an order is paid, create its paid invoice and email the customer the receipt in the language they ordered in. Switch this off if receipts are issued elsewhere.',
+    trigger_type: 'event',
+    trigger_config: { event: 'order.paid' },
+    skill_name: 'send_invoice_for_order',
+    skill_arguments: { order_id: '{{event.payload.id}}', receipt: true },
+  },
+];
+
 export const productsModule = defineModule<ProductModuleInput, ProductModuleOutput>({
   id: 'ecommerce',
   name: 'Products',
@@ -825,6 +843,7 @@ export const productsModule = defineModule<ProductModuleInput, ProductModuleOutp
     ],
   },
   skillSeeds: PRODUCTS_SKILLS,
+  automations: PRODUCTS_AUTOMATIONS,
 
   webhookEvents: [
     { event: 'order.created', description: 'An order was placed' },
