@@ -48,6 +48,7 @@ const STATUS_BADGE: Record<AgentActivityStatus, string> = {
   pending_approval: 'bg-yellow-500/10 text-yellow-700 border-yellow-200',
   approved: 'bg-blue-500/10 text-blue-700 border-blue-200',
   rejected: 'bg-gray-500/10 text-gray-700 border-gray-200',
+  refused: 'bg-slate-500/10 text-slate-700 border-slate-200',
 };
 
 type ViewMode = 'table' | 'timeline';
@@ -81,6 +82,7 @@ export function ActivityTable() {
             <SelectItem value="pending_approval">Pending</SelectItem>
             <SelectItem value="approved">Approved</SelectItem>
             <SelectItem value="rejected">Rejected</SelectItem>
+            <SelectItem value="refused">Refused</SelectItem>
           </SelectContent>
         </Select>
         <Select value={agentFilter} onValueChange={setAgentFilter}>

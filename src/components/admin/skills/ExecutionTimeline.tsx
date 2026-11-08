@@ -14,6 +14,7 @@ const STATUS_DOT: Record<AgentActivityStatus, string> = {
   pending_approval: 'bg-amber-500',
   approved: 'bg-blue-500',
   rejected: 'bg-muted-foreground/50',
+  refused: 'bg-muted-foreground/30',
 };
 
 const STATUS_LABEL: Record<AgentActivityStatus, string> = {
@@ -22,6 +23,7 @@ const STATUS_LABEL: Record<AgentActivityStatus, string> = {
   pending_approval: 'Pending',
   approved: 'Approved',
   rejected: 'Rejected',
+  refused: 'Refused',
 };
 
 interface ConversationGroup {
