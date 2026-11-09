@@ -80,8 +80,8 @@ also include a snapshot under `data`.
 
 | Event | Source | Payload | Listeners |
 |-------|--------|---------|-----------|
-| `order.created` | trigger on `orders` | `{ id, data }` | webhook, inventory |
-| `order.paid` | trigger on `orders` | `{ id, amount_cents }` | fulfillment, accounting |
+| `order.created` | trigger on `orders` | `{ id, order_id, data }` | webhook, inventory |
+| `order.paid` | trigger on `orders` | `{ id, order_id, data }` | picking (`allocate_picking`), receipt (`send_invoice_for_order`); the books by trigger `trg_order_paid_book` |
 | `order.cancelled` | trigger on `orders` | `{ id, reason }` | refund flow |
 | `order.refunded` | trigger on `orders` | `{ id, amount_cents }` | accounting reversal |
 | `pos.sale_completed` | RPC `record_pos_sale_v2` | `{ session_id, lines }` | journal, stock |

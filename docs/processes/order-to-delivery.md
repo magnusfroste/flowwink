@@ -75,11 +75,34 @@ as authoritative.
 
 ---
 
+## The receipt
+
+Stripe's own receipt says the card was charged. The receipt the business issues
+is the order's **paid invoice**: the books' figures, the company's number
+series, a page at `/invoice/<token>` and a PDF.
+
+When an order becomes `paid`, the customer gets two mails: the order
+confirmation from the Stripe webhook, and the receipt from the automation
+**Receipt on paid order** (`order.paid` → `send_invoice_for_order` with
+`receipt: true`). The receipt mail is the `order_receipt` template in the
+language the customer ordered in, then the party's, then the site's. The
+invoice is born `paid` and is not booked again: the sale was booked at payment.
+
+With `receipt: true` the skill refuses, sending nothing, when Invoicing is off
+(`MODULE_DISABLED`), when the order is not paid (`INVALID_INPUT`) or when the
+order already has a live invoice (`ALREADY_EXISTS`). The automation fires on the
+transition into `paid` only, so an order that was already paid when it was seeded
+gets its receipt by hand. An instance that invoices in another system switches
+the automation off.
+
+---
+
 ## Agent coverage
 
 | Step | 👤 Manual | 🤖 FlowPilot | 🔗 External agent |
 |------|----------|-------------|-------------------|
 | Order intake | — | ✅ Auto (Stripe webhook) — the flip to `paid` books the sale (`order_paid`) | — |
+| Receipt | ✅ (*Create invoice* on the order) | ✅ Auto (`Receipt on paid order` on `order.paid`) | ✅ (`send_invoice_for_order`) |
 | Stock check / reservation | ✅ | ✅ (`manage_inventory`, `reserve_stock`) | — |
 | Cart recovery | — | ✅ (`cart_recovery_check`) | — |
 | Pick/pack/ship | ✅ | ✅ (`allocate_picking`, `confirm_pick`, `ship_picking`) | ✅ over MCP |
