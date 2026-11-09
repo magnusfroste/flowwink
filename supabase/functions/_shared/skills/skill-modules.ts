@@ -62,7 +62,6 @@ export const SKILL_OWNER_MODULE: Readonly<Record<string, string>> = Object.freez
   "browse_feedback": "feedback",
   "browse_products": "ecommerce",
   "browse_services": "bookings",
-  "browser_fetch": "browserControl",
   "budget_vs_actual": "accounting",
   "build_site_step": "pages",
   "bulk_advance_approvals": "approvals",
