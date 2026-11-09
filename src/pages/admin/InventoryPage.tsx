@@ -1,3 +1,4 @@
+import { useIsModuleEnabled } from '@/hooks/useModules';
 import { useState } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
@@ -31,6 +32,7 @@ function StockBadge({ qty, reorder }: { qty: number; reorder: number }) {
 }
 
 export default function InventoryPage() {
+  const purchasingOn = useIsModuleEnabled('purchasing');
   // The business's format; the old sv-SE call threw when the list was empty
   // (Intl needs a currency with style 'currency').
   const { formatCurrency } = usePlatformFormat();
@@ -154,7 +156,7 @@ export default function InventoryPage() {
           <TabsTrigger value="stock">Stock Levels</TabsTrigger>
           <TabsTrigger value="valuation">Valuation</TabsTrigger>
           <TabsTrigger value="pickpack">Pick & Pack</TabsTrigger>
-          <TabsTrigger value="receiving">Receiving</TabsTrigger>
+          {purchasingOn && <TabsTrigger value="receiving">Receiving</TabsTrigger>}
           <TabsTrigger value="route">Receipt Route</TabsTrigger>
           <TabsTrigger value="transfers">Transfers</TabsTrigger>
           <TabsTrigger value="expiry">Expiry / FEFO</TabsTrigger>
@@ -235,9 +237,12 @@ export default function InventoryPage() {
           <PickPackPanel />
         </TabsContent>
 
-        <TabsContent value="receiving">
-          <ReceivingPanel />
-        </TabsContent>
+        {/* Receiving books goods against purchase orders: Purchasing's desk. */}
+        {purchasingOn && (
+          <TabsContent value="receiving">
+            <ReceivingPanel />
+          </TabsContent>
+        )}
 
         <TabsContent value="route">
           <ReceivingRoutePanel />

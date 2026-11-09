@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { WikiMarkdown } from '@/components/admin/wiki/WikiMarkdown';
 import { toWikiSlug, useUpsertWikiPage } from '@/hooks/useWiki';
+import { useIsModuleEnabled } from '@/hooks/useModules';
 import type { ChatDocument } from '@/hooks/useWorkspaceChat';
 import { toast } from 'sonner';
 
@@ -37,6 +38,8 @@ export function DocumentPanel({
 }) {
   const [preview, setPreview] = useState(false);
   const upsert = useUpsertWikiPage();
+  // Saving goes to the wiki; with the Wiki module off the draft stays a draft (no dead button).
+  const wikiOn = useIsModuleEnabled('wiki');
   const slug = useMemo(() => doc.slug || toWikiSlug(doc.title), [doc.slug, doc.title]);
 
   const save = async () => {
@@ -92,17 +95,19 @@ export function DocumentPanel({
         <span className="text-[11px] text-muted-foreground flex-1 min-w-0 truncate">
           {doc.slug
             ? dirty ? 'Unsaved changes' : 'Saved to the wiki'
-            : 'Not saved — only you see this draft'}
+            : wikiOn ? 'Not saved — only you see this draft' : 'A draft — the Wiki module is off, so it is not saved'}
         </span>
-        {doc.slug && (
+        {wikiOn && doc.slug && (
           <Link to={`/admin/wiki/${encodeURIComponent(doc.slug)}`} className="text-[11px] text-primary hover:underline inline-flex items-center gap-1">
             Open <ExternalLink className="h-3 w-3" />
           </Link>
         )}
-        <Button type="button" size="sm" className="h-7 gap-1 text-xs" onClick={save} disabled={upsert.isPending || (!!doc.slug && !dirty)}>
-          {upsert.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
-          {doc.slug ? 'Save' : 'Save to wiki'}
-        </Button>
+        {wikiOn && (
+          <Button type="button" size="sm" className="h-7 gap-1 text-xs" onClick={save} disabled={upsert.isPending || (!!doc.slug && !dirty)}>
+            {upsert.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+            {doc.slug ? 'Save' : 'Save to wiki'}
+          </Button>
+        )}
       </div>
     </div>
   );
