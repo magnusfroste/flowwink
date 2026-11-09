@@ -47,6 +47,13 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Fixed
 
+- **Consultant profiles are re-embedded every hour again.** The consultants
+  module schedules its reindex at `7 * * * *` (minute 7 of every hour), a shape
+  the dispatcher's cron parser had no branch for, so it switched the automation
+  off on its first tick — on every instance with Consultants on, since
+  2026-09-04. The parser runs `M * * * *` now, a guard checks every cron
+  expression a module seeds, and a migration switches back on what the old
+  parser switched off (only where the skill it runs is still enabled).
 - **Three inbound endpoints verify their caller; River's media is not
   listable by anyone; what stays open is written down.** `signal-ingest`
   accepted the publishable key (it ships in the site's JavaScript), so anyone
