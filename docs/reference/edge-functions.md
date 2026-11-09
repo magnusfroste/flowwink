@@ -13,7 +13,7 @@ generated: true
 
 | Function | Tier | Audience | Purpose |
 |---|---|---|---|
-| `agent-execute` | core | public | Skill executor — runs one skill (db/rpc/module/internal/edge handlers) with trust, staging and the agent audit trail. |
+| `agent-execute` | core | public | agent-execute — the HTTP face of the executor. |
 | `agent-operate` | core | public | FlowPilot Operate — Interactive streaming agent |
 | `ai-task` | core | public | ai-task — Consolidated AI Task Hub |
 | `automation-dispatcher` | core | public | Automation Dispatcher |
@@ -22,7 +22,7 @@ generated: true
 | `chat-stt` | core | default (JWT) | chat-stt — server-side Speech-to-Text router for the chat widget. |
 | `check-secrets` | core | default (JWT) | Reports which provider secrets (AI, email, payments…) are configured, for the admin setup screens. |
 | `comms-send` | core | default (JWT) | comms-send — the transactional-comms cluster (edge-surface refactor B2). |
-| `composio-proxy` | module: composio | public | Gmail thread the message belongs to — what the inbox thread view groups on. */ |
+| `composio-proxy` | module: composio | public | Proxy to Composio-connected accounts (Gmail and other integrations) for the inbox and outbound mail. |
 | `composio-webhook` | module: composio | public | composio-webhook — public endpoint Composio calls when a watched Gmail mailbox |
 | `consultant-match` | module: consultants | public | Resume Match — Hybrid semantic (pgvector) + BM25 (tsvector) matching. |
 | `content-api` | core | public | Programmatic content access — pages, posts and KB as JSON or Markdown for headless consumers. |
@@ -30,7 +30,7 @@ generated: true
 | `contract-sign` | module: contracts | public | Public contract signing endpoint. |
 | `create-checkout` | module: ecommerce | public | Creates the shop checkout (Stripe, or a recorded order in sandbox mode). |
 | `create-invoice-payment` | module: invoicing | public | Create a Stripe Checkout session for an invoice. Public — uses public_token. |
-| `create-user` | core | default (JWT) | Create user with admin API (email_confirm: true skips verification). |
+| `create-user` | core | default (JWT) | Creates a user through the auth admin API (admin only; the address is confirmed at once). |
 | `customer-signup` | core | public | Public customer-signup endpoint. |
 | `delete-user` | core | default (JWT) | delete-user — admin removes a user account, completely and safely. |
 | `demo-cycle` | core | public | demo-cycle — the nightly rebuild for a demo/sandbox instance. |
@@ -41,9 +41,9 @@ generated: true
 | `einvoice` | module: invoicing | default (JWT) | einvoice — UBL 2.1 / Peppol BIS Billing 3.0 for one invoice. |
 | `elks46-ingest` | module: liveSupport | public | NOTE: 46elks has NO Lovable connector yet — we call api.46elks.com directly |
 | `email-send` | core | default (JWT) | email-send — provider-agnostic email router for FlowWink |
-| `email-webhook` | core | public | email-webhook — receive delivery/bounce/complaint events from ESPs (Resend/Mailgun-shaped) |
+| `email-webhook` | core | public | email-webhook — the email router's inbound door. Three routes: |
 | `event-dispatcher` | core | public | Event Dispatcher (Phase 3 — Platform Event Bus) |
-| `extract-pdf-text` | core | public | Input: { document_id } / { file_url } / { storage_path } — any of the shapes a |
+| `extract-pdf-text` | core | public | Extracts text from a PDF — or an Office file — stored in Supabase Storage. |
 | `federation-invite-peer` | module: federation | public | Agents: connect an agent — mint its MCP key with an owner and a mission |
 | `flowpilot-heartbeat` | module: flowpilot | public | FlowPilot Heartbeat — Autonomous Loop |
 | `flowpilot-lifecycle` | core | default (JWT) | flowpilot-lifecycle — the autonomous operator's lifecycle cluster |
@@ -51,7 +51,7 @@ generated: true
 | `generate-invoice-pdf` | module: invoicing | default (JWT) | Renders an invoice as PDF — by public token for the customer, or as staff. |
 | `get-page` | core | public | Serves a published page by slug with caching; PublicPage falls back to the database if it fails. |
 | `gmail-oauth-callback` | module: email | public | Gmail OAuth Callback Edge Function |
-| `instance-health` | core | public | RPC and enriches it via the SHARED cron-health brain — which judges |
+| `instance-health` | core | public | Health report for the instance — cron jobs, database pulse, edge surface — for the fleet and the admin. |
 | `integrations-account` | core | default (JWT) | Integrations account info — one function for every provider's usage/quota |
 | `invite-colleague` | core | default (JWT) | invite-colleague — email a colleague an invite that lands them, on first |
 | `invite-employee` | module: recruitment | default (JWT) | Invites an employee to a portal account over the instance's own email rail. |
@@ -70,7 +70,7 @@ generated: true
 | `run-autonomy-tests` | module: flowpilot | default (JWT) | Runs the autonomy test suites against this instance and reports per test. |
 | `run-platform-tests` | core | default (JWT) | Platform Test Runner — FlowWink SaaS-level health checks. |
 | `score-visitor-intent` | module: visitorIntelligence | public | score-visitor-intent |
-| `send-webhook` | core | public | Send webhook with retry logic |
+| `send-webhook` | core | public | Delivers an outbound webhook to the configured endpoints, with retries. |
 | `setup-database` | core | default (JWT) | Fresh-install bootstrap — applies the core schema and seeds so a new project can start. |
 | `signal-dispatcher` | core | public | Signal Dispatcher |
 | `signal-ingest` | module: salesIntelligence | public | Signal Ingest — External operator endpoint |
@@ -85,8 +85,8 @@ generated: true
 | `twilio-ingest` | module: liveSupport | public | Twilio SMS channel adapter — inbound webhook + outbound send + test. |
 | `voice-ingest` | module: voice | public | voice-ingest — provider-agnostisk callback-handler + AI-receptionist-brygga. |
 | `voice-recording` | module: liveSupport, voice | default (JWT) | Proxies 46elks (and future provider) voicemail recordings so the browser |
-| `web-scrape` | module: flowpilot | public | Web Scrape — the `read` capability of the web layer (_shared/web) |
-| `web-search` | module: flowpilot | public | Web Search — the `search` capability of the web layer (_shared/web) |
+| `web-scrape` | module: flowpilot | public | Web Scrape — the `read` capability of the web layer (_shared/web). |
+| `web-search` | module: flowpilot | public | Web Search — the `search` capability of the web layer (_shared/web). |
 | `webmeet-ice` | module: webmeet | public | webmeet-ice — the door into a WebMeet room, and the ICE servers that get the |
 | `workspace-chat` | module: workspaceChat | JWT | Cowork Chat (internal id: workspace-chat) |
 

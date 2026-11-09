@@ -5,7 +5,7 @@ version: "1.0.0"
 category: "system"
 autonomy: "config-required"
 generated: true
-generated_at: "2026-09-30"
+generated_at: "2026-11-09"
 description: Template gallery, export current site as reusable template, and import templates from file
 ---
 
@@ -36,7 +36,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | Skill | Scope | Description |
 |-------|-------|-------------|
 | `list_templates` | internal | List the starter-template catalog (bundled template JSON) plus which template (if any) is currently installed on this site. Use when: a user asks "what templates are available?", "what site am I ru… |
-| `manage_site_template` | internal | Get, create, update or archive a reusable site template stored on this instance. |
+| `manage_site_template` | internal | Author the instance's own SITE templates: get, create, update or archive the reusable website bodies (pages, blocks, branding, header/footer/SEO) that install_template turns into a live site. IMPOR… |
 | `install_template` | internal | Install a starter template — either from the bundled catalog OR one authored on this instance (site_templates): seeds pages, blog posts, KB categories/articles, products (and consultants/booking da… |
 | `export_site_template` | internal | Store the export as a reusable template under this name, instead of only returning the JSON. Idempotent: an existing name is UPDATED, never duplicated. Omit for a read-only preview. This is what cl… |
 
@@ -62,6 +62,8 @@ All tables ship with Row-Level Security policies. See migration files for the ex
 |---------|------|
 | Module definition | `src/lib/modules/templates-module.ts` |
 | Migration | `supabase/migrations/20260808500000_site-templates-authorable.sql` |
+| Migration | `supabase/migrations/20261028090024_site-templates-keep-document-visibility.sql` |
+| Migration | `supabase/migrations/20261103105933_site-templates-answer-lean.sql` |
 
 ## Contributing
 

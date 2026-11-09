@@ -5,7 +5,7 @@ version: "1.0.0"
 category: "data"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-09-30"
+generated_at: "2026-11-09"
 description: Match consultant profiles against job descriptions with AI-powered scoring and cover letters
 ---
 
@@ -41,7 +41,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 |-------|-------|-------------|
 | `manage_consultant_profile` | internal | Manage consultant profiles: list, create, update, delete, deduplicate. Use when: adding a new consultant; updating skills or availability; cleaning up duplicate entries. NOT for: matching consultan… |
 | `match_consultant` | internal | Match consultants to a job description using AI. Use when: finding suitable candidates for an open position; a user provides a job description and needs recommendations; identifying best-fit consul… |
-| `consultant_checkin_update` | external | Save updated consultant profile information gathered during a check-in interview. |
+| `consultant_checkin_update` | external | Update a consultant's own profile during a check-in interview. Updates bio, summary, skills, availability, and experience. Use when: a consultant has completed a check-in conversation and you have … |
 | `reindex_consultants` | internal | Re-embed consultant profiles whose semantic-search index is stale. Use when: an automation or admin wants to refresh embeddings after bulk profile changes; keeping vector search up to date. NOT for… |
 | `manage_consultant_assignment` | internal | Track consultant assignments/engagements: which client a consultant works for, allocation %, rate, period, linked contract/SOW. Use when: staffing a consultant on a client engagement; updating or e… |
 | `consultant_utilization_report` | internal | Utilization report for the consultant pool: allocation % per consultant over a date window, with assignment breakdown — spot bench time and overbooking. Use when: "who is free next month?", staffin… |

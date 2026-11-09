@@ -5,7 +5,7 @@ version: "0.1.0"
 category: "data"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-10-02"
+generated_at: "2026-11-09"
 description: Airtable-style flexible tables for lists, prospect sheets, content backlogs.
 ---
 
@@ -39,7 +39,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `manage_flowtable_base` | internal | Create or update a Flowtable BASE — the top-level container tables live in. Use when: starting a new data surface (e.g. "put product info in a table" on an instance with no suitable base); renaming… |
 | `bulk_upsert_flowtable_records` | internal | Write MANY Flowtable records in one call, upserting by a natural key field (sku, name, …) so re-runs update instead of duplicating. Returns per-row results (created/updated/failed with reasons). Us… |
 | `import_csv_to_flowtable` | internal | Import raw CSV text straight into a Flowtable table — headers are matched to field names/keys, the delimiter is auto-detected (comma or semicolon; Swedish Excel exports use semicolons), quoted cell… |
-| `list_flowtable_records` | internal | List records inside a Flowtable table. Use when: reading rows from a user-owned ad-hoc table (call lists, prospect sheets). Each record has a free-form `values` JSONB matching the table\ |
+| `list_flowtable_records` | internal | List records inside a Flowtable table. Use when: reading rows from a user-owned ad-hoc table (call lists, prospect sheets). Each record has a free-form `values` JSONB matching the table's field keys. |
 | `list_flowtable_tables` | internal | Discover the tables + field schema inside a Flowtable base (Airtable-style). Use when: an agent found a base (list_flowtable_bases) and needs to know which tables it holds + their field keys before… |
 | `query_flowtable` | internal | Query a Flowtable table server-side: filter on field values (eq/neq/ilike pushed to the DB; gt/gte/lt/lte numeric, is_empty/not_empty), free-text search across all fields, sort by a field, and coun… |
 | `manage_flowtable_record` | internal | Create, update, delete or get a single Flowtable record. Update MERGES the given values into the existing row by default (merge=false replaces). Use when: correcting or enriching rows in an importe… |

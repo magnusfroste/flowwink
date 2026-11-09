@@ -248,13 +248,13 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 
 | Skill | Scope | Description |
 |-------|-------|-------------|
-| `publish_report` | internal | Publish a report — what you worked out (a quarter\ |
+| `publish_report` | internal | Publish a report — what you worked out (a quarter's costs, a reconciliation, a pipeline review, an incident write-up) as a page staff open under Reports, or a new version of one. Markdown with repo… |
 | `list_reports` | internal | List the reports staff can open — title, description, category, version, link — and the categories in use. Use when: before publishing (reuse a category, find the report to update); someone asks wh… |
 | `get_report` | internal | Read a report — its content and details, the current or an older version. Use when: building a new version on it; someone asks what a report says; comparing with an earlier version. NOT for: listin… |
 | `list_report_versions` | internal | Every version of a report: when, by whom (and who asked), the note. Use when: someone asks what changed or who published a report; before restoring is suggested to a person. NOT for: the content it… |
-| `update_report_details` | internal | Change a report\ |
+| `update_report_details` | internal | Change a report's title, description, category or tags without publishing new content. Fields a person set are not changed (not_changed names them). Use when: a report is filed under the wrong cate… |
 | `publish_overview_dashboard` | internal | Publish (or keep current) the overview dashboard "The state of things" / "Läget just nu" — one report of live blocks: what needs attention in the books (check_books, when accounting is on) and in o… |
-| `publish_weekly_digest` | internal | Publish this week\ |
+| `publish_weekly_digest` | internal | Publish this week's digest as a report — page views, leads, bookings, orders, invoices and deals of the last seven days (weekly_business_digest), one report "Weekly digest" with a version a week, u… |
 | `publish_month_close_report` | internal | Publish the month close as a report — the close checklist for one month (month_close_checklist: what passed, what blocks, the exact next call) as a page "Month close — <month>" for accounting staff… |
 
 <!-- generated:skills:end -->

@@ -148,6 +148,6 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `resolve_finding` | internal | Mark a beta test finding as resolved. Use when: closing fixed issues, updating finding status. NOT for: reporting new findings (use report_finding). |
 | `confirm_fulfillment` | external | Confirm delivery/fulfillment of an order or purchase order. Use when: an external agent (Claw/supplier) confirms that goods have been delivered. NOT for: updating order status manually (use manage_… |
 | `scan_beta_findings` | internal | Scan unresolved beta test findings from OpenClaw. Use when: reviewing outstanding QA issues, finding unresolved bugs. NOT for: resolving findings (use resolve_finding). |
-| `invite_peer_agent` | external | Invite a new sub-agent into the FlowWink federation. Auto-generates an MCP API key and registers the peer with full transitive trust (the new peer inherits the inviter\ |
+| `invite_peer_agent` | external | Invite a new sub-agent into the FlowWink federation. Auto-generates an MCP API key and registers the peer with full transitive trust (the new peer inherits the inviter's toolset_groups). Use when: … |
 
 <!-- generated:skills:end -->

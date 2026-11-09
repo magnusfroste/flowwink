@@ -5,7 +5,7 @@ version: "1.0.0"
 category: "communication"
 autonomy: "config-required"
 generated: true
-generated_at: "2026-10-08"
+generated_at: "2026-11-09"
 description: Create newsletter drafts for sending
 ---
 
@@ -28,10 +28,6 @@ Ships with **6 agent skills**, **1 public block**, an **admin UI**.
 | **MCP-exposed skills** | 6 |
 | **Owns tables** | — |
 
-## Integrations
-
-**Required:** `resend`
-
 ## Skills
 
 These skills are seeded into `agent_skills` when the module is enabled and exposed via MCP.
@@ -43,7 +39,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `execute_newsletter_send` | internal | Actually send a prepared newsletter to all confirmed subscribers via email. Use when: newsletter is approved and ready to send; executing a scheduled send; distributing content to subscriber list. … |
 | `manage_newsletter_subscribers` | internal | Manage newsletter subscribers and their mailing lists: list, search, count (optionally per list), lists (every list with counts), add_to_list, remove_from_list, remove (unsubscribe). Use when: revi… |
 | `manage_newsletters` | internal | Manage newsletters: list, get, create, update, delete. Full CRUD on newsletter drafts and scheduled sends. Use when: creating a new newsletter campaign; editing planned newsletter content; deleting… |
-| `lead_nurture_sequence` | internal | Draft ONE AI-written nurture email for ONE lead, saved as a newsletter draft (nothing is sent). Requires lead_id — call it once per lead. Use when: a specific lead needs a welcome, re-engage or ups… |
+| `lead_nurture_sequence` | internal | Save ONE nurture email you have written (subject + content_md) for ONE lead as a newsletter draft (nothing is sent). Requires lead_id — call it once per lead. Use when: a specific lead needs a welc… |
 | `newsletter_subscribe` | external | Subscribe a visitor to the newsletter. Use when: visitor wants to sign up for emails, newsletter opt-in. NOT for: managing subscribers (use manage_newsletter_subscribers), sending newsletters (use … |
 
 ## Used in Processes
@@ -62,6 +58,7 @@ This module participates in the following end-to-end business processes:
 | Public block | `src/components/public/blocks/NewsletterBlock.tsx` |
 | Migration | `supabase/migrations/20260718090000_fix-newsletter-cron-self-reference.sql` |
 | Migration | `supabase/migrations/20260821040000_a7b8c9d0-newsletter-follows-the-matrix.sql` |
+| Migration | `supabase/migrations/20261103120000_newsletter-flows-become-objectives.sql` |
 
 ## Contributing
 

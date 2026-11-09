@@ -5,7 +5,7 @@ version: "1.0.0"
 category: "data"
 autonomy: "view-required"
 generated: true
-generated_at: "2026-09-30"
+generated_at: "2026-11-09"
 description: Create and manage company records with optional AI enrichment
 ---
 
@@ -43,14 +43,14 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `merge_duplicate_partners` | internal | Find and merge parties that share an email address. One person as two parties means two receivable balances, two credit limits and two DSO figures for one customer. Use when: a duplicate is suspect… |
 | `manage_company` | internal | Manage companies: list, get, create, update, delete — incl. B2B fields (org/VAT number, parent company hierarchy, employee count, revenue, credit limit, account owner, tags). Use when: adding a com… |
 | `find_duplicate_companies` | internal | Find likely duplicate companies by name similarity or identical domain (read-only). Use when: cleaning the CRM, before creating a company that might already exist. NOT for: merging (manual for now)… |
-| `list_company_orders` | external | Max orders to return (default 20, max 50). |
-| `list_company_invoices` | external | Max invoices to return (default 20, max 50). |
-| `request_company_return` | external | Free-text detail (optional). |
-| `approve_company_quote` | external | The quote number (or id) to accept. |
-| `manage_company_contacts` | external | Default list. |
-| `reorder_company_order` | external | The earlier company order id (or its short prefix) to repeat. |
-| `request_company_quote` | external | What the company would like a quote for — products/services, quantities, timeline. |
-| `initiate_company_invoice_payment` | external | The invoice number (or id) to pay. |
+| `list_company_orders` | external | List the orders of the signed-in B2B contact's OWN company (identity ladder rung 3). Use when: an authenticated company contact asks about their organisation's orders. NOT for: an individual's pers… |
+| `list_company_invoices` | external | List the invoices of the signed-in B2B contact's OWN company (identity ladder rung 3), including which are unpaid. Use when: an authenticated company contact asks about their organisation's invoice… |
+| `request_company_return` | external | Open a return (RMA) for one of the signed-in B2B contact's OWN company's orders (identity ladder rung 3, write). Use when: an authenticated company contact with the buyer role or higher wants to re… |
+| `approve_company_quote` | external | Accept/approve a sales quote addressed to the signed-in B2B contact's OWN company (identity ladder rung 3, commitment). Use when: an authenticated company contact with the approver role or higher w… |
+| `manage_company_contacts` | external | Manage who else may act for the signed-in B2B contact's OWN company: list contacts, invite a colleague by email with a role, change a role, or revoke access (identity ladder rung 3, admin only). Us… |
+| `reorder_company_order` | external | Place a repeat of one of the signed-in B2B contact's OWN company's earlier orders (identity ladder rung 3, write). Use when: an authenticated company contact with the buyer role or higher wants to … |
+| `request_company_quote` | external | File a quote request on behalf of the signed-in B2B contact's OWN company (identity ladder rung 3, write). Use when: an authenticated company contact with the buyer role or higher asks for pricing/… |
+| `initiate_company_invoice_payment` | external | Get the secure payment link for one of the signed-in B2B contact's OWN company's unpaid invoices (identity ladder rung 3). Use when: an authenticated company contact with the buyer role or higher w… |
 
 ## Used in Processes
 

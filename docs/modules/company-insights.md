@@ -5,7 +5,7 @@ version: "1.0.0"
 category: "insights"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-10-02"
+generated_at: "2026-11-09"
 description: Unified business identity, financials, and market positioning.
 ---
 
@@ -39,8 +39,8 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 
 | Skill | Scope | Description |
 |-------|-------|-------------|
-| `get_company_profile` | both | Read the FlowWink site\ |
-| `update_company_profile` | both | Update the FlowWink site\ |
+| `get_company_profile` | both | Read the FlowWink site's Business Identity (company name, ICP, value proposition, services, clients, brand tone, contact info). Use when: you need affärs-/företagskontext before writing content, qu… |
+| `update_company_profile` | both | Update the FlowWink site's Business Identity. Performs a shallow merge by default. Use when: enriching the profile with newly discovered facts. NOT for: changing agent identity/soul. |
 | `enrich_company_profile` | internal | Enrich a company insights profile from a public identifier (org number / domain) — writes company facts for the customer-insights views. Use when: filling out a prospect company card. NOT for: CRM … |
 
 ## Module API Contract

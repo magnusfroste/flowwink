@@ -5,7 +5,7 @@ version: "1.0.0"
 category: "data"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-09-30"
+generated_at: "2026-11-09"
 description: Contract lifecycle management with renewal tracking and document storage
 ---
 
@@ -38,7 +38,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `manage_contract_obligation` | internal | Track contract milestones/obligations (description, due date, status pending/met/overdue, responsible). Use when: adding or updating what a contract commits either party to. NOT for: the contract d… |
 | `manage_contract` | internal | Create, list, update, or search contracts. Use when: admin wants to create an agreement, find a contract by counterparty, change status, or update terms. NOT for: invoicing (use manage_invoice), pr… |
 | `list_contract_templates` | internal | List available contract templates (NDA, Service, MSA, SOW, etc) before creating a contract. Use when: agent or admin needs to create a contract and wants to discover existing templates instead of w… |
-| `manage_contract_template` | internal | Author the organisation\ |
+| `manage_contract_template` | internal | Author the organisation's own contract templates: get, create, update or archive the reusable agreement bodies that manage_contract renders into real contracts. IMPORTANT: load this skill's full in… |
 | `contract_renewal_check` | internal | Check for contracts expiring soon and alert. Use when: autonomous heartbeat checks for renewal deadlines, or admin asks "which contracts are expiring soon?". NOT for: creating contracts (use manage… |
 | `create_service_from_contract` | internal | Create the service (subscription, provider "contract") that a SIGNED, active contract should have — the repair door for a contract whose signing did not produce one. Use when: a signed contract is … |
 | `generate_contract_invoice` | internal | Generate a customer invoice for a contract (the CTR-YYYYMMDD-… series). Use when: a service/retainer agreement is due for billing (its recurring fee), after the contract is active. NOT for: subscri… |

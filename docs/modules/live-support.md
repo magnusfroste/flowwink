@@ -5,7 +5,7 @@ version: "1.1.0"
 category: "communication"
 autonomy: "view-required"
 generated: true
-generated_at: "2026-10-02"
+generated_at: "2026-11-09"
 description: Omnichannel contact center: human-agent takeover across web chat, Telegram (and future SMS/voice), with presence-aware routing, callbacks, and voicemail triage.
 ---
 
@@ -43,9 +43,9 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `list_support_agents` | internal | List support agents with their availability: status (online/away/busy/offline), current load and max capacity. Use when: checking who is available before assigning/transferring a conversation; moni… |
 | `support_assign_conversation` | internal | Assign or reassign a support conversation to an agent. Use when: a customer query needs agent attention; re-routing a conversation to a specialist; ensuring no support ticket is unassigned. NOT for… |
 | `support_get_feedback` | internal | Retrieve chat feedback ratings and comments. Useful for monitoring customer satisfaction and identifying knowledge gaps. Use when: pulling raw feedback data; building satisfaction reports; reviewin… |
-| `route_conversation` | internal | Route a conversation to a human agent: assigns the least-loaded online agent that handles the conversation\ |
+| `route_conversation` | internal | Route a conversation to a human agent: assigns the least-loaded online agent that handles the conversation's channel, else queues it and records an escalation. Use when: a visitor (any channel) nee… |
 | `manage_channel` | internal | Configure or test an inbound channel (Telegram). action=test verifies the bot token; action=configure stores it and registers the webhook; action=list shows configured channels. Use when: connectin… |
-| `send_channel_message` | internal | Send an outbound message on a conversation\ |
+| `send_channel_message` | internal | Send an outbound message on a conversation's channel (e.g. an agent reply out to Telegram). Use when: a human agent replies to a non-web conversation; pushing a proactive message to a channel threa… |
 | `request_callback` | internal | Manage a callback request (rides the bookings table, metadata.kind=callback). action=create schedules one; action=mark_attempted records an outreach attempt; action=list returns open callbacks. Use… |
 | `handle_voicemail` | internal | FlowPilot-analyze a voicemail transcript: extracts summary, intent, sentiment, and whether a callback was requested, and stores them on the voicemail. Use when: a voicemail has a transcript and nee… |
 

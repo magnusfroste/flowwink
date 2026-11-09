@@ -5,7 +5,7 @@ version: "2.0.0"
 category: "data"
 autonomy: "view-required"
 generated: true
-generated_at: "2026-10-08"
+generated_at: "2026-11-09"
 description: Recurring revenue lifecycle — active customers, MRR, churn, dunning, renewals, win-back
 ---
 
@@ -45,7 +45,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `flag_at_risk_subscriptions` | internal | Sweep subscriptions and flag at-risk ones (past_due, scheduled cancel, low health). Use when: daily health check, before sending win-back. NOT for: reading current at-risk list (use list_subscripti… |
 | `record_churn_reason` | internal | Record why a customer churned (reason category + free-text feedback + NPS). Use when: customer cancels via portal, exit survey returned. NOT for: technical cancellation (use Stripe customer-portal … |
 | `manage_winback_campaign` | internal | Create or update a win-back campaign (the offer + email shown to churned/at-risk subscribers). Use when: setting up a retention offer after a churn event, or editing an existing one. NOT for: listi… |
-| `send_winback_campaign` | internal | Send a win-back campaign\ |
+| `send_winback_campaign` | internal | Send a win-back campaign's e-mail to churned (canceled) subscriptions that have not received it yet, and log each send in subscription_winback_sends (sent / simulated when no e-mail provider / fail… |
 | `list_winback_campaigns` | internal | List configured win-back campaigns (active or all). Use when: choosing which offer to send, auditing win-back program. NOT for: creating/editing a campaign (manage_winback_campaign) or sending it. |
 | `manage_subscription_plan` | internal | CRUD for reusable subscription plan templates (name/price/interval/trial/commitment). Use when: defining or changing the plans customers subscribe to. NOT for: creating a customer subscription (use… |
 | `create_manual_subscription` | internal | Create a recurring subscription billed by invoice (not via Stripe card). Use when: B2B customer signs a service plan paid by invoice (telecom plans, retainers, hosted services). NOT for: online car… |

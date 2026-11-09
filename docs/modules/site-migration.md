@@ -5,7 +5,7 @@ version: "1.0.0"
 category: "content"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-10-02"
+generated_at: "2026-11-09"
 description: Clone and migrate external websites into FlowWink.
 ---
 
@@ -30,8 +30,7 @@ Ships with **2 agent skills**.
 
 ## Integrations
 
-**Required:** `firecrawl`
-**Optional:** `jina`
+**Optional:** `firecrawl`, `jina`
 
 ## Skills
 

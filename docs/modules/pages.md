@@ -5,7 +5,7 @@ version: "1.0.0"
 category: "content"
 autonomy: "config-required"
 generated: true
-generated_at: "2026-10-08"
+generated_at: "2026-11-09"
 description: Create and publish website pages, header, footer and navigation
 ---
 
@@ -13,7 +13,7 @@ description: Create and publish website pages, header, footer and navigation
 
 > Create and publish website pages, header, footer and navigation
 
-Ships with **15 agent skills**, **3 database tables**.
+Ships with **19 agent skills**, **3 database tables**.
 
 ## Quick Facts
 
@@ -25,7 +25,7 @@ Ships with **15 agent skills**, **3 database tables**.
 | **Autonomy** | config-required |
 | **Core** | Yes |
 | **Capabilities** | `content:receive`, `data:write`, `webhook:trigger` |
-| **MCP-exposed skills** | 15 |
+| **MCP-exposed skills** | 19 |
 | **Owns tables** | 3 |
 
 ## Skills
@@ -37,17 +37,21 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 |-------|-------|-------------|
 | `generate_meta_description` | internal | Scan published pages for missing SEO meta descriptions and generate them via AI. Use when: improving site SEO; doing a content audit; filling gaps in meta_json. NOT for: writing page body content (… |
 | `generate_alt_text` | internal | Scan published pages for images missing alt-text and generate accessible alt descriptions via AI. Use when: improving accessibility (WCAG); SEO maintenance; auditing image content. NOT for: writing… |
-| `manage_page` | internal | Full page lifecycle management for WEBSITE/CMS pages — the pages visitors see on the public site. Use when: creating or editing a website page (landing page, about, services, contact), publishing a… |
-| `manage_page_blocks` | internal | Manipulate blocks on a page: list, add, update, remove, reorder, duplicate, toggle visibility. Use when: designing a page layout; repositioning elements; showing/hiding specific content blocks. NOT… |
+| `manage_page` | internal | Full page lifecycle management for WEBSITE/CMS pages — the pages visitors see on the public site. Use when: creating a website page (landing page, about, services, contact) with all its blocks in o… |
+| `manage_page_blocks` | internal | Manipulate blocks on a page: list, add, update, remove, reorder, duplicate, toggle visibility. Use when: changing the text or fields of a block on an existing page (update: block_id + ONLY the fiel… |
 | `site_branding_get` | internal | Read current site branding settings including logo, colors, fonts, and favicon. Use when: retrieving current brand settings; checking active color scheme; verifying logo URL. NOT for: updating bran… |
 | `site_branding_update` | internal | Update site branding settings — logo (light and dark), favicon, primary color (light and dark), accent color, heading/body fonts. Only the fields passed change; the rest of the branding is kept. Us… |
 | `create_page_block` | internal | Create a new content block on an existing page. Supports batch mode for adding multiple blocks at once. Use when: building a page after manage_page created it, adding sections during migration, use… |
 | `build_site_step` | both | Run one step of the site-builder reasoning loop: takes conversation history + current module state, returns next assistant message and optionally a tool_call (create_block / migrate_url / update_fo… |
 | `manage_redirect` | internal | Manage URL redirects (301/302) from old paths to new pages or external URLs. Use when: a page slug changed and old links must keep working, consolidating pages, migrating from another site, fixing … |
-| `list_stale_translations` | internal | Find language versions of pages that have fallen behind their freshest sibling — the Swedish page was improved but the English one was not. Use when: checking whether translations are up to date; b… |
-| `translate_site_into` | internal | Copy every published page into a new language in one go, as drafts, and add that language to the site. Use when: a site installed from a template is in one language and someone wants a second one; … |
-| `translate_page` | internal | Target-language page slug, e.g. "home-sv" |
-| `manage_page_translation` | internal | Multi-language pages: set a page locale, create/link translations of a page, list a page\ |
+| `list_stale_translations` | internal | Find translated text that has fallen behind its source, per string: the Swedish heading was changed, the English overlay still carries the old one — or was never translated. Use when: checking whet… |
+| `translate_site_into` | internal | Legacy name for enable_language: add a language to the site. Copies NOTHING any more — a language with no translations is an empty overlay, and translate_page fills it per page. Use when: an operat… |
+| `enable_language` | internal | Add a language to the site (site_languages.enabled). Copies nothing: a language with no translations is an empty overlay, and the switcher lists a page in it only once its overlay is published. Use… |
+| `translate_page` | internal | Translate one page into another language, server-side, keeping the design: give slug (the page) + locale (the language to translate INTO). The page's structure stays where it is; the text lands in … |
+| `set_translation` | internal | Set translated strings by hand: slug (the page) + locale + unit (from list_stale_translations or the page editor's translation view) + text, or doc for a rich-text unit. Several strings → ONE call … |
+| `publish_translation` | internal | Publish (or unpublish) translation overlays: slug + locale for one page, or locale alone for EVERY page that has an overlay in that language (one call publishes a language). status published|draft.… |
+| `convert_translation_groups` | internal | Convert pages stored as sibling rows per language (the pre-overlay model: home + home-sv) into ONE page with a translation overlay per language, so the design lives once. Use when: an instance stil… |
+| `manage_page_translation` | internal | LEGACY (pre-overlay model): set a page locale, create/link sibling pages as language versions, list a page's language versions. Use when: an instance still stores translations as sibling rows and a… |
 | `manage_page_experiment` | internal | A/B test two versions of a page: create an experiment between a control page and a variant page, start/stop it, and read impressions/conversions/lift per variant. Use when: optimizing a landing pag… |
 | `manage_global_blocks` | internal | Manage global blocks (header, footer, etc): list, get, update, toggle active status. Use when: changing header/footer content; reviewing active global elements; toggling visibility of a global bloc… |
 

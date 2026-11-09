@@ -181,7 +181,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | Skill | Scope | Description |
 |-------|-------|-------------|
 | `create_objective` | internal | Create a new high-level objective for FlowPilot to work toward. Use when: defining a new strategic goal; initiating a new project; setting a long-term target for operations. NOT for: creating CRM t… |
-| `list_objectives` | internal | List FlowPilot\ |
+| `list_objectives` | internal | List FlowPilot's objectives — the goals the autonomous loop works toward — with status, cadence, progress and evidence counts. Use when: an operator asks what FlowPilot is working on, before create… |
 | `manage_objective` | internal | Pause, resume, complete or edit a FlowPilot objective. Pausing stops the loop from acting on it without losing it; resume restarts it; complete closes it ONLY on evidence (the same rule FlowPilot i… |
 | `learn_from_data` | internal | Analyze page views, chat feedback, and lead conversions to distill learnings into persistent memory. Use when: heartbeat learning cycle; extracting insights from operational data; building institut… |
 | `manage_automations` | internal | Create and manage agent automations (cron jobs, event triggers, signal handlers). `list` answers each job with last_triggered_at, next_run_at, run_count, last_error and a `state` read against ITS s… |

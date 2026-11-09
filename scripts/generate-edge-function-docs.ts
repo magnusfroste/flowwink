@@ -52,7 +52,24 @@ for (const m of configToml.matchAll(/\[functions\.([a-z0-9-]+)\]\s*\nverify_jwt\
 function purposeOf(fn: string): string {
   let src = '';
   try { src = readFileSync(join(FN_DIR, fn, 'index.ts'), 'utf-8'); } catch { return ''; }
-  const lines = src.split('\n');
+  // The header: everything before the first statement that is not an import.
+  // A comment further down is an implementation note ("WinAnsi, which has no
+  // U+202F — swap it…" became generate-invoice-pdf's purpose, 2026-11-09).
+  const all = src.split('\n');
+  let end = all.length;
+  let inBlock = false;
+  let inImport = false;
+  for (let i = 0; i < all.length; i++) {
+    const t = all[i].trim();
+    if (inBlock) { if (t.includes('*/')) inBlock = false; continue; }
+    if (inImport) { if (/from\s+['"][^'"]+['"];?\s*$/.test(t) || /^['"][^'"]+['"];?$/.test(t)) inImport = false; continue; }
+    if (!t || t.startsWith('//')) continue;
+    if (t.startsWith('/*')) { if (!t.includes('*/')) inBlock = true; continue; }
+    if (/^import\s/.test(t)) { if (!/from\s+['"][^'"]+['"];?\s*$/.test(t) && !/^import\s+['"]/.test(t)) inImport = true; continue; }
+    end = i;
+    break;
+  }
+  const lines = all.slice(0, end);
   const isComment = (raw: string) => /^\s*(\/\/|\/\*\*?|\*)/.test(raw);
   const strip = (raw: string) => raw.replace(/^\s*(\/\/|\/\*\*?|\*\/?|\*)\s?/, '').trim();
   const noise = (line: string) =>
@@ -89,12 +106,14 @@ function purposeOf(fn: string): string {
  * that is the better home, and the generator prefers it.
  */
 const PURPOSE_OVERRIDES: Record<string, string> = {
-  'agent-execute': 'Skill executor — runs one skill (db/rpc/module/internal/edge handlers) with trust, staging and the agent audit trail.',
   'blog-rss': 'RSS feed of the 20 most recent published blog posts.',
   'check-secrets': 'Reports which provider secrets (AI, email, payments…) are configured, for the admin setup screens.',
   'composio-proxy': 'Proxy to Composio-connected accounts (Gmail and other integrations) for the inbox and outbound mail.',
   'content-api': 'Programmatic content access — pages, posts and KB as JSON or Markdown for headless consumers.',
   'create-checkout': 'Creates the shop checkout (Stripe, or a recorded order in sandbox mode).',
+  'create-user': 'Creates a user through the auth admin API (admin only; the address is confirmed at once).',
+  'extract-pdf-text': 'Extracts text from a PDF — or an Office file — stored in Supabase Storage.',
+  'send-webhook': 'Delivers an outbound webhook to the configured endpoints, with retries.',
   'generate-invoice-pdf': 'Renders an invoice as PDF — by public token for the customer, or as staff.',
   'get-page': 'Serves a published page by slug with caching; PublicPage falls back to the database if it fails.',
   'instance-health': 'Health report for the instance — cron jobs, database pulse, edge surface — for the fleet and the admin.',
