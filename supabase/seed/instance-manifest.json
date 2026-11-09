@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261109220000",
-      "migrations_count": 752,
+      "migration_head": "20261109230000",
+      "migrations_count": 753,
       "migrations": [
         {
           "version": "00000000000000",
@@ -3013,6 +3013,10 @@
         {
           "version": "20261109220000",
           "name": "svepen-fragar-om-det-finns-arbete"
+        },
+        {
+          "version": "20261109230000",
+          "name": "global-elements-ar-borta"
         }
       ]
     },
@@ -3023,9 +3027,9 @@
     },
     "edge_functions": {
       "count": 76,
-      "shared_hash": "sha256:5f03b01f1f97c601bbded98bf36f3d0a3e39a52798ea828b0331a3cdfe1e1d47",
+      "shared_hash": "sha256:c65cb6aa0e4cd7f592ec0c3d6fdf4bcc233a69b4e765ba17384b45bd97eda5cc",
       "functions": {
-        "agent-execute": "sha256:fa087ee9a5ea693f1f158ccbbbda854f34d6ba4193a3a0eddf1fed05d9750ba0",
+        "agent-execute": "sha256:1f26bd3d1b760f3f80ed3dea42f688904a5f8f3b15d5afc702d5e0ed09bb90b0",
         "agent-operate": "sha256:4320e02dd3e6a0a1706b42dc1905b631c61e6a4cbe3556c701f474c278c89e1a",
         "ai-task": "sha256:ce3aacdef625bba758f4323da3e49104a1b94a3d3d77d800e89dacd0b803d65e",
         "automation-dispatcher": "sha256:d905660cd907c6f1ef5c7cac0a97ed44a4e4187ef4d5179089fa2714b2751443",
