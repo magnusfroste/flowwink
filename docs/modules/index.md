@@ -7,7 +7,7 @@ generated: true
 
 # Module catalog
 
-69 modules across 5 categories, 640 module-owned skills.
+68 modules across 5 categories, 640 module-owned skills.
 Platform skills (search_web, manage_site_settings, briefings…) are not owned by a module — see [`src/lib/platform-seeds.ts`](../reference/skills-source.md).
 
 **How a module behaves**
@@ -116,7 +116,6 @@ With FlowPilot off, a module is a normal admin UI. With FlowPilot on, the same m
 | [**Federation**](./federation.md) | agent-capable | 11 | Connected agents — register and manage the agents that operate this instance over MCP |
 | [**Feedback**](./feedback.md) | agent-capable | 4 | The feedback board — bug reports, feature requests, template wishes, questions — with votes, comments and a status per post. By default… |
 | [**FlowPilot**](./flowpilot.md) | config-required | 7 | Autonomous AI operator — skills, objectives, automations and workflows. When disabled, FlowWink runs as a traditional SaaS; when enabled,… |
-| [**Global Blocks**](./global-elements.md) | config-required | 0 | Create reusable global content blocks (header, footer, etc.) |
 | [**Templates**](./templates.md) | config-required | 4 | Template gallery, export current site as reusable template, and import templates from file |
 
 ## Deep dives (hand-maintained)

@@ -99,4 +99,3 @@ export { feedbackModule } from './feedback-module';
 export { reportsModule } from './reports-module';
 
 // ── Legacy (not in ModulesSettings — kept for registry compatibility) ──
-export { globalBlocksModule } from './global-blocks-module';

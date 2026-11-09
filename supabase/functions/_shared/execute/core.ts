@@ -1719,7 +1719,10 @@ const MODULE_HANDLER_TO_SETTING: Record<string, string> = {
   consultants: 'consultants',
   pages: 'pages',
   kb: 'knowledgeBase',
-  globalElements: 'globalElements',
+  // The handler name is a wire identifier (manage_global_blocks → module:globalElements);
+  // the module it belongs to is Pages. Mapping it to itself woke a module that no longer
+  // exists every time an agent touched the header (liteit carried it enabled, 2026-11-09).
+  globalElements: 'pages',
   deals: 'deals',
   companies: 'companies',
   forms: 'forms',

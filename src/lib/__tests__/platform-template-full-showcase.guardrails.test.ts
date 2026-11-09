@@ -21,9 +21,7 @@ import { defaultModulesSettings } from '@/hooks/useModules';
 
 describe('flowwink-platform is the full showcase', () => {
   it('enables every module in the registry (minus deprecated)', () => {
-    const allModules = Object.keys(defaultModulesSettings).filter(
-      (id) => id !== 'globalElements', // deprecated — merged into pages
-    );
+    const allModules = Object.keys(defaultModulesSettings);
     const required = new Set(flowwinkPlatformTemplate.requiredModules ?? []);
     const missing = allModules.filter((id) => !required.has(id as never));
     expect(
@@ -35,7 +33,7 @@ describe('flowwink-platform is the full showcase', () => {
   it('declares no unknown or deprecated module ids', () => {
     const known = new Set(Object.keys(defaultModulesSettings));
     const unknown = (flowwinkPlatformTemplate.requiredModules ?? []).filter(
-      (id) => !known.has(id) || id === 'globalElements',
+      (id) => !known.has(id),
     );
     expect(unknown, `Unknown/deprecated module ids in requiredModules: ${unknown.join(', ')}`).toEqual([]);
   });

@@ -238,7 +238,7 @@ export default function ModulesPage() {
         category,
         label: CATEGORY_LABELS[category],
         modules: Object.entries(localModules)
-          .filter(([id, config]) => config.category === category && id !== 'globalElements')
+          .filter(([, config]) => config.category === category)
           .filter(([id, config]) => {
             if (!q) return true;
             return (

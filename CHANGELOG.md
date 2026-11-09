@@ -10,6 +10,10 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Removed
 
+- **The Global Elements module is gone.** It had no skills and no tables and was
+  hidden ("merged into Pages"); its one effect was to be switched on by accident
+  whenever an agent edited the header. Headers and footers are unchanged — they
+  are Pages' `manage_global_blocks`.
 - **Browser Control is retired.** The module was a Chrome-extension relay for
   reading pages behind a login (LinkedIn, X) through an admin's browser. Nobody
   used it, it was off by default, and agents with their own browser do that job

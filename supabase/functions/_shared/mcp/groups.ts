@@ -33,7 +33,7 @@ export type GroupMap = Record<string, string[]>;
 export const SKILL_CATEGORY_MODULES: GroupMap = {
   content: [
     "pages", "blog", "knowledgeBase", "handbook", "consultants", "mediaLibrary", "siteMigration",
-    "newsletter", "docs", "wiki", "reports", "webinars", "documents", "globalElements",
+    "newsletter", "docs", "wiki", "reports", "webinars", "documents",
   ],
   crm: [
     "leads", "deals", "companies", "forms", "bookings", "hr", "recruitment", "projects",
