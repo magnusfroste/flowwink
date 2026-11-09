@@ -877,7 +877,7 @@ Deno.serve(async (req) => {
     // A forged call webhook writes calls into the log and steers where a call
     // is routed: the provider's shared secret in the registered URL, exactly as
     // elks46-ingest (2026-11-09). Unconfigured → accepted and logged (Law 4).
-    const secretCheck = checkWebhookSecret(req, await loadWebhookSecret(supabase, providerHint, Deno.env.get(`${providerHint.toUpperCase()}_WEBHOOK_SECRET`)));
+    const secretCheck = checkWebhookSecret(req, await loadWebhookSecret(getServiceClient(), providerHint, Deno.env.get(`${providerHint.toUpperCase()}_WEBHOOK_SECRET`)));
     if (secretCheck === "mismatch") {
       return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
