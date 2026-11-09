@@ -7,6 +7,8 @@
 //    (UNIQUE(invoice_id, offset_days)) so retries are safe.
 //
 // Delivery uses the existing email-send function — no parallel machinery.
+import { requireScheduledCaller } from "../_shared/edge-auth.ts";
+import { getServiceClient } from "../_shared/supabase-clients.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 import { dateInZone, homeFormat } from "../_shared/locale/home.ts";
 import { loadHome } from "../_shared/locale/load-home.ts";
@@ -65,6 +67,11 @@ function reminderHtml(params: {
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+
+  // A scheduled function: the service key, a staff session or the database's
+  // x-cron-secret (_shared/edge-auth.ts requireScheduledCaller, 2026-11-09).
+  const scheduledRefusal = await requireScheduledCaller(req, getServiceClient(), "contract-billing-cron", corsHeaders);
+  if (scheduledRefusal) return scheduledRefusal;
 
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL") ?? "",

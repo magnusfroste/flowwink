@@ -104,13 +104,10 @@ export const PUBLIC_BY_DESIGN: Record<string, string> = {
 export const DEBT_MAX_DAYS = 60;
 /** fn → the day its clock started (ISO date). The nine were read from source on 2026-09-28; the clock starts when it was built. */
 export const KNOWN_UNGATED_SINCE: Record<string, string> = {
-  // Cron-shaped or tool-shaped, service client, no caller check.
-  'dunning-processor': '2026-11-07', 'subscription-billing-cron': '2026-11-07', 'contract-billing-cron': '2026-11-07',
-  'knowledge-indexer': '2026-11-07', 'quote-expiry-reminders': '2026-11-07',
-  'event-dispatcher': '2026-11-07', 'signal-dispatcher': '2026-11-07',
-  // flowpilot-heartbeat left the list 2026-10-30: requireServiceOrRole in-body, cron jobs carry the service key.
-  // Dispatch and rebuild entry points. demo-cycle gates on demo_mode, which is not a caller check.
-  'automation-dispatcher': '2026-11-07', 'demo-cycle': '2026-11-07',
+  // The nine scheduled functions (dispatchers, billing crons, knowledge-indexer, quote reminders,
+  // demo-cycle) left the list 2026-11-09: requireScheduledCaller — the service key, a staff session
+  // (admin for demo-cycle) or the database's own x-cron-secret (20261109160000).
+  // flowpilot-heartbeat left the list 2026-10-30: requireServiceOrRole in-body.
   // The agent tools on paid keys (browser-fetch, web-scrape, web-search, extract-pdf-text,
   // process-image) left the list 2026-11-07: requireServiceOrStaff in-body, after an SSRF report.
   // signal-ingest, voice-ingest and voice-recording left 2026-11-09: staff/service/own token,
@@ -120,7 +117,7 @@ export const KNOWN_UNGATED_SINCE: Record<string, string> = {
 };
 export const KNOWN_UNGATED: string[] = Object.keys(KNOWN_UNGATED_SINCE);
 // 21 on 2026-09-28. Lower it in the PR that gates or classifies one; never raise it.
-export const KNOWN_UNGATED_CEILING = 9;
+export const KNOWN_UNGATED_CEILING = 0;
 
 const toml = readFileSync(join(root, 'supabase/config.toml'), 'utf8');
 const pub = publicFunctions(toml);
@@ -196,6 +193,21 @@ describe('a public edge function that holds the service key verifies its caller'
       if (!src) continue;
       const c = classify(src);
       expect(c.verdict === 'ungated' ? KNOWN_UNGATED.includes(fn) : true, `${fn} is ungated but not on the ratchet`).toBe(true);
+    }
+  });
+
+  // The scheduled surface (2026-11-09) admits a call with no secret for one week, logged,
+  // so the fleet's logs can show any caller still without it. A week is a week: past
+  // 2026-11-23 the grace period is red until CRON_SECRET_REQUIRED is true.
+  it('the cron secret grace period ends', () => {
+    const edgeAuth = readFileSync(join(root, 'supabase/functions/_shared/edge-auth.ts'), 'utf8');
+    const required = /export const CRON_SECRET_REQUIRED = true;/.test(edgeAuth);
+    const today = new Date().toISOString().slice(0, 10);
+    expect(required || today <= '2026-11-23',
+      'CRON_SECRET_REQUIRED is still false: check the [cron-secret] lines in the fleet\'s edge logs, then set it to true').toBe(true);
+    for (const fn of ['automation-dispatcher', 'event-dispatcher', 'signal-dispatcher', 'knowledge-indexer',
+      'dunning-processor', 'subscription-billing-cron', 'contract-billing-cron', 'quote-expiry-reminders', 'demo-cycle']) {
+      expect(source(fn), `${fn} asks requireScheduledCaller`).toMatch(/requireScheduledCaller\(req,/);
     }
   });
 

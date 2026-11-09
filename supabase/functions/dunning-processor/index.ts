@@ -1,5 +1,6 @@
 // Dunning processor — runs on cron, advances active dunning sequences
 // through their email/escalation timeline.
+import { requireScheduledCaller } from "../_shared/edge-auth.ts";
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { getServiceClient } from '../_shared/supabase-clients.ts';
@@ -34,6 +35,11 @@ serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
+
+  // A scheduled function: the service key, a staff session or the database's
+  // x-cron-secret (_shared/edge-auth.ts requireScheduledCaller, 2026-11-09).
+  const scheduledRefusal = await requireScheduledCaller(req, getServiceClient(), "dunning-processor", corsHeaders);
+  if (scheduledRefusal) return scheduledRefusal;
 
   try {
     const supabase = getServiceClient();

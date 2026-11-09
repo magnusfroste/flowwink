@@ -10,6 +10,18 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Security
 
+- **A scheduled call carries a secret the database made itself.** The nine
+  functions pg_cron calls (the automation, event and signal dispatchers, the
+  knowledge indexer, dunning, contract and subscription billing, quote-expiry
+  reminders, demo-cycle) checked nobody: the cron jobs sent the publishable key
+  every browser carries, so anyone could start the billing run or, on a demo
+  instance, the nightly rebuild. The database now makes a random `CRON_SECRET`
+  in its vault, adds it to every scheduled call at call time (`x-cron-secret`),
+  and the functions admit the service key, a staff session (an admin for
+  demo-cycle) or that secret. automation-dispatcher rewrites any cron job that
+  lacks it within a minute. For one week a call with none of them is let
+  through and logged (`[cron-secret]`); then it is refused. No unguarded public
+  function is left on the ratchet.
 - **The public AI endpoints have a ceiling.** chat-completion, docs-chat and
   consultant-match answered anyone with the publishable key, a paid model call
   each, with nothing counting them. Now 30 per visitor per 5 minutes (a hashed

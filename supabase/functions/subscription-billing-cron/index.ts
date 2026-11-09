@@ -1,6 +1,8 @@
 // Daily cron — generates invoices for all manual (invoice-driven) subscriptions
 // whose next_invoice_date <= today. Stripe subscriptions are NOT touched —
 // Stripe bills them via its own scheduler.
+import { requireScheduledCaller } from "../_shared/edge-auth.ts";
+import { getServiceClient } from "../_shared/supabase-clients.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 import { businessToday } from "../_shared/locale/load-home.ts";
 
@@ -11,6 +13,11 @@ const corsHeaders = {
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+
+  // A scheduled function: the service key, a staff session or the database's
+  // x-cron-secret (_shared/edge-auth.ts requireScheduledCaller, 2026-11-09).
+  const scheduledRefusal = await requireScheduledCaller(req, getServiceClient(), "subscription-billing-cron", corsHeaders);
+  if (scheduledRefusal) return scheduledRefusal;
 
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL") ?? "",

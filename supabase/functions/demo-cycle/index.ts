@@ -10,6 +10,8 @@
 //
 // Body {"skip_rebuild": true} runs stage 2 alone (the pre-2026-08-12 behavior).
 // Deploy with --no-verify-jwt and schedule via pg_cron.
+import { requireScheduledCaller } from "../_shared/edge-auth.ts";
+import { getServiceClient } from "../_shared/supabase-clients.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 
 const corsHeaders = {
@@ -70,6 +72,11 @@ function describeError(e: unknown): string {
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+
+  // A scheduled function: the service key, a admin session or the database's
+  // x-cron-secret (_shared/edge-auth.ts requireScheduledCaller, 2026-11-09).
+  const scheduledRefusal = await requireScheduledCaller(req, getServiceClient(), "demo-cycle", corsHeaders, { role: "admin" });
+  if (scheduledRefusal) return scheduledRefusal;
 
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL") ?? "",
