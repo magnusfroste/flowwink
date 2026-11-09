@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261108230000",
-      "migrations_count": 746,
+      "migration_head": "20261109120000",
+      "migrations_count": 747,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2989,6 +2989,10 @@
         {
           "version": "20261108230000",
           "name": "automationens-korning-lamnar-ett-kvitto"
+        },
+        {
+          "version": "20261109120000",
+          "name": "river-media-listas-bara-av-personal"
         }
       ]
     },
@@ -3062,7 +3066,7 @@
         "send-webhook": "sha256:796644e9ab3d12a339c4fcc411fb28a9be6ef235b109e4e2e22262d53a44cbcc",
         "setup-database": "sha256:49f03dc85ea4d48cd53b7760b0a68f4e2a628a217207b0fe4590d931f594e56e",
         "signal-dispatcher": "sha256:a76e992430f13d05003a0e00ba622c239006fc853531400d88a1f238310c90dc",
-        "signal-ingest": "sha256:b7bf9c636845229394e12d2cec9b78da6657b3a321775f65063e53794eb0ea3d",
+        "signal-ingest": "sha256:2e10805208a71c731da6cf6c8a916886c9273dacaea79a13ad828338f192faa2",
         "sitemap": "sha256:cae857d14065abbd7064c4e111bb5bcc95522420d675b6aa9b4d293f5415e213",
         "stripe-webhook": "sha256:7d75adecab2680e76ecdcaf7a6946c7d5c139c8b00a7e9ebe66c48ea49a7cf9a",
         "subscription-billing-cron": "sha256:635a13846746187695a361f586125a59d61754c2eb950be3818a1c7258c8f48e",
@@ -3072,8 +3076,8 @@
         "track-auth-event": "sha256:b4c1796b0a75a20aa7812b9bc1cd8b3779192685fde43b324a06e8cb334bd783",
         "track-page-view": "sha256:5eedadc988ff9e91095dc7ff68b1cc56f1f253afca0c27f27ecbd3f7f627d115",
         "twilio-ingest": "sha256:4d6ee5b9c0856a5b0f9a652cd908af2ab657005f9bebf329d902ee2fa2274807",
-        "voice-ingest": "sha256:f0de07d9c8bdcccf38835d3d490fdcae5aa1677be63b11203e6349497265a654",
-        "voice-recording": "sha256:6c28b70fc05d33375374a380e6a34cc41296ada4aa033dc6fe3825306d3f1bb0",
+        "voice-ingest": "sha256:6fe17ff1268ca255409a5e96869c62258811788de3d698e39ae788fdc2aa58a3",
+        "voice-recording": "sha256:4b1a7ec9409ea9268529d571aaa85b5c04ecf945097811c60053d309ce19cf8f",
         "web-scrape": "sha256:1f3221889b0c278c0934eeb7a1f849a97818ebd2ffe37d9217da33f2b44630fd",
         "web-search": "sha256:6724b9f96d8c3487597fcf1e3948d043477c85050c7f7d60b7fbbb7a1f978810",
         "webmeet-ice": "sha256:0b8daa42425b9377066f76985be751f4491185d0a17feaee33bf9580c5141365",
