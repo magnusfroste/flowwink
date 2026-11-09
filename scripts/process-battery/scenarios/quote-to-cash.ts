@@ -31,6 +31,9 @@ async function signQuote(token: string, action: 'accept' | 'reject', email: stri
 }
 
 async function run(s: Scenario): Promise<void> {
+  // Where a person sees the outcome — proven to the screen by `npm run qa:process-views`.
+  s.shows('the quote is in the quote list, under its customer', '/admin/quotes', `Battery Kund ${s.tag}`);
+  s.shows('the invoice is in the invoice list', '/admin/invoices', `Battery Kund ${s.tag}`);
   const email = `kund-${s.tag}@example.test`;
   const inThirtyDays = new Date(Date.now() + 30 * 86_400_000).toISOString().slice(0, 10);
   const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);

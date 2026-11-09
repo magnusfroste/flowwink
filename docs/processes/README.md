@@ -9,6 +9,12 @@ category: processes
 > **What is this?** A business process usually spans multiple modules. This folder maps which **business processes** FlowWink supports, which modules participate, and at what **maturity level** each one currently sits.
 >
 > **Audience (initially):** Internal — to keep track of what we can actually deliver in customer conversations. Excerpts can later be published or shared as PDF.
+>
+> **The printable map:** `npm run docs:process-map` writes `.qa-output/process-map/process-map.{html,pdf}` —
+> how the processes hand off to each other, one purchase traced from checkout to close, the module matrix
+> and a page per process, read from these docs. What no single doc states (families, hand-offs, the traced
+> purchase) is curated in `scripts/process-map/data.ts`; the guard `process-map-stays-true` keeps every
+> entry pointing at a doc or a source symbol that exists.
 
 ---
 

@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { requireServiceOrStaff } from "../_shared/edge-auth.ts";
 import { getServiceClient } from '../_shared/supabase-clients.ts';
 
 /**
@@ -53,14 +54,17 @@ Deno.serve(async (req) => {
     const publishableKey = Deno.env.get("SUPABASE_PUBLISHABLE_KEY") || "";
     const supabase = getServiceClient();
 
-    // Accept anon key, publishable key, service_role, or custom token from site_settings.
-    // service_role: the FlowWink gateway / agent-execute invokes edge: skills with the
-    // service key (agent-execute forwards `Bearer ${SERVICE_ROLE_KEY}`), so process_signal
-    // over the operator surface must accept it or every agent call 401s ("Invalid token").
-    let authorized =
-      (anonKey && token === anonKey) ||
-      (publishableKey && token === publishableKey) ||
-      (serviceKey && token === serviceKey);
+    // Who may post a signal (2026-11-09): the platform (agent-execute's edge: skill
+    // forwards the service key), a signed-in member of staff (the browser, the
+    // Chrome extension with the user's session), or the instance's own
+    // signal_ingest_token. NOT the anon/publishable key: it ships in the site's
+    // JavaScript, so accepting it let anyone on the internet create blog drafts,
+    // memories and AI work through this endpoint.
+    let authorized = !!serviceKey && token === serviceKey;
+    if (!authorized && token !== anonKey && token !== publishableKey) {
+      const staff = await requireServiceOrStaff(req, supabase);
+      authorized = staff.authorized;
+    }
 
     // Also check custom token in site_settings
     if (!authorized) {

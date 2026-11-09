@@ -6,6 +6,7 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getServiceClient } from '../_shared/supabase-clients.ts';
+import { requireServiceOrRole, unauthorized } from '../_shared/edge-auth.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -19,6 +20,44 @@ function getSupabase() {
 const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
 const SCOPES = 'https://www.googleapis.com/auth/gmail.readonly';
+
+/**
+ * The OAuth `state` (2026-11-09). It was the constant 'gmail_connect': anyone
+ * could open ?action=authorize, consent with THEIR Google account, and the
+ * callback stored that account as the instance's inbox — FlowPilot would then
+ * scan a stranger's mail into this site's signals. Now an admin asks for a
+ * one-time state (POST begin), the callback accepts only that state, within
+ * ten minutes, once.
+ */
+const STATE_KEY = 'gmail_oauth_state';
+const STATE_TTL_MS = 10 * 60_000;
+
+function authorizeUrl(state: string): string | null {
+  const clientId = Deno.env.get('GOOGLE_CLIENT_ID');
+  if (!clientId) return null;
+  const params = new URLSearchParams({
+    client_id: clientId,
+    redirect_uri: getRedirectUri(),
+    response_type: 'code',
+    scope: SCOPES,
+    access_type: 'offline',
+    prompt: 'consent',
+    state,
+  });
+  return `${GOOGLE_AUTH_URL}?${params.toString()}`;
+}
+
+/** True once for the state an admin was handed; the stored state is spent either way. */
+async function consumeState(state: string | null): Promise<boolean> {
+  if (!state) return false;
+  const supabase = getSupabase();
+  const { data, error } = await supabase.from('site_settings').select('value').eq('key', STATE_KEY).maybeSingle();
+  // An unreadable state is no state: the connection fails closed.
+  if (error) { console.error('[Gmail OAuth] state unreadable:', error.message); return false; }
+  const stored = (data?.value ?? null) as { state?: string; expires_at?: number } | null;
+  await supabase.from('site_settings').delete().eq('key', STATE_KEY);
+  return !!stored?.state && stored.state === state && Number(stored.expires_at) > Date.now();
+}
 
 function getRedirectUri(): string {
   const url = Deno.env.get("SUPABASE_URL")!;
@@ -36,22 +75,9 @@ Deno.serve(async (req) => {
   // GET ?action=authorize → Redirect to Google consent
   // ============================================
   if (req.method === 'GET' && url.searchParams.get('action') === 'authorize') {
-    const clientId = Deno.env.get('GOOGLE_CLIENT_ID');
-    if (!clientId) {
-      return new Response('GOOGLE_CLIENT_ID not configured', { status: 500 });
-    }
-
-    const params = new URLSearchParams({
-      client_id: clientId,
-      redirect_uri: getRedirectUri(),
-      response_type: 'code',
-      scope: SCOPES,
-      access_type: 'offline',
-      prompt: 'consent',
-      state: 'gmail_connect',
-    });
-
-    return Response.redirect(`${GOOGLE_AUTH_URL}?${params.toString()}`, 302);
+    // The unauthenticated entry is gone: a consent screen is opened only with
+    // a state an admin was handed (POST { action: 'begin' }).
+    return new Response('Start the Gmail connection from Admin → Integrations.', { status: 400 });
   }
 
   // ============================================
@@ -59,6 +85,9 @@ Deno.serve(async (req) => {
   // ============================================
   if (req.method === 'GET' && url.searchParams.get('code')) {
     const code = url.searchParams.get('code')!;
+    if (!(await consumeState(url.searchParams.get('state')))) {
+      return new Response('This Gmail connection was not started from this site, or it took longer than ten minutes. Start it again from Admin → Integrations.', { status: 400 });
+    }
     const clientId = Deno.env.get('GOOGLE_CLIENT_ID');
     const clientSecret = Deno.env.get('GOOGLE_CLIENT_SECRET');
 
@@ -143,7 +172,28 @@ Deno.serve(async (req) => {
   // POST { action: 'status' | 'disconnect' | 'update_settings' }
   // ============================================
   if (req.method === 'POST') {
+    // Status, settings, disconnect and the start of a connection are an
+    // admin's (or the platform's) — until 2026-11-09 anyone could disconnect
+    // the inbox or read which account it was.
+    const auth = await requireServiceOrRole(req, getSupabase(), 'admin');
+    if (!auth.authorized) return unauthorized(corsHeaders);
     const body = await req.json();
+
+    if (body.action === 'begin') {
+      const state = crypto.randomUUID();
+      const url = authorizeUrl(state);
+      if (!url) {
+        return new Response(JSON.stringify({ error: 'GOOGLE_CLIENT_ID not configured' }), {
+          status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      await getSupabase().from('site_settings').upsert({
+        key: STATE_KEY,
+        value: { state, expires_at: Date.now() + STATE_TTL_MS },
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'key' });
+      return new Response(JSON.stringify({ url }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
 
     if (body.action === 'disconnect') {
       const supabase = getSupabase();

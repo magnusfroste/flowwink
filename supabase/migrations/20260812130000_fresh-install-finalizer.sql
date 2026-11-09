@@ -109,8 +109,11 @@ BEGIN
       CREATE POLICY "river-media authed upload" ON storage.objects FOR INSERT TO authenticated WITH CHECK ((bucket_id = 'river-media'::text) AND public.is_staff(auth.uid()));
       DROP POLICY IF EXISTS "river-media owner delete" ON storage.objects;
       CREATE POLICY "river-media owner delete" ON storage.objects FOR DELETE TO authenticated USING (((bucket_id = 'river-media'::text) AND (owner = auth.uid())));
+      -- River's images open by URL (public bucket); LISTING them is staff's (2026-11-09,
+      -- 20261109120000 does the same on instances that ran this file before).
       DROP POLICY IF EXISTS "river-media public read" ON storage.objects;
-      CREATE POLICY "river-media public read" ON storage.objects FOR SELECT TO public USING ((bucket_id = 'river-media'::text));
+      DROP POLICY IF EXISTS "river-media staff read" ON storage.objects;
+      CREATE POLICY "river-media staff read" ON storage.objects FOR SELECT TO authenticated USING (((bucket_id = 'river-media'::text) AND public.is_staff(auth.uid())));
       EXIT;
     EXCEPTION WHEN deadlock_detected THEN
       IF attempt >= 5 THEN RAISE; END IF;

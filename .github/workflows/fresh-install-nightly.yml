@@ -140,6 +140,13 @@ jobs:
       - name: Quiet by default — a fresh instance tells nobody anything
         run: npm run qa:quiet
 
+      # RLS is on everywhere; this lists what is still open to an anonymous
+      # visitor (anon/public policies with true, anon storage policies, public
+      # buckets) straight from the database and requires a written reason for
+      # each. River's bucket was listable by anyone until 2026-11-09.
+      - name: Open access — everything anyone can reach has a reason
+        run: npm run qa:open-access
+
       - name: Prepare the stack (skills, template, modules, skills)
         run: npm run qa:prep
 
@@ -157,6 +164,16 @@ jobs:
           psql "$BATTERY_DB_URL" -Atc "insert into api_keys (name, key_hash, key_prefix, scopes) values ('fresh-install nightly', '$HASH', '${RAW:0:12}', '{}')" > /dev/null
           echo "::add-mask::$RAW"
           MCP_URL=http://127.0.0.1:54321/functions/v1/mcp-server MCP_API_KEY="$RAW" SUPABASE_URL=http://127.0.0.1:54321 npm run test:mcp-regression
+
+      # The battery proves the DATA; this proves the SCREEN. Each scenario says
+      # where its outcome shows (s.shows → the battery report); an admin in a
+      # real browser opens every one of those views and needs the run's own
+      # text on it — nobody sits and runs the processes by hand, so this is
+      # the person looking. Runs whenever the battery ran, red or green: a
+      # process whose data is right but invisible is its own finding.
+      - name: Process views — every outcome on the screen it belongs to
+        if: always() && steps.battery.outcome != 'skipped'
+        run: npm run qa:process-views
 
       # System Chrome is on the runner, so the sweep's default channel works.
       - name: View sweep — every route, every role

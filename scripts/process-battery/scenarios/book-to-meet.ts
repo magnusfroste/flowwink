@@ -13,6 +13,8 @@ import type { Scenario, ScenarioModule } from '../lib';
  * with an explicit offset. The dates are January Tuesdays → +01:00.
  */
 async function run(s: Scenario): Promise<void> {
+  // Where a person sees the outcome — proven to the screen by `npm run qa:process-views`.
+  s.shows('the service is on the booking menu', '/admin/bookings/services', `Rådgivning 60 min ${s.tag}`);
   const [day, blockedDay] = await twoFreeTuesdays(s);
   const at = (date: string, hhmm: string) => `${date}T${hhmm}:00+01:00`;
   const customer = (n: string) => ({ p_customer_name: `Kund ${n} ${s.tag}`, p_customer_email: `kund-${n}-${s.tag}@example.test` });

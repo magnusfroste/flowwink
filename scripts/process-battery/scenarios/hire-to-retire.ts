@@ -13,6 +13,8 @@ import { anonKey, anonRpcJson, type Scenario, type ScenarioModule } from '../lib
 const SALARY = 4_200_000; // 42 000 kr → 2 000 kr per day on a 21-day month
 
 async function run(s: Scenario): Promise<void> {
+  // Where a person sees the outcome — proven to the screen by `npm run qa:process-views`.
+  s.shows('the job posting is under Jobs', '/admin/recruitment?tab=jobs', `Battery engineer ${s.tag}`);
   // ── Recruit ───────────────────────────────────────────────────────────────
   const job = await s.must('a job posting is created', 'manage_job_posting', {
     action: 'create', title: `Battery engineer ${s.tag}`, department: 'Engineering', employment_type: 'full_time',

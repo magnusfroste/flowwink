@@ -15,6 +15,8 @@ const T = (daysAhead: number, hour: number) => {
 };
 
 async function run(s: Scenario): Promise<void> {
+  // Where a person sees the outcome — proven to the screen by `npm run qa:process-views`.
+  s.shows('the poll is on the meeting-polls desk', '/admin/bookings/polls', `Battery sync ${s.tag}`);
   // ── The wall: anon reaches nothing but the two token RPCs ────────────────
   const openPolicies = await s.one<{ n: string }>(
     `select count(*)::text as n from pg_policies
