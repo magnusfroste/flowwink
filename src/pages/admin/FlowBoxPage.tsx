@@ -26,6 +26,7 @@ import { CallbacksPanel } from '@/components/admin/live-support/CallbacksPanel';
 import { VoicemailPanel } from '@/components/admin/live-support/VoicemailPanel';
 import { ActiveCallsPanel } from '@/components/admin/live-support/ActiveCallsPanel';
 import { useVoiceSettings } from '@/hooks/useVoice';
+import { useIsModuleEnabled } from '@/hooks/useModules';
 import { getVoiceProvider } from '@/lib/voice-providers';
 import { cn } from '@/lib/utils';
 
@@ -47,6 +48,8 @@ const TABS = ['queue', 'calls', 'routing', 'log'] as const;
 type Tab = (typeof TABS)[number];
 
 export default function FlowBoxPage() {
+  // The Calls desk is Voice's: with Voice off there is no call to answer.
+  const voiceOn = useIsModuleEnabled('voice');
   const [searchParams, setSearchParams] = useSearchParams();
   const requested = searchParams.get('tab');
   const tab: Tab = (TABS as readonly string[]).includes(requested ?? '') ? (requested as Tab) : 'queue';
@@ -78,7 +81,7 @@ export default function FlowBoxPage() {
         <Tabs value={tab} onValueChange={(v) => setSearchParams(v === 'queue' ? {} : { tab: v }, { replace: true })} className="space-y-4">
           <TabsList>
             <TabsTrigger value="queue"><Inbox className="h-4 w-4 mr-1" /> Queue</TabsTrigger>
-            <TabsTrigger value="calls"><Phone className="h-4 w-4 mr-1" /> Calls</TabsTrigger>
+            {voiceOn && <TabsTrigger value="calls"><Phone className="h-4 w-4 mr-1" /> Calls</TabsTrigger>}
             <TabsTrigger value="routing"><Route className="h-4 w-4 mr-1" /> Routing</TabsTrigger>
             <TabsTrigger value="log"><ScrollText className="h-4 w-4 mr-1" /> Message log</TabsTrigger>
           </TabsList>
@@ -86,7 +89,7 @@ export default function FlowBoxPage() {
           {/* Callbacks and voicemail — the two things Live Support did that the
               queue row cannot: schedule/complete a callback, play a message.
               Same panels, moved; the page they lived on is retired. */}
-          <TabsContent value="calls"><CallsTab /></TabsContent>
+          {voiceOn && <TabsContent value="calls"><CallsTab /></TabsContent>}
           <TabsContent value="routing"><RoutingLenses /></TabsContent>
           <TabsContent value="log"><MessageLogTab /></TabsContent>
         </Tabs>

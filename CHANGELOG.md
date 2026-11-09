@@ -10,6 +10,15 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Fixed
 
+- **Panels of a module that is off leave the pages they are mounted on.**
+  FlowBox shows no chat, ticket, form or call item and no Calls tab for a
+  module that is off; Flowwork's document panel saves to the wiki only with
+  Wiki on; deal and company pages carry reports only with Reports on; the
+  Receiving tab in Inventory needs Purchasing; a lead's process flow shows
+  only the steps (deal, quote, contract, invoice) whose module is on, and its
+  open quotes need Quotes. `foreign-module-panels-ask` now reads the legacy
+  dependency edges and ignores shared reference tables (people, currencies,
+  the activity timeline): 24 findings → 8.
 - **A module that is off is quiet on Observability, the bell, the dashboard
   and analytics.** Automations, failed skill runs, MCP failures, staged writes,
   notify runs and pg_cron jobs of a module the operator switched off kept
