@@ -2246,10 +2246,12 @@ Deno.serve(async (req) => {
       }
       if (req.method === 'POST') {
         const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
-        // The anon client throughout: the board's writes are RLS policies (a
-        // post is born open, a comment is never staff, a vote is one row per
-        // voter) and the ping is one definer RPC. No service key in here.
-        const admin = supabase;
+        // The service client: anon has no write policy on the board and no
+        // EXECUTE on the ping (20261107130000), so this handler is the only
+        // door and answers for what the policies used to. A post is born open
+        // (status is never read from the body), a comment is never staff, a
+        // vote is one row per voter, and every field below is bounded.
+        const admin = getServiceClient();
         const sub = pathParts[1] ?? '';
         if (typeof body.website === 'string' && body.website.trim()) return feedbackJson({ success: true, id: null }, 201);
         if (sub === '') {
