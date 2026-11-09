@@ -472,20 +472,15 @@ function AiReceptionistSection({
 
       {settings.aiReceptionistEnabled && (
         <div className="space-y-3">
-          <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-3 text-xs space-y-1">
-            <div className="font-medium text-amber-700 dark:text-amber-400">46elks websocket-number required</div>
+          <div className="rounded-md border border-border bg-muted/40 p-3 text-xs space-y-1">
+            <div className="font-medium">46elks websocket-number required</div>
             <p className="text-muted-foreground">
-              46elks Realtime Voice API uses a separate <strong>websocket-number</strong>. In the{' '}
+              46elks Realtime Voice API uses a separate <strong>websocket-number</strong>. Allocate a free one in the{' '}
               <a href="https://46elks.com/numbers" target="_blank" rel="noreferrer" className="underline">
                 46elks dashboard
               </a>{' '}
-              allocate a free websocket-number and set its <code>voice_start</code> to:
-            </p>
-            <pre className="overflow-x-auto rounded bg-muted px-2 py-1 text-[11px]">
-              wss://&lt;your-project&gt;.functions.supabase.co/voice-ingest/stream
-            </pre>
-            <p className="text-muted-foreground">
-              Then paste that WS-number below. Your public DID will bridge incoming calls to it via{' '}
+              and paste it below. When you save, the number is pointed at this site&apos;s voice stream with its own
+              secret — nothing to copy into 46elks. Your public number bridges incoming calls to it via{' '}
               <code>{'{connect: <ws-number>}'}</code>.
             </p>
           </div>

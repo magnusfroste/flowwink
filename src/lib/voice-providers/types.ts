@@ -154,8 +154,8 @@ export interface VoiceSettings {
   aiReceptionistMode?: 'native-audio' | 'half-cascade';
   /**
    * 46elks WebSocket-number (E.164) som det publika DID:t bryggas till när AI svarar.
-   * Måste vara ett separat 46elks-nummer som har `voice_start=wss://<project>.functions.supabase.co/voice-ingest/stream`
-   * konfigurerat i 46elks-dashboarden. Utan detta faller AI-flödet tillbaka till voicemail.
+   * Måste vara ett separat 46elks-nummer som pekas mot `wss://<project>.supabase.co/functions/v1/voice-ingest/stream?secret=…` när röstinställningarna sparas (elks46-ingest,
+   * set_voice_start target ai_stream). Utan detta faller AI-flödet tillbaka till voicemail.
    */
   aiReceptionistWebsocketNumber?: string;
 
