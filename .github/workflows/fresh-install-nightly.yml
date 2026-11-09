@@ -140,6 +140,13 @@ jobs:
       - name: Quiet by default — a fresh instance tells nobody anything
         run: npm run qa:quiet
 
+      # RLS is on everywhere; this lists what is still open to an anonymous
+      # visitor (anon/public policies with true, anon storage policies, public
+      # buckets) straight from the database and requires a written reason for
+      # each. River's bucket was listable by anyone until 2026-11-09.
+      - name: Open access — everything anyone can reach has a reason
+        run: npm run qa:open-access
+
       - name: Prepare the stack (skills, template, modules, skills)
         run: npm run qa:prep
 

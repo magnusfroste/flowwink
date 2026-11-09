@@ -3,6 +3,8 @@
 // `voice_calls.recording_url` by call id; provider credentials stay server-side.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
+import { requireServiceOrStaff, unauthorized } from '../_shared/edge-auth.ts';
+import { getServiceClient } from '../_shared/supabase-clients.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -13,6 +15,11 @@ const corsHeaders = {
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+  // A voicemail is a customer's voice: staff (the Voicemail panel sends the
+  // session token) or the platform. It used to play for anyone holding the
+  // call id (2026-11-09).
+  const auth = await requireServiceOrStaff(req, getServiceClient());
+  if (!auth.authorized) return unauthorized(corsHeaders);
 
   try {
     const url = new URL(req.url);

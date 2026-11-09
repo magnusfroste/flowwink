@@ -18,6 +18,18 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Fixed
 
+- **Three inbound endpoints verify their caller; River's media is not
+  listable by anyone; what stays open is written down.** `signal-ingest`
+  accepted the publishable key (it ships in the site's JavaScript), so anyone
+  could create blog drafts, memories and AI work — now the service key, a
+  member of staff or the instance's own `signal_ingest_token`. `voice-recording`
+  played a voicemail for anyone holding the call id — staff only, the panel
+  fetches it with the session. `voice-ingest` takes the provider's URL secret
+  on call webhooks, and an opt-in `VOICE_STREAM_SECRET` on the AI stream.
+  `river-media` let anon LIST every file the team posted — images still open
+  by URL, listing is staff's. `npm run qa:open-access` (nightly) lists every
+  table policy, storage policy and public bucket open to an anonymous visitor
+  from the database and requires a written reason for each. Known-ungated 12 → 9.
 - **Every process is proven to the screen a person looks at.** The battery
   proved the data; nobody opened /admin/invoices to see the receipt was there,
   and on an instance nobody runs the processes by hand. Scenarios now name

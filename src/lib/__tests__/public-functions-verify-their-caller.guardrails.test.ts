@@ -51,7 +51,7 @@ export const SERVICE_CLIENT = /SUPABASE_SERVICE_ROLE_KEY|getServiceClient\(|_sha
 export const CALLER_CHECKS: Record<string, RegExp> = {
   'edge-auth helper':  /_shared\/edge-auth/,
   'api_keys lookup':   /from\(['"]api_keys['"]\)|key_hash/,
-  'webhook signature': /constructEvent\(|verifySignature|createHmac|\bhmac\b|HMAC|WEBHOOK_SECRET|x-hub-signature|x-telegram-bot-api-secret-token|X-Twilio-Signature|signing_secret/,
+  'webhook signature': /constructEvent\(|verifySignature|createHmac|\bhmac\b|HMAC|WEBHOOK_SECRET|x-hub-signature|x-telegram-bot-api-secret-token|X-Twilio-Signature|signing_secret|checkWebhookSecret\(/,
   'shared secret':     /CRON_SECRET|INTERNAL_SECRET|x-cron-secret|x-internal-secret|A2A_SECRET|FEDERATION_SECRET/,
   // A resolver RPC handed the caller's token as its first argument (resolve_document_share({ _token }),
   // resolve_document_room_file({ p_token })) is possession too: the RPC answers nothing without it.
@@ -113,14 +113,14 @@ export const KNOWN_UNGATED_SINCE: Record<string, string> = {
   'automation-dispatcher': '2026-11-07', 'demo-cycle': '2026-11-07',
   // The agent tools on paid keys (browser-fetch, web-scrape, web-search, extract-pdf-text,
   // process-image) left the list 2026-11-07: requireServiceOrStaff in-body, after an SSRF report.
-  // Inbound webhooks with no signature or shared secret in the body.
-  'signal-ingest': '2026-11-07', 'voice-ingest': '2026-11-07', 'voice-recording': '2026-11-07',
+  // signal-ingest, voice-ingest and voice-recording left 2026-11-09: staff/service/own token,
+  // the provider's URL secret (checkWebhookSecret), staff only for a voicemail.
   // migrate-page left 2026-11-09 (requireServiceOrStaff); gmail-oauth-callback left 2026-11-09
   // (admin POST + a one-time OAuth state); document-share was token-gated all along (resolver RPCs).
 };
 export const KNOWN_UNGATED: string[] = Object.keys(KNOWN_UNGATED_SINCE);
 // 21 on 2026-09-28. Lower it in the PR that gates or classifies one; never raise it.
-export const KNOWN_UNGATED_CEILING = 12;
+export const KNOWN_UNGATED_CEILING = 9;
 
 const toml = readFileSync(join(root, 'supabase/config.toml'), 'utf8');
 const pub = publicFunctions(toml);
