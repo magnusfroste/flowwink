@@ -10,6 +10,12 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Security
 
+- **The public AI endpoints have a ceiling.** chat-completion, docs-chat and
+  consultant-match answered anyone with the publishable key, a paid model call
+  each, with nothing counting them. Now 30 per visitor per 5 minutes (a hashed
+  IP, never the address) and 600 per instance per hour, a 429 with
+  Retry-After past either; the platform's own calls are never counted. The
+  dial is `site_settings.security.publicAiRateLimit` (0 switches one off).
 - **A high-stakes write with nobody at the keyboard waits for a person.** The
   heartbeat, the e-mail responder, the visitor chat and gateway agents act on
   text other people wrote, and ten writes declared high-risk or irreversible

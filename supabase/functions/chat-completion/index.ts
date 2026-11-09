@@ -3,6 +3,7 @@ import { loadHomeCached } from '../_shared/locale/load-home.ts';
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getServiceClient, getAnonClient } from '../_shared/supabase-clients.ts';
+import { publicAiLimit } from '../_shared/rate-limit.ts';
 import { webSearch, loadWebContext, chainFor } from '../_shared/web/layer.ts';
 import { loadBusinessIdentityBlock } from '../_shared/domains/business-identity-block.ts';
 import { retrieve, renderContext } from '../_shared/retrieval/index.ts';
@@ -549,6 +550,11 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
+
+  // A paid model call for anyone with the publishable key: counted per visitor
+  // and per instance (_shared/rate-limit.ts). The platform's own calls are not.
+  const limited = await publicAiLimit(req, getServiceClient(), 'chat-completion', corsHeaders);
+  if (limited) return limited;
 
   try {
     const { messages, conversationId, sessionId, settings: payloadSettings, customerEmail, customerName, mode, checkinId, channel: rawChannel, emailContext } = await req.json() as ChatRequest;
