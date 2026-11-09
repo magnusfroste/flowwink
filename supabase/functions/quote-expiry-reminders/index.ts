@@ -7,6 +7,7 @@
 // pipeline the manual "Send Reminder" button uses, see
 // useQuoteWorkflow.ts/useSendQuoteReminder). Stamps expiry_reminder_sent_at so
 // a quote is never reminded twice.
+import { requireScheduledCaller } from "../_shared/edge-auth.ts";
 import { getServiceClient } from '../_shared/supabase-clients.ts';
 import { dateInZone } from '../_shared/locale/home.ts';
 import { loadHomeCached } from '../_shared/locale/load-home.ts';
@@ -38,6 +39,11 @@ async function resolveSiteOrigin(supabase: ReturnType<typeof getServiceClient>):
 
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
+
+  // A scheduled function: the service key, a staff session or the database's
+  // x-cron-secret (_shared/edge-auth.ts requireScheduledCaller, 2026-11-09).
+  const scheduledRefusal = await requireScheduledCaller(req, getServiceClient(), "quote-expiry-reminders", corsHeaders);
+  if (scheduledRefusal) return scheduledRefusal;
   try {
     const supabase = getServiceClient();
     const now = new Date();

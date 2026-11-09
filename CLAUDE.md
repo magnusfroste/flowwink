@@ -873,6 +873,16 @@ managed-ledger lessons still apply to every fork's Supabase integration:
   executable by authenticated, body without `service_role` / `has_role(` /
   `can_access_module(` / `is_staff(` / `auth.uid() =` — then check pg_policy,
   invoker-side functions, views, defaults and constraints before revoking.
+- **A scheduled function admits three callers (2026-11-09).** The service
+  key, a staff session, or `x-cron-secret` — a random secret the database
+  makes in its own vault (`CRON_SECRET`, migration 20261109160000) and adds to
+  every scheduled call at call time (`cron_secret_header()`, `pulse_lane`).
+  `requireScheduledCaller` (`_shared/edge-auth.ts`) is the check; a new
+  function pg_cron calls asks it, and its cron job needs nothing special:
+  automation-dispatcher runs `cron_jobs_carry_the_secret()` every tick and
+  rewrites any `net.http_post` job to an edge function that lacks it. Never
+  put the secret or the service key in a job's text, and never schedule a
+  call with the publishable key as its only credential.
 - **"Sync skills from code" is the 4th-layer deploy without DB creds — and
   the admin shell presses it for you.** `/admin/modules` → **"Sync skills from
   code"** re-runs `bootstrapModule()` for every enabled module, which **UPDATEs

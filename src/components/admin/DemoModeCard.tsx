@@ -93,9 +93,15 @@ export function DemoModeCard() {
         // Deliberately skip_rebuild: enabling must never destroy anything. The
         // wipe belongs to the announced nightly schedule, where the card's own
         // warning is what makes it fair.
+        // demo-cycle admits an admin session, the service key or the cron
+        // secret — never the publishable key (2026-11-09).
+        const { data: sessionData } = await supabase.auth.getSession();
         const res = await fetch(FN_URL, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${ANON_KEY}` },
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${sessionData.session?.access_token ?? ANON_KEY}`,
+          },
           body: JSON.stringify({ skip_rebuild: true }),
         });
         const seedResult = res.ok ? await res.json().catch(() => null) : null;

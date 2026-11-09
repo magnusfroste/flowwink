@@ -1,3 +1,4 @@
+import { requireScheduledCaller } from "../_shared/edge-auth.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getServiceClient } from '../_shared/supabase-clients.ts';
@@ -27,6 +28,11 @@ serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
+
+  // A scheduled function: the service key, a staff session or the database's
+  // x-cron-secret (_shared/edge-auth.ts requireScheduledCaller, 2026-11-09).
+  const scheduledRefusal = await requireScheduledCaller(req, getServiceClient(), "automation-dispatcher", corsHeaders);
+  if (scheduledRefusal) return scheduledRefusal;
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -60,6 +66,16 @@ serve(async (req) => {
     });
   } catch (e) {
     console.warn("ensure_platform_secret(SUPABASE_SERVICE_ROLE_KEY) failed:", (e as Error).message);
+  }
+  // Every scheduled call to an edge function carries the database's own
+  // x-cron-secret (20261109160000). A job a later writer schedules (demo mode,
+  // performance mode, a fork's bootstrap) is rewritten here within a minute —
+  // reconcile the state rather than trust every writer. Idempotent, one read
+  // of cron.job when nothing needs it.
+  try {
+    await supabase.rpc("cron_jobs_carry_the_secret");
+  } catch (e) {
+    console.warn("cron_jobs_carry_the_secret failed:", (e as Error).message);
   }
 
   try {

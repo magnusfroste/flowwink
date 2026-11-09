@@ -145,3 +145,54 @@ export function unauthorized(corsHeaders: Record<string, string>): Response {
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 }
+
+/**
+ * The scheduled surface (2026-11-09): the nine functions pg_cron calls —
+ * automation/event/signal dispatchers, knowledge-indexer, dunning-processor,
+ * contract- and subscription-billing-cron, quote-expiry-reminders, demo-cycle.
+ *
+ * Admitted: the service key (other edge functions, the SQL dispatchers), a
+ * staff session (an admin for demo-cycle: it rebuilds the instance), or the
+ * `x-cron-secret` header the database adds to every scheduled call
+ * (`cron_secret_header()`, the vault's CRON_SECRET — born by the migration
+ * 20261109160000, never shown to a browser). A WRONG secret is refused at once.
+ *
+ * A call with none of them was how pg_cron called these until today (the
+ * publishable key). For one week it is let through and logged with
+ * `[cron-secret]` so the fleet's logs show any caller still without it; then
+ * CRON_SECRET_REQUIRED turns true and it is refused. Answers null to go on,
+ * or the 401 to return.
+ */
+export const CRON_SECRET_REQUIRED = false; // turns true after 2026-11-16, once the fleet's logs are clean
+
+export async function requireScheduledCaller(
+  req: Request,
+  supabase: SupabaseClient,
+  fn: string,
+  corsHeaders: Record<string, string>,
+  opts: { role?: "staff" | "admin" } = {},
+): Promise<Response | null> {
+  const token = (req.headers.get("authorization") ?? "").replace(/^Bearer\s+/i, "").trim();
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+  if (token && serviceKey && token === serviceKey) return null;
+
+  const cronSecret = (req.headers.get("x-cron-secret") ?? "").trim();
+  if (cronSecret) {
+    const { data, error } = await supabase.rpc("cron_secret_matches", { p_secret: cronSecret });
+    if (!error && data === true) return null;
+    if (!error) {
+      console.warn(`[cron-secret] ${fn}: wrong x-cron-secret — refused`);
+      return unauthorized(corsHeaders);
+    }
+    console.warn(`[cron-secret] ${fn}: the secret could not be checked (${error.message})`);
+  }
+
+  const person = opts.role === "admin"
+    ? await requireServiceOrRole(req, supabase, "admin")
+    : await requireServiceOrStaff(req, supabase);
+  if (person.authorized) return null;
+
+  if (CRON_SECRET_REQUIRED) return unauthorized(corsHeaders);
+  console.warn(`[cron-secret] ${fn}: called without the cron secret, the service key or ${opts.role === "admin" ? "an admin" : "a staff"} session — let through until the secret is required`);
+  return null;
+}
