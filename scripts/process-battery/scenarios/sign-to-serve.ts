@@ -15,6 +15,8 @@ import type { Scenario, ScenarioModule } from '../lib';
 const FN_URL = (process.env.BATTERY_FN_URL ?? 'http://127.0.0.1:54321/functions/v1').replace(/\/$/, '');
 
 async function run(s: Scenario): Promise<void> {
+  // Where a person sees the outcome — proven to the screen by `npm run qa:process-views`.
+  s.shows('the agreement is in the contract list', '/admin/contracts', `Fiberavtal ${s.tag}`);
   const customerEmail = `fiber-${s.tag}@example.test`;
   const customerName = `Battery Fiber AB ${s.tag}`;
 

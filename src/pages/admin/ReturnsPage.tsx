@@ -20,6 +20,7 @@ import { usePlatformFormat } from '@/hooks/usePlatformFormat';
 
 interface ReturnRow {
   id: string;
+  orders?: { customer_name: string | null; customer_email: string | null } | null;
   rma_number: string;
   order_id: string;
   status: string;
@@ -322,7 +323,9 @@ export default function ReturnsPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('returns' as any)
-        .select('*')
+        // The customer is the order's: the list used to show eight characters of
+        // the order id and never who returned (found by qa:process-views, 2026-11-09).
+        .select('*, orders(customer_name, customer_email)')
         .order('created_at', { ascending: false });
       if (error) throw error;
       return (data ?? []) as unknown as ReturnRow[];
@@ -383,7 +386,7 @@ export default function ReturnsPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>RMA #</TableHead>
-                    <TableHead>Order</TableHead>
+                    <TableHead>Customer / order</TableHead>
                     <TableHead>Reason</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Refunded</TableHead>
@@ -395,7 +398,10 @@ export default function ReturnsPage() {
                   {data!.map((r) => (
                     <TableRow key={r.id}>
                       <TableCell className="font-medium">{r.rma_number}</TableCell>
-                      <TableCell className="text-xs font-mono">{r.order_id.slice(0, 8)}</TableCell>
+                      <TableCell>
+                        <div className="text-sm">{r.orders?.customer_name || r.orders?.customer_email || '—'}</div>
+                        <div className="text-xs font-mono text-muted-foreground">{r.order_id.slice(0, 8)}</div>
+                      </TableCell>
                       <TableCell className="max-w-xs">
                         <div className="space-y-0.5">
                           <Badge variant="outline" className="text-xs">{reasonLabel(r.reason_code)}</Badge>

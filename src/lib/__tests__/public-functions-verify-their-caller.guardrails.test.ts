@@ -53,7 +53,9 @@ export const CALLER_CHECKS: Record<string, RegExp> = {
   'api_keys lookup':   /from\(['"]api_keys['"]\)|key_hash/,
   'webhook signature': /constructEvent\(|verifySignature|createHmac|\bhmac\b|HMAC|WEBHOOK_SECRET|x-hub-signature|x-telegram-bot-api-secret-token|X-Twilio-Signature|signing_secret|checkWebhookSecret\(/,
   'shared secret':     /CRON_SECRET|INTERNAL_SECRET|x-cron-secret|x-internal-secret|A2A_SECRET|FEDERATION_SECRET/,
-  'token possession':  /rpc\(\s*['"][a-z_]*_by_token['"]|\.eq\(\s*['"](accept_token|public_token|sign_token|pay_token|share_token|edit_token|response_token)['"]/,
+  // A resolver RPC handed the caller's token as its first argument (resolve_document_share({ _token }),
+  // resolve_document_room_file({ p_token })) is possession too: the RPC answers nothing without it.
+  'token possession':  /rpc\(\s*['"][a-z_]*_by_token['"]|\.eq\(\s*['"](accept_token|public_token|sign_token|pay_token|share_token|edit_token|response_token)['"]|rpc\(\s*['"][a-z_]+['"]\s*,\s*\{\s*(?:_|p_)token\s*:/,
   'user JWT resolved': /auth\.getUser\(/,
 };
 
@@ -104,7 +106,7 @@ export const DEBT_MAX_DAYS = 60;
 export const KNOWN_UNGATED_SINCE: Record<string, string> = {
   // Cron-shaped or tool-shaped, service client, no caller check.
   'dunning-processor': '2026-11-07', 'subscription-billing-cron': '2026-11-07', 'contract-billing-cron': '2026-11-07',
-  'knowledge-indexer': '2026-11-07', 'migrate-page': '2026-11-07', 'quote-expiry-reminders': '2026-11-07',
+  'knowledge-indexer': '2026-11-07', 'quote-expiry-reminders': '2026-11-07',
   'event-dispatcher': '2026-11-07', 'signal-dispatcher': '2026-11-07',
   // flowpilot-heartbeat left the list 2026-10-30: requireServiceOrRole in-body, cron jobs carry the service key.
   // Dispatch and rebuild entry points. demo-cycle gates on demo_mode, which is not a caller check.
@@ -113,12 +115,12 @@ export const KNOWN_UNGATED_SINCE: Record<string, string> = {
   // process-image) left the list 2026-11-07: requireServiceOrStaff in-body, after an SSRF report.
   // signal-ingest, voice-ingest and voice-recording left 2026-11-09: staff/service/own token,
   // the provider's URL secret (checkWebhookSecret), staff only for a voicemail.
-  // Should verify a state/token it does not appear to.
-  'gmail-oauth-callback': '2026-11-07', 'document-share': '2026-11-07',
+  // migrate-page left 2026-11-09 (requireServiceOrStaff); gmail-oauth-callback left 2026-11-09
+  // (admin POST + a one-time OAuth state); document-share was token-gated all along (resolver RPCs).
 };
 export const KNOWN_UNGATED: string[] = Object.keys(KNOWN_UNGATED_SINCE);
 // 21 on 2026-09-28. Lower it in the PR that gates or classifies one; never raise it.
-export const KNOWN_UNGATED_CEILING = 16;
+export const KNOWN_UNGATED_CEILING = 9;
 
 const toml = readFileSync(join(root, 'supabase/config.toml'), 'utf8');
 const pub = publicFunctions(toml);

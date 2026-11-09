@@ -9,6 +9,8 @@ import type { Scenario, ScenarioModule } from '../lib';
  * when the goods are gone, and a cancelled order leaves no trace on the shelf.
  */
 async function run(s: Scenario): Promise<void> {
+  // Where a person sees the outcome — proven to the screen by `npm run qa:process-views`.
+  s.shows('the order is in the order list', '/admin/orders', `Battery Kund ${s.tag}`);
   // FINDING 2026-09-19: manage_product's instructions say "a physical product should be born
   // stocked" (stock_quantity on create). That writes only the catalog mirror — no quant, no
   // move, no valuation layer. The shop says ten, the warehouse says zero, allocate_picking

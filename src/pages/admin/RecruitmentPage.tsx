@@ -1,3 +1,4 @@
+import { useTabParam } from '@/hooks/useTabParam';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { Card, CardContent } from '@/components/ui/card';
@@ -13,6 +14,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 
 export default function RecruitmentPage() {
+  // The tab is in the URL, so a process step can link straight to it (useTabParam).
+  const [tab, setTab] = useTabParam('pipeline');
   const [newJobOpen, setNewJobOpen] = useState(false);
   const [jobFilter, setJobFilter] = useState('all');
   const [showClosed, setShowClosed] = useState(false);
@@ -64,7 +67,7 @@ export default function RecruitmentPage() {
           </Card>
         </div>
 
-        <Tabs defaultValue="pipeline">
+        <Tabs value={tab} onValueChange={setTab}>
           <TabsList>
             <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
             <TabsTrigger value="jobs">Jobs</TabsTrigger>
