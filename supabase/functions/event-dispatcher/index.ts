@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getServiceClient } from '../_shared/supabase-clients.ts';
 import { isModuleEnabled } from '../_shared/modules.ts';
+import { runOutcomeError, STALE_RUN_MS, staleRunErrorText } from '../_shared/execute/run-outcome.ts';
 
 /**
  * Event Dispatcher (Phase 3 — Platform Event Bus)
@@ -84,6 +85,23 @@ serve(async (req) => {
   const supabase = getServiceClient();
 
   try {
+    // 0. Runs nobody heard back from. A marker older than every edge wall
+    // clock means the run's isolate (and the handoff's) was shut down before
+    // either could settle it (2026-10-29: the reply skill died mid-run and
+    // left no error anywhere). Deleting is the claim, so two sweeps never
+    // write the same run twice.
+    const { data: staleRuns, error: sweepErr } = await supabase
+      .from("automation_pending_runs")
+      .delete()
+      .lt("started_at", new Date(Date.now() - STALE_RUN_MS).toISOString())
+      .select("automation_id, event_id, skill_name, started_at");
+    if (sweepErr) console.warn("event-dispatcher: pending-run sweep skipped:", sweepErr.message);
+    for (const run of (staleRuns ?? []) as Array<{ automation_id: string; event_id: string | null; skill_name: string | null; started_at: string }>) {
+      const { error: noteErr } = await supabase.from("agent_automations")
+        .update({ last_error: staleRunErrorText(run) }).eq("id", run.automation_id);
+      if (noteErr) console.error(`event-dispatcher: could not note a stale run on ${run.automation_id}:`, noteErr.message);
+    }
+
     // 1. Fetch unprocessed events (oldest first)
     const { data: events, error: eventsErr } = await supabase
       .from("agent_events")
@@ -133,7 +151,8 @@ serve(async (req) => {
     // BEFORE its automations fire (a claim; a second run in the same minute
     // skips it), every automation is handed to agent-execute with async:true
     // (202 at once, the skill runs there in the background, the activity log
-    // is the result), and the run stops taking new events after RUN_BUDGET_MS
+    // and a failure is written back to the automation's last_error through
+    // report_to), and the run stops taking new events after RUN_BUDGET_MS
     // so the function never dies mid-batch with events half-done. Before this
     // the dispatcher awaited every slow skill in sequence, was killed by the
     // wall clock, left events unmarked, re-fired the same ones every minute
@@ -175,6 +194,19 @@ serve(async (req) => {
       const runInline = INLINE_EVENTS.has(ev.event_name);
       const settled = await Promise.allSettled(runnable.map(async (auto: any) => {
         const executor = (auto.executor || "platform") as string;
+        // The marker a background run deletes when it answers. Written BEFORE
+        // the handoff, so a run whose isolate is shut down before anything can
+        // report still leaves a trace — the sweep above turns it into
+        // last_error. No table yet (migration not applied): run without one.
+        let runId: string | null = null;
+        if (!runInline) {
+          const { data: marker, error: markErr } = await supabase
+            .from("automation_pending_runs")
+            .insert({ automation_id: auto.id, event_id: ev.id, skill_name: auto.skill_name })
+            .select("id").maybeSingle();
+          if (markErr) console.warn(`event-dispatcher: no pending-run marker for ${auto.name}:`, markErr.message);
+          runId = (marker as { id?: string } | null)?.id ?? null;
+        }
         const resp = await fetch(`${supabaseUrl}/functions/v1/agent-execute`, {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${serviceKey}` },
@@ -189,20 +221,26 @@ serve(async (req) => {
             // no automation left a trace (2026-10-29). Runs from here are automations.
             agent_type: executor === "flowpilot" ? "flowpilot" : "automation",
             async: !runInline,
+            // The 202 says nothing about the skill: agent-execute writes a
+            // background failure back to this automation's last_error and
+            // deletes the run's marker when it answers.
+            ...(runInline ? {} : { report_to: { automation_id: auto.id, event_id: ev.id, run_id: runId } }),
           }),
           signal: AbortSignal.timeout(runInline ? INLINE_TIMEOUT_MS : 15_000),
         });
         const out = await resp.json().catch(() => ({}));
-        // agent-execute answers 200 { status: 'failed', result: { error } } when the
-        // SKILL failed; only a transport or gate failure sets out.error. Read both,
-        // or a refused reply ("thread_id required") reads as a clean run.
-        const skillErr = out?.status === "failed" ? (out?.result?.error || "skill failed") : null;
-        const err = !resp.ok ? (out.error || `HTTP ${resp.status}`) : (out.error || skillErr || null);
+        // A skill failure is 200 { status: 'failed' }; runOutcomeError reads it
+        // and the transport/gate failures alike. On the async path this is the
+        // handoff's answer (202, null) — the run's own failure comes later,
+        // written by agent-execute through report_to.
+        const err = runOutcomeError(resp.ok, resp.status, out);
         const { error: bumpErr } = await supabase
           .from("agent_automations")
           .update({ last_triggered_at: new Date().toISOString(), run_count: (auto.run_count || 0) + 1, last_error: err })
           .eq("id", auto.id);
         if (bumpErr) console.error(`event-dispatcher: could not bump ${auto.name}:`, bumpErr.message);
+        // The handoff itself was refused: nothing runs, the error above is the answer.
+        if (err && runId) await supabase.from("automation_pending_runs").delete().eq("id", runId);
         if (err) throw new Error(`${auto.name}: ${err}`);
         return auto.name;
       }));

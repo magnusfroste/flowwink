@@ -98,6 +98,24 @@ describe('the executor runs in-process for callers inside the Deno project', () 
     }
   });
 
+  it('a background run settles its outcome on the automation — from either isolate (report_to)', () => {
+    // 2026-11-08: the 202 said nothing about the skill, the dispatcher wrote
+    // last_error: null, and an automation failing on every event read healthy.
+    const branch = fn.slice(fn.indexOf('if (body.async === true) {'), fn.indexOf('const out = await executeSkillRequest('));
+    // The handoff settles what it hears back, and a run that died without answering …
+    expect(branch).toMatch(/settleRun\(supabase, report, runOutcomeError\(r\.ok, r\.status, out\)\)/);
+    expect(branch).toMatch(/\.catch\(async[\s\S]*settleRun\(supabase, report,/);
+    // … and forwards report_to, so the run settles itself when THIS isolate is gone.
+    expect(branch).toMatch(/JSON\.stringify\(report \? \{ \.\.\.rest, report_to: report \} : rest\)/);
+    const tail = fn.slice(fn.indexOf('const out = await executeSkillRequest('));
+    expect(tail).toMatch(/await settleRun\(supabase, report, runOutcomeError\(/);
+    expect(tail).toMatch(/catch \(err\) \{[\s\S]*await settleRun\(supabase, report,/);
+    // Only a service caller may name the automation to write to …
+    expect(fn).toMatch(/report = isServiceCaller && isRunReportTo\(reportTo\) \? reportTo : null;/);
+    // … and report_to is the wire's, never part of the request the core runs.
+    expect(fn).toMatch(/const \{ report_to: reportTo, \.\.\.body \}: WireRequest = await req\.json\(\);/);
+  });
+
   it('FlowPilot’s ReAct loop runs a skill through the runner its config carries, keeping the non-2xx envelope', () => {
     // The loop never imports the core: the app's tsc reaches reason.ts through
     // its tests, and the core is Deno's (the deno ratchet). It carries the
