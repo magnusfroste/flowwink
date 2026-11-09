@@ -24,7 +24,7 @@ import {
   invoicingModule, accountingModule, expensesModule, timesheetsModule,
   purchasingModule, manufacturingModule, contractsModule, hrModule, recruitmentModule, documentsModule, projectsModule,
   slaModule, calendarModule, meetingPollsModule, subscriptionsModule, salesIntelligenceModule,
-  growthModule, consultantsModule, browserControlModule, federationModule,
+  growthModule, consultantsModule, federationModule,
   composioModule, ticketsModule, siteMigrationModule, developerModule,
   flowpilotModule, emailModule,
   quotesModule, approvalsModule, reconciliationModule, workspaceChatModule,

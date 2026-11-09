@@ -61,6 +61,20 @@ export const RETIRED_SKILLS: Readonly<Record<string, RetiredSkill>> = Object.fre
       + '(action "create", content_json as a { type, data } block array), and create '
       + 'the header/footer with manage_global_blocks.',
   },
+  // Retired 2026-11-09 with the Browser Control module. For a public page it
+  // only ever forwarded to web-scrape — scrape_url's own path — and its other
+  // half, reading a login-walled page through a Chrome extension relay, nobody
+  // used: an agent with its own browser does that better and hands the result
+  // in over MCP. The system prompt told FlowPilot to call it for every URL
+  // while the module (off by default) hid it.
+  browser_fetch: {
+    replacement: 'scrape_url',
+    guidance:
+      'browser_fetch was retired: call scrape_url with the same url — it reads the page '
+      + 'through the web layer (Firecrawl, Jina or the built-in reader). A page behind a '
+      + 'login (LinkedIn, X) cannot be read from the platform: say so, or ask the person '
+      + 'to paste the content.',
+  },
 });
 
 /** The error body a retired name answers with. Shape mirrors a skill result. */

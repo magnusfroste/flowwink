@@ -395,7 +395,7 @@ describe('the rendering ladder, and the rung that is a human browser', () => {
     expect(edgeSrc).toMatch(/firecrawlPass\(6000, 'firecrawl-retry'\)/);
   });
 
-  it('a shell answers in browser_fetch\'s relay envelope, so the extension relay handles it unchanged', () => {
+  it('a shell answers in the relay envelope, so an agent with a browser can hand the page back', () => {
     expect(edgeSrc).toMatch(/action: 'relay_required'/);
     expect(edgeSrc).toMatch(/relay_instruction: \{ type: 'navigate_and_scrape'/);
   });

@@ -63,7 +63,7 @@ export const EDGE_FUNCTION_BUDGET = 90;
  */
 export const ALL_EDGE_FUNCTIONS: readonly string[] = [
   'agent-execute', 'agent-operate', 'ai-task',
-  'automation-dispatcher', 'blog-rss', 'browser-fetch',
+  'automation-dispatcher', 'blog-rss',
   'chat-completion', 'chat-stt', 'check-secrets', 'comms-send', 'composio-proxy',
   'composio-webhook', 'content-api',
   'contract-sign', 'create-checkout', 'create-invoice-payment',
@@ -153,7 +153,6 @@ export const MODULE_EDGE_FUNCTIONS: Partial<Record<ModuleId, readonly string[]>>
 
   // ── Integrations ─────────────────────────────────────────────────────────
   composio: ['composio-proxy', 'composio-webhook'],
-  browserControl: ['browser-fetch'],
   mediaLibrary: ['media-optimize'],
 };
 

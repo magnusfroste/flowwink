@@ -123,7 +123,6 @@ export interface ModulesSettings {
   webinars: ModuleConfig;
   salesIntelligence: ModuleConfig;
   consultants: ModuleConfig;
-  browserControl: ModuleConfig;
   federation: ModuleConfig;
   paidGrowth: ModuleConfig;
   companyInsights: ModuleConfig;
@@ -380,15 +379,7 @@ export const defaultModulesSettings: ModulesSettings = {
     optionalIntegrations: ['openai', 'gemini'],
     publicAnonymization: 'full',
   },
-  browserControl: {
-    enabled: false,
-    name: 'Browser Control',
-    description: 'Chrome Extension relay for authenticated web browsing — read LinkedIn, X, and login-walled sites via your browser',
-    icon: 'Globe',
-    category: 'system',
-    autonomy: 'config-required',
-    adminUI: true,
-  },
+
   federation: {
     enabled: false,
     name: 'Agents',

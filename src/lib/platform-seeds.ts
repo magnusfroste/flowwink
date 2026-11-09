@@ -503,7 +503,7 @@ Automations reacting to platform events (booking.created and friends) and agents
   },
   {
     name: 'search_web',
-    description: 'Search the web through the web layer: the providers and order the owner set (a self-hosted SearXNG, Firecrawl — cloud or self-hosted — Jina); the answer names the provider and the attempts, and provider \'none\' means every provider failed, not that nothing exists (web_providers_status says why). Use when: researching a topic; finding current information; answering questions requiring web data. NOT for: scraping a specific URL (scrape_url); fetching login-walled content (browser_fetch).',
+    description: 'Search the web through the web layer: the providers and order the owner set (a self-hosted SearXNG, Firecrawl — cloud or self-hosted — Jina); the answer names the provider and the attempts, and provider \'none\' means every provider failed, not that nothing exists (web_providers_status says why). Use when: researching a topic; finding current information; answering questions requiring web data. NOT for: scraping a specific URL (scrape_url); content behind a login (cannot be read from the platform).',
     category: 'search',
     handler: 'edge:web-search',
     scope: 'internal',
@@ -511,7 +511,7 @@ Automations reacting to platform events (booking.created and friends) and agents
       type: 'function',
       function: {
         name: 'search_web',
-        description: 'Search the web through the web layer: the providers and order the owner set (a self-hosted SearXNG, Firecrawl — cloud or self-hosted — Jina); the answer names the provider and the attempts, and provider \'none\' means every provider failed, not that nothing exists (web_providers_status says why). Use when: researching a topic; finding current information; answering questions requiring web data. NOT for: scraping a specific URL (scrape_url); fetching login-walled content (browser_fetch).',
+        description: 'Search the web through the web layer: the providers and order the owner set (a self-hosted SearXNG, Firecrawl — cloud or self-hosted — Jina); the answer names the provider and the attempts, and provider \'none\' means every provider failed, not that nothing exists (web_providers_status says why). Use when: researching a topic; finding current information; answering questions requiring web data. NOT for: scraping a specific URL (scrape_url); content behind a login (cannot be read from the platform).',
         parameters: {
           type: 'object',
           properties: {
@@ -627,7 +627,7 @@ finds "how do I get my money back" → refund policy without keyword overlap.`,
   },
   {
     name: 'scrape_url',
-    description: 'Read a single URL and return its content as markdown, through the web layer\'s readers in the owner\'s order (Firecrawl — cloud or self-hosted — Jina Reader, or the built-in reader that needs no service); the answer names the provider and the attempts. Use when: extracting content from a public webpage; converting web pages to markdown; needing text from an accessible URL. NOT for: accessing login-walled sites (browser_fetch); searching multiple pages (search_web).',
+    description: 'Read a single URL and return its content as markdown, through the web layer\'s readers in the owner\'s order (Firecrawl — cloud or self-hosted — Jina Reader, or the built-in reader that needs no service); the answer names the provider and the attempts. Use when: extracting content from a public webpage; converting web pages to markdown; needing text from an accessible URL. NOT for: pages behind a login (cannot be read from the platform); searching multiple pages (search_web).',
     category: 'search',
     handler: 'edge:web-scrape',
     scope: 'internal',
@@ -635,7 +635,7 @@ finds "how do I get my money back" → refund policy without keyword overlap.`,
       type: 'function',
       function: {
         name: 'scrape_url',
-        description: 'Read a single URL and return its content as markdown, through the web layer\'s readers in the owner\'s order (Firecrawl — cloud or self-hosted — Jina Reader, or the built-in reader that needs no service); the answer names the provider and the attempts. Use when: extracting content from a public webpage; converting web pages to markdown; needing text from an accessible URL. NOT for: accessing login-walled sites (browser_fetch); searching multiple pages (search_web).',
+        description: 'Read a single URL and return its content as markdown, through the web layer\'s readers in the owner\'s order (Firecrawl — cloud or self-hosted — Jina Reader, or the built-in reader that needs no service); the answer names the provider and the attempts. Use when: extracting content from a public webpage; converting web pages to markdown; needing text from an accessible URL. NOT for: pages behind a login (cannot be read from the platform); searching multiple pages (search_web).',
         parameters: {
           type: 'object',
           properties: {

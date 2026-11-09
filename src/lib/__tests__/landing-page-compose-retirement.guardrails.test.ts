@@ -204,10 +204,13 @@ describe('landing_page_compose — den försvunna skillen är ingen tyst återv�
     for (const name of Object.keys(RETIRED_SKILLS)) {
       const result = retiredSkillResult(name) as Record<string, string>;
       expect(result.error).toContain(name);
-      expect(result.use_instead).toBe('manage_page');
+      expect(result.use_instead).toBe(RETIRED_SKILLS[name].replacement);
       // Vägledningen måste bära den konkreta vägen vidare, inte bara ett namn.
-      expect(result.guidance).toContain('describe_blocks');
       expect(result.guidance.length).toBeGreaterThan(120);
+      if (name === 'landing_page_compose' || name === 'generate_site_from_identity') {
+        expect(result.use_instead).toBe('manage_page');
+        expect(result.guidance).toContain('describe_blocks');
+      }
     }
     expect(retiredSkillResult('manage_page')).toBeNull();
   });

@@ -24,7 +24,6 @@ export const CORE_SKILLS = [
   'process_signal',
   'search_web',
   'scrape_url',
-  'browser_fetch',
   'extract_pdf_text',
   'scan_gmail_inbox',
 ];

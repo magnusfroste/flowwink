@@ -110,7 +110,6 @@ With FlowPilot off, a module is a normal admin UI. With FlowPilot on, the same m
 
 | Module | Autonomy | Skills | What it does |
 |---|---|---:|---|
-| [**Browser Control**](./browser-control.md) | config-required | 1 | Chrome Extension relay for authenticated web browsing — enables FlowPilot to read login-walled sites (LinkedIn, X) using your browser… |
 | [**Composio**](./composio.md) | agent-capable | 4 | Connect to 1000+ external apps via managed OAuth and intent-based tool resolution |
 | [**Developer**](./developer.md) | config-required | 4 | API explorer, webhooks, and developer tools for integrating with external systems. Also hosts platform-level skills (e.g. global_search). |
 | [**Email**](./email.md) | agent-capable | 10 | Provider-agnostic email sender. Routes system emails through SMTP or Resend. |

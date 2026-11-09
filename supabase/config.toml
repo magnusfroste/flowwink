@@ -39,9 +39,6 @@ verify_jwt = false
 [functions.blog-rss]
 verify_jwt = false
 
-[functions.browser-fetch]
-verify_jwt = false
-
 [functions.chat-completion]
 verify_jwt = false
 

@@ -8,6 +8,20 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ## [Unreleased]
 
+### Removed
+
+- **Browser Control is retired.** The module was a Chrome-extension relay for
+  reading pages behind a login (LinkedIn, X) through an admin's browser. Nobody
+  used it, it was off by default, and agents with their own browser do that job
+  better and hand the result in over MCP. Gone: the module, the extension and its
+  download, the chat's relay code (never wired), and the `browser-fetch` edge
+  function. Its skill `browser_fetch` only forwarded public pages to web-scrape,
+  so a call to it now answers "retired, use `scrape_url`". FlowPilot's system
+  prompt told it to read every URL with `browser_fetch` while the off-by-default
+  module hid that skill; it names `scrape_url` now. A migration removes the
+  module from each instance's settings and access matrix and disables the skill
+  row and any automation that ran it.
+
 ### Security
 
 - **A scheduled call carries a secret the database made itself.** The nine

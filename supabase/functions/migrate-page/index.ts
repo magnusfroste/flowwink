@@ -447,10 +447,11 @@ serve(async (req) => {
           siteName: body.site_name,
         });
 
-        // Blind on this page. Speak the same envelope browser_fetch uses, so the
-        // admin panel's extension relay picks it up without knowing what a
-        // migration is — and an unattended agent still gets an honest refusal
-        // plus whatever little we did see.
+        // Blind on this page. Answer with the relay envelope: an agent with its
+        // own browser reads the page and calls back with relay_result, and an
+        // unattended agent still gets an honest refusal plus whatever little we
+        // did see. (The Chrome extension that once answered it automatically
+        // was retired with Browser Control, 2026-11-09.)
         if (observation.render.confidence === 'shell') {
           return new Response(JSON.stringify({
             success: false,

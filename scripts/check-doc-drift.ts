@@ -63,7 +63,6 @@ const docAliases: Record<string, string[]> = {
   kb: ['knowledge-base.md', 'kb.md'],
   salesIntelligence: ['sales-intelligence.md'],
   siteMigration: ['site-migration.md'],
-  browserControl: ['browser-control.md'],
 };
 
 for (const mod of getAllUnifiedModules()) {

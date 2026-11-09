@@ -9,7 +9,7 @@ category: reference
 > **GENERATED FILE.** Run `bun run scripts/parity-report.ts` to refresh.
 > Edit `docs/parity/capabilities/<module>.json` to change scores.
 
-**Benchmarked modules:** 58  ·  **Mean parity:** 92%  ·  **Differentiators (no Odoo benchmark):** 11  ·  **Unscored:** 3
+**Benchmarked modules:** 58  ·  **Mean parity:** 92%  ·  **Differentiators (no Odoo benchmark):** 10  ·  **Unscored:** 3
 
 ## Scored modules
 
@@ -78,7 +78,6 @@ category: reference
 
 | Module | Description | Capabilities |
 |---|---|---|
-| **browser-control** | none (FlowWink differentiator) | 4 |
 | **company-insights** | none (FlowWink differentiator) | 4 |
 | **composio** | none (FlowWink differentiator) | 4 |
 | **developer** | none (FlowWink differentiator) | 4 |

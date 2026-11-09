@@ -119,7 +119,7 @@ FlowWink has 69 modules in `src/lib/modules/`. Each module is a TypeScript file 
 - Feature set and capabilities
 - Skill registrations pointing to `agent_skills` rows
 
-**Module categories include:** accounting, analytics, approvals, blog, booking, browser-control, calendar, chat, companies, contracts, crm, customer360, deals, docs, documents, email, expenses, federation, feedback, field-service, fixed-assets, flowpilot, forms, global-blocks, growth, handbook, hr, inventory, invoicing, kb, live-support, manufacturing, media, multi-currency, newsletter, pages, payroll, pos, pricelists, products, projects, purchasing, quotes, reconciliation, recruitment, consultants, returns, river, sales-intelligence, shipping, site-migration, sla, subscriptions, surveys, templates, tickets, timesheets, webinars, wiki, workspace-chat.
+**Module categories include:** accounting, analytics, approvals, blog, booking, calendar, chat, companies, contracts, crm, customer360, deals, docs, documents, email, expenses, federation, feedback, field-service, fixed-assets, flowpilot, forms, global-blocks, growth, handbook, hr, inventory, invoicing, kb, live-support, manufacturing, media, multi-currency, newsletter, pages, payroll, pos, pricelists, products, projects, purchasing, quotes, reconciliation, recruitment, consultants, returns, river, sales-intelligence, shipping, site-migration, sla, subscriptions, surveys, templates, tickets, timesheets, webinars, wiki, workspace-chat.
 
 To scaffold a new module: `bun run scripts/new-module.ts`
 
@@ -131,7 +131,7 @@ All edge functions live in `supabase/functions/[name]/index.ts` and are Deno-bas
 
 **Budget: reuse before a new deployable.** The fleet runs on Supabase's Free
 tier (100 functions per project, 500K invocations/month, 150 s wall-clock,
-2 s CPU). The repo carries 77 functions and `EDGE_FUNCTION_BUDGET` in
+2 s CPU). The repo carries 76 functions and `EDGE_FUNCTION_BUDGET` in
 `src/lib/edge-function-registry.ts` caps it at 90; the registry guard turns
 CI red above that. A new capability is a handler in `agent-execute` (a
 skill), or a branch of an existing family — channel ingest
@@ -192,7 +192,9 @@ read the executor as text read `_shared/execute/core.ts`.
 
 **AI Enrichment:**
 - `extract-pdf-text` — data enrichment (`prospect-research`, `contact-finder`, `enrich-company`, `parse-resume` and `extract-receipt` are `internal:` handlers in `agent-execute`, `_shared/handlers/`)
-- `web-search`, `web-scrape`, `browser-fetch` — web intelligence
+- `web-search`, `web-scrape` — web intelligence (a page behind a login is an
+  external agent's job — its own browser, handed in over MCP; Browser Control
+  and `browser_fetch` were retired 2026-11-09)
 
 **Integrations:**
 - `stripe-webhook`, `gmail-oauth-callback`, `composio-proxy`, `integrations-account` (every provider's usage card) — third-party (`gmail-inbox-scan` is an `internal:` handler)
@@ -719,7 +721,7 @@ src/
   integrations/       # Supabase client + generated types
 
 supabase/
-  functions/          # 77 Deno edge functions (see docs/reference/edge-functions.md)
+  functions/          # 76 Deno edge functions (see docs/reference/edge-functions.md)
     _shared/          # Shared utilities
       pilot/          # FlowPilot ReAct engine
       skills/         # Skill Relevance Engine

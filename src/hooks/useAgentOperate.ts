@@ -373,7 +373,6 @@ export function useAgentOperate() {
 
     let finalContent = '';
     let skillResults: any[] = [];
-    let relayFollowUp: string | null = null;
 
     try {
       const convId = await getOrCreateConversation();
@@ -446,45 +445,6 @@ export function useAgentOperate() {
           }));
         },
         onSkillResults: async (results) => {
-          // Check for relay_required responses from browser_fetch
-          for (const result of results) {
-            if (result?.result?.action === 'relay_required' && result?.result?.url && relayHandlerRef.current) {
-              const relayUrl = result.result.url;
-              setMessages(prev => prev.map(m =>
-                m.id === assistantId
-                  ? { ...m, content: `🔗 Fetching via browser relay: ${relayUrl}`, toolStatus: { ...m.toolStatus, phase: 'executing', tools: ['browser_relay'] } }
-                  : m
-              ));
-
-              const relayResult = await relayHandlerRef.current(relayUrl);
-              if (relayResult && !relayResult.error) {
-                // Check if the scrape detected an error page
-                const isErrorPage = relayResult.method === 'error' || relayResult.is_error;
-                
-                // Send relay result back to browser-fetch to get formatted response
-                const { data: fetchResult } = await supabase.functions.invoke('browser-fetch', {
-                  body: { url: relayUrl, relay_result: relayResult },
-                });
-                // Replace the relay_required result with actual content
-                result.result = fetchResult;
-                result.status = isErrorPage ? 'failed' : 'success';
-
-                // Build follow-up content for the agent to continue reasoning
-                const title = relayResult.title || '';
-                const content = relayResult.content || fetchResult?.content || '';
-                
-                if (isErrorPage) {
-                  relayFollowUp = `Browser relay to ${relayUrl} failed: The page returned a 404 or error. The URL may be incorrect. Try a different URL format (e.g. for LinkedIn posts, try the /recent-activity/all/ path, or use the direct post URL).`;
-                } else {
-                  relayFollowUp = `Here is the fetched content from ${relayUrl}:\n\n**${title}**\n\n${content}`;
-                }
-              } else {
-                result.result = { error: relayResult?.error || 'Browser relay failed' };
-                result.status = 'failed';
-              }
-            }
-          }
-
           skillResults = results;
           setMessages(prev => prev.map(m =>
             m.id === assistantId
@@ -523,17 +483,6 @@ export function useAgentOperate() {
         });
       }
       await loadActivity();
-
-      // If a relay fetched content, automatically send it as a follow-up
-      // so the agent can use it to continue reasoning
-      if (relayFollowUp) {
-        setIsLoading(false);
-        // Small delay to let UI settle, then send follow-up
-        setTimeout(() => {
-          sendMessage(relayFollowUp!);
-        }, 500);
-        return; // Skip finally's setIsLoading since we'll re-enter sendMessage
-      }
 
     } catch (err: any) {
       if (err.name === 'AbortError') return;
@@ -777,14 +726,6 @@ export function useAgentOperate() {
     forceNewConversationRef.current = true;
   }, []);
 
-  // ─── Extension relay handler ──────────────────────────────────────────
-  // Can be set by the CopilotPage to handle relay_required responses
-  const relayHandlerRef = useRef<((url: string) => Promise<any>) | null>(null);
-
-  const setRelayHandler = useCallback((handler: (url: string) => Promise<any>) => {
-    relayHandlerRef.current = handler;
-  }, []);
-
   return {
     messages,
     isLoading,
@@ -804,6 +745,5 @@ export function useAgentOperate() {
     switchConversation,
     deleteConversation,
     clearMessages,
-    setRelayHandler,
   };
 }

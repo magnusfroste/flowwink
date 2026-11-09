@@ -7,7 +7,7 @@ generated: true
 
 # Edge functions — the full surface
 
-> **Generated** by `scripts/generate-edge-function-docs.ts`. 77 functions: 37 core (always deployed), 40 module-bound (deployed when an owning module is enabled). The deploy map is `supabase/seed/edge-function-map.json`; the operator's mental model is [`../operators/edge-function-tiers.md`](../operators/edge-function-tiers.md).
+> **Generated** by `scripts/generate-edge-function-docs.ts`. 76 functions: 37 core (always deployed), 39 module-bound (deployed when an owning module is enabled). The deploy map is `supabase/seed/edge-function-map.json`; the operator's mental model is [`../operators/edge-function-tiers.md`](../operators/edge-function-tiers.md).
 
 **Audience column:** `public` = `verify_jwt = false` in `config.toml` — the function verifies its caller itself (see the guard `public-functions-verify-their-caller`); `JWT` = the gateway requires a signed-in caller.
 
@@ -18,7 +18,6 @@ generated: true
 | `ai-task` | core | public | ai-task — Consolidated AI Task Hub |
 | `automation-dispatcher` | core | public | Automation Dispatcher |
 | `blog-rss` | module: blog | public | RSS feed of the 20 most recent published blog posts. |
-| `browser-fetch` | module: browserControl | public | Browser Fetch — Hybrid Operator Skill |
 | `chat-completion` | core | public | Chat Completion — Visitor-facing AI chat |
 | `chat-stt` | core | default (JWT) | chat-stt — server-side Speech-to-Text router for the chat widget. |
 | `check-secrets` | core | default (JWT) | Reports which provider secrets (AI, email, payments…) are configured, for the admin setup screens. |
