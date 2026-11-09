@@ -5,7 +5,7 @@ version: "1.0.0"
 category: "data"
 autonomy: "view-required"
 generated: true
-generated_at: "2026-10-27"
+generated_at: "2026-11-09"
 description: Equipment registry, corrective + preventive maintenance requests, and interval-based preventive schedules with a nightly sweep.
 ---
 
@@ -49,6 +49,12 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 **Input fields:** `action`
 
 **Output fields:** `success`, `error`
+
+## Used in Processes
+
+This module participates in the following end-to-end business processes:
+
+- [order-to-delivery](../processes/order-to-delivery.md)
 
 ## File Map
 

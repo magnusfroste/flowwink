@@ -5,7 +5,7 @@ version: "1.2.0"
 category: "communication"
 autonomy: "config-required"
 generated: true
-generated_at: "2026-09-30"
+generated_at: "2026-11-09"
 description: Plan, promote, run and follow up webinars — lifecycle, lead-loop, reminders and content-loop
 ---
 
@@ -13,7 +13,7 @@ description: Plan, promote, run and follow up webinars — lifecycle, lead-loop,
 
 > Plan, promote, run and follow up webinars — lifecycle, lead-loop, reminders and content-loop
 
-Ships with **9 agent skills**, an **admin UI**.
+Ships with **9 agent skills**, **2 database tables**, an **admin UI**.
 
 ## Quick Facts
 
@@ -26,7 +26,7 @@ Ships with **9 agent skills**, an **admin UI**.
 | **Core** | No |
 | **Capabilities** | `content:receive`, `data:write` |
 | **MCP-exposed skills** | 9 |
-| **Owns tables** | — |
+| **Owns tables** | 2 |
 
 ## Integrations
 
@@ -48,6 +48,23 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `cancel_webinar` | internal | Cancel a webinar. Emits webinar.cancelled event so automations can notify registrants. Use when: webinar will not run and registrants must be informed / "cancel webinar" / "ställ in webinariet". NO… |
 | `mark_webinar_attendance` | internal | Flag a registration as attended (or not). Boosts lead score +10 on attended=true. Emits webinar.attended event. Use when: post-webinar bookkeeping of who showed up / "mark attendance" / "registrera… |
 | `generate_blog_from_webinar` | internal | Turn a completed webinar into a blog post draft (title, slug, excerpt, markdown body, tags) and insert it as a draft in blog_posts. Use when: a webinar is completed and we want evergreen content fr… |
+
+## Data Model
+
+Tables this module owns (declared by the module, or created in its migrations):
+
+- `public.webinar_registrations`
+- `public.webinars`
+
+All tables ship with Row-Level Security policies. See migration files for the exact rules.
+
+## Used in Processes
+
+This module participates in the following end-to-end business processes:
+
+- [lead-to-customer](../processes/lead-to-customer.md)
+- [content-to-conversion](../processes/content-to-conversion.md)
+- [register-to-attend](../processes/register-to-attend.md)
 
 ## File Map
 

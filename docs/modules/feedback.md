@@ -13,7 +13,7 @@ description: The feedback board — bug reports, feature requests, template wish
 
 > The feedback board — bug reports, feature requests, template wishes, questions — with votes, comments and a status per post. By default this instance sends its feedback (and a daily usage ping) to www.flowwink.com; point the endpoint at this instance to run the board for your own product.
 
-Ships with **4 agent skills**, an **admin UI**.
+Ships with **4 agent skills**, **4 database tables**, an **admin UI**.
 
 ## Quick Facts
 
@@ -26,7 +26,7 @@ Ships with **4 agent skills**, an **admin UI**.
 | **Core** | No |
 | **Capabilities** | `data:read`, `data:write` |
 | **MCP-exposed skills** | 4 |
-| **Owns tables** | — |
+| **Owns tables** | 4 |
 
 ## Skills
 
@@ -39,6 +39,17 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `feedback_ping` | internal | The daily ping to the feedback endpoint: this instance's id (minted on the first ping), site URL and name (Branding → organisation name), skills sha, migration head and enabled modules — no busines… |
 | `manage_feedback` | internal | Operate the feedback board THIS instance receives (www.flowwink.com for the fleet; a self-hoster's own product board): list posts by board/status/origin, group open bug reports by defect across ins… |
 | `browse_feedback` | both | Read the public feedback board of this instance: what is open, planned, in progress or done, with votes and comment counts. Use when: a visitor or customer asks whether something is planned, known,… |
+
+## Data Model
+
+Tables this module owns (declared by the module, or created in its migrations):
+
+- `public.feedback_comments`
+- `public.feedback_instances`
+- `public.feedback_posts`
+- `public.feedback_votes`
+
+All tables ship with Row-Level Security policies. See migration files for the exact rules.
 
 ## Module API Contract
 

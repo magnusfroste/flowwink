@@ -13,7 +13,7 @@ description: Versioned pricing per customer, company, segment, country, or perio
 
 > Versioned pricing per customer, company, segment, country, or period — price lists with fixed prices, discount %, formula (cost+margin) rules, qty tiers, and time-window rules. Resolves the best applicable price for any product+customer+date, applies to POS sales and subscriptions, resolves supplier prices from vendor pricelists, and keeps a full revision history.
 
-Ships with **6 agent skills**, **1 database table**, an **admin UI**.
+Ships with **6 agent skills**, **3 database tables**, an **admin UI**.
 
 ## Quick Facts
 
@@ -26,7 +26,7 @@ Ships with **6 agent skills**, **1 database table**, an **admin UI**.
 | **Core** | No |
 | **Capabilities** | `data:read`, `data:write` |
 | **MCP-exposed skills** | 6 |
-| **Owns tables** | 1 |
+| **Owns tables** | 3 |
 
 ## Skills
 
@@ -44,9 +44,11 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 
 ## Data Model
 
-Tables created by this module (from migrations):
+Tables this module owns (declared by the module, or created in its migrations):
 
+- `public.pricelist_items`
 - `public.pricelist_revisions`
+- `public.pricelists`
 
 All tables ship with Row-Level Security policies. See migration files for the exact rules.
 
@@ -57,6 +59,13 @@ All tables ship with Row-Level Security policies. See migration files for the ex
 **Input fields:** `action`, `product_id`, `lead_id`, `company_id`, `quantity`, `pricelist_id`
 
 **Output fields:** `success`, `data`, `message`
+
+## Used in Processes
+
+This module participates in the following end-to-end business processes:
+
+- [quote-to-cash](../processes/quote-to-cash.md)
+- [order-to-delivery](../processes/order-to-delivery.md)
 
 ## File Map
 

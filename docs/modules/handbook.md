@@ -5,7 +5,7 @@ version: "1.0.0"
 category: "content"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-09-30"
+generated_at: "2026-11-09"
 description: Agentic methodology handbook with search and reader capabilities
 ---
 
@@ -13,7 +13,7 @@ description: Agentic methodology handbook with search and reader capabilities
 
 > Agentic methodology handbook with search and reader capabilities
 
-Ships with **3 agent skills**, an **admin UI**.
+Ships with **3 agent skills**, **2 database tables**, an **admin UI**.
 
 ## Quick Facts
 
@@ -26,7 +26,7 @@ Ships with **3 agent skills**, an **admin UI**.
 | **Core** | No |
 | **Capabilities** | `data:read` |
 | **MCP-exposed skills** | 3 |
-| **Owns tables** | — |
+| **Owns tables** | 2 |
 
 ## Skills
 
@@ -39,6 +39,15 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `sync_handbook_from_github` | internal | Recursively import markdown handbook chapters from a GitHub repo path. Use when: syncing the employee handbook maintained in GitHub. NOT for: product docs (sync_docs_from_github). |
 | `handbook_chapter_history` | internal | Version history for handbook chapters: list revisions, read an old revision, restore one. Every content/title/frontmatter change and every delete is captured automatically, and the revision survive… |
 
+## Data Model
+
+Tables this module owns (declared by the module, or created in its migrations):
+
+- `public.handbook_chapter_revisions`
+- `public.handbook_chapters`
+
+All tables ship with Row-Level Security policies. See migration files for the exact rules.
+
 ## Module API Contract
 
 **Actions:** `list`, `search`
@@ -46,6 +55,12 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 **Input fields:** `action`, `query`
 
 **Output fields:** `success`, `message`
+
+## Used in Processes
+
+This module participates in the following end-to-end business processes:
+
+- [hire-to-retire](../processes/hire-to-retire.md)
 
 ## File Map
 

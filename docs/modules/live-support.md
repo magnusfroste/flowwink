@@ -57,6 +57,12 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 
 **Output fields:** `success`, `message`, `error`
 
+## Used in Processes
+
+This module participates in the following end-to-end business processes:
+
+- [support-to-resolution](../processes/support-to-resolution.md)
+
 ## File Map
 
 | Purpose | Path |

@@ -13,7 +13,7 @@ description: Outbound shipping with multi-parcel support and carrier integration
 
 > Outbound shipping with multi-parcel support and carrier integrations. Built-in: PostNord, DHL, Bring. Tracking URLs are auto-rendered from per-carrier templates.
 
-Ships with **13 agent skills**, **3 database tables**, **1 public block**, an **admin UI**.
+Ships with **13 agent skills**, **5 database tables**, **1 public block**, an **admin UI**.
 
 ## Quick Facts
 
@@ -26,7 +26,7 @@ Ships with **13 agent skills**, **3 database tables**, **1 public block**, an **
 | **Core** | No |
 | **Capabilities** | `data:read`, `data:write` |
 | **MCP-exposed skills** | 13 |
-| **Owns tables** | 3 |
+| **Owns tables** | 5 |
 
 ## Integrations
 
@@ -55,10 +55,12 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 
 ## Data Model
 
-Tables created by this module (from migrations):
+Tables this module owns (declared by the module, or created in its migrations):
 
 - `public.canned_responses`
+- `public.carriers`
 - `public.postal_code_rules`
+- `public.shipments`
 - `public.shipping_pickups`
 
 All tables ship with Row-Level Security policies. See migration files for the exact rules.
@@ -68,6 +70,12 @@ All tables ship with Row-Level Security policies. See migration files for the ex
 **Actions:** `list_carriers`, `list_shipments`, `create_shipment`
 
 **Input fields:** `action`, `order_id`
+
+## Used in Processes
+
+This module participates in the following end-to-end business processes:
+
+- [order-to-delivery](../processes/order-to-delivery.md)
 
 ## File Map
 

@@ -13,7 +13,7 @@ description: Bank reconciliation: Stripe payout sync + bank file import (CAMT.05
 
 > Bank reconciliation: Stripe payout sync + bank file import (CAMT.053/MT940/OFX/CSV/SIE) + OCR import of statement images/PDFs. Auto-matches against invoices/expenses/orders.
 
-Ships with **10 agent skills**, an **admin UI**.
+Ships with **10 agent skills**, **5 database tables**, an **admin UI**.
 
 ## Quick Facts
 
@@ -26,7 +26,8 @@ Ships with **10 agent skills**, an **admin UI**.
 | **Core** | No |
 | **Capabilities** | `data:read`, `data:write` |
 | **MCP-exposed skills** | 10 |
-| **Owns tables** | — |
+| **Owns tables** | 5 |
+| **Requires modules** | `accounting` |
 
 ## Integrations
 
@@ -50,6 +51,18 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `reconciliation_report` | internal | Bank reconciliation summary for a period: matched vs unmatched counts and amounts, plus rule-suggested count. Use when: month-end reconciliation review, reporting bank-feed health. |
 | `run_bookkeeping_sweep` | internal | Run the WHOLE daily bookkeeping pipeline as one deterministic step: apply reconciliation rules → auto-match bank events against invoices/expenses/orders → propose bookings for the rest → auto-book … |
 
+## Data Model
+
+Tables this module owns (declared by the module, or created in its migrations):
+
+- `public.bank_accounts`
+- `public.bank_import_batches`
+- `public.bank_transactions`
+- `public.payment_reconciliations`
+- `public.reconciliation_matches`
+
+All tables ship with Row-Level Security policies. See migration files for the exact rules.
+
 ## Module API Contract
 
 **Actions:** `sync_stripe`, `import_file`, `import_image`, `auto_match`, `list_unmatched`
@@ -63,6 +76,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 This module participates in the following end-to-end business processes:
 
 - [record-to-report](../processes/record-to-report.md)
+- [procure-to-pay](../processes/procure-to-pay.md)
 
 ## File Map
 

@@ -5,7 +5,7 @@ version: "2.0.0"
 category: "data"
 autonomy: "view-required"
 generated: true
-generated_at: "2026-10-02"
+generated_at: "2026-11-09"
 description: In-store register — sessions, receipts, split payments, stock-aware product catalog
 ---
 
@@ -13,7 +13,7 @@ description: In-store register — sessions, receipts, split payments, stock-awa
 
 > In-store register — sessions, receipts, split payments, stock-aware product catalog
 
-Ships with **16 agent skills**, **3 database tables**.
+Ships with **16 agent skills**, **8 database tables**.
 
 ## Quick Facts
 
@@ -26,7 +26,7 @@ Ships with **16 agent skills**, **3 database tables**.
 | **Core** | No |
 | **Capabilities** | `data:read`, `data:write` |
 | **MCP-exposed skills** | 16 |
-| **Owns tables** | 3 |
+| **Owns tables** | 8 |
 
 ## Skills
 
@@ -54,10 +54,15 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 
 ## Data Model
 
-Tables created by this module (from migrations):
+Tables this module owns (declared by the module, or created in its migrations):
 
 - `public.loyalty_accounts`
 - `public.loyalty_transactions`
+- `public.pos_payments`
+- `public.pos_registers`
+- `public.pos_sale_lines`
+- `public.pos_sales`
+- `public.pos_sessions`
 - `public.pos_tables`
 
 All tables ship with Row-Level Security policies. See migration files for the exact rules.
@@ -69,6 +74,13 @@ All tables ship with Row-Level Security policies. See migration files for the ex
 **Input fields:** `action`, `register_id`, `limit`
 
 **Output fields:** `success`, `data`, `error`
+
+## Used in Processes
+
+This module participates in the following end-to-end business processes:
+
+- [order-to-delivery](../processes/order-to-delivery.md)
+- [record-to-report](../processes/record-to-report.md)
 
 ## File Map
 

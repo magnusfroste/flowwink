@@ -13,7 +13,7 @@ description: Match consultant profiles against job descriptions with AI-powered 
 
 > Match consultant profiles against job descriptions with AI-powered scoring and cover letters
 
-Ships with **7 agent skills**.
+Ships with **7 agent skills**, **3 database tables**.
 
 ## Quick Facts
 
@@ -26,7 +26,7 @@ Ships with **7 agent skills**.
 | **Core** | No |
 | **Capabilities** | `data:read`, `content:produce` |
 | **MCP-exposed skills** | 7 |
-| **Owns tables** | — |
+| **Owns tables** | 3 |
 
 ## Integrations
 
@@ -47,11 +47,27 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `consultant_utilization_report` | internal | Utilization report for the consultant pool: allocation % per consultant over a date window, with assignment breakdown — spot bench time and overbooking. Use when: "who is free next month?", staffin… |
 | `manage_consultant_rates` | internal | Per-skill hourly-rate matrix for consultants (e.g. React 1200 kr/h, DevOps 1400 kr/h) on top of the profile default rate. Use when: quoting engagements per competence, maintaining the rate card, co… |
 
+## Data Model
+
+Tables this module owns (declared by the module, or created in its migrations):
+
+- `public.consultant_assignments`
+- `public.consultant_profiles`
+- `public.consultant_skill_rates`
+
+All tables ship with Row-Level Security policies. See migration files for the exact rules.
+
 ## Module API Contract
 
 **Input fields:** `job_description`, `max_results`
 
 **Output fields:** `success`, `matches`, `consultant_id`, `name`, `title`, `score`, `reasoning`, `tailored_summary`, `cover_letter`, `matching_skills`, `missing_skills`, `error`
+
+## Used in Processes
+
+This module participates in the following end-to-end business processes:
+
+- [hire-to-retire](../processes/hire-to-retire.md)
 
 ## File Map
 

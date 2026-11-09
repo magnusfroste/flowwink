@@ -13,7 +13,7 @@ description: Recurring revenue lifecycle — active customers, MRR, churn, dunni
 
 > Recurring revenue lifecycle — active customers, MRR, churn, dunning, renewals, win-back
 
-Ships with **22 agent skills**, **1 database table**, an **admin UI**.
+Ships with **22 agent skills**, **6 database tables**, an **admin UI**.
 
 ## Quick Facts
 
@@ -26,7 +26,8 @@ Ships with **22 agent skills**, **1 database table**, an **admin UI**.
 | **Core** | No |
 | **Capabilities** | `data:read`, `data:write` |
 | **MCP-exposed skills** | 22 |
-| **Owns tables** | 1 |
+| **Owns tables** | 6 |
+| **Requires modules** | `invoicing` |
 
 ## Integrations
 
@@ -64,9 +65,14 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 
 ## Data Model
 
-Tables created by this module (from migrations):
+Tables this module owns (declared by the module, or created in its migrations):
 
 - `public.canned_responses`
+- `public.subscription_churn_reasons`
+- `public.subscription_events`
+- `public.subscription_winback_campaigns`
+- `public.subscription_winback_sends`
+- `public.subscriptions`
 
 All tables ship with Row-Level Security policies. See migration files for the exact rules.
 
@@ -83,6 +89,8 @@ All tables ship with Row-Level Security policies. See migration files for the ex
 This module participates in the following end-to-end business processes:
 
 - [quote-to-cash](../processes/quote-to-cash.md)
+- [subscribe-to-renew](../processes/subscribe-to-renew.md)
+- [sign-to-serve](../processes/sign-to-serve.md)
 
 ## File Map
 

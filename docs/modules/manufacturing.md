@@ -13,7 +13,7 @@ description: MRP-light: Bills of Materials, Manufacturing Orders, component rese
 
 > MRP-light: Bills of Materials, Manufacturing Orders, component reservation, and the link from production demand to procurement.
 
-Ships with **17 agent skills**, an **admin UI**.
+Ships with **17 agent skills**, **4 database tables**, an **admin UI**.
 
 ## Quick Facts
 
@@ -26,7 +26,7 @@ Ships with **17 agent skills**, an **admin UI**.
 | **Core** | No |
 | **Capabilities** | `data:write`, `data:read` |
 | **MCP-exposed skills** | 17 |
-| **Owns tables** | — |
+| **Owns tables** | 4 |
 
 ## Skills
 
@@ -53,6 +53,17 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `record_operation_scrap` | internal | Record units scrapped at one operation of a manufacturing order — what was started but will never be finished. Use when: parts crack, a batch fails, units are lost at a station. NOT for: a failed q… |
 | `mrp_reorder_run` | internal | Scan manufactured products (those with an active BOM) below their reordering rule and create draft manufacturing orders to replenish. The threshold is reorder_rules.min_qty with procurement_method=… |
 
+## Data Model
+
+Tables this module owns (declared by the module, or created in its migrations):
+
+- `public.bom_headers`
+- `public.bom_lines`
+- `public.manufacturing_orders`
+- `public.mo_components`
+
+All tables ship with Row-Level Security policies. See migration files for the exact rules.
+
 ## Module API Contract
 
 **Actions:** `list_mos`, `list_boms`, `get_mo`, `get_bom`
@@ -60,6 +71,14 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 **Input fields:** `action`, `mo_id`, `bom_id`, `status`
 
 **Output fields:** `success`, `message`
+
+## Used in Processes
+
+This module participates in the following end-to-end business processes:
+
+- [procure-to-pay](../processes/procure-to-pay.md)
+- [order-to-delivery](../processes/order-to-delivery.md)
+- [plan-to-produce](../processes/plan-to-produce.md)
 
 ## File Map
 

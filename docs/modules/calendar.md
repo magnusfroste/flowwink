@@ -5,7 +5,7 @@ version: "1.0.0"
 category: "insights"
 autonomy: "view-required"
 generated: true
-generated_at: "2026-09-30"
+generated_at: "2026-11-09"
 description: Unified calendar aggregating bookings, tasks, leave and renewals
 ---
 
@@ -46,6 +46,13 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 **Input fields:** `action`, `start`, `end`, `sources`
 
 **Output fields:** `success`, `events`, `error`
+
+## Used in Processes
+
+This module participates in the following end-to-end business processes:
+
+- [hire-to-retire](../processes/hire-to-retire.md)
+- [lead-to-customer](../processes/lead-to-customer.md)
 
 ## File Map
 

@@ -5,7 +5,7 @@ version: "1.0.0"
 category: "insights"
 autonomy: "view-required"
 generated: true
-generated_at: "2026-09-30"
+generated_at: "2026-11-09"
 description: Dashboard with insights on leads, deals, and newsletter performance
 ---
 
@@ -56,6 +56,14 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 **Input fields:** `action`, `page_url`, `period_days`
 
 **Output fields:** `success`, `message`, `error`
+
+## Used in Processes
+
+This module participates in the following end-to-end business processes:
+
+- [content-to-conversion](../processes/content-to-conversion.md)
+- [record-to-report](../processes/record-to-report.md)
+- [support-to-resolution](../processes/support-to-resolution.md)
 
 ## File Map
 

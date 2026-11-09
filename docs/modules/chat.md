@@ -5,7 +5,7 @@ version: "1.0.0"
 category: "communication"
 autonomy: "view-required"
 generated: true
-generated_at: "2026-10-02"
+generated_at: "2026-11-09"
 description: Public visitor chat — the AI-powered widget and /chat landing page for anonymous site visitors.
 ---
 
@@ -48,6 +48,13 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 **Input fields:** `action`
 
 **Output fields:** `success`, `error`
+
+## Used in Processes
+
+This module participates in the following end-to-end business processes:
+
+- [support-to-resolution](../processes/support-to-resolution.md)
+- [lead-to-customer](../processes/lead-to-customer.md)
 
 ## File Map
 

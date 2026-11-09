@@ -5,7 +5,7 @@ version: "1.0.0"
 category: "data"
 autonomy: "view-required"
 generated: true
-generated_at: "2026-09-30"
+generated_at: "2026-11-09"
 description: Create and manage sales deals/opportunities
 ---
 
@@ -13,7 +13,7 @@ description: Create and manage sales deals/opportunities
 
 > Create and manage sales deals/opportunities
 
-Ships with **2 agent skills**, an **admin UI**.
+Ships with **2 agent skills**, **3 database tables**, an **admin UI**.
 
 ## Quick Facts
 
@@ -26,7 +26,7 @@ Ships with **2 agent skills**, an **admin UI**.
 | **Core** | No |
 | **Capabilities** | `content:receive`, `data:write`, `webhook:trigger` |
 | **MCP-exposed skills** | 2 |
-| **Owns tables** | — |
+| **Owns tables** | 3 |
 
 ## Skills
 
@@ -37,6 +37,16 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 |-------|-------|-------------|
 | `manage_deal` | internal | Manage deals: list, create, update, move stage. Use when: creating a new sales opportunity; updating deal progress; moving a deal to next pipeline stage. NOT for: managing leads (manage_leads); cre… |
 | `deal_stale_check` | internal | Identifies deals that have stalled and suggests actions. Use when: heartbeat pipeline review, finding stuck deals. NOT for: managing deals directly (use manage_deal). |
+
+## Data Model
+
+Tables this module owns (declared by the module, or created in its migrations):
+
+- `public.deal_activities`
+- `public.deals`
+- `public.pipeline_stages`
+
+All tables ship with Row-Level Security policies. See migration files for the exact rules.
 
 ## Used in Processes
 

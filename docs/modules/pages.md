@@ -13,7 +13,7 @@ description: Create and publish website pages, header, footer and navigation
 
 > Create and publish website pages, header, footer and navigation
 
-Ships with **19 agent skills**, **3 database tables**.
+Ships with **19 agent skills**, **6 database tables**.
 
 ## Quick Facts
 
@@ -26,7 +26,7 @@ Ships with **19 agent skills**, **3 database tables**.
 | **Core** | Yes |
 | **Capabilities** | `content:receive`, `data:write`, `webhook:trigger` |
 | **MCP-exposed skills** | 19 |
-| **Owns tables** | 3 |
+| **Owns tables** | 6 |
 
 ## Skills
 
@@ -57,11 +57,14 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 
 ## Data Model
 
-Tables created by this module (from migrations):
+Tables this module owns (declared by the module, or created in its migrations):
 
 - `public.page_experiment_events`
 - `public.page_experiments`
 - `public.page_redirects`
+- `public.page_versions`
+- `public.page_views`
+- `public.pages`
 
 All tables ship with Row-Level Security policies. See migration files for the exact rules.
 

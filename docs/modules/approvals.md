@@ -13,7 +13,7 @@ description: Generic approval engine — define rules (entity type + amount thre
 
 > Generic approval engine — define rules (entity type + amount threshold + required role) and route requests for sign-off. Used by Purchasing, Expenses, Invoicing and Quotes.
 
-Ships with **10 agent skills**, an **admin UI**.
+Ships with **10 agent skills**, **7 database tables**, an **admin UI**.
 
 ## Quick Facts
 
@@ -26,7 +26,7 @@ Ships with **10 agent skills**, an **admin UI**.
 | **Core** | No |
 | **Capabilities** | `data:read`, `data:write` |
 | **MCP-exposed skills** | 10 |
-| **Owns tables** | — |
+| **Owns tables** | 7 |
 
 ## Skills
 
@@ -45,6 +45,20 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `manage_approval_delegation` | internal | Delegate approval authority while someone is away: list, create, or revoke delegations. The delegate may act on any step the delegator is authorized for. Use when: an approver is on vacation; cover… |
 | `check_approval_escalations` | internal | Sweep pending chain approvals whose current step exceeded its escalate_after_hours and advance them to the next step (final-step breaches are logged, never auto-approved). Use when: heartbeat/cron … |
 | `bulk_advance_approvals` | internal | Approve or reject MANY chain approval requests in one call. Use when: clearing an approval backlog, batch sign-off after review. NOT for: a single request (advance_approval_step) or staged operatio… |
+
+## Data Model
+
+Tables this module owns (declared by the module, or created in its migrations):
+
+- `public.approval_chains`
+- `public.approval_decisions`
+- `public.approval_group_members`
+- `public.approval_groups`
+- `public.approval_requests`
+- `public.approval_rules`
+- `public.approval_steps`
+
+All tables ship with Row-Level Security policies. See migration files for the exact rules.
 
 ## Module API Contract
 

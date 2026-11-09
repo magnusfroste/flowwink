@@ -7,7 +7,7 @@ generated: true
 
 # Module catalog
 
-69 modules across 5 categories, 640 module-owned skills.
+68 modules across 5 categories, 640 module-owned skills.
 Platform skills (search_web, manage_site_settings, briefings…) are not owned by a module — see [`src/lib/platform-seeds.ts`](../reference/skills-source.md).
 
 **How a module behaves**

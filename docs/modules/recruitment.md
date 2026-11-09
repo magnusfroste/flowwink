@@ -13,7 +13,7 @@ description: Applicant Tracking System — job postings, candidate pipeline, AI 
 
 > Applicant Tracking System — job postings, candidate pipeline, AI scoring and outreach. FlowPilot runs the daily pipeline review.
 
-Ships with **19 agent skills**, **4 database tables**, an **admin UI**.
+Ships with **19 agent skills**, **9 database tables**, an **admin UI**.
 
 ## Quick Facts
 
@@ -26,7 +26,7 @@ Ships with **19 agent skills**, **4 database tables**, an **admin UI**.
 | **Core** | No |
 | **Capabilities** | `data:write`, `data:read` |
 | **MCP-exposed skills** | 19 |
-| **Owns tables** | 4 |
+| **Owns tables** | 9 |
 
 ## Skills
 
@@ -57,12 +57,17 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 
 ## Data Model
 
-Tables created by this module (from migrations):
+Tables this module owns (declared by the module, or created in its migrations):
 
+- `public.application_stages`
+- `public.applications`
 - `public.candidate_assessments`
+- `public.candidate_notes`
 - `public.interviews`
 - `public.job_offers`
+- `public.job_postings`
 - `public.reference_checks`
+- `public.skills_catalog`
 
 All tables ship with Row-Level Security policies. See migration files for the exact rules.
 

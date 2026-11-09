@@ -13,7 +13,7 @@ description: Create and manage company records with optional AI enrichment
 
 > Create and manage company records with optional AI enrichment
 
-Ships with **16 agent skills**, an **admin UI**.
+Ships with **16 agent skills**, **1 database table**, an **admin UI**.
 
 ## Quick Facts
 
@@ -26,7 +26,7 @@ Ships with **16 agent skills**, an **admin UI**.
 | **Core** | No |
 | **Capabilities** | `content:receive`, `data:write` |
 | **MCP-exposed skills** | 16 |
-| **Owns tables** | — |
+| **Owns tables** | 1 |
 
 ## Skills
 
@@ -51,6 +51,14 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `reorder_company_order` | external | Place a repeat of one of the signed-in B2B contact's OWN company's earlier orders (identity ladder rung 3, write). Use when: an authenticated company contact with the buyer role or higher wants to … |
 | `request_company_quote` | external | File a quote request on behalf of the signed-in B2B contact's OWN company (identity ladder rung 3, write). Use when: an authenticated company contact with the buyer role or higher asks for pricing/… |
 | `initiate_company_invoice_payment` | external | Get the secure payment link for one of the signed-in B2B contact's OWN company's unpaid invoices (identity ladder rung 3). Use when: an authenticated company contact with the buyer role or higher w… |
+
+## Data Model
+
+Tables this module owns (declared by the module, or created in its migrations):
+
+- `public.companies`
+
+All tables ship with Row-Level Security policies. See migration files for the exact rules.
 
 ## Used in Processes
 

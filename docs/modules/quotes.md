@@ -5,7 +5,7 @@ version: "1.0.0"
 category: "data"
 autonomy: "view-required"
 generated: true
-generated_at: "2026-09-30"
+generated_at: "2026-11-09"
 description: Sales quotes with line items, versioning, customer e-sign via public link, reusable templates, and approval workflow before sending high-value offers.
 ---
 
@@ -13,7 +13,7 @@ description: Sales quotes with line items, versioning, customer e-sign via publi
 
 > Sales quotes with line items, versioning, customer e-sign via public link, reusable templates, and approval workflow before sending high-value offers.
 
-Ships with **4 agent skills**, an **admin UI**.
+Ships with **4 agent skills**, **5 database tables**, an **admin UI**.
 
 ## Quick Facts
 
@@ -26,7 +26,7 @@ Ships with **4 agent skills**, an **admin UI**.
 | **Core** | No |
 | **Capabilities** | `data:read`, `data:write` |
 | **MCP-exposed skills** | 4 |
-| **Owns tables** | — |
+| **Owns tables** | 5 |
 
 ## Integrations
 
@@ -44,6 +44,18 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `send_quote_expiry_reminders` | internal | Scan sent quotes whose valid_until is within the next 48 hours or up to 3 days past (grace window) and email the customer a reminder, reusing the existing quote reminder email pipeline (send-quote-… |
 | `run_recurring_quotes` | internal | Generate the next quote for every recurring-quote schedule that is due. Use when: running the periodic recurring-quote sweep (the Recurring Quotes automation calls this daily). Takes no arguments —… |
 
+## Data Model
+
+Tables this module owns (declared by the module, or created in its migrations):
+
+- `public.quote_items`
+- `public.quote_signatures`
+- `public.quote_templates`
+- `public.quote_versions`
+- `public.quotes`
+
+All tables ship with Row-Level Security policies. See migration files for the exact rules.
+
 ## Module API Contract
 
 **Actions:** `list`, `get`, `create`, `update`, `add_item`, `send`, `request_approval`, `list_templates`, `use_template`, `convert_to_invoice`
@@ -57,6 +69,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 This module participates in the following end-to-end business processes:
 
 - [quote-to-cash](../processes/quote-to-cash.md)
+- [sign-to-serve](../processes/sign-to-serve.md)
 
 ## File Map
 

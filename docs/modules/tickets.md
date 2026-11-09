@@ -5,7 +5,7 @@ version: "1.0.0"
 category: "communication"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-10-08"
+generated_at: "2026-11-09"
 description: Helpdesk ticket management with Kanban pipeline
 ---
 
@@ -13,7 +13,7 @@ description: Helpdesk ticket management with Kanban pipeline
 
 > Helpdesk ticket management with Kanban pipeline
 
-Ships with **6 agent skills**, **1 database table**, an **admin UI**.
+Ships with **6 agent skills**, **6 database tables**, an **admin UI**.
 
 ## Quick Facts
 
@@ -26,7 +26,7 @@ Ships with **6 agent skills**, **1 database table**, an **admin UI**.
 | **Core** | No |
 | **Capabilities** | `content:receive`, `data:write`, `webhook:trigger` |
 | **MCP-exposed skills** | 6 |
-| **Owns tables** | 1 |
+| **Owns tables** | 6 |
 
 ## Skills
 
@@ -44,9 +44,14 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 
 ## Data Model
 
-Tables created by this module (from migrations):
+Tables this module owns (declared by the module, or created in its migrations):
 
 - `public.canned_responses`
+- `public.support_agents`
+- `public.support_escalations`
+- `public.ticket_comments`
+- `public.ticket_escalation_rules`
+- `public.tickets`
 
 All tables ship with Row-Level Security policies. See migration files for the exact rules.
 
@@ -61,6 +66,7 @@ All tables ship with Row-Level Security policies. See migration files for the ex
 This module participates in the following end-to-end business processes:
 
 - [support-to-resolution](../processes/support-to-resolution.md)
+- [sign-to-serve](../processes/sign-to-serve.md)
 
 ## File Map
 

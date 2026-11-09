@@ -5,7 +5,7 @@ version: "0.1.0"
 category: "communication"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-10-02"
+generated_at: "2026-11-09"
 description: Quick 1-to-few video meetings with shareable URLs and screen sharing — peer-to-peer WebRTC, no SFU required.
 ---
 
@@ -13,7 +13,7 @@ description: Quick 1-to-few video meetings with shareable URLs and screen sharin
 
 > Quick 1-to-few video meetings with shareable URLs and screen sharing — peer-to-peer WebRTC, no SFU required. Use for internal huddles, customer consultations (e.g. psychologist sessions), and ad-hoc calls. For 50+ viewer broadcasts, use the Webinars module instead.
 
-Ships with **3 agent skills**, an **admin UI**.
+Ships with **3 agent skills**, **2 database tables**, an **admin UI**.
 
 ## Quick Facts
 
@@ -26,7 +26,7 @@ Ships with **3 agent skills**, an **admin UI**.
 | **Core** | No |
 | **Capabilities** | `data:write` |
 | **MCP-exposed skills** | 3 |
-| **Owns tables** | — |
+| **Owns tables** | 2 |
 
 ## Skills
 
@@ -38,6 +38,21 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `create_webmeet_room` | internal | Create a new WebMeet video room and return a shareable URL. Use when: visitor or admin asks for a "video meeting link", "video call", "huddle", "screen share session", or any 1-to-few real-time vid… |
 | `end_webmeet_room` | internal | End an active WebMeet room — sets ended_at and stops new participants from joining. Use when: meeting is over and the host wants to close the link; cleanup after an expired session. NOT for: deleti… |
 | `list_webmeet_rooms` | internal | List WebMeet rooms (active by default). Use when: an agent or user asks "what meetings do we have right now?", "any open rooms?", or needs to surface a join link to a known participant. NOT for: we… |
+
+## Data Model
+
+Tables this module owns (declared by the module, or created in its migrations):
+
+- `public.webmeet_knocks`
+- `public.webmeet_rooms`
+
+All tables ship with Row-Level Security policies. See migration files for the exact rules.
+
+## Used in Processes
+
+This module participates in the following end-to-end business processes:
+
+- [lead-to-customer](../processes/lead-to-customer.md)
 
 ## File Map
 

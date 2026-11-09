@@ -13,7 +13,7 @@ description: Employee directory, leave management, and organizational structure
 
 > Employee directory, leave management, and organizational structure
 
-Ships with **22 agent skills**, **9 database tables**.
+Ships with **22 agent skills**, **25 database tables**.
 
 ## Quick Facts
 
@@ -26,7 +26,7 @@ Ships with **22 agent skills**, **9 database tables**.
 | **Core** | No |
 | **Capabilities** | `data:write`, `data:read` |
 | **MCP-exposed skills** | 22 |
-| **Owns tables** | 9 |
+| **Owns tables** | 25 |
 
 ## Skills
 
@@ -60,17 +60,33 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 
 ## Data Model
 
-Tables created by this module (from migrations):
+Tables this module owns (declared by the module, or created in its migrations):
 
+- `public.attendance_entries`
 - `public.benefit_plans`
+- `public.certifications`
+- `public.compensation_revision_lines`
+- `public.compensation_revisions`
 - `public.disciplinary_actions`
 - `public.employee_benefits`
+- `public.employee_documents`
+- `public.employee_salary_history`
+- `public.employee_skills`
+- `public.employees`
 - `public.hr_rule_templates`
 - `public.hr_rules`
+- `public.leave_allocations`
+- `public.leave_requests`
+- `public.onboarding_checklists`
+- `public.onboarding_templates`
+- `public.one_on_ones`
+- `public.performance_goals`
+- `public.performance_reviews`
 - `public.salary_grades`
 - `public.shifts`
 - `public.training_courses`
 - `public.training_enrollments`
+- `public.vacation_policies`
 
 All tables ship with Row-Level Security policies. See migration files for the exact rules.
 
