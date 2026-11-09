@@ -60,7 +60,7 @@ flowchart TD
 | Template management | ✅ | ✅ (`manage_accounting_template`) | — |
 | Booking suggestion | — | ✅ (`suggest_accounting_template`) | — |
 | Journal entries | ✅ | ✅ (`manage_journal_entry`) | — |
-| Opening balances | ✅ | ✅ (`manage_opening_balances`) | — |
+| Opening balances | ✅ the bridge, once | ✅ (`manage_opening_balances`) — a later year is derived and read, never stored (`IB_IS_DERIVED`) | — |
 | Reconciliations | ✅ | ⚠️ Partial (autonomous) — now incl. partial-match variance, petty-cash, sign-off | — |
 | Reports | ✅ | ✅ (`accounting_reports`) | — |
 | Period-end close | ✅ | ✅ (`close_accounting_period`, `reopen_accounting_period`) | — |
@@ -72,7 +72,7 @@ flowchart TD
 
 - ✅ **Period-end close workflow** — `close_accounting_period` locks JE + JE-lines + time_entries via guard triggers
 - ❌ Tax reporting (VAT, employer reports, K10) — see § The Swedish statutory tail below for the full map + borrow plan
-- ❌ **Correction flow for posted vouchers (storno)** — today a mistake is fixed by reopening the period and editing, which breaks the immutability principle Swedish law expects (BFL: posted vouchers are never edited — you post a reversal or a correction entry). Needed: `reverse_journal_entry` / `correct_journal_entry` skills + UI, and with them the period-reopen path becomes the exception instead of the correction mechanism
+- ✅ **Correction flow for posted vouchers (storno)** — `manage_journal_entry action=void` keeps the original posted and writes a mirror entry dated today, linked through `reversed_by` / `reverses`; a correction belonging to another date is its own voucher. `delete` is for drafts only. The Journal tab shows and filters reversed entries; ❌ there is no reverse button in the admin view yet, so the reversal runs through the skill.
 - ✅ SIE export — pluggable adapters per locale pack (SE → SIE 4, generic → SAF-T + CSV)
 - ✅ Bank feed / reconciliation — `import_bank_file`, `import_bank_image` (OCR), `sync_stripe_payouts`, `auto_match_transactions`; ❌ live PSD2 bank connection (Odoo and Accounted both have feed-level sync; a `bank_feed_connections` scaffold exists but aggregator sync needs Plaid/Tink creds)
 - ✅ Reconciliation depth (2026-07-08) — partial-match with variance write-off, petty-cash reconciliation, and reconciliation sign-off (`reconciliation_signoffs`, locks matched lines once balanced)
