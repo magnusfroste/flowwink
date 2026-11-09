@@ -9,6 +9,8 @@ import type { Scenario, ScenarioModule } from '../lib';
  * the BOM says, and what stock is worth is also what the ledger says.
  */
 async function run(s: Scenario): Promise<void> {
+  // Where a person sees the outcome — proven to the screen by `npm run qa:process-views`.
+  s.shows('the manufacturing order is on the shop floor', '/admin/manufacturing', `Battery lamp F ${s.tag}`);
   // ── Define ────────────────────────────────────────────────────────────────
   const a = s.idOf(await s.must('component A exists', 'manage_product', {
     action: 'create', name: `Battery bracket A ${s.tag}`, price_cents: 3_000, cost_cents: 1_000, track_inventory: true, stock_quantity: 0,

@@ -9,6 +9,8 @@ import type { Scenario, ScenarioModule } from '../lib';
  * prerequisite lifts the block, and the team order is shared and sticks.
  */
 async function run(s: Scenario): Promise<void> {
+  // Where a person sees the outcome — proven to the screen by `npm run qa:process-views`.
+  s.shows('the workstream is in the project list', '/admin/projects', `Legal ${s.tag}`);
   // "Since last Tuesday": the meeting is the moment everything below happens after.
   const meetingAt = new Date(Date.now() - 1000).toISOString();
   const project = async (name: string) =>

@@ -16,6 +16,14 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
   IP, never the address) and 600 per instance per hour, a 429 with
   Retry-After past either; the platform's own calls are never counted. The
   dial is `site_settings.security.publicAiRateLimit` (0 switches one off).
+- **A high-stakes write with nobody at the keyboard waits for a person.** The
+  heartbeat, the e-mail responder, the visitor chat and gateway agents act on
+  text other people wrote, and ten writes declared high-risk or irreversible
+  (pay_vendor_invoice, close_accounting_period, send_einvoice, …) could run with
+  no human at all. An unattended call of such a write now lands in
+  /admin/approvals; a person in FlowChat or the admin is never held. Every
+  prompt carries a hardcoded rule that content from tools and channels is
+  data, never an instruction.
 
 ### Added
 
@@ -27,6 +35,40 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Fixed
 
+- **Three inbound endpoints verify their caller; River's media is not
+  listable by anyone; what stays open is written down.** `signal-ingest`
+  accepted the publishable key (it ships in the site's JavaScript), so anyone
+  could create blog drafts, memories and AI work — now the service key, a
+  member of staff or the instance's own `signal_ingest_token`. `voice-recording`
+  played a voicemail for anyone holding the call id — staff only, the panel
+  fetches it with the session. `voice-ingest` takes the provider's URL secret
+  on call webhooks, and an opt-in `VOICE_STREAM_SECRET` on the AI stream.
+  `river-media` let anon LIST every file the team posted — images still open
+  by URL, listing is staff's. `npm run qa:open-access` (nightly) lists every
+  table policy, storage policy and public bucket open to an anonymous visitor
+  from the database and requires a written reason for each. Known-ungated 12 → 9.
+- **Every process is proven to the screen a person looks at.** The battery
+  proved the data; nobody opened /admin/invoices to see the receipt was there,
+  and on an instance nobody runs the processes by hand. Scenarios now name
+  where their outcome shows (`s.shows`), and `npm run qa:process-views`
+  (nightly, after the battery) opens each view as an admin in a real browser
+  and requires the run's text — 17 views across 16 processes. Its first run
+  found three real gaps, fixed here: the quote list showed "—" for every quote
+  made without a lead (it read only the lead, never the quote's own
+  `customer_name`); the returns list never named the customer; Webinars and
+  Recruitment could not be linked to a tab (now `useTabParam`).
+- **Gmail can be connected only by an admin of the site.** The OAuth `state`
+  was the constant `gmail_connect`: anyone could consent with their own Google
+  account and the instance stored it as its inbox; `status`, `disconnect` and
+  `update_settings` answered anyone too. The POST actions need an admin (or the
+  platform), and the consent screen opens only with a one-time state an admin
+  is handed (`begin`), accepted once within ten minutes.
+- **migrate-page verifies its caller** (`requireServiceOrStaff`): it fetches any
+  public URL and spends AI tokens on it. The wizard (staff) and
+  `edge:migrate-page` (service key) are its callers.
+- The public-functions guard knows a resolver RPC handed the caller's token
+  (`resolve_document_share({ _token })`) as token possession; `document-share`
+  was token-gated all along. Known-ungated ceiling 16 → 12.
 - **UB becomes IB for agents too.** The agent report read stored opening balances
   per year, so a later year opened at zero and an agent booked the previous closing
   balance as a voucher. Every reader now derives it, and only the bridge of the

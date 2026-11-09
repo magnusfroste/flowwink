@@ -93,10 +93,19 @@ export function GmailIntegrationCard() {
     return () => window.removeEventListener('message', handler);
   }, [fetchStatus]);
 
-  const handleConnect = () => {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const authUrl = `${supabaseUrl}/functions/v1/gmail-oauth-callback?action=authorize`;
-    window.open(authUrl, 'gmail_oauth', 'width=600,height=700');
+  const handleConnect = async () => {
+    // The popup opens on the click (a popup opened after an await is blocked),
+    // then goes to Google with the one-time state the function hands an admin.
+    const popup = window.open('', 'gmail_oauth', 'width=600,height=700');
+    const { data, error } = await supabase.functions.invoke('gmail-oauth-callback', { body: { action: 'begin' } });
+    const url = (data as { url?: string } | null)?.url;
+    if (error || !url) {
+      popup?.close();
+      toast.error('Could not start the Gmail connection');
+      return;
+    }
+    if (popup) popup.location.href = url;
+    else window.location.href = url;
   };
 
   const handleDisconnect = async () => {
