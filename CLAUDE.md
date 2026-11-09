@@ -175,33 +175,33 @@ read the executor as text read `_shared/execute/core.ts`.
 - `content-api` — programmatic content access
 
 **Agent / FlowPilot:**
-- `agent-execute`, `agent-operate`, `agent-reason` — agentic AI workflow functions.
+- `agent-execute`, `agent-operate` — agentic AI workflow functions; the ReAct engine is `_shared/pilot/reason.ts`.
   **agent-execute's pipeline lives in `_shared/execute/core.ts`**
   (`executeSkillRequest(body, auth)` → `{ status, body }`); `agent-execute/index.ts`
   is the HTTP door — see "The executor is a function you import" above.
-- `flowpilot-heartbeat`, `flowpilot-briefing`, `flowpilot-distill`, `flowpilot-learn` — autonomous operator lifecycle
+- `flowpilot-heartbeat`, `flowpilot-lifecycle` (briefing, distill, learn, followthrough, curator) — autonomous operator lifecycle
 - `mcp-server` — outward-facing MCP gateway for external agents/federation peers
 
 **Automations:**
 - `automation-dispatcher`, `event-dispatcher`, `signal-dispatcher`, `signal-ingest` — workflow automation pipeline
 
 **Commerce / Finance:**
-- `create-checkout`, `create-invoice-payment`, `send-order-confirmation`, `subscribe` — e-commerce
+- `create-checkout`, `create-invoice-payment`, `subscriptions` — e-commerce (the order confirmation is `comms-send`; a paid order's receipt is the `Receipt on paid order` automation)
 - `generate-invoice-pdf`, `dunning-processor` — finance (`reconciliation` and `fetch-fx-rates`
   are `internal:` handlers in `agent-execute` since the 2026-07 consolidation, not functions)
 
 **AI Enrichment:**
-- `prospect-research`, `contact-finder`, `enrich-company`, `parse-resume`, `extract-pdf-text`, `extract-receipt` — data enrichment
-- `web-search`, `web-scrape`, `browser-fetch`, `firecrawl-account` — web intelligence
+- `extract-pdf-text` — data enrichment (`prospect-research`, `contact-finder`, `enrich-company`, `parse-resume` and `extract-receipt` are `internal:` handlers in `agent-execute`, `_shared/handlers/`)
+- `web-search`, `web-scrape`, `browser-fetch` — web intelligence
 
 **Integrations:**
-- `stripe-webhook`, `gmail-inbox-scan`, `gmail-oauth-callback`, `composio-proxy`, `hunter-account` — third-party
+- `stripe-webhook`, `gmail-oauth-callback`, `composio-proxy`, `integrations-account` (every provider's usage card) — third-party (`gmail-inbox-scan` is an `internal:` handler)
 
 **Communication:**
-- `email-send`, `newsletter-send`, `send-contact-email`, `send-booking-confirmation`, `send-invoice-email` — outbound comms
+- `email-send`, `comms-send` (`?kind=` order_confirmation, invoice_email, quote_email, contract_email, contact_email, booking_confirmation, the reminders …), `newsletter` (`/subscribe`, `/send`, `/track` …) — outbound comms
 
 **System / Admin:**
-- `setup-database`, `system-integrity-check`, `test-ai-connection`, `instance-health` — operations
+- `setup-database`, `system-integrity-check`, `instance-health` — operations (`test_ai_connection` is an `internal:` handler)
 - `run-autonomy-tests`, `run-platform-tests` — autonomous testing
 
 **Shared utilities** live in `supabase/functions/_shared/`:
@@ -288,6 +288,25 @@ The `/rest/execute` endpoint mirrors the MCP tool surface but over plain HTTP PO
 **`manage_company`** — B2B master data lives on `companies`: `org_number`, `vat_number`, `parent_company_id` (subsidiary hierarchy; self-parent rejected), `employee_count`, `annual_revenue_cents`, `credit_limit_cents`, `account_owner`, `tags` (text[]). Use `find_duplicate_companies` before creating a company that might already exist (identical domain scores 1.0).
 
 **`refund_return`** — supports **partial refunds**: each call adds `refund_cents` to the running total; the expected total is Σ(return_items qty × unit_refund_cents) − `restocking_fee_cents`. Over-refunds are rejected. The RMA closes when the total is reached or `p_final: true` is passed. Set the restocking fee via `inspect_return` (QC step, only valid in status `received`).
+
+**`send_invoice_for_order` — the receipt (2026-11-08).** A paid order's receipt
+is its paid invoice, never Stripe's: the books' figures, the number series, a page
+and a PDF. The automation `Receipt on paid order` runs the skill on `order.paid`
+with `receipt: true`, which refuses, sending nothing, when Invoicing is off
+(`MODULE_DISABLED`), the order is unpaid (`INVALID_INPUT`) or it already has a
+live invoice (`ALREADY_EXISTS`). Lines are gross and split per rate; a paid order's
+invoice is born `paid` and is not booked again. A cancelled invoice does not count
+as the order's. The mail is the `order_receipt` template in the customer's
+language. Only a draft invoice can be deleted, and the link in the customer's mail
+is why.
+
+**`manage_opening_balances` — UB blir IB (2026-11-08).** Only the bridge is stored:
+the opening balances of the FIRST fiscal year the books carry. Every other year is
+derived (`opening_balances_for_year`), and storing one is refused with
+`IB_IS_DERIVED`, by the skill and by a trigger. Never book an opening balance as a
+voucher; `accounting_reports` reads the derived figure
+(`_shared/accounting/opening-balance.ts`). Only the first SIE file's `#IB 0` rows go
+in; a later file's `#IB` rows are a control.
 
 **`write_blog_post` — the floor (2026-10-28, after Hermes' audit of autoversio:
 median 260 words, 18 titles on one angle, 8 English posts on a Swedish site,
@@ -887,7 +906,7 @@ autonomous operator that consumes the platform's skills. Consequences:
 - **Name new platform components for what they do, not for FlowPilot**
   (same rule as the Skill Relevance Engine note above).
 - **Runtime identifiers stay stable even where legacy-named.** Edge function
-  names (`flowpilot-heartbeat`, `flowpilot-learn`), DB values
+  names (`flowpilot-heartbeat`, `flowpilot-lifecycle`), DB values
   (`flowpilot_to_openclaw`), cron jobnames, and `agent_type` strings are
   deployed per-instance across the fleet — renaming them is a multi-instance
   lockstep with zero user value. Fix the STORY (docs/UI copy), not the wire.
