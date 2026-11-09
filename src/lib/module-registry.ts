@@ -33,7 +33,6 @@ import {
   fixedAssetsModule, payrollModule, wikiModule, riverModule, multiCurrencyModule,
   maintenanceModule, flowtableModule, feedbackModule, reportsModule,
   // Legacy modules (manual registration)
-  globalBlocksModule,
 } from '@/lib/modules';
 
 // =============================================================================
@@ -48,14 +47,6 @@ class ModuleRegistry {
     for (const unified of getAllUnifiedModules()) {
       if (!this.modules.has(unified.id)) {
         this.register(unified as unknown as ModuleDefinition<unknown, unknown>);
-      }
-    }
-
-    // Legacy modules without ModulesSettings keys — register explicitly
-    const legacy = [globalBlocksModule];
-    for (const mod of legacy) {
-      if (!this.modules.has(mod.id)) {
-        this.register(mod as ModuleDefinition<unknown, unknown>);
       }
     }
 
