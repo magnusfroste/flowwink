@@ -24,37 +24,40 @@ import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import * as modules from '@/lib/modules';
 import { routeModuleId } from '@/lib/admin-route-access';
+import { LEGACY_MODULE_DEPENDENCIES } from '@/lib/module-dependencies';
 
 const ROOT = process.cwd();
 const read = (p: string) => readFileSync(join(ROOT, p), 'utf-8');
 
 type Mod = { id: string; requires?: string[]; data?: { tables?: string[] }; tables?: string[] };
 
+/**
+ * Reference data every module reads to render its own records — who a person
+ * is, who can be assigned, what a currency is worth, what happened to a
+ * record. Reading them does not make a component another module's panel, so
+ * they never decide a component's home. Add a table here only with that
+ * reason; a table that holds a module's own records belongs to it.
+ */
+const SHARED_REFERENCE_TABLES = new Set<string>([
+  'profiles', 'user_roles',          // who someone is, what they may do
+  'employees', 'support_agents',     // who can be assigned a visit, a ticket, a call
+  'exchange_rates', 'currencies',    // what an amount is in the business currency
+  'activities', 'entity_followers',  // the generic activity timeline any record carries
+]);
+
 const BASELINE = new Set<string>([
-  'WorkspaceChatPage.tsx | components/admin/chat/DocumentPanel.tsx → wiki',
-  'FlowBoxPage.tsx | components/admin/flowbox/ChatReply.tsx → tickets',
+  // Gated upstream, where the scanner does not look: useInboxItems builds no
+  // form or ticket item while Forms / Tickets is off, so these never mount.
   'FlowBoxPage.tsx | components/admin/flowbox/FormHandle.tsx → forms',
   'FlowBoxPage.tsx | components/admin/flowbox/TicketReply.tsx → tickets',
-  'FlowBoxPage.tsx | components/admin/live-support/ActiveCallsPanel.tsx → tickets',
-  'LeadDetailPage.tsx | components/admin/crm/LeadProcessFlow.tsx → deals|quotes|contracts|invoicing',
-  'LeadDetailPage.tsx | components/admin/crm/LeadCommunicationsCard.tsx → quotes',
-  'DealsPage.tsx | components/admin/deals/DealTeamsPanel.tsx → multiCurrency',
-  'DealsPage.tsx | components/admin/deals/DealTemplatesPanel.tsx → multiCurrency|leads|ecommerce',
-  'DealDetailPage.tsx | components/admin/reports/SubjectReports.tsx → reports',
-  'DealDetailPage.tsx | components/admin/EntityActivityTimeline.tsx → leads',
-  'DealDetailPage.tsx | components/admin/deals/DealHistoryTimeline.tsx → multiCurrency',
+  // Read leads (CRM) as context — the task's record, an owner, a push target.
+  // Left to judge one at a time: whether a CRM-less instance should see them.
   'ActivitiesPage.tsx | components/admin/CreateTaskDialog.tsx → leads|deals',
   'CompaniesPage.tsx | components/admin/OwnerChip.tsx → leads',
-  'CompanyDetailPage.tsx | components/admin/reports/SubjectReports.tsx → reports',
-  'CompanyDetailPage.tsx | components/admin/companies/CompanyResearchHistory.tsx → leads',
-  'OrdersPage.tsx | components/admin/EntityActivityTimeline.tsx → leads',
-  'InventoryPage.tsx | components/admin/inventory/ReceivingPanel.tsx → purchasing',
   'PurchaseOrdersPage.tsx | components/admin/purchasing/AutoReorderSettings.tsx → ecommerce',
   'FlowtablePage.tsx | components/admin/flowtable/FieldsMenu.tsx → leads',
   'QuotesPage.tsx | components/admin/OwnerChip.tsx → leads',
   'Customer360Page.tsx | components/admin/crm/RecordDiscussPanel.tsx → leads',
-  'FieldServicePage.tsx | components/admin/field-service/PackagesTab.tsx → hr',
-  'VoicePage.tsx | components/admin/voice/AgentVoiceConfigCard.tsx → tickets',
 ]);
 
 function findings(): string[] {
@@ -76,15 +79,18 @@ function findings(): string[] {
       else if (cur && /^\s{4}core: true,/.test(l)) core.add(cur);
     }
   }
+  // Parents: the module's own `requires` plus the legacy edges, the same graph
+  // /admin/modules and the skills artifact cascade along.
+  const parentsOf = (id: string) => [...(byId.get(id)?.requires ?? []), ...(LEGACY_MODULE_DEPENDENCIES[id] ? [LEGACY_MODULE_DEPENDENCIES[id]] : [])];
   const ancestors = (id: string, seen = new Set<string>()): Set<string> => {
-    for (const p of byId.get(id)?.requires ?? []) if (!seen.has(p)) { seen.add(p); ancestors(p, seen); }
+    for (const p of parentsOf(id)) if (!seen.has(p)) { seen.add(p); ancestors(p, seen); }
     return seen;
   };
   const resolve = (spec: string): string | null => {
     const base = join('src', spec.replace(/^@\//, ''));
     return ['.tsx', '.ts', '/index.tsx', '/index.ts'].map((e) => base + e).find((p) => existsSync(join(ROOT, p))) ?? null;
   };
-  const tablesOf = (src: string) => [...src.matchAll(/\.from\(\s*['"]([a-z_0-9]+)['"]/g)].map((m) => m[1]);
+  const tablesOf = (src: string) => [...src.matchAll(/\.from\(\s*['"]([a-z_0-9]+)['"]/g)].map((m) => m[1]).filter((t) => !SHARED_REFERENCE_TABLES.has(t));
   const hookTables = new Map<string, string[]>();
   const tablesViaHooks = (src: string): string[] => [...src.matchAll(/from '(@\/hooks\/[^']+)'/g)].flatMap((m) => {
     if (!hookTables.has(m[1])) { const f = resolve(m[1]); hookTables.set(m[1], f ? tablesOf(read(f)) : []); }

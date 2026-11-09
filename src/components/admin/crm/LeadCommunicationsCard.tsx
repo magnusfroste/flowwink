@@ -7,6 +7,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { Link } from 'react-router-dom';
 import { useLeadCommunications } from '@/hooks/useLeadCommunications';
 import { useOpenQuotesByLead } from '@/hooks/useQuotesByLead';
+import { useIsModuleEnabled } from '@/hooks/useModules';
 import { CommunicationDetailDialog, type Comm } from '@/components/admin/communications/CommunicationDetailDialog';
 
 const STATUS_VARIANT: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
@@ -70,6 +71,7 @@ function snippet(comm: Comm): string {
 export function LeadCommunicationsCard({ leadId }: { leadId: string }) {
   const { data: comms = [], isLoading } = useLeadCommunications(leadId);
   const { data: quotes = [] } = useOpenQuotesByLead(leadId);
+  const quotesOn = useIsModuleEnabled('quotes');
   const [selected, setSelected] = useState<Comm | null>(null);
   const { formatCurrency, formatDate } = usePlatformFormat();
 
@@ -82,7 +84,7 @@ export function LeadCommunicationsCard({ leadId }: { leadId: string }) {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {quotes.length > 0 && (
+        {quotesOn && quotes.length > 0 && (
           <div className="rounded-md border bg-muted/40 p-3 space-y-2">
             <div className="text-xs uppercase text-muted-foreground flex items-center gap-1.5">
               <FileText className="h-3.5 w-3.5" />
