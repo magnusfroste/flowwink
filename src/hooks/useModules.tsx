@@ -117,8 +117,6 @@ export interface ModulesSettings {
   companies: ModuleConfig;
   ecommerce: ModuleConfig;
   developer: ModuleConfig;
-  /** @deprecated Merged into pages module */
-  globalElements: ModuleConfig;
   mediaLibrary: ModuleConfig;
   webinars: ModuleConfig;
   salesIntelligence: ModuleConfig;
@@ -323,16 +321,6 @@ export const defaultModulesSettings: ModulesSettings = {
     category: 'system',
     autonomy: 'config-required',
     adminUI: true,
-  },
-  globalElements: {
-    enabled: false,
-    name: 'Global Elements',
-    description: 'Merged into Pages module — kept for backward compatibility',
-    icon: 'LayoutGrid',
-    category: 'system',
-    autonomy: 'config-required',
-    adminUI: false,
-    core: false,
   },
   mediaLibrary: {
     enabled: true,

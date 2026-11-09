@@ -79,7 +79,6 @@ const MAP: Record<string, Entry> = {
   leads: { processes: ['lead-to-customer'], maturity: 'L4' },
   fieldService: { processes: ['order-to-delivery', 'support-to-resolution'], maturity: 'L2' },
   fixedAssets: { processes: ['record-to-report'], maturity: 'L3' },
-  globalElements: { processes: ['content-to-conversion'], maturity: 'L3' },
   paidGrowth: { processes: ['content-to-conversion'], maturity: 'L3' },
   knowledgeBase: { processes: ['content-to-conversion', 'support-to-resolution'], maturity: 'L3' },
   liveSupport: { processes: ['support-to-resolution'], maturity: 'L3' },

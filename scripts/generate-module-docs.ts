@@ -480,7 +480,6 @@ const MODULE_ID_TO_SETTINGS_KEY: Record<string, string> = {
   kb: 'knowledgeBase',
   products: 'ecommerce',
   booking: 'bookings',
-  'global-blocks': 'globalElements',
   media: 'mediaLibrary',
   deals: 'deals',
   companies: 'companies',

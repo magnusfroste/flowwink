@@ -1278,8 +1278,9 @@ Never run it live on a site you have not dry-run first.`,
     instructions:
       'Workflow: clone the page (manage_page or manage_page_translation-style copy) and edit the variant → create → start. Only one running experiment per page. The variant page can stay a draft — its content is served through the experiment engine. Conversions are recorded on form submissions on the page. conclude with p_winner records the outcome; to ship variant B, copy its content onto the control page.',
   },
-  // Header/footer live under Pages — the globalElements module is off by
-  // default ("merged into Pages"), so seeding here is what makes the skill exist.
+  // Header/footer live under Pages. `module:globalElements` is the executor's
+  // handler name (a wire identifier, kept); the module of that name was removed
+  // 2026-11-09.
   {
     name: 'manage_global_blocks',
     description:
