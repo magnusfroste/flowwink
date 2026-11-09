@@ -45,7 +45,7 @@ export type SiteMigrationOutput = z.infer<typeof siteMigrationOutputSchema>;
  * the description is the tier an agent reads BEFORE choosing the call.
  */
 const MIGRATE_URL_DESCRIPTION =
-  'Read an external website as OBSERVATIONS an agent composes from — site page inventory (action=survey, the default), or one page\'s title candidates, headings, text, images with role hints and brand tokens (action=read). Returns NO blocks and writes nothing: you call describe_blocks, then manage_page + create_page_block yourself. Every count travels with a render report — when render.confidence is "shell" the page is JavaScript-rendered and the numbers describe a loading screen, so re-read it through a browser (relay_result / browser_fetch force_relay) instead of composing. action=compose is the legacy one-shot that also asks a model for blocks. Use when: cloning or importing an existing website, inventorying what pages a site has, reading a page before rebuilding it. NOT for: creating pages from scratch (manage_page), adding blocks manually (create_page_block), reading a page for facts rather than structure (browser_fetch or scrape_url).';
+  'Read an external website as OBSERVATIONS an agent composes from — site page inventory (action=survey, the default), or one page\'s title candidates, headings, text, images with role hints and brand tokens (action=read). Returns NO blocks and writes nothing: you call describe_blocks, then manage_page + create_page_block yourself. Every count travels with a render report — when render.confidence is "shell" the page is JavaScript-rendered and the numbers describe a loading screen, so re-read it through a real browser and pass relay_result instead of composing. action=compose is the legacy one-shot that also asks a model for blocks. Use when: cloning or importing an existing website, inventorying what pages a site has, reading a page before rebuilding it. NOT for: creating pages from scratch (manage_page), adding blocks manually (create_page_block), reading a page for facts rather than structure (scrape_url).';
 
 const SITEMIGRATION_SKILLS: SkillSeed[] = [
   {
@@ -142,9 +142,9 @@ decisions, and no extractor can make them for you.
 read answers \`{action: 'relay_required'}\` with a \`partial_observation\`. That is
 an honest refusal, not a failure to retry blindly. Either hand back a browser
 result — \`migrate_url({url, action:'read', relay_result:{title, html, content}})\`
-— or use browser_fetch with force_relay=true and compose from its text. In the
-admin panel the Chrome extension answers this automatically; unattended, say so
-rather than publishing a page built from a loading screen.
+— an agent with its own browser (Claude in Chrome, OpenClaw) can read the page
+and pass that. Unattended and without a browser, say so rather than publishing a
+page built from a loading screen.
 
 ## Rules
 - Preserve the source language unless asked otherwise.

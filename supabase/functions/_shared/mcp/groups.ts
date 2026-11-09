@@ -51,12 +51,10 @@ export const SKILL_CATEGORY_MODULES: GroupMap = {
     "email", "voice", "webmeet", "workspaceChat", "composio", "river", "recruitment", "leads",
   ],
   automation: [],
-  // browserControl stays listed for ?groups=browsercontrol alias routing,
-  // but the category itself is ALWAYS_ON (see below): search_web/scrape_url/
-  // search_knowledge are platform seeds, and gating the category behind the
-  // browser-control toggle hid them. Browser-control's own skills are still
-  // governed by their skill rows (enabled per module bootstrap).
-  search: ["browserControl"],
+  // The search category is ALWAYS_ON (see below): search_web/scrape_url/
+  // search_knowledge are platform seeds. Browser Control, the one module that
+  // owned a search skill (browser_fetch), was retired on 2026-11-09.
+  search: [],
   analytics: [
     "analytics", "sla",
     "pages", "knowledgeBase", "leads", "ecommerce", "liveSupport", "visitorIntelligence",

@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom';
-import { useState, useEffect } from "react";
 import { 
   Sheet, 
   SheetContent, 
@@ -19,19 +18,12 @@ import {
   Database, 
   FileText,
   CheckCircle2,
-  XCircle,
   Clock,
   Hash,
   Bot,
   Settings2,
   Eye,
   Monitor,
-  Download,
-  Chrome,
-  Copy,
-  RefreshCw,
-  Plug,
-  Globe,
   Mail,
 } from "lucide-react";
 import { moduleRegistry } from "@/lib/module-registry";
@@ -41,9 +33,6 @@ import type { ModuleStats } from "@/hooks/useModuleStats";
 import type { ModuleAutonomy, ModuleConfig, ModulesSettings, ConsultantAnonymization } from "@/hooks/useModules";
 import { useModules, useUpdateModules } from "@/hooks/useModules";
 import { formatDistanceToNow } from "date-fns";
-import { useExtensionRelay } from "@/hooks/useExtensionRelay";
-import { toast } from "sonner";
-import JSZip from "jszip";
 import { FlowPilotDetails } from "./FlowPilotDetails";
 import { ModuleSkillsSection } from "./ModuleSkillsSection";
 import { ModuleRoleAccessSection } from "./ModuleRoleAccessSection";
@@ -311,179 +300,6 @@ const API_EXAMPLES: Record<string, { input: string; output: string }> = {
   },
 };
 
-const EXTENSION_FILES = [
-  'manifest.json',
-  'background.js',
-  'extractors.js',
-  'content-global.js',
-  'popup.html',
-  'popup.js',
-];
-
-function BrowserControlSetup() {
-  const relay = useExtensionRelay();
-  const [extensionId, setExtensionId] = useState('');
-  const [isDownloading, setIsDownloading] = useState(false);
-  const [isChecking, setIsChecking] = useState(false);
-
-  useEffect(() => {
-    const saved = localStorage.getItem('flowwink_extension_id');
-    if (saved) setExtensionId(saved);
-  }, []);
-
-  const handleConnect = async () => {
-    if (!extensionId.trim()) {
-      toast.error('Enter a valid Extension ID');
-      return;
-    }
-    setIsChecking(true);
-    localStorage.setItem('flowwink_extension_id', extensionId.trim());
-    const found = await relay.detectExtension(extensionId.trim());
-    setIsChecking(false);
-    if (found) {
-      toast.success('Extension connected!');
-    } else {
-      toast.error('Extension not detected. Make sure it\'s installed and the ID is correct.');
-    }
-  };
-
-  const handleDownload = async () => {
-    setIsDownloading(true);
-    try {
-      const zip = new JSZip();
-      for (const file of EXTENSION_FILES) {
-        const resp = await fetch(`/chrome-extension/${file}`);
-        if (!resp.ok) throw new Error(`Failed to fetch ${file}`);
-        const text = await resp.text();
-        zip.file(file, text);
-      }
-      for (const icon of ['icon16.png', 'icon48.png', 'icon128.png']) {
-        try {
-          const resp = await fetch(`/chrome-extension/icons/${icon}`);
-          if (resp.ok) {
-            const blob = await resp.blob();
-            zip.file(`icons/${icon}`, blob);
-          }
-        } catch { /* optional */ }
-      }
-      const blob = await zip.generateAsync({ type: 'blob' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'signal-capture-extension.zip';
-      a.click();
-      URL.revokeObjectURL(url);
-      toast.success('Extension downloaded! Unzip and install in Chrome.');
-    } catch (err) {
-      toast.error('Failed to create download');
-      console.error(err);
-    } finally {
-      setIsDownloading(false);
-    }
-  };
-
-  const handleCopyId = () => {
-    if (relay.extensionStatus.extensionId) {
-      navigator.clipboard.writeText(relay.extensionStatus.extensionId);
-      toast.success('Extension ID copied');
-    }
-  };
-
-  return (
-    <div className="space-y-4">
-      {/* Connection Status */}
-      <div className="rounded-lg border p-3 bg-muted/20">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2 text-sm font-medium">
-            <Plug className="h-4 w-4" />
-            Connection
-          </div>
-          <Badge variant={relay.extensionStatus.installed ? 'default' : 'secondary'} className="text-[10px]">
-            {relay.extensionStatus.installed ? (
-              <><CheckCircle2 className="h-3 w-3 mr-1" /> Connected</>
-            ) : (
-              <><XCircle className="h-3 w-3 mr-1" /> Not detected</>
-            )}
-          </Badge>
-        </div>
-        {relay.extensionStatus.installed ? (
-          <div className="space-y-1.5 text-sm">
-            <div className="flex items-center justify-between">
-              <span className="text-muted-foreground text-xs">Version</span>
-              <span className="font-mono text-xs">{relay.extensionStatus.version}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-muted-foreground text-xs">Extension ID</span>
-              <button onClick={handleCopyId} className="font-mono text-[10px] flex items-center gap-1 hover:text-primary transition-colors">
-                {relay.extensionStatus.extensionId?.slice(0, 16)}…
-                <Copy className="h-3 w-3" />
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            <div className="flex gap-2">
-              <Input
-                placeholder="Paste Extension ID"
-                value={extensionId}
-                onChange={e => setExtensionId(e.target.value)}
-                className="font-mono text-xs h-8"
-                onKeyDown={e => e.key === 'Enter' && handleConnect()}
-              />
-              <Button onClick={handleConnect} disabled={isChecking} size="sm" className="h-8 px-3">
-                {isChecking ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : 'Connect'}
-              </Button>
-            </div>
-            <p className="text-[10px] text-muted-foreground">
-              Find your Extension ID at <code className="px-1 py-0.5 bg-muted rounded">chrome://extensions</code>
-            </p>
-          </div>
-        )}
-      </div>
-
-      {/* Download */}
-      <div>
-        <Button onClick={handleDownload} disabled={isDownloading} variant="outline" size="sm" className="w-full h-8 text-xs">
-          <Chrome className="h-3.5 w-3.5 mr-1.5" />
-          {isDownloading ? 'Preparing…' : 'Download Extension (.zip)'}
-        </Button>
-      </div>
-
-      {/* Install Steps */}
-      <div className="space-y-2">
-        <h4 className="text-xs font-medium">Installation</h4>
-        <ol className="space-y-1.5 text-[11px] text-muted-foreground">
-          {[
-            'Download & unzip the file',
-            'Open chrome://extensions',
-            'Enable Developer mode (top-right)',
-            'Click Load unpacked → select folder',
-            'Copy the Extension ID shown',
-            'Paste it above to connect',
-          ].map((step, i) => (
-            <li key={i} className="flex gap-2">
-              <span className="shrink-0 w-4 h-4 rounded-full bg-primary/10 text-primary text-[9px] flex items-center justify-center font-medium">{i + 1}</span>
-              <span>{step}</span>
-            </li>
-          ))}
-        </ol>
-      </div>
-
-      {/* How it works */}
-      <div className="rounded-lg border p-3 bg-muted/20">
-        <div className="flex items-center gap-2 mb-2 text-xs font-medium">
-          <Globe className="h-3.5 w-3.5" />
-          How it works
-        </div>
-        <p className="text-[11px] text-muted-foreground leading-relaxed">
-          FlowPilot uses your Chrome Extension to read login-walled sites (LinkedIn, X) through your 
-          real browser session — no server-side scraping needed. Press ⌘⇧S on any page to capture content directly.
-        </p>
-      </div>
-    </div>
-  );
-}
-
 export function ModuleDetailSheet({
   open,
   onOpenChange,
@@ -538,14 +354,6 @@ export function ModuleDetailSheet({
             {/* Automations seeded by this module */}
             <Separator />
             <ModuleAutomationsSection moduleId={moduleId} />
-
-            {/* Browser Control Setup */}
-            {moduleId === 'browserControl' && (
-              <>
-                <Separator />
-                <BrowserControlSetup />
-              </>
-            )}
 
             {/* Booking Email Settings */}
             {moduleId === 'bookings' && moduleConfig && (

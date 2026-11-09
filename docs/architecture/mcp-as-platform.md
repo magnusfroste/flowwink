@@ -29,10 +29,11 @@ Enforced by:
 - `src/lib/module-bootstrap.ts` — `flowpilotEnabled` is checked **only** before the automations step (step 5). Steps 3 + 4 (skill enable, skill seed) always run.
 - `supabase/functions/mcp-server/index.ts` — `SKILL_CATEGORY_MODULES`:
   - `automation`, `system`, `search` — **ALWAYS_ON_CATEGORIES** (platform-level,
-    available to any MCP client). search kept `["browserControl"]` in the map for
-    `?groups=browsercontrol` alias routing, but was exposure-gated behind that
-    toggle until 2026-07-14 — stale from before search_web/scrape_url moved to
-    platform-seeds. Browser-control's own skills are governed by their skill rows.
+    available to any MCP client). search was exposure-gated behind the
+    browser-control toggle until 2026-07-14 — stale from before
+    search_web/scrape_url moved to platform-seeds. Browser Control itself was
+    retired 2026-11-09: reading a page behind a login is an external agent's
+    job (its own browser), handed to FlowWink over MCP.
   - `agent: ["flowpilot"]` — the **only** category that requires FlowPilot. Holds FlowPilot-internal skills (objectives, soul, reflect) that don't make sense for external callers.
 - Guardrail tests:
   - `src/lib/__tests__/mcp-flowpilot-decoupling.test.ts`

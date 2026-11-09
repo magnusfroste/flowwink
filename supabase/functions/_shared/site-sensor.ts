@@ -102,7 +102,7 @@ export function assessRender(
       client_rendered: true,
       confidence: 'shell',
       reason: `${html_bytes} bytes of HTML but only ${text_chars} characters of text — this is a JavaScript shell, not the page. Counts below are what the SHELL contains, not what the site contains.`,
-      suggestion: 'Re-read this URL through a real browser: browser_fetch with force_relay=true, or pass the browser result back as relay_result. Do NOT compose a page from this observation.',
+      suggestion: 'Re-read this URL through a real browser and pass the result back as relay_result. Do NOT compose a page from this observation.',
     };
   }
 
@@ -111,7 +111,7 @@ export function assessRender(
     client_rendered: spa,
     confidence: 'partial',
     reason: `Only ${text_chars} characters of readable text. The page may be genuinely short, or only partly rendered.`,
-    suggestion: 'Check the headings and text below against the live page before composing. If they look truncated, re-read with browser_fetch force_relay=true.',
+    suggestion: 'Check the headings and text below against the live page before composing. If they look truncated, re-read it through a real browser and pass relay_result.',
   };
 }
 
@@ -549,7 +549,7 @@ export function buildPageObservation(input: {
   if (!routing.path_reflected && render.confidence === 'high') {
     render.confidence = 'partial';
     render.reason = `${render.reason} BUT: ${routing.reason}`;
-    render.suggestion = 'Verify against the live URL before composing — re-read it through a browser (relay_result / browser_fetch force_relay=true), which follows client-side routing.';
+    render.suggestion = 'Verify against the live URL before composing — re-read it through a real browser and pass relay_result, which follows client-side routing.';
   }
 
   const image_summary: Record<ImageRole, number> = { logo: 0, icon: 0, hero: 0, content: 0 };

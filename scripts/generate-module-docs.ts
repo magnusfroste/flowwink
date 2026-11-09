@@ -462,7 +462,6 @@ const MODULE_ID_TO_SETTINGS_KEY: Record<string, string> = {
   webinars: 'webinars',
   'sales-intelligence': 'salesIntelligence',
   resume: 'resume',
-  'browser-control': 'browserControl',
   growth: 'paidGrowth',
   federation: 'federation',
   composio: 'composio',

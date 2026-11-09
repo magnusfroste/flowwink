@@ -14,6 +14,6 @@ import './skill-map';
 // ── All modules migrated to defineModule() ──
 // documents, projects, contracts, hr, expenses, timesheets, invoicing, purchasing
 // blog, pages, newsletter, deals, companies, forms, webinars, booking, crm, kb, media, products
-// salesIntelligence, paidGrowth, resume, browserControl, federation, composio
+// salesIntelligence, paidGrowth, resume, federation, composio
 // tickets, siteMigration, templates, developer, handbook, inventory, accounting, sla
 // These are now self-contained in src/lib/modules/*-module.ts

@@ -18,7 +18,6 @@ const MAP: Record<string, Entry> = {
   blog: { processes: ['content-to-conversion'], maturity: 'L4' },
   booking: { processes: ['lead-to-customer'], maturity: 'L3' },
   bookings: { processes: ['lead-to-customer'], maturity: 'L3' },
-  'browser-control': { processes: ['lead-to-customer', 'content-to-conversion'], maturity: 'L3' },
   calendar: { processes: ['hire-to-retire', 'lead-to-customer'], maturity: 'L3' },
   chat: { processes: ['support-to-resolution', 'lead-to-customer'], maturity: 'L3' },
   
@@ -76,7 +75,6 @@ const MAP: Record<string, Entry> = {
   webinars: { processes: ['lead-to-customer', 'content-to-conversion'], maturity: 'L3' },
   wiki: { processes: ['hire-to-retire'], maturity: 'L2' },
   'workspace-chat': { processes: [], maturity: 'L3' },
-  browserControl: { processes: ['lead-to-customer', 'content-to-conversion'], maturity: 'L3' },
   companyInsights: { processes: ['lead-to-customer'], maturity: 'L3' },
   leads: { processes: ['lead-to-customer'], maturity: 'L4' },
   fieldService: { processes: ['order-to-delivery', 'support-to-resolution'], maturity: 'L2' },

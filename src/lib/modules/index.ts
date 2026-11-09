@@ -78,7 +78,6 @@ export { growthModule } from './growth-module';
 export { consultantsModule } from './consultants-module';
 
 // ── System / Integration ──
-export { browserControlModule } from './browser-control-module';
 export { federationModule } from './federation-module';
 
 export { composioModule } from './composio-module';

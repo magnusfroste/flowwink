@@ -197,7 +197,7 @@ describe('every fetch of a caller-supplied URL is judged', () => {
 
   it('the guard module exists and is what the sinks import', () => {
     const importers = files.filter((f) => /net\/outbound-url\.ts'/.test(readFileSync(f, 'utf8'))).map((f) => relative(FUNCTIONS, f));
-    for (const must of ['_shared/web/layer.ts', 'web-scrape/index.ts', 'browser-fetch/index.ts', 'extract-pdf-text/index.ts',
+    for (const must of ['_shared/web/layer.ts', 'web-scrape/index.ts', 'extract-pdf-text/index.ts',
       'process-image/index.ts', '_shared/handlers/fetch-image.ts', '_shared/handlers/parse-resume.ts',
       '_shared/site-scrape.ts', 'migrate-page/index.ts']) {
       expect(importers, `${must} fetches a caller URL and must import the guard`).toContain(must);
@@ -214,7 +214,7 @@ describe('every fetch of a caller-supplied URL is judged', () => {
   });
 
   it('the tool functions on paid keys verify their caller', () => {
-    for (const fn of ['web-scrape', 'browser-fetch', 'extract-pdf-text', 'process-image', 'web-search']) {
+    for (const fn of ['web-scrape', 'extract-pdf-text', 'process-image', 'web-search']) {
       const src = strip(readFileSync(join(FUNCTIONS, fn, 'index.ts'), 'utf8'));
       expect(src, `${fn} must gate on requireServiceOrStaff`).toMatch(/requireServiceOrStaff\(/);
       expect(src).toMatch(/if \(!auth\.authorized\) return unauthorized\(corsHeaders\);/);

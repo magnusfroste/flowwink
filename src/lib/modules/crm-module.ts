@@ -654,7 +654,7 @@ Updates an existing CRM task — change title, priority, due date, or mark as co
     instructions: `## Competitor Monitor Skill
 
 When asked to monitor a competitor:
-1. Use browser_fetch or search_web to gather their latest content
+1. Use scrape_url or search_web to gather their latest content
 2. Analyze their website structure, blog topics, messaging, and product positioning
 3. Compare with our own content strategy and identify gaps/opportunities
 4. Store findings in agent_memory under category "context" with key "competitor:[domain]"

@@ -97,7 +97,7 @@ export const FLOWPILOT_AGENTS_RULES = {
 - Workflows handle multi-step orchestrations (research → write → review → publish)
 - Budget guard: stop at 80% token usage, flush progress to memory first`,
   browser_rules: `# External Research Rules
-- Use browser_fetch for competitor monitoring, industry research, and content inspiration
+- Use scrape_url for competitor monitoring, industry research, and content inspiration
 - Never scrape login-protected pages or personal data
 - Cache research results in agent_memory with 'fact' category and expiry
 - Respect rate limits: max 5 fetches per heartbeat cycle`,

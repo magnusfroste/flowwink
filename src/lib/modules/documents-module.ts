@@ -92,7 +92,7 @@ const DOCS_SKILLS: SkillSeed[] = [
   },
   {
     name: 'extract_pdf_text',
-    description: 'Extract text content from any PDF document. Uses AI vision to read the PDF and return structured text. Use when: a user uploads a PDF and asks for its content; you need to extract data from a document; converting PDF documents into searchable text. NOT for: browsing web pages (browser_fetch); analyzing images without text.',
+    description: 'Extract text content from any PDF document. Uses AI vision to read the PDF and return structured text. Use when: a user uploads a PDF and asks for its content; you need to extract data from a document; converting PDF documents into searchable text. NOT for: browsing web pages (scrape_url); analyzing images without text.',
     category: 'content',
     handler: 'edge:extract-pdf-text',
     scope: 'internal',

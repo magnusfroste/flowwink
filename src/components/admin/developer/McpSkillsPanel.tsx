@@ -28,7 +28,7 @@ const CATEGORY_TO_MODULES: Record<string, string[]> = {
   commerce: ['ecommerce', 'accounting', 'expenses', 'contracts', 'inventory', 'purchasing', 'invoicing', 'timesheets'],
   analytics: ['analytics', 'sla'],
   growth: ['paidGrowth'],
-  search: ['browserControl'],
+  search: ['(platform)'],
   automation: ['(platform)'],
   system: ['(platform)'],
   agent: ['flowpilot'],

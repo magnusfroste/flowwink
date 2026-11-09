@@ -50,7 +50,6 @@ describe('MCP contract guardrails', () => {
       'liveSupport',
       'webinars',
       'flowpilot',
-      'browserControl',
       'analytics',
       'sla',
       'ecommerce',
