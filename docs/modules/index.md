@@ -7,7 +7,7 @@ generated: true
 
 # Module catalog
 
-70 modules across 5 categories, 638 module-owned skills.
+70 modules across 5 categories, 641 module-owned skills.
 Platform skills (search_web, manage_site_settings, briefings…) are not owned by a module — see [`src/lib/platform-seeds.ts`](../reference/skills-source.md).
 
 **How a module behaves**
@@ -48,7 +48,7 @@ With FlowPilot off, a module is a normal admin UI. With FlowPilot on, the same m
 | [**Docs**](./docs.md) | agent-capable | 3 | Public documentation portal — auto-synced from the GitHub docs/ folder, browsable at /docs with embedded AI chat for evaluators. |
 | [**Knowledge Base**](./knowledge-base.md) | config-required | 5 | Create knowledge base articles |
 | [**Pages**](./pages.md) | config-required | 19 | Create and publish website pages, header, footer and navigation |
-| [**Reports**](./reports.md) | agent-capable | 6 | Reports agents publish for people — FlowPilot, Flowwork and external agents over MCP turn what they worked out into versioned pages under… |
+| [**Reports**](./reports.md) | agent-capable | 8 | Reports agents publish for people — FlowPilot, Flowwork and external agents over MCP turn what they worked out into versioned pages under… |
 | [**Site Migration**](./site-migration.md) | agent-capable | 2 | Clone and migrate external websites into FlowWink. Discovers pages, extracts branding, and creates blocks that match the source site |
 | [**Wiki**](./wiki.md) | agent-capable | 6 | Internal TEdit-style wiki / intranet with page hierarchy, automatic version history (list/diff/restore), and per-page permissions… |
 
@@ -65,7 +65,7 @@ With FlowPilot off, a module is a normal admin UI. With FlowPilot on, the same m
 | [**CRM**](./leads.md) | view-required | 23 | Create and manage leads |
 | [**Customer 360**](./customer360.md) | view-required | 1 | One screen showing every signal, deal, order, invoice, ticket, booking, subscription, chat and webinar tied to a person or customer — with… |
 | [**Deals**](./deals.md) | view-required | 2 | Create and manage sales deals/opportunities |
-| [**Documents**](./documents.md) | agent-capable | 5 | Document management with categorization, entity linking, and version tracking |
+| [**Documents**](./documents.md) | agent-capable | 6 | Document management with categorization, entity linking, and version tracking |
 | [**Expense Reporting**](./expenses.md) | agent-capable | 13 | Employee expense reporting with receipt scanning, monthly report submission, approval workflow, and autonomous journal entry booking via… |
 | [**Field Service**](./field-service.md) | view-required | 9 | Dispatch on-site service orders: schedule technicians, track visits, capture signatures and auto-generate invoices on completion. |
 | [**Fixed Assets**](./fixed-assets.md) | agent-capable | 9 | Capitalize equipment, run monthly depreciation, and post disposals — all to BAS 2024 accounts (1210/1219/7832 + 3970/7970). |
