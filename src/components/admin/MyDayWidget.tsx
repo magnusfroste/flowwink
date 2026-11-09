@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useActiveModules, moduleShown } from '@/lib/module-visibility';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
@@ -22,11 +23,21 @@ interface MyDayItem {
  * signed-in user (plus approvals awaiting a decision), so it complements
  * Needs Attention — which is org-wide.
  */
+/** The module each kind of item belongs to — an item of a module that is off is not on anyone's day. */
+const KIND_MODULE: Record<string, string> = {
+  'CRM task': 'leads',
+  'Project task': 'projects',
+  Ticket: 'tickets',
+  Approval: 'approvals',
+};
+
 function useMyDay(userId: string | undefined) {
+  const active = useActiveModules();
   return useQuery({
     queryKey: ['my-day', userId],
     enabled: !!userId,
     staleTime: 60_000,
+    select: (items: MyDayItem[]) => items.filter((i) => !KIND_MODULE[i.kind] || moduleShown(KIND_MODULE[i.kind], active)),
     queryFn: async (): Promise<MyDayItem[]> => {
       const [crm, tasks, tickets, approvals] = await Promise.all([
         supabase

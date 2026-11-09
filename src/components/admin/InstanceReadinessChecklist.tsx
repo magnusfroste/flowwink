@@ -139,6 +139,7 @@ export function useInstanceReadiness() {
         // the `modules` row in instance-readiness.ts.
         modulesChosen: entries.some((m) => Object.keys(m).some((k) => k !== 'enabled')),
         modulesEnabled: modulesValue ? entries.filter((m) => m.enabled === true).length : null,
+        modulesValue,
       };
     },
     staleTime: 60_000,
@@ -210,6 +211,10 @@ export function useInstanceReadiness() {
       cron: {
         jobs: cronQ.data?.jobs ?? null,
         available: cronQ.data ? cronQ.data.cron_available : null,
+        // A missing modules row requires every job (fail open, as the route gate).
+        moduleOn: settingsQ.data?.modulesValue
+          ? (id: string) => (settingsQ.data!.modulesValue as Record<string, { enabled?: unknown }>)[id]?.enabled === true
+          : undefined,
       },
       ai: { configured: secretsQ.isError ? null : secretsQ.data ? aiConfigured : null },
       siteUrl: {

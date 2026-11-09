@@ -8,6 +8,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { subDays, startOfDay, format } from 'date-fns';
+import { useActiveModules, skillShown } from '@/lib/module-visibility';
 
 export interface AutomationHealthItem {
   id: string;
@@ -138,19 +139,17 @@ async function fetchAutomationHealth(): Promise<AutomationHealthSummary> {
     };
   });
 
-  const enabled = items.filter(i => i.enabled).length;
-  const healthy = items.filter(i => i.health === 'healthy').length;
-  const warning = items.filter(i => i.health === 'warning').length;
-  const erroring = items.filter(i => i.health === 'error').length;
-  const stale = items.filter(i => i.health === 'stale').length;
+  return summarize(items, totalRuns7d, totalErrors7d);
+}
 
+function summarize(items: AutomationHealthItem[], totalRuns7d: number, totalErrors7d: number): AutomationHealthSummary {
   return {
     total: items.length,
-    enabled,
-    healthy,
-    warning,
-    erroring,
-    stale,
+    enabled: items.filter(i => i.enabled).length,
+    healthy: items.filter(i => i.health === 'healthy').length,
+    warning: items.filter(i => i.health === 'warning').length,
+    erroring: items.filter(i => i.health === 'error').length,
+    stale: items.filter(i => i.health === 'stale').length,
     totalRuns7d,
     totalErrors7d,
     overallErrorRate: totalRuns7d > 0 ? totalErrors7d / totalRuns7d : 0,
@@ -158,10 +157,27 @@ async function fetchAutomationHealth(): Promise<AutomationHealthSummary> {
   };
 }
 
+/**
+ * An automation whose skill belongs to a module that is off is not shown and
+ * counts toward nothing (src/lib/module-visibility.ts). The module switch
+ * disables those automations, but a row that leaked — or one switched off
+ * with an old last_error — read as "warning" / "stale" on Observability and
+ * the dashboard for a module the operator had chosen not to run.
+ */
+export function withoutOffModules(summary: AutomationHealthSummary, active: Set<string>): AutomationHealthSummary {
+  const items = summary.items.filter((i) => skillShown(i.skillName, active));
+  if (items.length === summary.items.length) return summary;
+  const runs = items.reduce((s, i) => s + i.dailyRuns.reduce((a, b) => a + b, 0), 0);
+  const errors = items.reduce((s, i) => s + i.dailyErrors.reduce((a, b) => a + b, 0), 0);
+  return summarize(items, runs, errors);
+}
+
 export function useAutomationHealth() {
+  const active = useActiveModules();
   return useQuery({
     queryKey: ['automation-health'],
     queryFn: fetchAutomationHealth,
     refetchInterval: 30_000,
+    select: (data) => withoutOffModules(data, active),
   });
 }

@@ -12,23 +12,29 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useActiveModules, skillShown } from '@/lib/module-visibility';
 
 const POLL_MS = 120_000;
 
 export function useStagedOperationCount() {
   const { isAdmin } = useAuth();
+  // A staged write of a module that is off cannot be carried out (the executor
+  // refuses it, MODULE_DISABLED) — it is not something to attend to.
+  const active = useActiveModules();
   return useQuery({
     queryKey: ['agent-attention', 'staged-count', isAdmin],
     enabled: isAdmin,
     refetchInterval: POLL_MS,
     queryFn: async () => {
-      const { count, error } = await supabase
+      const { data, error } = await supabase
         .from('pending_operations')
-        .select('id', { count: 'exact', head: true })
-        .eq('status', 'pending');
-      if (error) return 0;
-      return count ?? 0;
+        .select('skill_name')
+        .eq('status', 'pending')
+        .limit(1000);
+      if (error) return [] as Array<{ skill_name: string | null }>;
+      return (data ?? []) as Array<{ skill_name: string | null }>;
     },
+    select: (rows) => rows.filter((r) => skillShown(r.skill_name, active)).length,
   });
 }
 
@@ -42,6 +48,7 @@ export interface NotifiedAction {
 
 export function useNotifiedActions(limit = 20) {
   const { isAdmin } = useAuth();
+  const active = useActiveModules();
   return useQuery({
     queryKey: ['agent-attention', 'notified', isAdmin, limit],
     enabled: isAdmin,
@@ -56,6 +63,11 @@ export function useNotifiedActions(limit = 20) {
         .limit(limit);
       if (error) return { rows: [] as NotifiedAction[], total: 0 };
       return { rows: (data ?? []) as unknown as NotifiedAction[], total: count ?? 0 };
+    },
+    // A run of a module that has since been switched off is history, not news.
+    select: (d) => {
+      const rows = d.rows.filter((r) => skillShown(r.skill_name, active));
+      return { rows, total: Math.max(0, d.total - (d.rows.length - rows.length)) };
     },
   });
 }

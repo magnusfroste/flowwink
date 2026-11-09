@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { supabase } from '@/integrations/supabase/client';
+import { useActiveModules, skillShown } from '@/lib/module-visibility';
 import { ValidationErrorDetails, hasValidationDetails } from '@/components/admin/agent/ValidationErrorDetails';
 
 interface McpActivityRow {
@@ -28,6 +29,9 @@ function getCallerApiKeyId(input: Record<string, unknown> | null): string | null
 }
 
 export function McpActivityPanel() {
+  // A FAILED call into a module that is off is that module's history, not a red
+  // row to act on; a refusal (MODULE_DISABLED: an agent tried an off module) stays.
+  const active = useActiveModules();
   const { data, isLoading } = useQuery({
     queryKey: ['mcp-activity'],
     queryFn: async () => {
@@ -41,6 +45,7 @@ export function McpActivityPanel() {
       return (data ?? []) as McpActivityRow[];
     },
     refetchInterval: 15000,
+    select: (rows) => rows.filter((r) => r.status !== 'failed' || skillShown(r.skill_name, active)),
   });
 
   // Collect unique caller api_key_ids and resolve to peer names
