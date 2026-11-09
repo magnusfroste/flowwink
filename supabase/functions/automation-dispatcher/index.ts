@@ -3,6 +3,8 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getServiceClient } from '../_shared/supabase-clients.ts';
 import { isModuleEnabled } from '../_shared/modules.ts';
+import { skillModuleOn } from '../_shared/skills/module-gate.ts';
+import { loadActiveModuleIds } from '../_shared/mcp/groups.ts';
 import { calculateNextRun, isSupportedCron, readCronExpression, readCronTimeZone } from '../_shared/cron/next-run.ts';
 import { loadHomeCached } from '../_shared/locale/load-home.ts';
 
@@ -99,6 +101,14 @@ serve(async (req) => {
       work_done?: number;
     }> = [];
 
+    // One read of the modules row for the whole tick, and only if a due
+    // automation asks (most ticks have none with an owning module to check).
+    // The platform's own rule (skillModuleOn): platform skills and kept
+    // utilities always pass, a missing or unreadable modules row fails open.
+    let activeModulesPromise: Promise<Set<string>> | null = null;
+    const activeModules = () =>
+      (activeModulesPromise ??= loadActiveModuleIds(supabase).catch(() => new Set<string>(["__all__"])));
+
     // 2. Execute each automation (skip NULL next_run_at — just initialize them)
     for (const auto of (dueAutomations || [])) {
       // Gate BEFORE anything schedules: a cron automation whose expression is
@@ -161,6 +171,37 @@ serve(async (req) => {
             .from("agent_automations")
             .update({ next_run_at: calculateNextRun(cronExpr, undefined, readCronTimeZone(auto.trigger_config, businessTimeZone)) })
             .eq("id", auto.id);
+          continue;
+        }
+      }
+
+      // A skill of a module that is off does not run. The module switch
+      // already disables such an automation; this is the belt for one that
+      // leaked back on (a seed, a hand edit). Skipped, schedule advanced.
+      if (auto.skill_name && !skillModuleOn(String(auto.skill_name), await activeModules())) {
+        results.push({ id: auto.id, name: auto.name, status: "skipped_module_off", type: "automation" });
+        await supabase
+          .from("agent_automations")
+          .update({ next_run_at: calculateNextRun(cronExpr, undefined, readCronTimeZone(auto.trigger_config, businessTimeZone)) })
+          .eq("id", auto.id);
+        continue;
+      }
+
+      // A sweep that declares a work probe (trigger_config.work_probe, migration
+      // 20261109220000) is asked in the database before agent-execute is woken:
+      // no work → no invocation. The row still says it was looked at, and the
+      // schedule moves on. An unanswerable probe means there is work (Law 4).
+      if ((auto.trigger_config as Record<string, unknown> | null)?.work_probe) {
+        const { data: hasWork, error: probeError } = await supabase.rpc("automation_has_work", { p_trigger_config: auto.trigger_config });
+        if (!probeError && hasWork === false) {
+          await supabase
+            .from("agent_automations")
+            .update({
+              last_triggered_at: now,
+              next_run_at: calculateNextRun(cronExpr, undefined, readCronTimeZone(auto.trigger_config, businessTimeZone)),
+            })
+            .eq("id", auto.id);
+          results.push({ id: auto.id, name: auto.name, status: "idle_no_work", type: "automation", work_done: 0 });
           continue;
         }
       }

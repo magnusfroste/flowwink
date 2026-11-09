@@ -93,7 +93,7 @@ const VISITOR_INTELLIGENCE_AUTOMATIONS: AutomationSeed[] = [
     description:
       'Evaluates visitor-intelligence rules against recent page views and fires behavioral signals against identified leads. Adjust cadence or pause here without touching the database.',
     trigger_type: 'cron',
-    trigger_config: { expression: '*/15 * * * *' },
+    trigger_config: { expression: '*/15 * * * *', work_probe: 'visitor_intent' },
     skill_name: 'score_visitor_intent',
     skill_arguments: {},
     executor: 'platform',

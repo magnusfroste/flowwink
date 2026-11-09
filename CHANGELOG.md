@@ -252,6 +252,14 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
   every `fetch` of a caller-URL identifier. `SECURITY.md` is new.
 ### Changed
 
+- **A sweep asks whether there is work before anything wakes.** Four
+  automations fired every fifteen minutes on every instance (qualify new leads,
+  score visitor intent, webinar reminders, the social post scheduler) and mostly
+  found nothing — about 380 function invocations a day per instance. Each now
+  declares a probe the database answers; with no work, neither the dispatcher
+  nor the skill is woken, and the automation still reads as alive. The moment a
+  lead, a scheduled post or a registration appears, the next minute's pulse runs
+  it. An automation whose module is off is skipped by the dispatcher too.
 - **agent-execute's pipeline is importable.** The 20 500-line executor moved
   from `agent-execute/index.ts` to `_shared/execute/core.ts` as
   `handleAgentExecute(req)`, byte-identical but for the import prefixes and the
