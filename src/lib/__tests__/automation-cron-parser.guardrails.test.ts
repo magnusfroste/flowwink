@@ -68,4 +68,44 @@ describe('automation-dispatcher cron parser guardrails', () => {
   it('the unsupported-expression fallback is LOGGED, never silent', () => {
     expect(src).toMatch(/console\.warn\([^)]*unsupported cron/);
   });
+
+  it('hourly at a fixed minute (M * * * *) is the next :M — not the fallback', () => {
+    expect(next('7 * * * *', new Date('2026-07-17T10:00:00Z'))).toBe('2026-07-17T10:07:00.000Z');
+    expect(next('7 * * * *', new Date('2026-07-17T10:07:00Z'))).toBe('2026-07-17T11:07:00.000Z');
+    expect(next('7 * * * *', new Date('2026-07-17T23:30:00Z'))).toBe('2026-07-18T00:07:00.000Z');
+  });
+
+  // The consultants module seeded '7 * * * *' and the dispatcher switched it off
+  // on its first tick: the parser did not know the shape (2026-11-09). Every cron
+  // expression a module or the platform seeds is one the dispatcher can run.
+  it('every seeded cron expression is supported by the dispatcher', () => {
+    const grab = (name: string) => {
+      const start = src.indexOf(`function ${name}`);
+      const end = src.indexOf('\n}\n', start);
+      return src.slice(start, end + 2);
+    };
+    const js = (grab('isSupportedCron') + '\n' + grab('parseDayOfWeekSet'))
+      .replace('cronExpr?: string', 'cronExpr')
+      .replace(/\): boolean \{/, ') {')
+      .replace('field: string', 'field')
+      .replace(/: Set<number> \{/g, ' {')
+      .replace('new Set<number>()', 'new Set()');
+    // eslint-disable-next-line @typescript-eslint/no-implied-eval
+    const supported = new Function(`${js}; return isSupportedCron;`)() as (e: string) => boolean;
+    const { readdirSync } = require('node:fs') as typeof import('node:fs');
+    const files = [
+      ...readdirSync(join(root, 'src/lib/modules')).filter((f) => f.endsWith('.ts')).map((f) => join(root, 'src/lib/modules', f)),
+      join(root, 'src/lib/platform-seeds.ts'),
+    ];
+    const seen: string[] = [];
+    const bad: string[] = [];
+    for (const f of files) {
+      for (const m of readFileSync(f, 'utf-8').matchAll(/expression:\s*['"]([^'"]+)['"]/g)) {
+        seen.push(m[1]);
+        if (!supported(m[1])) bad.push(`${f.split('/').pop()}: '${m[1]}'`);
+      }
+    }
+    expect(seen.length).toBeGreaterThan(10);
+    expect(bad).toEqual([]);
+  });
 });
