@@ -62,7 +62,8 @@ interface VoiceSettings {
   aiReceptionistMode?: "native-audio" | "half-cascade";
   /**
    * 46elks WebSocket-number (E.164). Måste vara ett separat nummer som är
-   * konfigurerat i 46elks dashboard med `voice_start=wss://<project>.functions.supabase.co/voice-ingest/stream`.
+   * pekat mot `wss://<project>.supabase.co/functions/v1/voice-ingest/stream?secret=…` — det gör
+   * elks46-ingest (set_voice_start, target ai_stream) när röstinställningarna sparas.
    * Det publika DID:t bryggar in samtalet hit via `{connect: <wsNum>}`.
    */
   aiReceptionistWebsocketNumber?: string;
@@ -138,7 +139,7 @@ function serializeElks46(action: VoiceAction): { body: string; contentType: stri
     case "stream":
       // 46elks Realtime Voice API: a `stream` action does NOT exist as JSON.
       // We must bridge the public DID to a 46elks **websocket-number** which
-      // has its own `voice_start=wss://...` configured in the 46elks dashboard.
+      // has its own `voice_start=wss://…/stream?secret=…`, registered when the voice settings are saved.
       // The bridging itself is just a normal connect to that DID.
       payload = { connect: action.wsUrl };
       break;
@@ -201,8 +202,8 @@ async function decideAction(ctx: RoutingContext): Promise<VoiceAction> {
       const wsNum = (settings.aiReceptionistWebsocketNumber ?? "").trim();
       if (wsNum) {
         // Bridge the public DID into the 46elks websocket-number. That number
-        // must have voice_start=wss://<project>.functions.supabase.co/voice-ingest/stream
-        // configured in the 46elks dashboard (one-time setup).
+        // points at voice-ingest/stream?secret=… — registered by elks46-ingest
+        // (set_voice_start, target ai_stream) when the voice settings are saved.
         return { type: "stream", wsUrl: wsNum };
       }
       console.warn("[voice-ingest] AI receptionist enabled but no websocket-number configured — falling back to voicemail");
@@ -862,7 +863,7 @@ Deno.serve(async (req) => {
   if (url.pathname.endsWith("/stream") && req.headers.get("upgrade")?.toLowerCase() === "websocket") {
     const streamCheck = checkWebhookSecret(req, await loadWebhookSecret(getServiceClient(), "voice_stream", Deno.env.get("VOICE_STREAM_SECRET")));
     if (streamCheck === "mismatch") return new Response("unauthorized", { status: 401 });
-    if (streamCheck === "unconfigured") console.warn("[voice-ingest] stream secret not configured — anyone can open an AI voice session; add ?secret=… to the number's voice_start URL and save it as integrations.voice_stream.config.webhook_secret");
+    if (streamCheck === "unconfigured") console.warn("[voice-ingest] stream secret not configured — anyone can open an AI voice session; save the voice settings (Voice → Settings) once and the websocket-number is re-registered with its secret");
     return await handleStreamSession(req);
   }
 

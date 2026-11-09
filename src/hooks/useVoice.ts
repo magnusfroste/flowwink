@@ -70,11 +70,33 @@ export function useUpdateVoiceSettings() {
         const { error } = await supabase.from('site_settings').insert({ key: SETTINGS_KEY, value });
         if (error) throw error;
       }
-      return settings;
+      // The AI receptionist's websocket-number is pointed at the stream when it
+      // is saved: elks46-ingest makes the stream secret (once) and registers
+      // voice_start = wss://…/voice-ingest/stream?secret=… on 46elks. Nobody
+      // pastes a URL into the 46elks dashboard, and the stream is never open
+      // (2026-11-09). A failure here leaves the settings saved and says so.
+      let streamError: string | null = null;
+      const wsNumber = settings.aiReceptionistWebsocketNumber?.trim();
+      if (settings.aiReceptionistEnabled && wsNumber) {
+        const { data, error } = await supabase.functions.invoke('elks46-ingest', {
+          body: { action: 'set_voice_start', target: 'ai_stream', number: wsNumber },
+        });
+        const answer = data as { error?: string } | null;
+        if (error || answer?.error) streamError = answer?.error ?? error?.message ?? 'unknown error';
+      }
+      return { settings, streamError };
     },
-    onSuccess: (s) => {
+    onSuccess: ({ settings: s, streamError }) => {
       qc.setQueryData(['site-settings', SETTINGS_KEY], s);
-      toast({ title: 'Saved', description: 'Voice settings updated.' });
+      if (streamError) {
+        toast({
+          title: 'Saved — but the websocket-number was not connected',
+          description: `46elks did not take the stream address: ${streamError}`,
+          variant: 'destructive',
+        });
+      } else {
+        toast({ title: 'Saved', description: 'Voice settings updated.' });
+      }
     },
     onError: (err) => {
       logger.error('voice settings save failed', err);
