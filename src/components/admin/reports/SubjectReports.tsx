@@ -4,6 +4,7 @@ import { FileBarChart } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useSubjectReports } from '@/hooks/useReports';
+import { useIsModuleEnabled } from '@/hooks/useModules';
 
 /**
  * "Reports about this" on a company, deal or project page: what an agent
@@ -17,7 +18,9 @@ export function SubjectReports({ subjectType, subjectId, className }: {
   className?: string;
 }) {
   const { data: reports = [] } = useSubjectReports(subjectType, subjectId);
-  if (reports.length === 0) return null;
+  // Reports are their own module: with it off, a deal or company page carries none.
+  const reportsOn = useIsModuleEnabled('reports');
+  if (!reportsOn || reports.length === 0) return null;
   return (
     <Card className={className}>
       <CardHeader className="pb-3">

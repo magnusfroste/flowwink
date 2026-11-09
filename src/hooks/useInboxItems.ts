@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useActiveModules, moduleShown } from '@/lib/module-visibility';
 import {
   emailItems, chatItems, ticketItems, formItems, voiceItems, sortQueue, attachSteps,
   type InboxItem, type EmailThreadRow, type EmailMessageRow, type ChatConversationRow,
@@ -17,8 +18,12 @@ const LIMIT = 200;
  * not an error, and the other channels still show.
  */
 export function useInboxItems() {
+  // A channel of a module that is off is not in the queue (src/lib/module-visibility.ts):
+  // with Tickets off, an old ticket is not something to answer.
+  const active = useActiveModules();
+  const on = (m: string) => moduleShown(m, active);
   return useQuery({
-    queryKey: ['inbox-items'],
+    queryKey: ['inbox-items', [...active].sort().join(',')],
     refetchInterval: 30_000,
     queryFn: async (): Promise<InboxItem[]> => {
       const since = new Date(Date.now() - WINDOW_DAYS * 86_400_000).toISOString();
@@ -42,10 +47,10 @@ export function useInboxItems() {
       };
       const items = sortQueue([
         ...emailItems(rows<EmailThreadRow>(threads, 'email threads'), rows<EmailMessageRow>(messages, 'email messages')),
-        ...chatItems(rows<ChatConversationRow>(chats, 'chat')),
-        ...ticketItems(rows<TicketRow>(tickets, 'tickets')),
-        ...formItems(rows<FormSubmissionRow>(forms, 'forms')),
-        ...voiceItems(rows<VoiceCallRow>(calls, 'voice')),
+        ...(on('chat') || on('liveSupport') ? chatItems(rows<ChatConversationRow>(chats, 'chat')) : []),
+        ...(on('tickets') ? ticketItems(rows<TicketRow>(tickets, 'tickets')) : []),
+        ...(on('forms') ? formItems(rows<FormSubmissionRow>(forms, 'forms')) : []),
+        ...(on('voice') ? voiceItems(rows<VoiceCallRow>(calls, 'voice')) : []),
       ]);
       return attachSteps(items, rows<AgentActivityRow>(activity, 'agent activity'));
     },

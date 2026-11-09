@@ -1,3 +1,4 @@
+import { useActiveModules, moduleShown } from '@/lib/module-visibility';
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,15 +20,19 @@ interface Props {
  * at a glance which step this record has reached and what the next action is,
  * without knowing which module owns which object.
  */
+/** The module each step of the lead's process belongs to. */
+const STEP_MODULE: Partial<Record<string, string>> = { deal: 'deals', quote: 'quotes', contract: 'contracts', invoice: 'invoicing' };
+
 export function LeadProcessFlow({ leadId, email }: Props) {
   const { data } = useLeadPipelineChain(leadId, email ?? undefined);
   const { formatCurrency } = usePlatformFormat();
 
+  const active = useActiveModules();
   const scrollTo = (id: string) => {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   };
 
-  const steps = [
+  const allSteps = [
     {
       key: 'contact',
       label: 'Contact',
@@ -68,6 +73,8 @@ export function LeadProcessFlow({ leadId, email }: Props) {
     },
   ];
 
+  // A step of a module that is off is not part of this instance's process.
+  const steps = allSteps.filter((st) => !STEP_MODULE[st.key] || moduleShown(STEP_MODULE[st.key]!, active));
   const nextStep = steps.find((s) => !s.done);
 
   const nextAction = (() => {
