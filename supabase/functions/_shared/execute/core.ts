@@ -100,6 +100,7 @@ import { handleEmailAdmins as hEmailAdmins } from '../handlers/email-admins.ts';
 import { handleDraftEmailReply } from '../handlers/draft-email-reply.ts';
 import { handleTranslatePage } from '../handlers/translate-page.ts';
 import { classifyCall, isDryRunRead } from '../skills/read-surface.ts';
+import { mustWaitForAPerson } from './high-stakes.ts';
 import { parseReport } from '../reports/blocks.ts';
 import { overviewDashboard } from '../reports/overview.ts';
 import { weeklyDigestReport, monthCloseReport, previousMonth, type ScheduledFormat } from '../reports/scheduled.ts';
@@ -1194,6 +1195,18 @@ export async function executeSkillRequest(input: ExecuteRequest, auth: ExecuteAu
     // to approve it. A live run of the same skill still stops below.
     const planOnly = isDryRunRead(skill.name, args as Record<string, unknown>);
     if (planOnly && trustLevel === 'approve') trustLevel = 'notify';
+
+    // Nobody at the keyboard + a write its own definition calls high-risk or
+    // irreversible → it waits for a person (high-stakes.ts: the prompt-injection
+    // net — the model acts on text strangers wrote; only 'approve' is a gate it
+    // cannot pass alone). A person at the keyboard is the approval.
+    if (!planOnly && trustLevel !== 'approve' && mustWaitForAPerson({
+      agentType: agent_type, callerUserId: caller_user_id, scheduled,
+      toolDefinition: (skill as { tool_definition?: unknown }).tool_definition,
+      callKind: classifyCall(skill.name, args as Record<string, unknown>),
+    })) {
+      trustLevel = 'approve';
+    }
 
     if (trustLevel === 'approve' && !bypassApproval) {
       const activityId = await logActivity(supabase, {
