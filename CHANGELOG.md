@@ -10,6 +10,12 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Fixed
 
+- **An alarm means something is wrong now.** The bell was amber every day on every
+  instance, because any agent run on notify trust painted it; it is amber now for
+  a person being needed or something still broken, and a healed integration stops
+  warning. A read is no longer "an agent acted on its own". An automation is
+  `stale` against its own schedule, not after 48 hours (a monthly job was dead 29
+  days of 30), and warns while its own newest run failed, not for a week after.
 - **The feedback board and the daily ping write again.** #922 took anon's write
   policies and its EXECUTE on `feedback_record_ping` on the belief that content-api
   writes as the service role; it wrote with the anon client under the name `admin`,
