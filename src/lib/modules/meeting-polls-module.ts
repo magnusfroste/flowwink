@@ -169,7 +169,7 @@ export const meetingPollsModule = defineModule<Input, Output>({
   name: 'Meeting Polls',
   version: '0.1.0',
   processes: ['propose-to-meet'],
-  maturity: 'L1',
+  maturity: 'L3',
   description: 'Propose several times, let people answer by link without an account, and let a rule pick the first time everyone can make',
   capabilities: ['data:write', 'content:receive'],
   tier: 'standard',
