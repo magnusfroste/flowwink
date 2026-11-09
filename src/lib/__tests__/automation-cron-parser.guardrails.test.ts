@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
@@ -90,9 +90,7 @@ describe('automation-dispatcher cron parser guardrails', () => {
       .replace('field: string', 'field')
       .replace(/: Set<number> \{/g, ' {')
       .replace('new Set<number>()', 'new Set()');
-    // eslint-disable-next-line @typescript-eslint/no-implied-eval
     const supported = new Function(`${js}; return isSupportedCron;`)() as (e: string) => boolean;
-    const { readdirSync } = require('node:fs') as typeof import('node:fs');
     const files = [
       ...readdirSync(join(root, 'src/lib/modules')).filter((f) => f.endsWith('.ts')).map((f) => join(root, 'src/lib/modules', f)),
       join(root, 'src/lib/platform-seeds.ts'),
