@@ -1041,7 +1041,7 @@ export const crmModule = defineModule<CRMLeadInput, CRMLeadOutput>({
       description:
         'Sweeps unqualified leads (ai_qualified_at is null) every 15 minutes and scores them. Replaces the old browser-side trigger, which called an internal skill with the anon key and therefore never ran for actual visitors — the only people forms exist for.',
       trigger_type: 'cron',
-      trigger_config: { expression: '*/15 * * * *' },
+      trigger_config: { expression: '*/15 * * * *', work_probe: 'leads_to_qualify' },
       skill_name: 'qualify_lead',
       skill_arguments: {},
       executor: 'platform',

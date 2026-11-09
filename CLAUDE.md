@@ -885,6 +885,18 @@ managed-ledger lessons still apply to every fork's Supabase integration:
   rewrites any `net.http_post` job to an edge function that lacks it. Never
   put the secret or the service key in a job's text, and never schedule a
   call with the publishable key as its only credential.
+- **A sweep asks whether there is work before anything wakes (2026-11-09).**
+  An automation may declare `trigger_config.work_probe: '<name>'`, answered by
+  `public.work_probe_<name>()` (boolean, STABLE, a SUPERSET of what its skill
+  would pick up). `automation_has_work(trigger_config)` is the one question:
+  the lane asks it before it pulses (`lane_has_work`), the dispatcher before it
+  wakes agent-execute. No probe, an unknown probe or a probe that raises means
+  there IS work. An idle probed row stays due (the minute work appears the lane
+  pulses) and `note_idle_automations()` keeps its `last_triggered_at` fresh, so
+  idle never reads as stale. A new every-N-minutes sweep ships its probe in the
+  same PR; a daily-at-a-time job does not take one (it would run when work
+  appears, not at its hour). The dispatcher also skips an automation whose
+  skill's owning module is off (`skillModuleOn`).
 - **"Sync skills from code" is the 4th-layer deploy without DB creds — and
   the admin shell presses it for you.** `/admin/modules` → **"Sync skills from
   code"** re-runs `bootstrapModule()` for every enabled module, which **UPDATEs

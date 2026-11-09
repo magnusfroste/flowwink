@@ -479,7 +479,7 @@ const GROWTH_AUTOMATIONS: AutomationSeed[] = [
     name: 'Social Post Scheduler',
     description: 'Every 15 minutes, process scheduled social posts whose publish time has passed.',
     trigger_type: 'cron',
-    trigger_config: { cron: '*/15 * * * *', expression: '*/15 * * * *' },
+    trigger_config: { cron: '*/15 * * * *', expression: '*/15 * * * *', work_probe: 'social_posts_due' },
     skill_name: 'process_due_social_posts',
     skill_arguments: {},
   },
