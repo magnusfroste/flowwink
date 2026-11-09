@@ -5,7 +5,7 @@ version: "1.0.0"
 category: "data"
 autonomy: "view-required"
 generated: true
-generated_at: "2026-09-30"
+generated_at: "2026-11-09"
 description: One screen showing every signal, deal, order, invoice, ticket, booking, subscription, chat and webinar tied to a person or customer — with a unified timeline and lifetime-value…
 ---
 
@@ -44,6 +44,13 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 **Input fields:** `action`, `lead_id`, `email`
 
 **Output fields:** `success`, `error`
+
+## Used in Processes
+
+This module participates in the following end-to-end business processes:
+
+- [lead-to-customer](../processes/lead-to-customer.md)
+- [support-to-resolution](../processes/support-to-resolution.md)
 
 ## File Map
 

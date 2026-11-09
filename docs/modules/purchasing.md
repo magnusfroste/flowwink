@@ -13,7 +13,7 @@ description: Procure-to-pay lifecycle: purchase orders, vendor management, and g
 
 > Procure-to-pay lifecycle: purchase orders, vendor management, and goods receipt
 
-Ships with **24 agent skills**.
+Ships with **24 agent skills**, **12 database tables**.
 
 ## Quick Facts
 
@@ -26,7 +26,7 @@ Ships with **24 agent skills**.
 | **Core** | No |
 | **Capabilities** | `data:write`, `data:read` |
 | **MCP-exposed skills** | 24 |
-| **Owns tables** | — |
+| **Owns tables** | 12 |
 
 ## Integrations
 
@@ -64,6 +64,25 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `manage_purchase_agreement` | internal | Blanket purchase agreements (blanket orders): a vendor commits to a price for an agreed quantity over a period, and goods are called off it as separate purchase orders. create (with p_lines) / add_… |
 | `call_off_purchase_agreement` | internal | Call goods off an active blanket purchase agreement: creates a draft purchase order for the agreement's vendor at the agreed prices, its lines tied to the agreement lines they consume. Refuses a qu… |
 
+## Data Model
+
+Tables this module owns (declared by the module, or created in its migrations):
+
+- `public.goods_receipt_lines`
+- `public.goods_receipts`
+- `public.procurement_suggestions`
+- `public.purchase_order_lines`
+- `public.purchase_orders`
+- `public.rfq_bids`
+- `public.rfq_lines`
+- `public.rfqs`
+- `public.tolerance_policies`
+- `public.vendor_invoices`
+- `public.vendor_products`
+- `public.vendors`
+
+All tables ship with Row-Level Security policies. See migration files for the exact rules.
+
 ## Module API Contract
 
 **Actions:** `create_po`, `list_pos`, `list_vendors`, `get_vendor`
@@ -77,6 +96,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 This module participates in the following end-to-end business processes:
 
 - [procure-to-pay](../processes/procure-to-pay.md)
+- [plan-to-produce](../processes/plan-to-produce.md)
 
 ## File Map
 

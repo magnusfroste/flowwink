@@ -5,7 +5,7 @@ version: "1.0.0"
 category: "system"
 autonomy: "config-required"
 generated: true
-generated_at: "2026-09-30"
+generated_at: "2026-11-09"
 description: Create reusable global content blocks (header, footer, etc.)
 ---
 
@@ -25,6 +25,12 @@ description: Create reusable global content blocks (header, footer, etc.)
 | **Capabilities** | `content:receive`, `data:write` |
 | **MCP-exposed skills** | — |
 | **Owns tables** | — |
+
+## Used in Processes
+
+This module participates in the following end-to-end business processes:
+
+- [content-to-conversion](../processes/content-to-conversion.md)
 
 ## File Map
 

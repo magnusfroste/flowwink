@@ -5,7 +5,7 @@ version: "1.0.0"
 category: "data"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-10-02"
+generated_at: "2026-11-09"
 description: Capture customer satisfaction with one-click NPS, CSAT, and custom surveys.
 ---
 
@@ -13,7 +13,7 @@ description: Capture customer satisfaction with one-click NPS, CSAT, and custom 
 
 > Capture customer satisfaction with one-click NPS, CSAT, and custom surveys. Triggered manually or automatically after orders, tickets, contracts and bookings. Detractor responses auto-route to FlowPilot for recovery; promoter responses boost lead score and surface testimonial opportunities.
 
-Ships with **6 agent skills**, an **admin UI**.
+Ships with **6 agent skills**, **4 database tables**, an **admin UI**.
 
 ## Quick Facts
 
@@ -26,7 +26,7 @@ Ships with **6 agent skills**, an **admin UI**.
 | **Core** | No |
 | **Capabilities** | `data:read`, `data:write` |
 | **MCP-exposed skills** | 6 |
-| **Owns tables** | — |
+| **Owns tables** | 4 |
 
 ## Skills
 
@@ -42,6 +42,17 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `get_survey_analytics` | internal | Aggregate per-campaign NPS/CSAT scores AND per-question response distributions across all responses. Use when: building the monthly NPS report, seeing which quiz question failed the most, understan… |
 | `export_survey_responses` | internal | Export survey responses as a CSV string. Use when: an operator requests a spreadsheet-ready extract for board reports, external BI, or archive. Filters by campaign, category, and start date. Caps a… |
 
+## Data Model
+
+Tables this module owns (declared by the module, or created in its migrations):
+
+- `public.survey_campaigns`
+- `public.survey_responses`
+- `public.survey_sends`
+- `public.survey_templates`
+
+All tables ship with Row-Level Security policies. See migration files for the exact rules.
+
 ## Module API Contract
 
 **Actions:** `create_campaign`, `send_survey`, `list_responses`, `get_nps_score`
@@ -49,6 +60,13 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 **Input fields:** `action`
 
 **Output fields:** `success`, `error`
+
+## Used in Processes
+
+This module participates in the following end-to-end business processes:
+
+- [support-to-resolution](../processes/support-to-resolution.md)
+- [lead-to-customer](../processes/lead-to-customer.md)
 
 ## File Map
 

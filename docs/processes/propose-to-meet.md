@@ -36,9 +36,29 @@ identifies people by name, and leaves its row-level security open.
 |--------|---------------------|
 | **Meeting Polls** | The poll, its slots, the answers, the rule (`meeting_polls`, `meeting_poll_slots`, `meeting_poll_responses`) |
 | **Calendar** | Where a resolved poll lands: a `calendar_events` row with the respondents as attendees; `list_events` is where FlowPilot reads the gaps to propose from |
-| **Booking** | Module gate for staff access; a `customer_facing` poll also creates a `bookings` row on resolve |
+| **Booking** | The desk lives under it (Bookings → Meeting polls) and the database grant is its (`can_access_module(…, 'bookings')` on the tables and the staff RPCs); a `customer_facing` poll also creates a `bookings` row on resolve |
 | **Email** | The share link out (`comms-send` kind `meeting_poll_invite`), the decision back to everyone who can make it (`meeting_poll_confirmation`) |
 | **FlowPilot** | Proposes slots from the calendar's gaps; the block only captures intent (Law 3) |
+
+---
+
+## Turning it on
+
+Meeting Polls is **off by default** and needs **Bookings** and **Calendar** on.
+An administrator switches it on under **Modules** (or an agent with
+`manage_modules`, which waits for approval). Three things come on together:
+
+| What | Where | While the module is off |
+|------|-------|-------------------------|
+| The organizer's desk | **Bookings → Meeting polls** (`/admin/bookings/polls`) | The tab says the module is off and links to Modules |
+| The public answer page | `/poll/<share_token>` (and the `meeting-poll` page block) | The site's own 404 |
+| The four skills | FlowPilot, MCP | Refused with `MODULE_DISABLED` |
+
+**Who may use it** is two grants, one per layer. The page and the sidebar ask for
+the `meetingPolls` module in Role Permissions; every role that holds Bookings was
+given it (2026-11-08), so switching the module on takes the desk from nobody. The
+database asks for `bookings`: that is what lets a staff session read the polls and
+their answers. Administrators pass both.
 
 ---
 
@@ -98,6 +118,17 @@ who chose the slot.
 | Answer | `respond_to_meeting_poll` | **external** — by share token, `trust_level: notify` |
 | Decide | `resolve_meeting_poll` | internal |
 | Oversee | `list_meeting_polls` | internal |
+
+## Where it lives
+
+| Part | Path |
+|------|------|
+| Module, skills, their instructions | `src/lib/modules/meeting-polls-module.ts` |
+| Tables, the token RPCs, the rule | `supabase/migrations/20260930215000_meeting-polls-propose-slots-first-common-wins.sql` (slots on the business's clock: `20261026040000`; who may use the desk: `20261108200000`) |
+| Organizer's desk | `src/components/admin/booking/MeetingPollsPanel.tsx` (off-state: `MeetingPollsOff.tsx`), data in `src/hooks/useMeetingPolls.ts` |
+| Public page and block | `src/pages/PublicMeetingPollPage.tsx`, `src/components/public/blocks/MeetingPollBlock.tsx` — both render `src/components/public/meeting-poll/MeetingPollRespond.tsx` |
+| Mail | `supabase/functions/comms-send/meeting_poll_invite.ts`, `meeting_poll_confirmation.ts` |
+| Proof | `scripts/process-battery/scenarios/propose-to-meet.ts` |
 
 Verified by `scripts/process-battery/scenarios/propose-to-meet.ts`: the wall
 (anon may call the two token RPCs and nothing else), the pick (exactly the slot

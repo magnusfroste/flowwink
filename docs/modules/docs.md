@@ -5,7 +5,7 @@ version: "1.0.0"
 category: "content"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-09-30"
+generated_at: "2026-11-09"
 description: Public documentation portal — auto-synced from the GitHub docs/ folder, browsable at /docs with embedded AI chat for evaluators.
 ---
 
@@ -13,7 +13,7 @@ description: Public documentation portal — auto-synced from the GitHub docs/ f
 
 > Public documentation portal — auto-synced from the GitHub docs/ folder, browsable at /docs with embedded AI chat for evaluators.
 
-Ships with **3 agent skills**.
+Ships with **3 agent skills**, **1 database table**.
 
 ## Quick Facts
 
@@ -26,7 +26,7 @@ Ships with **3 agent skills**.
 | **Core** | No |
 | **Capabilities** | `data:read` |
 | **MCP-exposed skills** | 3 |
-| **Owns tables** | — |
+| **Owns tables** | 1 |
 
 ## Skills
 
@@ -39,6 +39,14 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `manage_docs_page` | internal | Author and maintain documentation pages in-app (not via GitHub sync): create, update, delete, or restore a previous version. Use when: writing a new docs page from inside the platform, editing an e… |
 | `sync_docs_from_github` | internal | Recursively import markdown docs from a GitHub repo path into the docs pages. Use when: syncing product documentation maintained in GitHub. NOT for: the handbook (sync_handbook_from_github); wiki (… |
 
+## Data Model
+
+Tables this module owns (declared by the module, or created in its migrations):
+
+- `public.docs_pages`
+
+All tables ship with Row-Level Security policies. See migration files for the exact rules.
+
 ## Module API Contract
 
 **Actions:** `list`, `search`, `get`
@@ -46,6 +54,12 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 **Input fields:** `action`, `query`, `category`, `slug`
 
 **Output fields:** `success`, `message`
+
+## Used in Processes
+
+This module participates in the following end-to-end business processes:
+
+- [content-to-conversion](../processes/content-to-conversion.md)
 
 ## File Map
 

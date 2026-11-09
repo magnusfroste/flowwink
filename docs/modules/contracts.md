@@ -13,7 +13,7 @@ description: Contract lifecycle management with renewal tracking and document st
 
 > Contract lifecycle management with renewal tracking and document storage
 
-Ships with **13 agent skills**, an **admin UI**.
+Ships with **13 agent skills**, **7 database tables**, an **admin UI**.
 
 ## Quick Facts
 
@@ -26,7 +26,7 @@ Ships with **13 agent skills**, an **admin UI**.
 | **Core** | No |
 | **Capabilities** | `data:write`, `data:read` |
 | **MCP-exposed skills** | 13 |
-| **Owns tables** | — |
+| **Owns tables** | 7 |
 
 ## Skills
 
@@ -49,6 +49,20 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `list_contract_documents` | internal | List archive documents FILED AGAINST a contract — correspondence, the countersigned PDF, supporting material. Use when: admin or agent asks "which documents are attached to contract X?", or wants t… |
 | `run_contract_billing` | internal | Invoice every active billing-enabled contract whose billing date has arrived. Use when: running the daily contract billing sweep — the Contract Billing automation calls this. Takes no arguments. NO… |
 
+## Data Model
+
+Tables this module owns (declared by the module, or created in its migrations):
+
+- `public.contract_documents`
+- `public.contract_signatures`
+- `public.contract_templates`
+- `public.contract_versions`
+- `public.contracts`
+- `public.employment_contract_templates`
+- `public.employment_contracts`
+
+All tables ship with Row-Level Security policies. See migration files for the exact rules.
+
 ## Module API Contract
 
 **Actions:** `create`, `update`, `list`, `get`
@@ -62,6 +76,8 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 This module participates in the following end-to-end business processes:
 
 - [hire-to-retire](../processes/hire-to-retire.md)
+- [quote-to-cash](../processes/quote-to-cash.md)
+- [sign-to-serve](../processes/sign-to-serve.md)
 
 ## File Map
 

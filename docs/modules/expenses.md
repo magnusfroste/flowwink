@@ -13,7 +13,7 @@ description: Employee expense reporting with receipt scanning, monthly report su
 
 > Employee expense reporting with receipt scanning, monthly report submission, approval workflow, and autonomous journal entry booking via FlowPilot
 
-Ships with **13 agent skills**, an **admin UI**.
+Ships with **13 agent skills**, **6 database tables**, an **admin UI**.
 
 ## Quick Facts
 
@@ -26,7 +26,7 @@ Ships with **13 agent skills**, an **admin UI**.
 | **Core** | No |
 | **Capabilities** | `data:write`, `data:read` |
 | **MCP-exposed skills** | 13 |
-| **Owns tables** | — |
+| **Owns tables** | 6 |
 
 ## Skills
 
@@ -49,6 +49,19 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `manage_expense_advance` | internal | Expense (travel) advances: money paid to an employee BEFORE the trip, settled against their expense reports AFTER it. grant pays it out (Dt employee advance 1610 / Cr bank) and opens the advance; b… |
 | `match_expense_to_po` | internal | Tie an employee expense to the purchase order it paid for — the employee took the company card for something that was ordered — so the order's remaining value shrinks and a vendor invoice for the s… |
 
+## Data Model
+
+Tables this module owns (declared by the module, or created in its migrations):
+
+- `public.expense_advance_settlements`
+- `public.expense_advances`
+- `public.expense_attachments`
+- `public.expense_payments`
+- `public.expense_reports`
+- `public.expenses`
+
+All tables ship with Row-Level Security policies. See migration files for the exact rules.
+
 ## Module API Contract
 
 **Actions:** `create`, `list`, `submit_report`, `approve_report`, `analyze_receipt`
@@ -63,6 +76,7 @@ This module participates in the following end-to-end business processes:
 
 - [procure-to-pay](../processes/procure-to-pay.md)
 - [record-to-report](../processes/record-to-report.md)
+- [hire-to-retire](../processes/hire-to-retire.md)
 
 ## File Map
 

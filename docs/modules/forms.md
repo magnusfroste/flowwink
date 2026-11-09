@@ -5,7 +5,7 @@ version: "1.0.0"
 category: "data"
 autonomy: "view-required"
 generated: true
-generated_at: "2026-10-08"
+generated_at: "2026-11-09"
 description: Process form submissions and create leads
 ---
 
@@ -13,7 +13,7 @@ description: Process form submissions and create leads
 
 > Process form submissions and create leads
 
-Ships with **3 agent skills**.
+Ships with **3 agent skills**, **1 database table**.
 
 ## Quick Facts
 
@@ -26,7 +26,7 @@ Ships with **3 agent skills**.
 | **Core** | No |
 | **Capabilities** | `content:receive`, `data:write`, `webhook:trigger` |
 | **MCP-exposed skills** | 3 |
-| **Owns tables** | — |
+| **Owns tables** | 1 |
 
 ## Skills
 
@@ -38,6 +38,14 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `manage_form_submissions` | internal | View and manage form submissions. Use when: reviewing customer inquiries from website forms; processing collected data; deleting spam submissions. NOT for: analyzing feedback sentiment (analyze_cha… |
 | `manage_form` | internal | Inspect website forms and their performance. A form is a Form block on a page (its fields define the form); this reads those definitions. Use when: an operator asks what forms exist, which fields a… |
 | `test_form_delivery` | internal | Dry-run a website form: report every rail a submission would take (storage, CRM lead, form.submitted webhooks and automations, notification email, job application) against the live configuration — … |
+
+## Data Model
+
+Tables this module owns (declared by the module, or created in its migrations):
+
+- `public.form_submissions`
+
+All tables ship with Row-Level Security policies. See migration files for the exact rules.
 
 ## Used in Processes
 

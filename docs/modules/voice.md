@@ -5,7 +5,7 @@ version: "0.1.0"
 category: "communication"
 autonomy: "config-required"
 generated: true
-generated_at: "2026-10-02"
+generated_at: "2026-11-09"
 description: Inbound + outbound voice calls via pluggable providers (46elks, Twilio, ...).
 ---
 
@@ -46,6 +46,13 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 **Input fields:** `action`, `call_id`
 
 **Output fields:** `success`, `message`, `error`
+
+## Used in Processes
+
+This module participates in the following end-to-end business processes:
+
+- [support-to-resolution](../processes/support-to-resolution.md)
+- [lead-to-customer](../processes/lead-to-customer.md)
 
 ## File Map
 

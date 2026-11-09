@@ -13,7 +13,7 @@ description: Create and manage bookings/appointments
 
 > Create and manage bookings/appointments
 
-Ships with **11 agent skills**, **2 public blocks**, an **admin UI**.
+Ships with **11 agent skills**, **4 database tables**, **2 public blocks**, an **admin UI**.
 
 ## Quick Facts
 
@@ -26,7 +26,7 @@ Ships with **11 agent skills**, **2 public blocks**, an **admin UI**.
 | **Core** | No |
 | **Capabilities** | `content:receive`, `data:write`, `webhook:trigger` |
 | **MCP-exposed skills** | 11 |
-| **Owns tables** | — |
+| **Owns tables** | 4 |
 
 ## Integrations
 
@@ -50,6 +50,24 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `manage_booking_waitlist` | internal | Read the booking waiting list, or change the status of an entry. Use when: a time has opened up and you need to know who is waiting for that day, or an entry should be marked booked, expired or can… |
 | `manage_booking_service` | internal | Create, update, list or retire the services customers can book (booking_services): name, duration, price, colour, order. Use when: setting up booking on a new site (a fresh install has NO services,… |
 | `manage_staff_calendar` | internal | Per-staff booking calendars: a staff member's weekly working hours, time off, and which services they perform. A service with staff is booked per person — check_availability offers a time when any … |
+
+## Data Model
+
+Tables this module owns (declared by the module, or created in its migrations):
+
+- `public.booking_availability`
+- `public.booking_blocked_dates`
+- `public.booking_services`
+- `public.bookings`
+
+All tables ship with Row-Level Security policies. See migration files for the exact rules.
+
+## Used in Processes
+
+This module participates in the following end-to-end business processes:
+
+- [lead-to-customer](../processes/lead-to-customer.md)
+- [book-to-meet](../processes/book-to-meet.md)
 
 ## File Map
 

@@ -42,6 +42,12 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `search_unsplash` | internal | Search Unsplash for royalty-free stock photos. Use when: finding a hero/blog image by keyword. NOT for: fetching a known image URL (fetch_image_base64); the media library (manage_media). |
 | `fetch_image_base64` | internal | Download an image by URL and return it as base64 (used when exporting a site template so remote images are inlined). Use when: bundling external images. NOT for: searching stock photos (search_unsp… |
 
+## Used in Processes
+
+This module participates in the following end-to-end business processes:
+
+- [content-to-conversion](../processes/content-to-conversion.md)
+
 ## File Map
 
 | Purpose | Path |

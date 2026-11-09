@@ -13,7 +13,7 @@ description: Time tracking for employees and projects with billable/non-billable
 
 > Time tracking for employees and projects with billable/non-billable categorization
 
-Ships with **10 agent skills**, an **admin UI**.
+Ships with **10 agent skills**, **2 database tables**, an **admin UI**.
 
 ## Quick Facts
 
@@ -26,7 +26,8 @@ Ships with **10 agent skills**, an **admin UI**.
 | **Core** | No |
 | **Capabilities** | `data:write`, `data:read` |
 | **MCP-exposed skills** | 10 |
-| **Owns tables** | — |
+| **Owns tables** | 2 |
+| **Requires modules** | `projects` |
 
 ## Skills
 
@@ -46,6 +47,15 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `payroll_timesheet_basis` | internal | Per-employee timesheet basis for one payroll month: work hours, overtime hours, PTO/training hours, sick days and unapproved-entry count. Use when: preparing a payroll run from logged time. NOT for… |
 | `apply_timesheet_overtime` | internal | Apply overtime pay from timesheets onto a DRAFT payroll run: sums time_entries.overtime_hours for the run month per employee, adds overtime pay (hourly = monthly salary / 168, × multiplier) and rec… |
 
+## Data Model
+
+Tables this module owns (declared by the module, or created in its migrations):
+
+- `public.time_entries`
+- `public.timesheet_period_locks`
+
+All tables ship with Row-Level Security policies. See migration files for the exact rules.
+
 ## Module API Contract
 
 **Actions:** `create`, `update`, `list`, `get`
@@ -60,6 +70,7 @@ This module participates in the following end-to-end business processes:
 
 - [hire-to-retire](../processes/hire-to-retire.md)
 - [quote-to-cash](../processes/quote-to-cash.md)
+- [plan-to-deliver](../processes/plan-to-deliver.md)
 
 ## File Map
 

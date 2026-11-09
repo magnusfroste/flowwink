@@ -13,7 +13,7 @@ description: Create and manage leads
 
 > Create and manage leads
 
-Ships with **23 agent skills**, an **admin UI**.
+Ships with **23 agent skills**, **4 database tables**, an **admin UI**.
 
 ## Quick Facts
 
@@ -26,7 +26,7 @@ Ships with **23 agent skills**, an **admin UI**.
 | **Core** | No |
 | **Capabilities** | `content:receive`, `data:write`, `webhook:trigger` |
 | **MCP-exposed skills** | 23 |
-| **Owns tables** | — |
+| **Owns tables** | 4 |
 
 ## Skills
 
@@ -58,6 +58,17 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `manage_consent` | internal | GDPR consent center: record granted/revoked consent per contact email and type (marketing_email, newsletter, sms, profiling, analytics), check current state, read the full audit history. Use when: … |
 | `send_bulk_lead_email` | internal | Send one email to a whole lead segment (mass mail) with automatic unsubscribe-list and consent exclusions plus an unsubscribe footer link. Use when: announcing something to all opportunities, react… |
 | `predict_lead_score` | internal | Predictive lead scoring: estimate a lead's win probability from historical closed outcomes (won vs lost) using attribute likelihoods — source, email domain type, phone/company presence, engagement … |
+
+## Data Model
+
+Tables this module owns (declared by the module, or created in its migrations):
+
+- `public.activities`
+- `public.crm_tasks`
+- `public.lead_activities`
+- `public.leads`
+
+All tables ship with Row-Level Security policies. See migration files for the exact rules.
 
 ## Used in Processes
 

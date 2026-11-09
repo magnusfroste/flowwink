@@ -13,7 +13,7 @@ description: Multi-location inventory: locations, lots/serials, quants, reservat
 
 > Multi-location inventory: locations, lots/serials, quants, reservations, transfers, MRP scheduler, and a full Pick & Pack flow that fulfills paid orders end-to-end.
 
-Ships with **18 agent skills**, an **admin UI**.
+Ships with **18 agent skills**, **7 database tables**, an **admin UI**.
 
 ## Quick Facts
 
@@ -26,7 +26,7 @@ Ships with **18 agent skills**, an **admin UI**.
 | **Core** | No |
 | **Capabilities** | `data:read`, `data:write` |
 | **MCP-exposed skills** | 18 |
-| **Owns tables** | — |
+| **Owns tables** | 7 |
 
 ## Skills
 
@@ -54,6 +54,20 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `manage_inventory_count` | internal | Run a physical cycle count: open a count for a location, snapshot system quantities, record counted quantities, and post variances to stock. Use when: stocktake, periodic cycle count, reconciling o… |
 | `manage_inventory_receipt` | internal | Receive goods in steps: create a receipt with lines, record quality control per line, then advance it received → quality_check → putaway → done. Putaway posts the stock moves to each line's target … |
 
+## Data Model
+
+Tables this module owns (declared by the module, or created in its migrations):
+
+- `public.stock_locations`
+- `public.stock_lots`
+- `public.stock_moves`
+- `public.stock_quants`
+- `public.stock_reservations`
+- `public.uom_categories`
+- `public.uoms`
+
+All tables ship with Row-Level Security policies. See migration files for the exact rules.
+
 ## Module API Contract
 
 **Actions:** `check_stock`, `list_low_stock`, `get_movements`
@@ -68,6 +82,7 @@ This module participates in the following end-to-end business processes:
 
 - [order-to-delivery](../processes/order-to-delivery.md)
 - [procure-to-pay](../processes/procure-to-pay.md)
+- [plan-to-produce](../processes/plan-to-produce.md)
 
 ## File Map
 

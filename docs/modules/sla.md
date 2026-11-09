@@ -13,7 +13,7 @@ description: Service level agreement monitoring for order fulfillment, ticket re
 
 > Service level agreement monitoring for order fulfillment, ticket response, lead handling, chat reply times, and booking confirmations. Auto-detects violations, auto-resolves when entities are handled.
 
-Ships with **10 agent skills**, **4 database tables**.
+Ships with **10 agent skills**, **6 database tables**.
 
 ## Quick Facts
 
@@ -26,7 +26,7 @@ Ships with **10 agent skills**, **4 database tables**.
 | **Core** | No |
 | **Capabilities** | `data:read`, `data:write` |
 | **MCP-exposed skills** | 10 |
-| **Owns tables** | 4 |
+| **Owns tables** | 6 |
 
 ## Skills
 
@@ -48,12 +48,14 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 
 ## Data Model
 
-Tables created by this module (from migrations):
+Tables this module owns (declared by the module, or created in its migrations):
 
 - `public.service_credits`
 - `public.sla_clock_pauses`
+- `public.sla_policies`
 - `public.sla_tier_assignments`
 - `public.sla_tiers`
+- `public.sla_violations`
 
 All tables ship with Row-Level Security policies. See migration files for the exact rules.
 
@@ -70,6 +72,7 @@ All tables ship with Row-Level Security policies. See migration files for the ex
 This module participates in the following end-to-end business processes:
 
 - [support-to-resolution](../processes/support-to-resolution.md)
+- [order-to-delivery](../processes/order-to-delivery.md)
 
 ## File Map
 

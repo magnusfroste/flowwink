@@ -13,7 +13,7 @@ description: Project and task management with Kanban boards, assignments, and ti
 
 > Project and task management with Kanban boards, assignments, and time tracking integration
 
-Ships with **17 agent skills**, **2 database tables**, an **admin UI**.
+Ships with **17 agent skills**, **5 database tables**, an **admin UI**.
 
 ## Quick Facts
 
@@ -26,7 +26,7 @@ Ships with **17 agent skills**, **2 database tables**, an **admin UI**.
 | **Core** | No |
 | **Capabilities** | `data:write`, `data:read` |
 | **MCP-exposed skills** | 17 |
-| **Owns tables** | 2 |
+| **Owns tables** | 5 |
 
 ## Skills
 
@@ -55,10 +55,13 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 
 ## Data Model
 
-Tables created by this module (from migrations):
+Tables this module owns (declared by the module, or created in its migrations):
 
+- `public.project_members`
 - `public.project_task_dependencies`
+- `public.project_tasks`
 - `public.project_templates`
+- `public.projects`
 
 All tables ship with Row-Level Security policies. See migration files for the exact rules.
 
@@ -75,6 +78,7 @@ All tables ship with Row-Level Security policies. See migration files for the ex
 This module participates in the following end-to-end business processes:
 
 - [quote-to-cash](../processes/quote-to-cash.md)
+- [plan-to-deliver](../processes/plan-to-deliver.md)
 
 ## File Map
 

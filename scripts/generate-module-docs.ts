@@ -47,6 +47,10 @@ interface ModuleInfo {
   actions: string[];
   skills: SkillInfo[];
   sourceFile: string;
+  /** What the module itself declares — one fact, read where it is stated. */
+  declaredTables: string[];
+  declaredProcesses: string[];
+  requires: string[];
 }
 
 interface SkillInfo {
@@ -68,6 +72,10 @@ function parseModuleFile(filePath: string): ModuleInfo | null {
   const versionMatch = defBlock.match(/version:\s*['"]([^'"]+)['"]/);
   const descMatch = defBlock.match(/description:\s*['"]([^'"]+)['"]/);
   const capMatch = defBlock.match(/capabilities:\s*\[([^\]]+)\]/);
+  const quoted = (re: RegExp) => [...(defBlock.match(re)?.[1] ?? '').matchAll(/['"]([^'"]+)['"]/g)].map((m) => m[1]);
+  const declaredTables = quoted(/\btables:\s*\[([^\]]*)\]/);
+  const declaredProcesses = quoted(/\bprocesses:\s*\[([^\]]*)\]/);
+  const requires = quoted(/\brequires:\s*\[([^\]]*)\]/);
 
   if (!idMatch) return null;
 
@@ -94,6 +102,9 @@ function parseModuleFile(filePath: string): ModuleInfo | null {
     actions,
     skills: extractSkillSeeds(src),
     sourceFile: path.relative(ROOT, filePath),
+    declaredTables,
+    declaredProcesses,
+    requires,
   };
 }
 
@@ -358,7 +369,16 @@ function findBlocks(moduleName: string): string[] {
   try {
     const files = fs.readdirSync(PUBLIC_BLOCKS);
     for (const f of files) {
-      if (f.toLowerCase().includes(moduleName.toLowerCase()) && f.endsWith('Block.tsx')) {
+      // "Meeting Polls" owns MeetingPollBlock.tsx: a multi-word name is compared
+      // without spaces and without its plural (until 2026-11-09 such a module
+      // found no block). A one-word name keeps the literal match — dropping the
+      // plural there handed the pull-quote QuoteBlock to the Quotes module.
+      const lower = moduleName.toLowerCase();
+      const key = lower.replace(/[^a-z0-9]/g, '');
+      const file = f.toLowerCase();
+      const multiWord = /\s/.test(moduleName.trim());
+      const hit = file.includes(lower) || (multiWord && (file.includes(key) || (key.endsWith('s') && file.includes(key.slice(0, -1)))));
+      if (hit && f.endsWith('Block.tsx')) {
         blocks.push(`src/components/public/blocks/${f}`);
       }
     }
@@ -669,6 +689,7 @@ function generateMarkdown(
   lines.push(`| **Capabilities** | ${mod.capabilities.map(c => `\`${c}\``).join(', ') || '—'} |`);
   lines.push(`| **MCP-exposed skills** | ${skillCount || '—'} |`);
   lines.push(`| **Owns tables** | ${tableCount || '—'} |`);
+  if (mod.requires.length) lines.push(`| **Requires modules** | ${mod.requires.map((r) => `\`${r}\``).join(', ')} |`);
   lines.push('');
 
   // Integrations
@@ -690,7 +711,7 @@ function generateMarkdown(
   if (tables.length) {
     lines.push('## Data Model');
     lines.push('');
-    lines.push('Tables created by this module (from migrations):');
+    lines.push('Tables this module owns (declared by the module, or created in its migrations):');
     lines.push('');
     for (const t of tables) lines.push(`- \`public.${t}\``);
     lines.push('');
@@ -941,8 +962,12 @@ function main() {
     const adminPage = findAdminPage(mod.name, mod.id);
     const blocks = findBlocks(mod.name);
     const migrations = findMigrations(mod.id);
-    const tables = extractTablesFromMigrations(migrations);
-    const processes = MODULE_TO_PROCESSES[mod.id] ?? [];
+    // The module's own declaration first (data.tables, processes), then what
+    // the migrations and the hand-kept map add. Meeting Polls declared three
+    // tables and a process and its page showed neither.
+    const tables = [...new Set([...mod.declaredTables, ...extractTablesFromMigrations(migrations)])].sort();
+    const processes = [...new Set([...(MODULE_TO_PROCESSES[mod.id] ?? []), ...mod.declaredProcesses])]
+      .filter((p) => fs.existsSync(path.join(ROOT, 'docs/processes', `${p}.md`)));
     const kebabId = mod.id.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
 
     // The catalog covers every module regardless of --module filtering, so a

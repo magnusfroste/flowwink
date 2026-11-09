@@ -44,7 +44,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 
 ## Data Model
 
-Tables created by this module (from migrations):
+Tables this module owns (declared by the module, or created in its migrations):
 
 - `public.journal_entry_documents`
 
@@ -64,6 +64,7 @@ This module participates in the following end-to-end business processes:
 
 - [hire-to-retire](../processes/hire-to-retire.md)
 - [procure-to-pay](../processes/procure-to-pay.md)
+- [order-to-delivery](../processes/order-to-delivery.md)
 
 ## File Map
 

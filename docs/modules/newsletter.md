@@ -13,7 +13,7 @@ description: Create newsletter drafts for sending
 
 > Create newsletter drafts for sending
 
-Ships with **6 agent skills**, **1 public block**, an **admin UI**.
+Ships with **6 agent skills**, **4 database tables**, **1 public block**, an **admin UI**.
 
 ## Quick Facts
 
@@ -26,7 +26,7 @@ Ships with **6 agent skills**, **1 public block**, an **admin UI**.
 | **Core** | No |
 | **Capabilities** | `content:receive`, `data:write` |
 | **MCP-exposed skills** | 6 |
-| **Owns tables** | — |
+| **Owns tables** | 4 |
 
 ## Skills
 
@@ -41,6 +41,17 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `manage_newsletters` | internal | Manage newsletters: list, get, create, update, delete. Full CRUD on newsletter drafts and scheduled sends. Use when: creating a new newsletter campaign; editing planned newsletter content; deleting… |
 | `lead_nurture_sequence` | internal | Save ONE nurture email you have written (subject + content_md) for ONE lead as a newsletter draft (nothing is sent). Requires lead_id — call it once per lead. Use when: a specific lead needs a welc… |
 | `newsletter_subscribe` | external | Subscribe a visitor to the newsletter. Use when: visitor wants to sign up for emails, newsletter opt-in. NOT for: managing subscribers (use manage_newsletter_subscribers), sending newsletters (use … |
+
+## Data Model
+
+Tables this module owns (declared by the module, or created in its migrations):
+
+- `public.newsletter_email_opens`
+- `public.newsletter_link_clicks`
+- `public.newsletter_subscribers`
+- `public.newsletters`
+
+All tables ship with Row-Level Security policies. See migration files for the exact rules.
 
 ## Used in Processes
 
