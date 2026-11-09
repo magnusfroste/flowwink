@@ -5,7 +5,7 @@ version: "1.0.0"
 category: "data"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-10-31"
+generated_at: "2026-11-09"
 description: Applicant Tracking System — job postings, candidate pipeline, AI scoring and outreach.
 ---
 
@@ -48,12 +48,12 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `manage_job_offer` | internal | Generate offer letters from employment contract templates (merge fields filled from the application + job posting), track send/response. Use when: extending an offer to a candidate, recording their… |
 | `manage_reference_check` | internal | Track reference/background checks per candidate: add referees, record outcomes with a rating. Use when: final-stage vetting before an offer. NOT for: assessments (manage_candidate_assessment) or in… |
 | `recruitment_analytics` | internal | Recruitment analytics: time-to-hire (avg/median days), source ROI (applications vs hires per source), stage funnel, interview stats, open positions. Use when: "how effective is our hiring?", channe… |
-| `match_internal_candidates` | internal | Internal mobility: rank existing employees against a job posting\ |
+| `match_internal_candidates` | internal | Internal mobility: rank existing employees against a job posting's required skills (employee_skills × skills_catalog). Use when: considering internal transfers before external hiring, succession pl… |
 | `manage_application` | internal | Create, list, get or update job applications (applications) — the candidate record an agent scores, moves and hires. Use when: registering a candidate that arrived outside the public form (email, r… |
 | `invite_candidate_to_interview` | internal | Let the candidate pick the interview time: propose up to ten times, and the candidate gets an e-mail with a link (/interview/<token>, no account) where they book one — the booked time becomes a vid… |
-| `send_interview_confirmation` | internal | Mail the candidate the booked interview — time on the business\ |
-| `manage_candidate_note` | internal | Add or list the team\ |
-| `submit_job_application` | internal | Submit a candidate\ |
+| `send_interview_confirmation` | internal | Mail the candidate the booked interview — time on the business's clock in their language and the WebMeet link. Once per interview (a second call answers already_sent). Use when: an interview was sc… |
+| `manage_candidate_note` | internal | Add or list the team's notes on a candidate (with an optional 1–5 rating) — the same notes the candidate card in the admin shows. Use when: recording a phone screen, an impression, a question for t… |
+| `submit_job_application` | internal | Submit a candidate's application for an open role through the same door as the careers page — consent and screening answers checked, CV text parsed, the candidate gets a confirmation mail in their … |
 
 ## Data Model
 

@@ -105,7 +105,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `import_exchange_rates` | internal | Bulk import historical exchange rates (upsert per base/quote/date). Use when: backfilling rate history before revaluation, migrating from another system, loading a year of ECB/Riksbank data. NOT fo… |
 | `manage_fx_forward` | internal | Hedging: manage FX forward contracts — create, list, mark-to-market against the latest spot, settle (posts realized gain/loss to BAS 3960/7960), cancel. Use when: locking a future currency exchange… |
 | `manage_subsidiary` | internal | Manage subsidiaries (local-currency entities) and tag journal entries to a subsidiary ledger. Use when: setting up a foreign subsidiary, booking an entry into its local-currency ledger. NOT for: co… |
-| `subsidiary_ledger_report` | internal | Per-account ledger totals for one subsidiary in its local currency (posted journal entries tagged to it). Use when: reviewing a subsidiary\ |
-| `consolidation_report` | internal | Group consolidation with currency translation: translates each entity\ |
+| `subsidiary_ledger_report` | internal | Per-account ledger totals for one subsidiary in its local currency (posted journal entries tagged to it). Use when: reviewing a subsidiary's books, preparing local statutory reporting. NOT for: gro… |
+| `consolidation_report` | internal | Group consolidation with currency translation: translates each entity's trial balance (HQ base ledger + every active subsidiary) into a presentation currency at the closing rate. Use when: month/ye… |
 
 <!-- generated:skills:end -->

@@ -101,7 +101,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `dispose_fixed_asset` | internal | Dispose of a fixed asset (sale, scrap, write-off). Reverses cost + accumulated depreciation, books any sale proceeds, and posts gain (3970) or loss (7970) on disposal. Use when: an asset is sold, r… |
 | `revalue_fixed_asset` | internal | Impair or revalue a fixed asset to a new value (nedskrivning/återföring). Below NBV posts an impairment loss (Dt 7720 / Cr accumulated); above NBV reverses prior depreciation/impairment (Dt accumul… |
 | `post_manual_depreciation` | internal | Post a manual depreciation adjustment for one asset outside the monthly sweep (catch-up after a missed period, correction, accelerated write-down). Use when: the computed schedule needs a one-off o… |
-| `post_units_depreciation` | internal | Post usage-based depreciation for a units_of_production asset: amount = (cost − salvage) × units / total_expected_units. Use when: recording a period\ |
+| `post_units_depreciation` | internal | Post usage-based depreciation for a units_of_production asset: amount = (cost − salvage) × units / total_expected_units. Use when: recording a period's machine-hours/units for a UOP asset. NOT for:… |
 | `update_fixed_asset` | internal | Update fixed-asset metadata: name, description, physical location, parent asset (component tracking — e.g. an engine as a component of a machine) and total expected units for UOP depreciation. Use … |
 | `get_depreciation_schedule` | internal | Forward-looking depreciation schedule report: simulates each remaining month per asset (straight-line, declining, sum-of-years; UOP estimated as even spread) with amount, accumulated and NBV. Use w… |
 

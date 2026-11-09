@@ -5,7 +5,7 @@ version: "1.0.0"
 category: "data"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-09-30"
+generated_at: "2026-11-09"
 description: Time tracking for employees and projects with billable/non-billable categorization
 ---
 
@@ -38,8 +38,8 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `lock_timesheet_period` | internal | Lock all time entries in a fiscal month so they can no longer be edited. Use when: month-end close, payroll cutoff, "lock timesheets for March". NOT for: deleting individual entries (use log_time) … |
 | `log_time` | internal | Log time entries for projects. Use when: employee reports hours worked, FlowPilot processes daily standups, user says "I worked 4 hours on X". NOT for: project management (use manage_project), summ… |
 | `timesheet_summary` | internal | Generate timesheet summaries and reports. Use when: admin asks for weekly/monthly hours overview, billing summary, or "how much time have we spent on project X". NOT for: logging time (use log_time). |
-| `manage_timesheet_approval` | internal | Submit, approve or reject all timesheet entries in a date range (manager approval workflow). Use when: "approve last week\ |
-| `split_time_entry` | internal | Split one time entry into several entries across multiple projects on the same day (multi-project day split). Use when: an employee\ |
+| `manage_timesheet_approval` | internal | Submit, approve or reject all timesheet entries in a date range (manager approval workflow). Use when: "approve last week's timesheets", weekly/monthly sign-off, rejecting a period for correction. … |
+| `split_time_entry` | internal | Split one time entry into several entries across multiple projects on the same day (multi-project day split). Use when: an employee's day covered several projects but was logged as one block. NOT f… |
 | `log_indirect_time` | internal | Log indirect (non-project) time: PTO, sick, training or overhead hours. Books to the auto-created "Internal (non-billable)" project with the right category. Use when: "Anna was sick Tuesday", "log … |
 | `apply_overtime_rules` | internal | Compute and flag overtime: any hours above a daily threshold (default 8h) per person per day in a date range are stamped on the entries as overtime_hours. Use when: month-end before payroll, "how m… |
 | `timesheet_utilization_report` | internal | Utilization / productivity analytics per person for a date range: work vs billable vs indirect hours, overtime, capacity, utilization %, labor cost and revenue. Use when: "team utilization last mon… |

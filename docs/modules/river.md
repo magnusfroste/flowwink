@@ -61,8 +61,8 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 
 | Skill | Scope | Description |
 |-------|-------|-------------|
-| `post_to_river` | internal | Post a message to the internal River feed (team social channel, Slack/X-style). This is also the agent\ |
+| `post_to_river` | internal | Post a message to the internal River feed (team social channel, Slack/X-style). This is also the agent's team voice. Use when: announcing a release, sharing a quick win, posting a positive/informat… |
 | `search_river` | internal | Search the internal River feed by free-text query against post body. Use when: looking up an internal announcement, finding a thread you remember reading, or summarising what the team posted recent… |
-| `share_weekly_knowledge` | internal | Post the last 7 days of new/updated wiki pages and new KB articles to River as one digest post. No parameters. |
+| `share_weekly_knowledge` | internal | Post the weekly knowledge digest to River: new and updated wiki pages plus new KB articles from the last 7 days, as one positive team post. Runs automatically every Monday (cron weekly-knowledge-ri… |
 
 <!-- generated:skills:end -->

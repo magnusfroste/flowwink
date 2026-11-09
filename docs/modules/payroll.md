@@ -112,12 +112,12 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `list_payroll_runs` | internal | List recent payroll runs with status and totals. Use when: viewing payroll history or generating reports. |
 | `list_payroll_lines` | internal | List per-employee payroll lines for a specific run. Use when: reviewing or auditing a payroll run. |
 | `apply_pension` | internal | Apply occupational pension to a DRAFT payroll run (employer contribution + optional employee deduction, as a % of gross). Use when: adding tjänstepension before approving a run. NOT for: a posted/a… |
-| `apply_sick_pay` | internal | Apply Swedish statutory sick pay (sjuklön) as an adjustment on one employee\ |
+| `apply_sick_pay` | internal | Apply Swedish statutory sick pay (sjuklön) as an adjustment on one employee's line in a DRAFT payroll run: deducts ordinary salary for the sick days, adds 80% sick pay for the employer period (days… |
 | `calc_sick_pay` | internal | Compute Swedish statutory sick pay (sjuklön) for the employer period (days 1–14) at 80% with one karensavdrag. Use when: estimating sick pay for a payroll adjustment. Pure calculator — does not write. |
 | `manage_salary_structure` | internal | Configure reusable salary structures (base salary + components: fixed or % of base, earning/benefit/deduction) and assign them to employees. Assigned structures are applied automatically on the nex… |
 | `manage_payroll_country` | internal | Multi-country payroll: manage per-country statutory profiles (employer social fee %, default tax %, currency) and assign a payroll country to employees. Seeded with SE/NO/DK/FI/DE. Use when: employ… |
 | `manage_salary_advance` | internal | Salary advances/loans: grant an advance (posts Dt 1610 / Cr 1930), list per employee, cancel (posts the reversal). Open advances are deducted from net pay on the next payroll run and settled (Cr 16… |
-| `apply_tax_correction` | internal | Apply a preliminary-tax correction to one employee\ |
+| `apply_tax_correction` | internal | Apply a preliminary-tax correction to one employee's line on a DRAFT payroll run (positive delta withholds more, negative refunds too-much-withheld tax). Use when: fixing a wrong tax table, jämknin… |
 | `get_payslip` | internal | Structured payslip for one employee+run (employer, period, all components, gross→net breakdown incl. pension/sick pay/advances/tax corrections, YTD totals) — or, without a run id, the list of avail… |
 | `year_end_payroll_summary` | internal | Year-end tax certification data: per-employee annual gross, benefits, withheld tax, employer social fees, pension and net over all approved/paid runs of a year (KU/kontrolluppgift-style income stat… |
 | `generate_agi_export` | internal | Tax-authority integration: generate the monthly AGI declaration (arbetsgivardeklaration på individnivå) as Skatteverket-style XML — HU totals (social fees FK487, withheld tax FK497) plus one IU per… |

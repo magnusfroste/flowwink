@@ -55,14 +55,14 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 
 | Skill | Scope | Description |
 |-------|-------|-------------|
-| `write_blog_post` | internal | Create a blog post with title, topic, tone, and pre-written content. One thesis per post, argued to the end (800–1200 words, ## sections, a closing ask) — pass the identity\ |
+| `write_blog_post` | internal | Create a blog post with title, topic, tone, and pre-written content. One thesis per post, argued to the end (800–1200 words, ## sections, a closing ask) — pass the identity's content angle as `angl… |
 | `research_content` | internal | Deep AI research on a topic — audience insights, content angles, hooks, competitive landscape, and recommended structure. Use when: planning content strategy; understanding a topic before writing; … |
 | `generate_content_proposal` | internal | Generate multi-channel content (blog, newsletter, LinkedIn, X) from a topic with brand voice and tone control. Use when: a user requests new content for multiple platforms; needing a content strate… |
 | `publish_scheduled_content` | internal | Check and publish pages and blog posts that are due for scheduled publishing. Use when: automated publish cycle runs; checking if any content is ready to go live; processing scheduled content queue… |
-| `translate_content` | internal | What to translate. "page" is the same as translate_page; "product" translates a product\ |
-| `manage_blog_posts` | internal | Manage existing blog posts: list, get, update (title, excerpt, body as markdown `content`, image, category, status, schedule), publish, unpublish, delete. Use when: editing or rewriting an existing… |
+| `translate_content` | internal | Translate a blog post — or a product, or a product category — into other languages, server-side: entity "blog_post" + slug + locale (or languages: ["sv", …] / "all"); entity "product" + product_id … |
+| `manage_blog_posts` | internal | Manage existing blog posts: list, get, update (title, excerpt, body as markdown `content`, SEO title / meta description / share image, image, category, status, schedule, address via `new_slug` — th… |
 | `manage_blog_categories` | internal | Manage blog categories and tags: list, create, delete. Use when: organizing blog content into new categories; listing existing blog categories; cleaning up unused tags. NOT for: managing individual… |
-| `audit_blog` | internal | Audit what the blog already holds: every post\ |
+| `audit_blog` | internal | Audit what the blog already holds: every post's word count against the floor, the language it reads as against the one it is declared in, duplicate clusters (titles that re-word an earlier one), th… |
 | `browse_blog` | both | Browse published blog posts (visitor-facing). Use when: a user asks to see latest blog articles; you need to find existing blog content to link to; displaying content on a public-facing blog page. … |
 | `content_calendar_view` | internal | Lists scheduled and draft content, identifies content gaps. Use when: reviewing editorial calendar, checking upcoming content, finding content gaps. NOT for: creating content (use write_blog_post),… |
 | `generate_social_post` | internal | Generate social media posts from existing blog content or content proposals. Use when: user wants LinkedIn/X posts from an article, repurposing blog content for social. NOT for: writing blog posts … |
@@ -73,6 +73,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `list_blog_comments` | internal | List blog comments filtered by status (pending by default) for moderation review. Use when: showing the moderation queue or auditing comments per post. |
 | `get_blog_rss_url` | external | Return the public RSS feed URL for the blog. Use when: a caller asks for the RSS/Atom feed, or when integrating a syndication endpoint. |
 | `blog_post_history` | internal | Version history for blog posts: list revisions, read an old revision, restore one. Every content/title/excerpt/image edit and every delete is captured automatically, and the revision survives the p… |
+
 <!-- generated:skills:end -->
 
 ## Used in Processes

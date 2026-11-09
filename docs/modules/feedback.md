@@ -5,7 +5,7 @@ version: "1.0.0"
 category: "system"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-11-04"
+generated_at: "2026-11-09"
 description: The feedback board — bug reports, feature requests, template wishes, questions — with votes, comments and a status per post.
 ---
 
@@ -36,8 +36,8 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | Skill | Scope | Description |
 |-------|-------|-------------|
 | `submit_feedback` | internal | Send feedback about the platform — a bug report, a feature request, a template wish or a question — to the feedback endpoint this instance is configured for (www.flowwink.com by default; a self-hos… |
-| `feedback_ping` | internal | The daily ping to the feedback endpoint: this instance\ |
-| `manage_feedback` | internal | Operate the feedback board THIS instance receives (www.flowwink.com for the fleet; a self-hoster\ |
+| `feedback_ping` | internal | The daily ping to the feedback endpoint: this instance's id (minted on the first ping), site URL and name (Branding → organisation name), skills sha, migration head and enabled modules — no busines… |
+| `manage_feedback` | internal | Operate the feedback board THIS instance receives (www.flowwink.com for the fleet; a self-hoster's own product board): list posts by board/status/origin, group open bug reports by defect across ins… |
 | `browse_feedback` | both | Read the public feedback board of this instance: what is open, planned, in progress or done, with votes and comment counts. Use when: a visitor or customer asks whether something is planned, known,… |
 
 ## Module API Contract

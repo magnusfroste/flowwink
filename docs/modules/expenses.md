@@ -5,7 +5,7 @@ version: "1.0.0"
 category: "data"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-10-08"
+generated_at: "2026-11-09"
 description: Employee expense reporting with receipt scanning, monthly report submission, approval workflow, and autonomous journal entry booking via FlowPilot
 ---
 
@@ -35,9 +35,9 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 
 | Skill | Scope | Description |
 |-------|-------|-------------|
-| `manage_expenses` | internal | Full lifecycle management for employee expenses: create individual expenses (with optional receipt data, in any currency — converted to the base currency at the receipt date\ |
+| `manage_expenses` | internal | Full lifecycle management for employee expenses: create individual expenses (with optional receipt data, in any currency — converted to the base currency at the receipt date's rate), submit monthly… |
 | `analyze_receipt` | internal | Analyze a receipt image using AI vision to extract structured data: amount, VAT, vendor, date, and suggest matching account code. Use when: employee uploads a receipt photo, FlowPilot processes exp… |
-| `generate_monthly_expense_report` | internal | Generate or refresh a monthly expense report |
+| `generate_monthly_expense_report` | internal | Creates or refreshes a monthly expense report for the current user, aggregating all draft/submitted expenses in the period (YYYY-MM). Use when: user wants to compile this month's receipts into a su… |
 | `submit_expense_report` | internal | Submits a draft expense report for approval: locks all included expenses to submitted state and recomputes the report total from its lines. Only the report owner or an admin may submit. Use when: e… |
 | `approve_expense_report` | internal | Admin-only. Approves a submitted expense report, marks all included expenses as approved and refreshes the report total from its lines. Use when: manager approves a submitted report / "approve expe… |
 | `book_expense_report` | internal | Admin-only. Posts a balanced journal entry for an approved expense report (Dt expense + VAT / Cr owed-to-employee) and marks the report as booked; an open expense advance the employee holds is sett… |
@@ -47,7 +47,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `evaluate_expense_policy` | internal | Check a prospective expense against the policies — returns allowed, requires_approval, and any violations (over_limit, missing_receipt, needs_approval). Use when: validating an expense before submi… |
 | `extract_receipt` | internal | Extract structured expense fields (vendor, date, total, VAT, line items) from a receipt image or PDF via AI. Use when: an employee uploads a receipt to file an expense. NOT for: bank statement OCR … |
 | `manage_expense_advance` | internal | Expense (travel) advances: money paid to an employee BEFORE the trip, settled against their expense reports AFTER it. grant pays it out (Dt employee advance 1610 / Cr bank) and opens the advance; b… |
-| `match_expense_to_po` | internal | Tie an employee expense to the purchase order it paid for — the employee took the company card for something that was ordered — so the order\ |
+| `match_expense_to_po` | internal | Tie an employee expense to the purchase order it paid for — the employee took the company card for something that was ordered — so the order's remaining value shrinks and a vendor invoice for the s… |
 
 ## Module API Contract
 

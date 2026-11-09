@@ -85,7 +85,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | Skill | Scope | Description |
 |-------|-------|-------------|
 | `prospect_research` | internal | Research a company — search web, scrape website, find contacts via Hunter.io. Found contacts are saved as PROSPECTS (pre-leads in the Contacts → Prospects triage tab), never directly as leads: a hu… |
-| `verify_email` | internal | Verify one email address via Hunter (1 credit). Updates the lead when lead_id is given. |
+| `verify_email` | internal | Verify an email address's deliverability via Hunter's Email Verifier and stamp the verdict on the lead. COSTS ONE HUNTER CREDIT per call (50/month on the free plan) — verify only addresses you inte… |
 | `prospect_fit_analysis` | internal | Collect company data, related leads, and deals to evaluate prospect fit. Returns raw data for FlowPilot to analyze. Use when: evaluating a new prospect; scoring company fit before outreach; compari… |
 | `process_signal` | internal | Process an incoming signal from Chrome extension or external webhook. Analyzes content and determines next actions. Use when: a website event is detected; an external system sends an update; respon… |
 | `sales_profile_setup` | internal | Set up or update the per-seller sales profile (type "user"): name, title, personal pitch, tone, signature — the sender context outreach is written in. Use when: a salesperson configures how their o… |

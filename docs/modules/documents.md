@@ -5,7 +5,7 @@ version: "1.0.0"
 category: "data"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-09-30"
+generated_at: "2026-11-09"
 description: Document management with categorization, entity linking, and version tracking
 ---
 
@@ -13,7 +13,7 @@ description: Document management with categorization, entity linking, and versio
 
 > Document management with categorization, entity linking, and version tracking
 
-Ships with **4 agent skills**, **1 database table**, an **admin UI**.
+Ships with **6 agent skills**, **1 database table**, an **admin UI**.
 
 ## Quick Facts
 
@@ -25,7 +25,7 @@ Ships with **4 agent skills**, **1 database table**, an **admin UI**.
 | **Autonomy** | agent-capable |
 | **Core** | No |
 | **Capabilities** | `data:write`, `data:read` |
-| **MCP-exposed skills** | 4 |
+| **MCP-exposed skills** | 6 |
 | **Owns tables** | 1 |
 
 ## Skills
@@ -35,24 +35,18 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 
 | Skill | Scope | Description |
 |-------|-------|-------------|
+| `verify_document_integrity` | internal | Re-download every archived file and every voucher attachment and recompute its SHA-256: an unsealed file is sealed with what is there now, a sealed file whose bytes changed is reported as a mismatc… |
 | `manage_document` | internal | Upload, search, categorize, and delete documents in the central archive. Use when: storing contracts, HR docs, financial records, or project files. NOT for: media library images (use media_browse),… |
 | `extract_pdf_text` | internal | Extract text content from any PDF document. Uses AI vision to read the PDF and return structured text. Use when: a user uploads a PDF and asks for its content; you need to extract data from a docum… |
 | `manage_document_share_link` | internal | Create/revoke/list tokenized public share links for a document (optional expiry, view/download permission). Use when: sharing a document externally without an account. NOT for: uploading documents … |
-| `manage_document_room` | internal | A document room: a named set of documents and who may see it, without copying anything — a board room, legal counsel, a partner. Members get a personal link (view or download, optional expiry) and the access log names who opened what. |
+| `manage_document_room` | internal | A document room: a named set of documents and who may see it, without copying anything — a board room, legal counsel, a partner, an investor. Members get a PERSONAL link (view or download, optional… |
 | `upload_document` | internal | Upload a file to the workspace knowledge base. Stores a permanent, searchable document with extracted markdown so future workspace-chat queries can cite it. Use when: the agent has produced or rece… |
-
-## Integrity and retention (2026-10-27)
-
-- `content_sha256` / `hashed_at` seal a document's bytes at upload (admin dialog, drag-and-drop, `upload_document`); `verify_document_integrity` re-downloads and recomputes, seals the unsealed, and reports a changed file as a mismatch it never re-seals.
-- `retention_until` / `retention_reason` are stamped when the document is attached to a posted voucher (31 December seven years after the fiscal year ended, `documentRetentionYears` in Accounting preferences). Until then the row, the storage object and the voucher attachment refuse deletion (`RETENTION_LOCKED`); only a full reset overrides.
-- The accounting module's `export_voucher_archive_manifest` lists a year's vouchers with their documents and hashes.
 
 ## Data Model
 
 Tables created by this module (from migrations):
 
 - `public.journal_entry_documents`
-- `public.document_rooms`, `public.document_room_items`, `public.document_room_members`, `public.document_room_access` — a room points at documents (never copies), a member is one personal link, the access log is written by `open_document_room` / `resolve_document_room_file` only (migration `20261107120000`). Public page `/room/<token>`; files through `document-share?room=&doc=`. Investor room (migration `20261107150000`): `document_room_members.document_ids` (NULL = the whole room) is applied by both readers; `get` answers `seen_by` / `unseen_by` per document; `member_history` is one person's record; the recipient page marks what is new since their last visit.
 
 All tables ship with Row-Level Security policies. See migration files for the exact rules.
 

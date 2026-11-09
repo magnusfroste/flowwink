@@ -5,7 +5,7 @@ version: "1.0.0"
 category: "data"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-10-31"
+generated_at: "2026-11-09"
 description: Employee directory, leave management, and organizational structure
 ---
 
@@ -38,10 +38,10 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `hr_process_guide` | internal | The HR process guides a founder without an HR person is led through — "welcome a new employee" (p_process onboarding) and "when someone leaves" (p_process offboarding: who ends it and the last day,… |
 | `manage_hr_rules` | internal | The employment rules the HR guides and end_employment read, per country: notice by length of employment (employer and employee, tiers of {from_years, months|days}), the longest probation and the no… |
 | `end_employment` | internal | Record that an employment is ending — who ends it (employee resigned, employer for personal reasons, employer for redundancy, ending a probation, a fixed term ending, by agreement), the day notice … |
-| `manage_employment_contract` | internal | One employee\ |
-| `manage_leave_allocation` | internal | One employee\ |
-| `manage_onboarding_template` | internal | Create and maintain onboarding templates: the checklist items a new hire gets, optionally per department or employment type. hire_application seeds each new employee\ |
-| `manage_employment_contract_template` | internal | Create and maintain employment contract templates: the body (markdown with merge fields), employment type, default probation and notice period. hire_application renders each new hire\ |
+| `manage_employment_contract` | internal | One employee's employment contract: create (draft), list, get and update — title, employment type, start and end date, monthly salary or hourly rate, weekly hours, probation end, notice period, the… |
+| `manage_leave_allocation` | internal | One employee's leave allocation for a year — how many vacation (or other leave) days they have: list, get, create, update. Use when: a new hire needs this year's vacation days; correcting one perso… |
+| `manage_onboarding_template` | internal | Create and maintain onboarding templates: the checklist items a new hire gets, optionally per department or employment type. hire_application seeds each new employee's checklist from the best-match… |
+| `manage_employment_contract_template` | internal | Create and maintain employment contract templates: the body (markdown with merge fields), employment type, default probation and notice period. hire_application renders each new hire's draft contra… |
 | `sign_employment_contract` | internal | Record a signature on an employment contract — the employer side (needs the HR module) or the employee side. When both sides have signed the contract becomes signed. Use when: the employer approves… |
 | `auto_allocate_vacation` | internal | Allocate annual vacation days for all active employees at year-end based on age/tenure policies, including capped carry-over from previous year. Use when: rolling over to a new fiscal year, onboard… |
 | `manage_employee` | internal | Create, update, search, and deactivate employee records. Use when: adding new team members, updating roles/departments, offboarding. NOT for: leave requests (use manage_leave), documents. |
@@ -56,7 +56,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `manage_employee_skill` | internal | Tag an employee with a catalog skill and a proficiency (employee_skills). Use when: recording what an employee can do, before match_internal_candidates or succession planning. NOT for: the catalog … |
 | `manage_performance` | internal | Performance management for one employee: goals (create_goal / update_goal with progress_pct — 100 % completes it / list_goals), 1:1 meetings between the employee and their manager (schedule_one_on_… |
 | `org_chart` | internal | The reporting structure from one seat: the chain of managers above an employee and everyone who reports to them below (recursive, default 3 levels), with open goals, the next 1:1 and the last revie… |
-| `manage_compensation_revision` | internal | The salary revision round: open a budgeted round for the active staff (or one department / a list of employees), proposals pre-filled from each person\ |
+| `manage_compensation_revision` | internal | The salary revision round: open a budgeted round for the active staff (or one department / a list of employees), proposals pre-filled from each person's latest review recommendation (salary_adjustm… |
 
 ## Data Model
 
@@ -97,6 +97,8 @@ This module participates in the following end-to-end business processes:
 | Migration | `supabase/migrations/20261031140000_hr-guides-a-founder-through-a-hire.sql` |
 | Migration | `supabase/migrations/20261031150000_hr-guides-someone-leaving.sql` |
 | Migration | `supabase/migrations/20261031160000_hr-rules-per-country.sql` |
+| Migration | `supabase/migrations/20261031170000_hr-guides-as-a-person-reads-them.sql` |
+| … | _1 more migration_ |
 
 ## Contributing
 

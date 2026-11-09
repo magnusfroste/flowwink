@@ -101,6 +101,25 @@ function parseModuleFile(filePath: string): ModuleInfo | null {
  * Extract skillSeeds from a module file. Each seed has at minimum `name` and
  * `description`. We do a tolerant parse — name + description per seed object.
  */
+/** Index of `description:` at brace depth 1 of a seed object, skipping strings; -1 when absent. */
+function topLevelDescriptionAt(obj: string): number {
+  let depth = 0;
+  let quote: string | null = null;
+  for (let i = 0; i < obj.length; i++) {
+    const c = obj[i];
+    if (quote) {
+      if (c === '\\') i++;
+      else if (c === quote) quote = null;
+      continue;
+    }
+    if (c === "'" || c === '"' || c === '`') { quote = c; continue; }
+    if (c === '{' || c === '[' || c === '(') depth++;
+    else if (c === '}' || c === ']' || c === ')') depth--;
+    else if (depth === 1 && obj.startsWith('description:', i) && !/[\w.]/.test(obj[i - 1] ?? ' ')) return i;
+  }
+  return -1;
+}
+
 function extractSkillSeeds(src: string): SkillInfo[] {
   const seeds: SkillInfo[] = [];
   // Match the SKILL_SEEDS or *Skills array definition body
@@ -130,7 +149,15 @@ function extractSkillSeeds(src: string): SkillInfo[] {
     const nameM = obj.match(/\bname:\s*['"]([^'"]+)['"]/);
     if (!nameM) continue;
     // description may be a backtick template, single, or double quote string
+    // The seed's OWN description: the one at the object's top level. A seed
+    // that declares tool_definition first would otherwise be described by its
+    // first parameter (translate_content read "What to translate…", 2026-11-09).
+    const own = topLevelDescriptionAt(obj);
+    const scope_ = own === -1 ? obj : obj.slice(own);
     const descM =
+      scope_.match(/^description:\s*`([^`]+)`/) ||
+      scope_.match(/^description:\s*'((?:[^'\\]|\\.)+)'/) ||
+      scope_.match(/^description:\s*"((?:[^"\\]|\\.)+)"/) ||
       obj.match(/\bdescription:\s*`([^`]+)`/) ||
       obj.match(/\bdescription:\s*'((?:[^'\\]|\\.)+)'/) ||
       obj.match(/\bdescription:\s*"([^"]+)"/);
@@ -139,7 +166,7 @@ function extractSkillSeeds(src: string): SkillInfo[] {
 
     seeds.push({
       name: nameM[1],
-      description: descM?.[1]?.replace(/\\'/g, "'").replace(/\s+/g, ' ').trim() ?? '',
+      description: descM?.[1]?.replace(/\\(['"`])/g, '$1').replace(/\s+/g, ' ').trim() ?? '',
       category: catM?.[1],
       scope: scopeM?.[1],
     });

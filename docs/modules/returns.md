@@ -5,7 +5,7 @@ version: "1.0.0"
 category: "data"
 autonomy: "view-required"
 generated: true
-generated_at: "2026-10-02"
+generated_at: "2026-11-09"
 description: Return-merchandise-authorization flow with line-item tracking, approval, restock-on-receive, and refund processing.
 ---
 
@@ -37,7 +37,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 |-------|-------|-------------|
 | `create_return` | internal | Create a new return (RMA) for an existing order. Use when: creating a return, an RMA or a return authorization for an order; a customer or support agent requests a return, a refund or an exchange o… |
 | `request_return` | external | Categorized return reason |
-| `manage_return_item` | internal | Add/edit/remove line items on an existing return. Every line must match a line of the return\ |
+| `manage_return_item` | internal | Add/edit/remove line items on an existing return. Every line must match a line of the return's order (order_item_id, or product_id sold on that order): quantity is capped at what is left to return … |
 | `approve_return` | internal | Approve a requested return so the customer can ship it back. Use when: support/admin signs off on the RMA. NOT for: actually receiving goods (use receive_return). |
 | `receive_return` | internal | Mark an approved return as received. Nothing goes back into stock yet — inspect_return decides each line. Use when: warehouse confirms the package arrived. |
 | `refund_return` | internal | Process the refund for a received return. Use when: payment is being returned to the customer (Stripe, manual, or store-credit). |

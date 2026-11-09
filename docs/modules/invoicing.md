@@ -40,7 +40,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 
 | Skill | Scope | Description |
 |-------|-------|-------------|
-| `manage_invoice` | internal | ISO currency code, default ${getActivePack().currency.code} |
+| `manage_invoice` | internal | Create, update, list, or send invoices. Use when: user wants to create an invoice, change status (draft→sent→paid), update line items, or look up invoice details. NOT for: quotes (use manage_quote)… |
 | `invoice_from_timesheets` | internal | Generate invoice draft from billable time entries. Use when: user wants to invoice a client for logged hours, "fakturera timmar", "invoice project X for last month". NOT for: manual invoices (use m… |
 | `bulk_invoice_from_timesheets` | external | Bulk-generate invoice draft from billable, uninvoiced time entries for a project + period. Use when: month-end billing run, "create monthly invoice from hours". NOT for: single manual invoices (use… |
 | `send_dunning_reminders` | external | Sweep overdue invoices and dispatch graduated dunning reminders (friendly 7d, formal 14d, final 30d). Use when: daily AR run, "run reminders", "send overdue reminders". NOT for: single invoice remi… |

@@ -5,7 +5,7 @@ version: "1.1.0"
 category: "insights"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-10-02"
+generated_at: "2026-11-09"
 description: Service level agreement monitoring for order fulfillment, ticket response, lead handling, chat reply times, and booking confirmations.
 ---
 
@@ -40,7 +40,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `list_sla_violations` | internal | List SLA violations — open (unresolved) by default, with optional filters by entity_type and time window. Use when: building a dashboard, asked about overdue work, investigating SLA health. |
 | `manage_business_hours` | internal | Configure the business-hours calendar (per-weekday open/close) and holidays used to measure SLA elapsed time on working hours instead of 24/7. Use when: setting office hours, adding a public holida… |
 | `manage_sla_tier` | internal | Per-customer SLA tiers: define tiers with a threshold multiplier (0.5 = twice as fast for premium customers) and assign them to companies or customer emails. Use when: a customer has contractual SL… |
-| `manage_sla_clock` | internal | Pause/resume the SLA clock for an entity (clock-stop while waiting on the customer). Paused minutes never count toward a breach. Use when: work is blocked on the customer\ |
+| `manage_sla_clock` | internal | Pause/resume the SLA clock for an entity (clock-stop while waiting on the customer). Paused minutes never count toward a breach. Use when: work is blocked on the customer's reply. NOT for: business… |
 | `manage_sla_escalation` | internal | Configure what happens automatically when an SLA breach opens: bump ticket priority, emit a platform notify event, create a follow-up task, accrue a service credit. Use when: breaches must trigger … |
 | `manage_service_credit` | internal | Service-credit accounting for SLA breaches: accrue a credit (manually or via escalation), then apply it to the customer or waive it. Use when: contract promises compensation for missed SLAs. NOT fo… |
 | `manage_sla_remediation` | internal | Remediation workflow for SLA breaches: open a tracked remediation (creates a high-priority CRM task), complete it with a note, list all remediations. Use when: a breach needs an owner and follow-th… |

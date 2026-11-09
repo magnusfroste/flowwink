@@ -5,7 +5,7 @@ version: "1.0.0"
 category: "data"
 autonomy: "agent-capable"
 generated: true
-generated_at: "2026-09-30"
+generated_at: "2026-11-09"
 description: MRP-light: Bills of Materials, Manufacturing Orders, component reservation, and the link from production demand to procurement.
 ---
 
@@ -46,7 +46,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `list_manufacturing_orders` | internal | List Manufacturing Orders, optionally filtered by status. Read-only. Use when: building a dashboard, triaging the queue, or summarizing factory load. NOT for: detailed component view (read mo_compo… |
 | `manage_work_center` | internal | Manage work centers (production resources with an hourly cost + capacity). Use when: defining the shop floor (cutting, assembly, packing), setting labor rates. NOT for: routing steps (manage_routin… |
 | `manage_routing_operation` | internal | Manage the ordered routing operations of a BOM (which work center, how many minutes per unit). Use when: defining how a product is made step by step. NOT for: work centers (manage_work_center) or g… |
-| `generate_mo_work_orders` | internal | Materialise a manufacturing order\ |
+| `generate_mo_work_orders` | internal | Materialise a manufacturing order's work orders from its BOM routing, with planned minutes and labor cost. Use when: a MO is confirmed and you need the shop-floor task list + labor cost. NOT for: d… |
 | `progress_work_order` | internal | Run a manufacturing work order on the shop floor: start, pause, finish or cancel it, recording actual minutes and actual labor cost. Use when: reporting shop-floor progress or time spent on an oper… |
 | `record_quality_check` | internal | Record the result of a quality inspection on a work order (pass or fail), with the measured value. Use when: an operation that requires inspection has been checked, or a later check supersedes an e… |
 | `work_order_inspection_state` | internal | Read whether a work order needs a quality check, what the latest result was, and the whole check history. Use when: deciding whether an operation can be finished, or reporting why it cannot. NOT fo… |

@@ -5,7 +5,7 @@ version: "0.1.0"
 category: "data"
 autonomy: "view-required"
 generated: true
-generated_at: "2026-09-30"
+generated_at: "2026-11-09"
 description: Propose several times, let people answer by link without an account, and let a rule pick the first time everyone can make
 ---
 
@@ -37,7 +37,7 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 |-------|-------|-------------|
 | `create_meeting_poll` | internal | Propose several candidate times for a meeting and get a shareable link people answer WITHOUT an account. Use when: someone wants to find a time that works for a group ("hitta en tid för oss nästa v… |
 | `respond_to_meeting_poll` | external | Answer a meeting poll by its share link: which of the proposed times work for this person. One answer per e-mail — answering again replaces the previous one. Use when: a visitor or external attende… |
-| `resolve_meeting_poll` | internal | Decide the meeting time from the answers, by the poll\ |
+| `resolve_meeting_poll` | internal | Decide the meeting time from the answers, by the poll's rule, and put it on the calendar with the people who can make it as attendees. Use when: enough answers are in, the organizer asks "which tim… |
 | `list_meeting_polls` | internal | List meeting polls with their status, rule, answer counts and share links. Use when: an operator asks what polls are open, which have enough answers, or wants the link to re-send. NOT for: the publ… |
 
 ## Module API Contract
