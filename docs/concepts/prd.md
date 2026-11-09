@@ -35,7 +35,7 @@ FlowWink's modules form an ecosystem with three tiers:
 
 | Tier | Name | Origin | Trust | Status |
 |------|------|--------|-------|--------|
-| **1** | **Core Modules** | Bundled in repo | `bundled` / full trust | ✅ Active (69 modules) |
+| **1** | **Core Modules** | Bundled in repo | `bundled` / full trust | ✅ Active (68 modules) |
 | **2** | **Community-Submitted** | PR → FlowWink review → merge | `bundled` after review | 🔜 Next |
 | **3** | **External/Marketplace** | Loaded at runtime from external source | `community` + admin install | 🔮 Future |
 
@@ -616,7 +616,7 @@ Introduce a runtime module-loader that reads module manifests from the database,
 Trade-offs: requires runtime dependency resolution, loses some TypeScript compile-time safety, adds startup latency for async loading. Mitigated by keeping manifests statically typed and validating at registration time.
 
 ### Current state (April 2026)
-All 69 modules use `defineModule()` with static imports. Registration happens at build-time in `ModuleRegistry` constructor. Enabled/disabled is a runtime flag that controls UI visibility and pre-flight checks — not code loading.
+All 68 modules use `defineModule()` with static imports. Registration happens at build-time in `ModuleRegistry` constructor. Enabled/disabled is a runtime flag that controls UI visibility and pre-flight checks — not code loading.
 
 ---
 

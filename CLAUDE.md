@@ -114,12 +114,12 @@ Block layout in `BlockRenderer`: full-bleed blocks (hero, parallax-section, marq
 
 ### Module System
 
-FlowWink has 69 modules in `src/lib/modules/`. Each module is a TypeScript file defining:
+FlowWink has 68 modules in `src/lib/modules/`. Each module is a TypeScript file defining:
 - Module metadata (id, name, category, dependencies)
 - Feature set and capabilities
 - Skill registrations pointing to `agent_skills` rows
 
-**Module categories include:** accounting, analytics, approvals, blog, booking, calendar, chat, companies, contracts, crm, customer360, deals, docs, documents, email, expenses, federation, feedback, field-service, fixed-assets, flowpilot, forms, global-blocks, growth, handbook, hr, inventory, invoicing, kb, live-support, manufacturing, media, multi-currency, newsletter, pages, payroll, pos, pricelists, products, projects, purchasing, quotes, reconciliation, recruitment, consultants, returns, river, sales-intelligence, shipping, site-migration, sla, subscriptions, surveys, templates, tickets, timesheets, webinars, wiki, workspace-chat.
+**Modules (one file each, `<name>-module.ts`):** accounting, analytics, approvals, blog, booking, calendar, chat, companies, company-insights, composio, consultants, contracts, crm, customer360, deals, developer, docs, documents, email, expenses, federation, feedback, field-service, fixed-assets, flowpilot, flowtable, forms, growth, handbook, hr, inventory, invoicing, kb, live-support, maintenance, manufacturing, media, meeting-polls, multi-currency, newsletter, pages, payroll, pos, pricelists, products, projects, purchasing, quotes, reconciliation, recruitment, reports, returns, river, sales-intelligence, shipping, site-migration, sla, subscriptions, surveys, templates, tickets, timesheets, visitor-intelligence, voice, webinars, webmeet, wiki, workspace-chat.
 
 To scaffold a new module: `bun run scripts/new-module.ts`
 
@@ -707,7 +707,7 @@ src/
     account/          # ~15 customer portal pages
   hooks/              # 151 custom React hooks (TanStack Query)
   lib/
-    modules/          # 69 module definitions
+    modules/          # 68 module definitions
     module-def.ts     # Module definition type system
     module-bootstrap.ts
     module-registry.ts

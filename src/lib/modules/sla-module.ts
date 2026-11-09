@@ -344,7 +344,7 @@ const SLA_AUTOMATIONS: AutomationSeed[] = [
     description:
       'Every 15 minutes, measure every enabled SLA policy against current data — open violations, auto-resolve stopped clocks, and refresh ticket SLA deadlines.',
     trigger_type: 'cron',
-    trigger_config: { cron: '*/15 * * * *', expression: '*/15 * * * *' },
+    trigger_config: { cron: '*/15 * * * *', expression: '*/15 * * * *', work_probe: 'sla_policies_enabled' },
     skill_name: 'sla_check',
     skill_arguments: {},
     executor: 'platform',
