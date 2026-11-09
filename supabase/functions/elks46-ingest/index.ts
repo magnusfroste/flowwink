@@ -1187,27 +1187,52 @@ async function handleSetVoiceStart(req: Request): Promise<Response> {
 
     const body = (await req.json().catch(() => ({}))) as {
       number_id?: string;
+      /** E.164, looked up among the account's numbers when number_id is not known. */
+      number?: string;
       voice_start?: string;
       sms_url?: string;
       also_sms?: boolean;
+      /** "ai_stream": the AI receptionist's websocket-number → voice-ingest/stream. */
+      target?: "ingest" | "ai_stream";
     };
-    if (!body.number_id) return json({ error: "number_id required" }, 400);
-
-    // The URL 46elks will call carries the shared secret the ingest checks;
-    // generated and stored on first save, reused after that.
-    const webhookSecret = await ensureWebhookSecret(supabase, "elks46", Deno.env.get("ELKS46_WEBHOOK_SECRET"));
-    const ingestUrl = `${supabaseUrl}/functions/v1/elks46-ingest?secret=${encodeURIComponent(webhookSecret)}`;
-    const voiceStart = body.voice_start || ingestUrl;
-    const smsUrl = body.sms_url || (body.also_sms ? ingestUrl : undefined);
+    if (!body.number_id && !body.number) return json({ error: "number_id or number required" }, 400);
 
     let auth: string;
     try { auth = basicAuthHeader(); }
     catch (e: any) { return json({ error: e?.message ?? "not configured" }, 400); }
 
+    let numberId = body.number_id ?? "";
+    if (!numberId) {
+      const wanted = String(body.number).replace(/[\s-]/g, "");
+      const listResp = await fetch(`${ELKS_BASE}/Numbers?active=yes`, { headers: { Authorization: auth } });
+      const listData = await listResp.json().catch(() => ({}));
+      if (!listResp.ok) return json({ error: `46elks ${listResp.status}`, details: (listData as any)?.message || JSON.stringify(listData) }, 502);
+      const found = ((listData as any)?.data ?? []).find((n: any) => String(n.number) === wanted);
+      if (!found?.id) return json({ error: `${wanted} is not an active number on this 46elks account` }, 404);
+      numberId = String(found.id);
+    }
+
+    // The URL 46elks will call carries the shared secret its receiver checks;
+    // generated and stored on first save, reused after that. The AI
+    // receptionist's websocket-number gets its own (integrations.voice_stream),
+    // so the stream is protected the moment it is set up (2026-11-09) — nobody
+    // types a secret, and nobody pastes a URL into the 46elks dashboard.
+    let voiceStart: string;
+    let smsUrl: string | undefined;
+    if (body.target === "ai_stream") {
+      const streamSecret = await ensureWebhookSecret(supabase, "voice_stream", Deno.env.get("VOICE_STREAM_SECRET"));
+      voiceStart = `${supabaseUrl.replace(/^http/, "ws")}/functions/v1/voice-ingest/stream?secret=${encodeURIComponent(streamSecret)}`;
+    } else {
+      const webhookSecret = await ensureWebhookSecret(supabase, "elks46", Deno.env.get("ELKS46_WEBHOOK_SECRET"));
+      const ingestUrl = `${supabaseUrl}/functions/v1/elks46-ingest?secret=${encodeURIComponent(webhookSecret)}`;
+      voiceStart = body.voice_start || ingestUrl;
+      smsUrl = body.sms_url || (body.also_sms ? ingestUrl : undefined);
+    }
+
     const form = new URLSearchParams({ voice_start: voiceStart });
     if (smsUrl) form.set("sms_url", smsUrl);
 
-    const resp = await fetch(`${ELKS_BASE}/Numbers/${encodeURIComponent(body.number_id)}`, {
+    const resp = await fetch(`${ELKS_BASE}/Numbers/${encodeURIComponent(numberId)}`, {
       method: "POST",
       headers: { Authorization: auth, "Content-Type": "application/x-www-form-urlencoded" },
       body: form,
