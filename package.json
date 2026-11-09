@@ -30,6 +30,7 @@
     "docs:modules": "bun run scripts/generate-module-docs.ts",
     "docs:edge-functions": "bun run scripts/generate-edge-function-docs.ts",
     "docs:frontmatter": "bun run scripts/normalize-doc-frontmatter.ts",
+    "docs:process-map": "bun run scripts/process-map/build.ts",
     "parity:report": "bun run scripts/parity-report.ts",
     "parity:check": "bun run scripts/parity-report.ts --check",
     "skills:json": "bun run scripts/skills-to-json.ts",

@@ -28,6 +28,18 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
   made without a lead (it read only the lead, never the quote's own
   `customer_name`); the returns list never named the customer; Webinars and
   Recruitment could not be linked to a tab (now `useTabParam`).
+- **Gmail can be connected only by an admin of the site.** The OAuth `state`
+  was the constant `gmail_connect`: anyone could consent with their own Google
+  account and the instance stored it as its inbox; `status`, `disconnect` and
+  `update_settings` answered anyone too. The POST actions need an admin (or the
+  platform), and the consent screen opens only with a one-time state an admin
+  is handed (`begin`), accepted once within ten minutes.
+- **migrate-page verifies its caller** (`requireServiceOrStaff`): it fetches any
+  public URL and spends AI tokens on it. The wizard (staff) and
+  `edge:migrate-page` (service key) are its callers.
+- The public-functions guard knows a resolver RPC handed the caller's token
+  (`resolve_document_share({ _token })`) as token possession; `document-share`
+  was token-gated all along. Known-ungated ceiling 16 → 12.
 - **UB becomes IB for agents too.** The agent report read stored opening balances
   per year, so a later year opened at zero and an agent booked the previous closing
   balance as a voucher. Every reader now derives it, and only the bridge of the

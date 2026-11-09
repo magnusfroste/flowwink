@@ -229,3 +229,28 @@ non-idempotent chains is the upgrade path" — accurate, not over-claimed.
 
 Phases 1–2 are the immediate next step. Phase 4 is the last benchmark gap. After that, the
 harness is complete *and legible* — which is the actual product.
+
+## 9. CPU budget of the in-process executor (measured 2026-11-09)
+
+Since 2026-11-07 the ReAct loop and the gateway run a skill in-process
+(`executeSkillRequest`), so a tool call's CPU is spent inside the caller's own
+invocation — the Free tier's 2 s CPU per invocation is shared by the whole
+tick, where it used to be split across one `agent-execute` call per tool.
+
+Measured on a local stack (edge runtime 1.77, the `flowwink-platform` template
+seeded, CPU read from the runtime container's cgroup, idle subtracted):
+
+| what | CPU |
+|---|---|
+| cold start of a function that imports the core (heartbeat, workspace-chat) | ~430 ms (local, TS compiled on load; the deployed eszip is cheaper) |
+| cold start without the core (instance-health) | ~105 ms |
+| a warm call of an ordinary skill (check_operations, check_books, browse_blog, manage_leads list, accounting_reports …) | 10–25 ms |
+| module_usage_report (counts every module's tables) | ~210 ms |
+| the Skill Relevance Engine ranking 670 skills, per ReAct turn | ~1.4 ms |
+
+A tick with ten ordinary tool calls lands around 0.5–1 s, including a cold
+start: no action needed. The budget is spent by a tick that runs several heavy
+skills (module_usage_report-class reads over large tables) on a cold worker.
+If that shape appears, the lever is a per-tick CPU account in `ReasonConfig`
+that sends the next tool call over HTTP (`agent-execute`, its own budget) once
+the tick has used ~1.2 s — not a return to HTTP for every call.
