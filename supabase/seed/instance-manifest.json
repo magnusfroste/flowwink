@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261109120000",
-      "migrations_count": 747,
+      "migration_head": "20261109140000",
+      "migrations_count": 748,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2993,6 +2993,10 @@
         {
           "version": "20261109120000",
           "name": "river-media-listas-bara-av-personal"
+        },
+        {
+          "version": "20261109140000",
+          "name": "publika-ai-svar-har-ett-tak"
         }
       ]
     },
@@ -3003,7 +3007,7 @@
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:8cc36196842037ccb97fc556c8f748f665d5970758944475097be5572d02fff4",
+      "shared_hash": "sha256:c726cf0dcd11a292745f17b0501d7d8d0526f565fae4c65474d9ce912c0be952",
       "functions": {
         "agent-execute": "sha256:9ea735d384eaaf8ad24b33bed3a2b1a0d505df44aa04529b007e165868af459e",
         "agent-operate": "sha256:4320e02dd3e6a0a1706b42dc1905b631c61e6a4cbe3556c701f474c278c89e1a",
@@ -3011,13 +3015,13 @@
         "automation-dispatcher": "sha256:c7862e942bb9fbfcb847d236cd7fece01ad934f354ac038d03f9128e4f2e006a",
         "blog-rss": "sha256:44fac28a8078c06e101df2acac66fbc443542377f7ccec210a40409d090ba283",
         "browser-fetch": "sha256:5cc150753321f6b63f40fb68b526c015301e857b00528dd1f44652c2a9429e7f",
-        "chat-completion": "sha256:5635ba6e71a402cb44524eb507eb8bba24358db7955ad6bf65efbf138a0acc5a",
+        "chat-completion": "sha256:0d5dcfb6134a52f19a6f3bb2cd55c95af4cfce054fea2fc9a63abf3acaeb36fa",
         "chat-stt": "sha256:b67dd50ab6cad26f061b911a366607620aca8647977b2be8d4331b2ec51c4aa6",
         "check-secrets": "sha256:f902784792b71f22da5df6bbcf0069e27dfad9315a86e06460dd753ee7ab4b54",
         "comms-send": "sha256:db4b09447e6870f296d3f6b047ace031ef4f924847a09b4d36258cd1be7158d1",
         "composio-proxy": "sha256:6635c3a91cff990bed5a1e68f160c028e346c5c29d69935f496ac5af45f64b8d",
         "composio-webhook": "sha256:27f17b7198bfbab422931ef1c872da083299e095792e43b98b4154ec79c858ca",
-        "consultant-match": "sha256:7f891dad970a77c2a72f7c88224f952ce082d8915ec544727a56cdc6b66a61b9",
+        "consultant-match": "sha256:73a34fd5b974c44a2bfe54c42fc5b145a61710d8a9b45866d5a18cd21c44d2e7",
         "content-api": "sha256:24273d55254eeddf79678b70289901eaf5a90b0b56585a76386741d8d72e51e5",
         "contract-billing-cron": "sha256:1786af36bebaa65cf00555d2728d1af85656eee8e5cd1d843ccea4f9ca8ec3c4",
         "contract-sign": "sha256:f4af280386c03f0d21840d528e450208b682c81324e22780a662512eaea7d41f",
@@ -3027,7 +3031,7 @@
         "customer-signup": "sha256:a28e4a612842ca548e8dc645efdea5d9b16e209ceac2fa97177246d392a07724",
         "delete-user": "sha256:30ab94347450ac8d1664234057b39861e825e27af98f1688b21dbcb1262d8edb",
         "demo-cycle": "sha256:b017eedb21cd26fd4bb8149a58fcf0f905c79d7b9572ad7fa006e2318c99c310",
-        "docs-chat": "sha256:7fd904e6cda9c1ad57f0aebc77b43adeb3ca4dc8ad31820d71f1213587611064",
+        "docs-chat": "sha256:40ffe143ab06532baac76f04ce9ee750cee029a7e7b36690405e3bf794735856",
         "document-share": "sha256:723aba99c8ed6cd00f6679f8c3650d42d7a9599250846391337e99a04dc2c7e2",
         "document-sign-request": "sha256:1df2d2989368c711d2ad0dbac629c754804bde795f0e081ae9c7892f0a193be3",
         "dunning-processor": "sha256:2edee2050aa3b0e76564c16a76dfdeaaa7b03bf8df69e71ebb883d402a6d35a8",
