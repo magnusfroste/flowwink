@@ -10,6 +10,18 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Fixed
 
+- **Gmail can be connected only by an admin of the site.** The OAuth `state`
+  was the constant `gmail_connect`: anyone could consent with their own Google
+  account and the instance stored it as its inbox; `status`, `disconnect` and
+  `update_settings` answered anyone too. The POST actions need an admin (or the
+  platform), and the consent screen opens only with a one-time state an admin
+  is handed (`begin`), accepted once within ten minutes.
+- **migrate-page verifies its caller** (`requireServiceOrStaff`): it fetches any
+  public URL and spends AI tokens on it. The wizard (staff) and
+  `edge:migrate-page` (service key) are its callers.
+- The public-functions guard knows a resolver RPC handed the caller's token
+  (`resolve_document_share({ _token })`) as token possession; `document-share`
+  was token-gated all along. Known-ungated ceiling 16 → 12.
 - **Panels of a module that is off leave the pages they are mounted on.**
   FlowBox shows no chat, ticket, form or call item and no Calls tab for a
   module that is off; Flowwork's document panel saves to the wiki only with
