@@ -9,6 +9,8 @@
  * Falls back to native-audio without tools if Gemini rejects the tools model.
  */
 
+import { getServiceClient } from '../_shared/supabase-clients.ts';
+import { checkWebhookSecret, loadWebhookSecret } from "../_shared/webhook-secret.ts";
 import { todayLine } from '../_shared/locale/today-line.ts';
 import { dateInZone } from '../_shared/locale/home.ts';
 import { loadHomeCached } from '../_shared/locale/load-home.ts';
@@ -851,8 +853,16 @@ Deno.serve(async (req) => {
 
   const url = new URL(req.url);
 
-  // WebSocket upgrade for AI bridge
+  // WebSocket upgrade for AI bridge. 46elks opens the stream straight from the
+  // number's voice_start URL, so no call row exists to check it against; the
+  // gate is an opt-in secret in that URL (integrations.voice_stream.config.
+  // webhook_secret or VOICE_STREAM_SECRET). Configured → required, like every
+  // other channel ingest; unconfigured → accepted and logged (Law 4) — each
+  // stream opens a paid Gemini Live session, so set it (2026-11-09).
   if (url.pathname.endsWith("/stream") && req.headers.get("upgrade")?.toLowerCase() === "websocket") {
+    const streamCheck = checkWebhookSecret(req, await loadWebhookSecret(getServiceClient(), "voice_stream", Deno.env.get("VOICE_STREAM_SECRET")));
+    if (streamCheck === "mismatch") return new Response("unauthorized", { status: 401 });
+    if (streamCheck === "unconfigured") console.warn("[voice-ingest] stream secret not configured — anyone can open an AI voice session; add ?secret=… to the number's voice_start URL and save it as integrations.voice_stream.config.webhook_secret");
     return await handleStreamSession(req);
   }
 
@@ -863,6 +873,15 @@ Deno.serve(async (req) => {
     );
 
     const providerHint = (url.searchParams.get("provider") as ProviderId | null) ?? "elks46";
+
+    // A forged call webhook writes calls into the log and steers where a call
+    // is routed: the provider's shared secret in the registered URL, exactly as
+    // elks46-ingest (2026-11-09). Unconfigured → accepted and logged (Law 4).
+    const secretCheck = checkWebhookSecret(req, await loadWebhookSecret(supabase, providerHint, Deno.env.get(`${providerHint.toUpperCase()}_WEBHOOK_SECRET`)));
+    if (secretCheck === "mismatch") {
+      return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    if (secretCheck === "unconfigured") console.warn(`[voice-ingest] ${providerHint} webhook secret not configured — anyone can POST call events here`);
 
     const ct = req.headers.get("content-type") ?? "";
     let body: FormData | Record<string, unknown>;

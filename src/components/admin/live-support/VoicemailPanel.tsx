@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,6 +19,34 @@ interface VoicemailRow {
   transcript: string | null;
   callback_status: string | null;
   started_at: string;
+}
+
+/**
+ * A voicemail is a customer's voice: voice-recording answers staff only, so the
+ * audio is fetched with the session's token and played from a blob — an <audio
+ * src> cannot send a header, and the bare URL used to play for anyone holding
+ * the call id (2026-11-09).
+ */
+function RecordingPlayer({ callId }: { callId: string }) {
+  const [src, setSrc] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
+  useEffect(() => {
+    let url: string | null = null;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase.auth.getSession();
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/voice-recording?id=${encodeURIComponent(callId)}`, {
+        headers: { Authorization: `Bearer ${data.session?.access_token ?? ''}` },
+      });
+      if (!res.ok) { if (!cancelled) setFailed(true); return; }
+      url = URL.createObjectURL(await res.blob());
+      if (!cancelled) setSrc(url); else URL.revokeObjectURL(url);
+    })().catch(() => { if (!cancelled) setFailed(true); });
+    return () => { cancelled = true; if (url) URL.revokeObjectURL(url); };
+  }, [callId]);
+  if (failed) return <p className="text-xs text-muted-foreground">The recording could not be loaded.</p>;
+  if (!src) return <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />;
+  return <audio src={src} controls autoPlay className="w-full h-8" />;
 }
 
 export function VoicemailPanel() {
@@ -120,14 +148,7 @@ export function VoicemailPanel() {
                   </div>
                 </div>
 
-                {playingId === vm.id && vm.recording_url && (
-                  <audio
-                    src={`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/voice-recording?id=${vm.id}`}
-                    controls
-                    autoPlay
-                    className="w-full h-8"
-                  />
-                )}
+                {playingId === vm.id && vm.recording_url && <RecordingPlayer callId={vm.id} />}
 
                 {vm.transcript && (
                   <div className="rounded-md bg-muted p-2 text-xs whitespace-pre-wrap">
