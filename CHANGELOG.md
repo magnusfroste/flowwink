@@ -16,6 +16,15 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
   warning. A read is no longer "an agent acted on its own". An automation is
   `stale` against its own schedule, not after 48 hours (a monthly job was dead 29
   days of 30), and warns while its own newest run failed, not for a week after.
+- **A module that is off is quiet on Observability, the bell, the dashboard
+  and analytics.** Automations, failed skill runs, MCP failures, staged writes,
+  notify runs and pg_cron jobs of a module the operator switched off kept
+  raising warnings and counts. They are now judged by the module that owns
+  them (`src/lib/module-visibility.ts`, the server's `skillModuleOn`); cron
+  jobs carry their module (`CRON_JOB_MODULE`) and are never red, never
+  required and never "drifted" while it is off. Analytics no longer offers
+  "Enable <module>" prompts, Pipeline/Marketing tabs or goal kinds for modules
+  that are off. New guards: `off-modules-stay-quiet`, `foreign-module-panels-ask`.
 - **Meeting polls says when it is off, and has a place in the sidebar.** The
   Meeting polls tab under Bookings rendered its full desk with the module off
   (the default) — `/poll/<token>` answered 404 and every poll skill was

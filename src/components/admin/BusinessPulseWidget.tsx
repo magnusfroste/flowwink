@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useLatestBriefing } from '@/hooks/useFlowPilotBriefings';
 import { cn } from '@/lib/utils';
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
+import { useIsModuleEnabled } from '@/hooks/useModules';
 
 function TrendIndicator({ value, unit = '%' }: { value: number | null | undefined; unit?: string }) {
   if (value == null) return <Minus className="h-3 w-3 text-muted-foreground" />;
@@ -57,6 +58,8 @@ function MetricCard({ label, value, trend, icon: Icon }: { label: string; value:
 export function BusinessPulseWidget() {
   const { formatDateTime } = usePlatformFormat();
   const { data: briefing, isLoading } = useLatestBriefing();
+  const leadsOn = useIsModuleEnabled('leads');
+  const flowpilotOn = useIsModuleEnabled('flowpilot');
 
   if (isLoading) {
     return (
@@ -118,9 +121,10 @@ export function BusinessPulseWidget() {
         {/* Key metrics grid */}
         <div className="grid grid-cols-2 gap-2">
           <MetricCard label="Visitors (7d)" value={m.traffic_week} trend={m.traffic_trend} icon={Eye} />
-          <MetricCard label="New Leads (7d)" value={m.leads_week} icon={Users} />
+          {/* A tile of a module that is off is not part of the pulse. */}
+          {leadsOn && <MetricCard label="New Leads (7d)" value={m.leads_week} icon={Users} />}
           <MetricCard label="Content Published" value={m.content_published} icon={FileText} />
-          <MetricCard label="FlowPilot Actions" value={m.flowpilot_actions} icon={Bot} />
+          {flowpilotOn && <MetricCard label="FlowPilot Actions" value={m.flowpilot_actions} icon={Bot} />}
         </div>
 
         {/* Action items preview */}

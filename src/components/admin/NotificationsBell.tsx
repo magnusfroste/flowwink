@@ -1,3 +1,4 @@
+import { useActiveModules, moduleShown } from '@/lib/module-visibility';
 import { Bell } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import {
@@ -52,7 +53,7 @@ export function NotificationsBell() {
   // that announces queues you cannot open is noise, not transparency.
   const { isAdmin } = useAuth();
   const { canAccess } = useModuleAccess();
-  const { data: approvals = 0 } = usePendingApprovalCount();
+  const { data: approvalsRaw = 0 } = usePendingApprovalCount();
   const { data: stagedRaw = 0 } = useStagedOperationCount();
   const { data: notifiedData } = useNotifiedActions(1);
   const { data: pausedRaw = 0 } = usePausedAgentRunCount();
@@ -62,10 +63,14 @@ export function NotificationsBell() {
   // admin-guarded. Don't fetch it for someone who could not act on it.
   const { data: healthNotices = [] } = useUnacknowledgedIntegrationNotices(isAdmin);
   const acknowledgeHealth = useAcknowledgeIntegrationHealth();
-  const paused = isAdmin ? pausedRaw : 0;
-  const tickets = canAccess('tickets') ? ticketsRaw : 0;
+  // …and every signal follows the module it belongs to: a module that is off
+  // raises nothing here (src/lib/module-visibility.ts).
+  const active = useActiveModules();
+  const paused = isAdmin && moduleShown('flowpilot', active) ? pausedRaw : 0;
+  const tickets = canAccess('tickets') && moduleShown('tickets', active) ? ticketsRaw : 0;
   const integrationChanges = isAdmin ? healthNotices.length : 0;
   const staged = isAdmin ? stagedRaw : 0;
+  const approvals = moduleShown('approvals', active) ? approvalsRaw : 0;
   const notified = isAdmin ? (notifiedData?.total ?? 0) : 0;
 
   // A recovery is news too, and it is the nicer kind — it must not paint the

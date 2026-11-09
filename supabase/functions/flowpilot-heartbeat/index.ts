@@ -1,3 +1,4 @@
+import { loadEnabledModules } from '../_shared/modules.ts';
 import { todayLine } from '../_shared/locale/today-line.ts';
 import { loadHomeCached } from '../_shared/locale/load-home.ts';
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -266,7 +267,7 @@ async function runCronHealthGate(supabase: any): Promise<string> {
   try {
     const { data, error } = await supabase.rpc('cron_health_report');
     if (error || !data) return '';
-    const enriched = enrichCronHealth(data as CronHealthReport, new Date(), { bornAt: await loadInstanceBornAt(supabase) });
+    const enriched = enrichCronHealth(data as CronHealthReport, new Date(), { bornAt: await loadInstanceBornAt(supabase), moduleOn: await loadEnabledModules(supabase) });
     const summary = formatCronHealthSummary(enriched);
     if (!summary) return '';
 

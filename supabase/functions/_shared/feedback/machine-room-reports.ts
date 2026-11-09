@@ -13,6 +13,7 @@
  * titles across the fleet. Bodies carry no error text — a skill's message can
  * quote a customer's data, a job's target host names another instance.
  */
+import { loadEnabledModules } from '../modules.ts';
 import { classifyAgentError } from '../agent-errors.ts';
 import { enrichCronHealth, loadInstanceBornAt, type CronHealthReport } from '../cron/health.ts';
 
@@ -73,7 +74,7 @@ export async function fileMachineRoomReports(
   try {
     const { data: cron, error: cronErr } = await supabase.rpc('cron_health_report');
     const enriched = !cronErr && cron?.cron_available
-      ? enrichCronHealth(cron as CronHealthReport, new Date(), { bornAt: await loadInstanceBornAt(supabase) })
+      ? enrichCronHealth(cron as CronHealthReport, new Date(), { bornAt: await loadInstanceBornAt(supabase), moduleOn: await loadEnabledModules(supabase) })
       : null;
     const { data: failures, error: failuresErr } = await supabase.from('agent_activity')
       .select('skill_name, error_message')
