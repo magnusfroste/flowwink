@@ -22,6 +22,18 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 - The public-functions guard knows a resolver RPC handed the caller's token
   (`resolve_document_share({ _token })`) as token possession; `document-share`
   was token-gated all along. Known-ungated ceiling 16 → 12.
+- **An alarm means something is wrong now.** The bell was amber every day on every
+  instance, because any agent run on notify trust painted it; it is amber now for
+  a person being needed or something still broken, and a healed integration stops
+  warning. A read is no longer "an agent acted on its own". An automation is
+  `stale` against its own schedule, not after 48 hours (a monthly job was dead 29
+  days of 30), and warns while its own newest run failed, not for a week after.
+- **The feedback board and the daily ping write again.** #922 took anon's write
+  policies and its EXECUTE on `feedback_record_ping` on the belief that content-api
+  writes as the service role; it wrote with the anon client under the name `admin`,
+  so every instance's ping answered 500 from 2026-11-08. It now is the service
+  client, and a guard scans every edge function for an anon client calling an RPC
+  anon has lost.
 - **Panels of a module that is off leave the pages they are mounted on.**
   FlowBox shows no chat, ticket, form or call item and no Calls tab for a
   module that is off; Flowwork's document panel saves to the wiki only with

@@ -88,6 +88,7 @@ export const PUBLIC_BY_DESIGN: Record<string, string> = {
   'process-job-application': 'public careers form — the applicant has no account yet',
   'create-checkout':         'public storefront checkout — a Stripe session is the outcome, inputs validated server-side',
   'consultant-match':        'public matching form on the consultants block',
+  'content-api':             'public content API; the service client is for the public feedback board alone, whose posters and instance pings have no account (anon-client-never-calls-a-revoked-function pins it to that branch)',
 };
 
 /**

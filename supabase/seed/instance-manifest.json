@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261108200000",
-      "migrations_count": 745,
+      "migration_head": "20261108230000",
+      "migrations_count": 746,
       "migrations": [
         {
           "version": "00000000000000",
@@ -2985,6 +2985,10 @@
         {
           "version": "20261108200000",
           "name": "motesomrostningen-foljer-bokningen"
+        },
+        {
+          "version": "20261108230000",
+          "name": "automationens-korning-lamnar-ett-kvitto"
         }
       ]
     },
@@ -2995,9 +2999,9 @@
     },
     "edge_functions": {
       "count": 77,
-      "shared_hash": "sha256:0b280a050a943e0808ac4ccf37fbda75013b9db2c1043424c776ac0ec65ac130",
+      "shared_hash": "sha256:8cc36196842037ccb97fc556c8f748f665d5970758944475097be5572d02fff4",
       "functions": {
-        "agent-execute": "sha256:ccd3114abc4c53d1b13043cfa5a9478ec07d18380876e11fd6a70bda0437c584",
+        "agent-execute": "sha256:9ea735d384eaaf8ad24b33bed3a2b1a0d505df44aa04529b007e165868af459e",
         "agent-operate": "sha256:4320e02dd3e6a0a1706b42dc1905b631c61e6a4cbe3556c701f474c278c89e1a",
         "ai-task": "sha256:ce3aacdef625bba758f4323da3e49104a1b94a3d3d77d800e89dacd0b803d65e",
         "automation-dispatcher": "sha256:c7862e942bb9fbfcb847d236cd7fece01ad934f354ac038d03f9128e4f2e006a",
@@ -3010,7 +3014,7 @@
         "composio-proxy": "sha256:6635c3a91cff990bed5a1e68f160c028e346c5c29d69935f496ac5af45f64b8d",
         "composio-webhook": "sha256:27f17b7198bfbab422931ef1c872da083299e095792e43b98b4154ec79c858ca",
         "consultant-match": "sha256:7f891dad970a77c2a72f7c88224f952ce082d8915ec544727a56cdc6b66a61b9",
-        "content-api": "sha256:c10d72fe013be6d14a0c39e3c280aa409a0b18f5f64066728ebbe861c8c8f370",
+        "content-api": "sha256:24273d55254eeddf79678b70289901eaf5a90b0b56585a76386741d8d72e51e5",
         "contract-billing-cron": "sha256:1786af36bebaa65cf00555d2728d1af85656eee8e5cd1d843ccea4f9ca8ec3c4",
         "contract-sign": "sha256:f4af280386c03f0d21840d528e450208b682c81324e22780a662512eaea7d41f",
         "create-checkout": "sha256:b17c5c0461c1adb8c17b3410929dc7db0ebaf84ec8c443ebf20a589bc97afec9",
@@ -3027,7 +3031,7 @@
         "elks46-ingest": "sha256:161d6528fed5b76c7d632e7f7ebf762fc3fea89d678092c42fc7d8ab70a6587f",
         "email-send": "sha256:72bbe238ccc89a83b7fdaecb14eb8172e79efb60bd189efdaaaf9a75e95d33d4",
         "email-webhook": "sha256:8934c5e9ceaf373ea9f66eb6e9894b7592b41b703208c7abe67c66144a54d4aa",
-        "event-dispatcher": "sha256:daa075ab3ac24df598506a9ed5232426b5dd2a1911cede5a9d432e8de05de5d9",
+        "event-dispatcher": "sha256:46825622327decf76a18ad3ce65dca2257cd4dcff8a043b91eeb09f62bca1221",
         "extract-pdf-text": "sha256:fb2e1a10f79fb0b150cd547a08fc3b1e11b79c09771f2d13d748c08b4e93f34c",
         "federation-invite-peer": "sha256:475817522c4d1b7a2faed2a0a4fbe03ac5f340479eb246febe0456f3d0596b21",
         "flowpilot-heartbeat": "sha256:c233b4c6b0ae60a266741fbc90d626baa1479e34adf359ef1aa555569828390f",
