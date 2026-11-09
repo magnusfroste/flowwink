@@ -9,6 +9,8 @@ import { useIsModuleEnabled } from '@/hooks/useModules';
 
 export function ChatFeedbackDashboardWidget() {
   const chatEnabled = useIsModuleEnabled('chat');
+  // The article alarm is the knowledge base's: with it off there is nothing to improve here.
+  const kbEnabled = useIsModuleEnabled('knowledgeBase');
   const { data: stats, isLoading: statsLoading } = useChatFeedbackStats();
   const { data: articlesNeedingImprovement, isLoading: articlesLoading } = useKbArticlesNeedingImprovement();
 
@@ -96,7 +98,7 @@ export function ChatFeedbackDashboardWidget() {
             </div>
 
             {/* Articles Needing Improvement */}
-            {articlesNeedingImprovement && articlesNeedingImprovement.length > 0 && (
+            {kbEnabled && articlesNeedingImprovement && articlesNeedingImprovement.length > 0 && (
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-sm font-medium text-warning">
                   <AlertTriangle className="h-4 w-4" />

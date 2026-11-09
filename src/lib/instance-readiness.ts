@@ -28,6 +28,8 @@
  * can be pinned by tests against both a fresh and a mature instance.
  */
 
+import { CRON_JOB_MODULE } from '../../supabase/functions/_shared/cron/health';
+
 /**
  * - `ok`            — measured, and complete.
  * - `blocked`       — measured, and incomplete. The instance is not finished.
@@ -98,6 +100,14 @@ export const PLATFORM_CRON_JOBS: readonly string[] = [
   'booking-reminders',
 ];
 
+/** The platform jobs this instance needs: every job of PLATFORM_CRON_JOBS whose module (if it has one) is on. */
+export function requiredCronJobs(moduleOn?: (moduleId: string) => boolean): string[] {
+  return PLATFORM_CRON_JOBS.filter((n) => {
+    const owner = CRON_JOB_MODULE[n];
+    return !owner || !moduleOn || moduleOn(owner);
+  });
+}
+
 export interface CronJobState {
   jobname: string;
   active: boolean;
@@ -154,6 +164,8 @@ export interface ReadinessInput {
     jobs: CronJobState[] | null;
     /** false when pg_cron is not installed at all. */
     available: boolean | null;
+    /** Which modules are on; a job that serves a module that is off is not required (CRON_JOB_MODULE). */
+    moduleOn?: (moduleId: string) => boolean;
   };
   ai: {
     /** true/false when check-secrets answered; null when it did not. */
@@ -471,8 +483,11 @@ function cronRow(input: ReadinessInput['cron']): ReadinessRow {
   }
 
   const byName = new Map(input.jobs.map((j) => [j.jobname, j]));
-  const missing = PLATFORM_CRON_JOBS.filter((n) => !byName.has(n));
-  const inactive = PLATFORM_CRON_JOBS.filter((n) => byName.get(n)?.active === false);
+  // A job that exists for one module is not required while that module is off
+  // (booking-reminders with Bookings off is not "missing", it is not needed).
+  const required = requiredCronJobs(input.moduleOn);
+  const missing = required.filter((n) => !byName.has(n));
+  const inactive = required.filter((n) => byName.get(n)?.active === false);
   // The poison-chain class: a job cloned from another instance keeps pointing
   // at that instance's URL and silently drives someone else's site.
   const foreign = input.jobs.filter((j) => j.foreign_host === true).map((j) => j.jobname);
@@ -481,7 +496,7 @@ function cronRow(input: ReadinessInput['cron']): ReadinessRow {
     return {
       ...base,
       status: 'ok',
-      detail: `All ${PLATFORM_CRON_JOBS.length} platform jobs are scheduled and active on this instance.`,
+      detail: `All ${required.length} platform jobs are scheduled and active on this instance.`,
     };
   }
 

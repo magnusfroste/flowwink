@@ -1,3 +1,4 @@
+import { useActiveModules, skillShown } from '@/lib/module-visibility';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -17,8 +18,9 @@ interface FlowPilotSummary {
 }
 
 function useFlowPilotSummary() {
+  const active = useActiveModules();
   return useQuery({
-    queryKey: ['flowpilot-summary'],
+    queryKey: ['flowpilot-summary', [...active].sort().join(',')],
     queryFn: async (): Promise<FlowPilotSummary> => {
       const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
       
@@ -43,7 +45,8 @@ function useFlowPilotSummary() {
           .limit(1),
       ]);
 
-      const activities = activityRes.data || [];
+      // A run in a module that has since been switched off is not this week's error rate.
+      const activities = (activityRes.data || []).filter((a) => skillShown(a.skill_name, active));
       const objectives = objectivesRes.data || [];
       const errors = activities.filter(a => a.status === 'failed').length;
 

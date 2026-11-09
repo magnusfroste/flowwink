@@ -11,8 +11,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
+import { useActiveModules, moduleShown } from '@/lib/module-visibility';
 
 type GoalKind = 'lead' | 'booking' | 'order' | 'quote_accepted' | 'subscription' | 'page_reached';
+
+/** The module whose event a goal counts — a goal of a module that is off is not offered. */
+const KIND_MODULE: Partial<Record<GoalKind, string>> = {
+  lead: 'leads',
+  booking: 'bookings',
+  order: 'ecommerce',
+  quote_accepted: 'quotes',
+  subscription: 'subscriptions',
+};
 
 const KIND_LABEL: Record<GoalKind, string> = {
   lead: 'A new lead',
@@ -55,7 +65,12 @@ export function ConversionsTab({ days }: { days: number }) {
   const qc = useQueryClient();
   const { formatCurrency, formatNumber } = usePlatformFormat();
   const [name, setName] = useState('');
-  const [kind, setKind] = useState<GoalKind>('lead');
+  const active = useActiveModules();
+  const kinds = (Object.keys(KIND_LABEL) as GoalKind[]).filter((k) => !KIND_MODULE[k] || moduleShown(KIND_MODULE[k]!, active));
+  const leadsOn = moduleShown('leads', active);
+  const [kindChoice, setKind] = useState<GoalKind>('lead');
+  // The chosen kind falls back to the first offered one when its module is off.
+  const kind: GoalKind = kinds.includes(kindChoice) ? kindChoice : (kinds[0] ?? 'page_reached');
   const [pageSlug, setPageSlug] = useState('');
   const [value, setValue] = useState('');
   const [saving, setSaving] = useState(false);
@@ -183,7 +198,7 @@ export function ConversionsTab({ days }: { days: number }) {
               <Select value={kind} onValueChange={(v) => setKind(v as GoalKind)}>
                 <SelectTrigger id="goal-kind"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {(Object.keys(KIND_LABEL) as GoalKind[]).map((k) => (
+                  {kinds.map((k) => (
                     <SelectItem key={k} value={k}>{KIND_LABEL[k]}</SelectItem>
                   ))}
                 </SelectContent>
@@ -212,8 +227,8 @@ export function ConversionsTab({ days }: { days: number }) {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Which page gave the lead</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-base">{leadsOn ? 'Which page gave the lead' : 'Pages'}</CardTitle>
+          <CardDescription className={leadsOn ? undefined : 'hidden'}>
             A page is credited with a lead when that lead browsed it. A lead that read several pages counts for each of them, so the revenue column does not add up to total revenue.
           </CardDescription>
         </CardHeader>
@@ -229,9 +244,9 @@ export function ConversionsTab({ days }: { days: number }) {
                   <TableHead>Page</TableHead>
                   <TableHead className="text-right">Views</TableHead>
                   <TableHead className="text-right">Visitors</TableHead>
-                  <TableHead className="text-right">Leads</TableHead>
-                  <TableHead className="text-right">Customers</TableHead>
-                  <TableHead className="text-right">Revenue of those leads</TableHead>
+                  {leadsOn && <TableHead className="text-right">Leads</TableHead>}
+                  {leadsOn && <TableHead className="text-right">Customers</TableHead>}
+                  {leadsOn && <TableHead className="text-right">Revenue of those leads</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -240,9 +255,9 @@ export function ConversionsTab({ days }: { days: number }) {
                     <TableCell className="font-medium">/{p.page}</TableCell>
                     <TableCell className="text-right tabular-nums">{formatNumber(p.views)}</TableCell>
                     <TableCell className="text-right tabular-nums">{formatNumber(p.unique_visitors)}</TableCell>
-                    <TableCell className="text-right tabular-nums">{formatNumber(p.leads)}</TableCell>
-                    <TableCell className="text-right tabular-nums">{formatNumber(p.customers)}</TableCell>
-                    <TableCell className="text-right tabular-nums">{p.revenue_cents ? formatCurrency(p.revenue_cents) : '—'}</TableCell>
+                    {leadsOn && <TableCell className="text-right tabular-nums">{formatNumber(p.leads)}</TableCell>}
+                    {leadsOn && <TableCell className="text-right tabular-nums">{formatNumber(p.customers)}</TableCell>}
+                    {leadsOn && <TableCell className="text-right tabular-nums">{p.revenue_cents ? formatCurrency(p.revenue_cents) : '—'}</TableCell>}
                   </TableRow>
                 ))}
               </TableBody>
