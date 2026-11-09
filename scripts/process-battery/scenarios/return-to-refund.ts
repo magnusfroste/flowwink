@@ -7,6 +7,8 @@ import type { Scenario, ScenarioModule } from '../lib';
  * every payout has a balanced journal entry against the booked sale.
  */
 async function run(s: Scenario): Promise<void> {
+  // Where a person sees the outcome — proven to the screen by `npm run qa:process-views`.
+  s.shows('the return is in the returns list, under its customer', '/admin/returns', `Battery Kund ${s.tag}`);
   const product = await s.must('a stocked product exists', 'manage_product', {
     action: 'create', name: `Battery kettle ${s.tag}`, price_cents: 50_000, cost_cents: 20_000,
     track_inventory: true, stock_quantity: 10,

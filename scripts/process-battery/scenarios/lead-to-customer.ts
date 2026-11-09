@@ -11,6 +11,9 @@ import { anonKey, anonRpc, type Scenario, type ScenarioModule } from '../lib';
  * merged; the activity ledger cannot be rewritten.
  */
 async function run(s: Scenario): Promise<void> {
+  // Where a person sees the outcome — proven to the screen by `npm run qa:process-views`.
+  s.shows('the contact is in the CRM', '/admin/contacts', `Anna Berg ${s.tag}`);
+  s.shows('the company is in the register', '/admin/companies', `Berg & Partners ${s.tag}`);
   // The name carries the run's tag: duplicate detection scores names, so eighty runs of a plain
   // "Anna Berg" are 3 000 cross-run pairs and the pair under test falls off the end of the answer.
   const anna = `Anna Berg ${s.tag}`;

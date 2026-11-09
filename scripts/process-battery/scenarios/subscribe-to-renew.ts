@@ -13,6 +13,8 @@ const DAY = 86_400_000;
 const isoDay = (d: Date) => d.toISOString().slice(0, 10);
 
 async function run(s: Scenario): Promise<void> {
+  // Where a person sees the outcome — proven to the screen by `npm run qa:process-views`.
+  s.shows('the subscription is in the list', '/admin/subscriptions', `Battery Abo ${s.tag}`);
   const email = `abo-${s.tag}@example.test`;
   const today = isoDay(new Date());
   const mrrBefore = await mrr(s);

@@ -42,6 +42,7 @@
     "qa:quiet": "bun run scripts/quiet-by-default.ts",
     "qa:processes": "bun run scripts/process-battery/run.ts",
     "qa:views": "bun run scripts/view-sweep/index.ts",
+    "qa:process-views": "bun run scripts/process-views/index.ts",
     "flowpilot:sim": "bun run scripts/flowpilot-simulate.ts",
     "manifest:json": "bun run scripts/generate-instance-manifest.ts",
     "migrations:redate": "bun run scripts/redate-migrations.ts",

@@ -61,6 +61,8 @@ function longBody(lang: string, paragraphs: string[] = []): string {
 }
 
 async function run(s: Scenario): Promise<void> {
+  // Where a person sees the outcome — proven to the screen by `npm run qa:process-views`.
+  s.shows('the article is in the blog list', '/admin/blog', `Fem fallgropar i offentlig upphandling ${s.tag}`);
   const anon = anonKey();
   if (!anon) s.skip('every anonymous-visitor check below', 'no local anon key (supabase-go status) — set BATTERY_ANON_KEY');
 

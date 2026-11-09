@@ -36,6 +36,12 @@ MCP regression and the view sweep, and commits the stamp below to main.
   cross-run pairs and crowds the pair under test out of the answer.
 - Approval handshakes (staged operation, human approval) are walked by the harness
   and recorded in `s.handshakes`.
+- `s.shows(label, '/admin/…', \`…${s.tag}\`)` — where a person sees the outcome. The battery proves the
+  data; `npm run qa:process-views` (nightly, right after the battery) opens each named view as an admin in a
+  real browser and requires the run's own text on it, with a screenshot under `.qa-output/process-views/`
+  when it is missing. Nobody runs the processes by hand, so this is the person looking. Every scenario names
+  at least one view (`processes-are-proven-to-the-screen`), or is exempt there with the reason. Name a tab
+  with `?tab=` (pages keep their tab in the URL with `useTabParam`).
 
 Look up a skill's contract with `node scripts/process-battery/skill-contract.cjs <skill> …`.
 

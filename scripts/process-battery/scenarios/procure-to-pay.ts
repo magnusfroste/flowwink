@@ -12,6 +12,8 @@ import type { Scenario, ScenarioModule } from '../lib';
  * leaves with a sale is the price that was paid for the goods.
  */
 async function run(s: Scenario): Promise<void> {
+  // Where a person sees the outcome — proven to the screen by `npm run qa:process-views`.
+  s.shows('the purchase order to the vendor is in the list', '/admin/purchase-orders', `Battery Rosteri ${s.tag}`);
   const vendor = await s.must('a vendor is onboarded', 'manage_vendor', {
     action: 'create', name: `Battery Rosteri ${s.tag}`, email: `rosteri-${s.tag}@example.test`, payment_terms: 'net30', currency: 'SEK',
   });
