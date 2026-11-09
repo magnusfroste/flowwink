@@ -8,7 +8,27 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ## [Unreleased]
 
+### Added
+
+- **A paid order gets its receipt by itself.** The receipt is the order's paid
+  invoice, sent by the new automation `Receipt on paid order` in the language the
+  customer ordered in (`order_receipt` template, en + sv). It can be switched off
+  per instance, and it needs the Invoicing module. The public invoice page is
+  translatable and calls a paid invoice a receipt. The PDF is still in English.
+
 ### Fixed
+
+- **UB becomes IB for agents too.** The agent report read stored opening balances
+  per year, so a later year opened at zero and an agent booked the previous closing
+  balance as a voucher. Every reader now derives it, and only the bridge of the
+  first fiscal year can be stored (`IB_IS_DERIVED`).
+- **An order is invoiced at what the customer paid.** Gross lines were read as net
+  and VAT added again, and a paid order's invoice asked to be paid. It is now split
+  per rate and born paid. A cancelled invoice is no longer reused for its order, so
+  the order can be invoiced again.
+- **An issued invoice cannot be deleted in the admin view.** Only a draft can: the
+  link in the customer's mail stopped answering when the invoice went.
+- **Internal order markers no longer reach the customer** in a new invoice's notes.
 
 - **An alarm means something is wrong now.** The bell was amber every day on every
   instance, because any agent run on notify trust painted it; it is amber now for
