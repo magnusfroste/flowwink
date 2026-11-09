@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261109200000",
-      "migrations_count": 751,
+      "migration_head": "20261109220000",
+      "migrations_count": 752,
       "migrations": [
         {
           "version": "00000000000000",
@@ -3009,6 +3009,10 @@
         {
           "version": "20261109200000",
           "name": "browser-control-pensioneras"
+        },
+        {
+          "version": "20261109220000",
+          "name": "svepen-fragar-om-det-finns-arbete"
         }
       ]
     },
@@ -3021,10 +3025,10 @@
       "count": 76,
       "shared_hash": "sha256:5f03b01f1f97c601bbded98bf36f3d0a3e39a52798ea828b0331a3cdfe1e1d47",
       "functions": {
-        "agent-execute": "sha256:9cb0f28f9bfec415a150271be927f65f70128f3c642a30faf0704d1aa81dbb2f",
+        "agent-execute": "sha256:fa087ee9a5ea693f1f158ccbbbda854f34d6ba4193a3a0eddf1fed05d9750ba0",
         "agent-operate": "sha256:4320e02dd3e6a0a1706b42dc1905b631c61e6a4cbe3556c701f474c278c89e1a",
         "ai-task": "sha256:ce3aacdef625bba758f4323da3e49104a1b94a3d3d77d800e89dacd0b803d65e",
-        "automation-dispatcher": "sha256:b30027e0657761bf7bb0103bd2ee01269b9cb5fc561cba1a38dffadde7eef2c9",
+        "automation-dispatcher": "sha256:d905660cd907c6f1ef5c7cac0a97ed44a4e4187ef4d5179089fa2714b2751443",
         "blog-rss": "sha256:44fac28a8078c06e101df2acac66fbc443542377f7ccec210a40409d090ba283",
         "chat-completion": "sha256:0d5dcfb6134a52f19a6f3bb2cd55c95af4cfce054fea2fc9a63abf3acaeb36fa",
         "chat-stt": "sha256:b67dd50ab6cad26f061b911a366607620aca8647977b2be8d4331b2ec51c4aa6",
