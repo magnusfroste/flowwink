@@ -236,8 +236,11 @@ the template (migration `20260903190000`); the code-rendered `{{notes_block}}`
 variable, English label baked in, is still sent for templates that predate the
 move, but new templates use the section.
 
-Still hardcoded: invoice_email, order_confirmation and the rest of comms-send —
-same recipe when they matter.
+On the same rail since: invoice_email, invoice_reminder and order_confirmation
+(migration `20260903210000`), and order_receipt, the paid order's receipt
+(`20261108120000`). Still hardcoded: contact_email, csat_dispatch and survey_send
+in comms-send, and the labels of `generate-invoice-pdf` — same recipe when they
+matter.
 
 ## Knowledge base
 

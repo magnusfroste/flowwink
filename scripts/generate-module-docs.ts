@@ -132,14 +132,14 @@ function extractSkillSeeds(src: string): SkillInfo[] {
     // description may be a backtick template, single, or double quote string
     const descM =
       obj.match(/\bdescription:\s*`([^`]+)`/) ||
-      obj.match(/\bdescription:\s*'([^']+)'/) ||
+      obj.match(/\bdescription:\s*'((?:[^'\\]|\\.)+)'/) ||
       obj.match(/\bdescription:\s*"([^"]+)"/);
     const catM = obj.match(/\bcategory:\s*['"]([^'"]+)['"]/);
     const scopeM = obj.match(/\bscope:\s*['"]([^'"]+)['"]/);
 
     seeds.push({
       name: nameM[1],
-      description: descM?.[1]?.replace(/\s+/g, ' ').trim() ?? '',
+      description: descM?.[1]?.replace(/\\'/g, "'").replace(/\s+/g, ' ').trim() ?? '',
       category: catM?.[1],
       scope: scopeM?.[1],
     });

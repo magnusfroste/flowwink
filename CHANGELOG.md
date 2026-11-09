@@ -8,7 +8,39 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ## [Unreleased]
 
+### Added
+
+- **A paid order gets its receipt by itself.** The receipt is the order's paid
+  invoice, sent by the new automation `Receipt on paid order` in the language the
+  customer ordered in (`order_receipt` template, en + sv). It can be switched off
+  per instance, and it needs the Invoicing module. The public invoice page is
+  translatable and calls a paid invoice a receipt. The PDF is still in English.
+
 ### Fixed
+
+- **Gmail can be connected only by an admin of the site.** The OAuth `state`
+  was the constant `gmail_connect`: anyone could consent with their own Google
+  account and the instance stored it as its inbox; `status`, `disconnect` and
+  `update_settings` answered anyone too. The POST actions need an admin (or the
+  platform), and the consent screen opens only with a one-time state an admin
+  is handed (`begin`), accepted once within ten minutes.
+- **migrate-page verifies its caller** (`requireServiceOrStaff`): it fetches any
+  public URL and spends AI tokens on it. The wizard (staff) and
+  `edge:migrate-page` (service key) are its callers.
+- The public-functions guard knows a resolver RPC handed the caller's token
+  (`resolve_document_share({ _token })`) as token possession; `document-share`
+  was token-gated all along. Known-ungated ceiling 16 → 12.
+- **UB becomes IB for agents too.** The agent report read stored opening balances
+  per year, so a later year opened at zero and an agent booked the previous closing
+  balance as a voucher. Every reader now derives it, and only the bridge of the
+  first fiscal year can be stored (`IB_IS_DERIVED`).
+- **An order is invoiced at what the customer paid.** Gross lines were read as net
+  and VAT added again, and a paid order's invoice asked to be paid. It is now split
+  per rate and born paid. A cancelled invoice is no longer reused for its order, so
+  the order can be invoiced again.
+- **An issued invoice cannot be deleted in the admin view.** Only a draft can: the
+  link in the customer's mail stopped answering when the invoice went.
+- **Internal order markers no longer reach the customer** in a new invoice's notes.
 
 - **An alarm means something is wrong now.** The bell was amber every day on every
   instance, because any agent run on notify trust painted it; it is amber now for

@@ -82,7 +82,7 @@
       "odoo": true,
       "status": "done",
       "weight": 2,
-      "verify": "supabase/functions/send-order-confirmation/index.ts (HTML receipt from order+order_items, sends via email-send, stamps orders.confirmation_sent_at) — invoked by stripe-webhook on checkout.session.completed L391-402",
+      "verify": "supabase/functions/comms-send/order_confirmation.ts (template order_confirmation from order+order_items, sends via email-send, stamps orders.confirmation_sent_at) — invoked by stripe-webhook on checkout.session.completed. The receipt is separate: automation 'Receipt on paid order' on order.paid",
       "notes": "Live-Stripe path only: sandbox orders never trigger it (create-checkout sandbox path does not call it) — close that gap when touching checkout. No separate 'shipped' email (Odoo has one, reference card §5)."
     },
     {
@@ -146,7 +146,7 @@
       "status": "done",
       "weight": 2,
       "verify": "Dual-surface DONE 2026-07-06. Skill: send_invoice_for_order registered (commit 43223301, was missing from products-module skills[]) + synced to dev; Stage-3 live over gateway — built INV-0028 (22500) from an order, second call returned the SAME invoice_id (idempotent). UI: 'Create invoice' action on admin OrdersPage (→ send_invoice_for_order, 'View invoice' when one exists).",
-      "notes": "Registration + admin action both fixed 2026-07-06."
+      "notes": "Registration + admin action both fixed 2026-07-06. Since 2026-11-08 a paid order gets its invoice as a receipt automatically (receipt: true on order.paid); one live invoice per order, a cancelled one does not count."
     },
     {
       "id": "refund_recording",

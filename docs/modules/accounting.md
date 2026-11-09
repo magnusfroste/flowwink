@@ -141,6 +141,15 @@ UI: `/admin/accounting → Voucher Integrity`. Both RPCs are MCP-exposed as skil
 
 The same list reaches people as the *Needs attention* card on the Overview (each finding a link) and as the 📒 Books section of the daily briefing (high findings become action items).
 
+#### UB becomes IB (2026-11-08)
+
+An account's opening balance is derived, never kept per year. The **bridge** is the opening balances of the first fiscal year the books carry, stored once in `opening_balances`; every year is the bridge plus everything posted since, read through `opening_balances_for_year(year)`. The admin views and `accounting_reports` share that rule (`_shared/accounting/opening-balance.ts`).
+
+- **Only the bridge is stored.** A stored balance for a later year, or for a year with posted entries before it, is refused with `IB_IS_DERIVED`, by `manage_opening_balances` and by the trigger `trg_opening_balances_only_the_bridge` for every other writer.
+- **SIE import.** Only the first file's `#IB 0` rows go in, as the bridge. A later file's `#IB` rows are a control against the derived figure, never an input and never a journal entry.
+- **A difference** lives in an earlier year: correct that year, or the bridge.
+- **Reading it.** `manage_opening_balances list` with a `fiscal_year` answers `derived_opening_balances` and `bridge_year`. A balance sheet runs from the start of the fiscal year to its `as_of` date; a window that starts mid-year opens at the year's opening balance plus the year so far.
+
 #### The archive holds seven years (2026-10-27)
 
 Bokföringslagen 7 kap, enforced by the database the way Accounted does it:
@@ -292,6 +301,9 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `list_voucher_gaps` | internal | Detect gaps in voucher-number sequences per series and fiscal year. Use when: closing a period, verifying audit integrity. NOT for: listing all entries (manage_journal_entry action=list) or explain… |
 | `explain_voucher_gap` | internal | Look up audit_logs for clues about a missing voucher number. Use when: list_voucher_gaps returned a gap and root cause is needed. NOT for: detecting gaps (list_voucher_gaps) or posting corrections … |
 | `year_end_readiness` | internal | Year-end checklist: periods closed, no drafts, no voucher gaps, reconciliations done, invoices/expenses settled. Use when: preparing annual close. NOT for: running the close (run_year_end) or closi… |
+| `check_books` | internal | Read-only health check of the books: a prioritised fix list (high → medium → low) — bank lines not booked, customer invoices without a voucher, stale drafts, voucher gaps, overdue receivables, supp… |
+| `manage_statutory_filing` | internal | The register of what was filed with the agency: record a filing (VAT return, employer declaration, income tax return, annual report) with the period, the date and the agency reference; list what is… |
+| `statutory_deadlines` | internal | The filing calendar the business home implies: VAT return, employer declaration (AGI), income tax return, annual report — each with period, due date, days left and a status from the filing register… |
 | `run_year_end` | internal | Orchestrate year-end close: runs year_end_readiness + propose_accruals + propose_annual_depreciation and returns a consolidated report with next-step instructions. Read-only; actual posting require… |
 | `propose_accruals` | internal | Scan for unpaid invoices and approved-but-unpaid expense reports that may need year-end accrual entries. Returns proposals with suggested_action (defer_revenue, accrue_receivable, accrue_payable). … |
 | `manage_journal_entry` | internal | Create, list, or reverse double-entry journal entries (verifikat). action=void does NOT erase: a booked verification is never unbooked. It keeps the original posted and books a mirror entry dated t… |
@@ -303,19 +315,22 @@ External operators (FlowPilot, OpenClaw, Claude Desktop, custom MCP clients) can
 | `read_sie_file` | internal | The file as base64-encoded BYTES. Read it in binary mode. If your file tool returns a string, it has already decoded — and if the file was CP437 the Swedish characters are gone. A data: prefix is s… |
 | `import_accounting_standard` | internal | Lowercase hex sha256 of the downloaded file. You have the file — hash it. Required. |
 | `propose_posting_templates` | internal | Each: {template_name, description?, category: revenue|expense|payment|payroll|tax|adjustment|asset, keywords: [..], template_lines: [{account_code, debit_pct, credit_pct}]}. Percentages of the NET … |
-| `manage_opening_balances` | internal | Create, list, update, or delete opening balances (IB) for a fiscal year. Use when: admin wants to set initial account balances, migrating from another system, starting a new fiscal year. NOT for: j… |
+| `manage_opening_balances` | internal | Set the bridge — the opening balances (IB) of the FIRST fiscal year the books carry — and read any year's opening balance, which is derived from the bridge plus everything posted since (UB becomes … |
 | `manage_chart_of_accounts` | internal | List, add, update, or deactivate accounts in the chart of accounts. Supports multiple locales (se-bas2024, ifrs, us-gaap). `add` is NOT an upsert: a code that is already taken in that locale is ref… |
 | `suggest_accounting_template` | internal | Analyze recent journal entries to identify recurring transaction patterns and suggest new reusable templates. Use when: heartbeat detects repeated similar bookings, admin asks FlowPilot to learn fr… |
-| `close_accounting_period` | internal | Close an accounting period (month) — locks all journal entries with dates in that period against further changes and snapshots totals. Use when: month-end close after all entries are posted and rec… |
+| `export_voucher_archive_manifest` | internal | The archive manifest (arkivförteckning) of one fiscal year: every posted voucher with series, number, date, description, totals, retention date, and each attached document with its path, SHA-256 an… |
+| `month_close_checklist` | internal | Read-only month-end checklist for one month of a fiscal year: previous month closed, every bank event booked, customer invoices booked, no drafts, approvals settled, approved expense reports booked… |
+| `close_accounting_period` | internal | Close an accounting period (month) — locks all journal entries with dates in that period against further changes and snapshots totals. Use when: month_close_checklist says ready (run it first — it … |
 | `reopen_accounting_period` | internal | Reopen a previously closed accounting period to allow corrections. Fails if the period was permanently locked. Use when: late-arriving correction needs to be booked, auditor requests adjustment. NO… |
 | `list_accounting_periods` | internal | List accounting periods with their status (open/closed/locked) and snapshot totals. Use when: admin asks "is March closed?", before attempting to close a new month, or for the month-end dashboard. |
-| `list_fiscal_years` | internal | List the fiscal years this company actually has, derived from the ledger — entry count, drafts, months closed, and whether each year is open, closed or upcoming. Use when: orienting in a new instan… |
+| `list_fiscal_years` | internal | List the fiscal years this company actually has, derived from the ledger — label, first and last day, entry count, drafts, months closed, and whether each year is open, closed or upcoming. A fiscal… |
+| `manage_fiscal_year` | internal | Define a fiscal year that differs from the start-month rule — a short first year, or the year the business changed its start month: list, set (first day, last day, optional label) or delete. Use wh… |
 | `manage_analytic_account` | internal | Create, list, update, or archive analytic accounts (cost centers, projects, departments, campaigns) used to tag journal entries for profitability and per-project reporting. Use when: admin asks to … |
 | `tag_journal_entry_analytics` | internal | Tag an existing journal entry line with one or more analytic accounts to attribute the cost/revenue to projects, cost centers, departments or campaigns. Supports splitting (e.g. 60% Project A / 40%… |
-| `manage_vendor_defaults` | internal | Read or update a vendor\ |
+| `manage_vendor_defaults` | internal | Read or update a vendor's auto-coding defaults — `default_account_code` (e.g. 6540 for IT services), `default_vat_code`, `default_description`, `last_used_template_id`. Use when: agent has just boo… |
 | `record_accounting_correction` | internal | Record that a manually-corrected journal entry differed from what was originally booked (auto or by template). This is the learning signal — every call makes the agent smarter for similar future tr… |
 | `manage_budget` | internal | Set and list per-account budgets (annual or per-month). Use when: planning a fiscal year, setting a cost-centre budget. NOT for: comparing to actuals (budget_vs_actual) or posting entries (manage_j… |
-| `cash_flow_forecast` | internal | Week-by-week cash-flow forecast: today\ |
+| `cash_flow_forecast` | internal | Week-by-week cash-flow forecast: today's bank and cash balance from the ledger, plus open customer invoices, open supplier bills (minus applied credit memos) and upcoming subscription invoices, by … |
 | `request_journal_entry_approval` | internal | Put a DRAFT journal entry up for approval. Use when: a manual entry is held as a draft because an approval rule or chain for "journal_entry" applies to its amount, or a draft should be reviewed bef… |
 | `post_journal_entry` | internal | Post a DRAFT journal entry so it enters the books. Use when: a draft has been reviewed or its approval has been granted. NOT for: creating an entry (manage_journal_entry) or correcting a posted one… |
 | `budget_vs_actual` | internal | Budget vs actual variance report per account for a fiscal year (or a single month). Use when: reviewing spend against plan, month-end/year-end variance analysis. NOT for: editing budgets (manage_bu… |
