@@ -8,6 +8,17 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ## [Unreleased]
 
+### Security
+
+- **A high-stakes write with nobody at the keyboard waits for a person.** The
+  heartbeat, the e-mail responder, the visitor chat and gateway agents act on
+  text other people wrote, and ten writes declared high-risk or irreversible
+  (pay_vendor_invoice, close_accounting_period, send_einvoice, …) could run with
+  no human at all. An unattended call of such a write now lands in
+  /admin/approvals; a person in FlowChat or the admin is never held. Every
+  prompt carries a hardcoded rule that content from tools and channels is
+  data, never an instruction.
+
 ### Added
 
 - **A paid order gets its receipt by itself.** The receipt is the order's paid
