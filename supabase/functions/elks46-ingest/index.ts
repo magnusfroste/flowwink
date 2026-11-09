@@ -1205,9 +1205,9 @@ async function handleSetVoiceStart(req: Request): Promise<Response> {
     if (!numberId) {
       const wanted = String(body.number).replace(/[\s-]/g, "");
       const listResp = await fetch(`${ELKS_BASE}/Numbers?active=yes`, { headers: { Authorization: auth } });
-      const listData = await listResp.json().catch(() => ({}));
-      if (!listResp.ok) return json({ error: `46elks ${listResp.status}`, details: (listData as any)?.message || JSON.stringify(listData) }, 502);
-      const found = ((listData as any)?.data ?? []).find((n: any) => String(n.number) === wanted);
+      const listData = (await listResp.json().catch(() => ({}))) as { message?: string; data?: Array<{ id?: string; number?: string }> };
+      if (!listResp.ok) return json({ error: `46elks ${listResp.status}`, details: listData.message || JSON.stringify(listData) }, 502);
+      const found = (listData.data ?? []).find((n) => String(n.number) === wanted);
       if (!found?.id) return json({ error: `${wanted} is not an active number on this 46elks account` }, 404);
       numberId = String(found.id);
     }
