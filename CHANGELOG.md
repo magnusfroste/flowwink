@@ -10,6 +10,16 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Fixed
 
+- **Every process is proven to the screen a person looks at.** The battery
+  proved the data; nobody opened /admin/invoices to see the receipt was there,
+  and on an instance nobody runs the processes by hand. Scenarios now name
+  where their outcome shows (`s.shows`), and `npm run qa:process-views`
+  (nightly, after the battery) opens each view as an admin in a real browser
+  and requires the run's text — 17 views across 16 processes. Its first run
+  found three real gaps, fixed here: the quote list showed "—" for every quote
+  made without a lead (it read only the lead, never the quote's own
+  `customer_name`); the returns list never named the customer; Webinars and
+  Recruitment could not be linked to a tab (now `useTabParam`).
 - **An alarm means something is wrong now.** The bell was amber every day on every
   instance, because any agent run on notify trust painted it; it is amber now for
   a person being needed or something still broken, and a healed integration stops

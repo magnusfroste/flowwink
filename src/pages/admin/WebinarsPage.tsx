@@ -1,3 +1,4 @@
+import { useTabParam } from '@/hooks/useTabParam';
 import { useState } from 'react';
 import { EmptyState } from '@/components/ui/empty-state';
 import { isPast, isFuture } from 'date-fns';
@@ -79,6 +80,8 @@ const defaultFormData: CreateWebinarInput = {
 };
 
 export default function WebinarsPage() {
+  // The tab is in the URL, so a process step can link straight to it (useTabParam).
+  const [tab, setTab] = useTabParam('upcoming');
   // The form edits the business's wall clock; the column stores an instant.
   const clock = useBusinessClock();
   const { formatDateTime, formatTime } = usePlatformFormat();
@@ -287,7 +290,7 @@ export default function WebinarsPage() {
             }
           />
         ) : (
-          <Tabs defaultValue="upcoming">
+          <Tabs value={tab} onValueChange={setTab}>
             <TabsList>
               <TabsTrigger value="upcoming">Upcoming ({upcoming.length})</TabsTrigger>
               <TabsTrigger value="past">Past ({past.length})</TabsTrigger>

@@ -42,19 +42,27 @@ export interface Quote {
   owner_id?: string | null;
   created_at: string;
   updated_at: string;
+  /** The quote's own customer — what an agent or the API writes when there is no lead (manage_quote customer_name). */
+  customer_name?: string | null;
+  customer_email?: string | null;
+  customer_company?: string | null;
+  title?: string | null;
   leads: InvoiceLead | null;
 }
 
+// The lead when there is one, else the quote's own customer columns: a quote
+// made by an agent or the API with customer_name and no lead used to read "—"
+// in the list (found by qa:process-views, 2026-11-09).
 export function getQuoteCustomerName(q: Quote): string {
-  return q.leads?.name || '—';
+  return q.leads?.name || q.customer_name || '—';
 }
 
 export function getQuoteCustomerEmail(q: Quote): string {
-  return q.leads?.email || '';
+  return q.leads?.email || q.customer_email || '';
 }
 
 export function getQuoteCompanyName(q: Quote): string | null {
-  return q.leads?.companies?.name || null;
+  return q.leads?.companies?.name || q.customer_company || null;
 }
 
 const QUOTE_SELECT = '*, leads(id, name, email, company_id, companies(name))';

@@ -92,6 +92,18 @@ export class Scenario {
 
   readonly handshakes: Array<{ skill: string; gate: 'staged' | 'human' }> = [];
 
+  /**
+   * Where a person sees what this scenario made (2026-11-09). The battery
+   * proves the DATA; `npm run qa:process-views` opens each of these routes as
+   * an admin in a real browser and requires `text` on the page — so a process
+   * is proven to the screen a person would look at, not only to the table.
+   * `text` is something only this run wrote (it carries `this.tag`).
+   */
+  readonly views: Array<{ label: string; route: string; text: string }> = [];
+  shows(label: string, route: string, text: string): void {
+    this.views.push({ label, route, text });
+  }
+
   /** SQL as the service role (what an RPC sees when the gateway calls it). */
   async asService<R = Record<string, unknown>>(query: string, params: unknown[] = []): Promise<R[]> {
     await this.db.query('begin');

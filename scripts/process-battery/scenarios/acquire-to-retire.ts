@@ -14,6 +14,8 @@ import type { Scenario, ScenarioModule } from '../lib';
 const Y = 2031; // far from any period another scenario may close
 
 async function run(s: Scenario): Promise<void> {
+  // Where a person sees the outcome — proven to the screen by `npm run qa:process-views`.
+  s.shows('the machine is in the asset register', '/admin/fixed-assets', `Battery svarv ${s.tag}`);
   const acct = await s.one<Record<string, string>>(
     `select public.account_for('fixed_asset') as asset, public.account_for('accumulated_depreciation') as accumulated,
             public.account_for('depreciation_expense') as expense, public.account_for('bank') as bank,

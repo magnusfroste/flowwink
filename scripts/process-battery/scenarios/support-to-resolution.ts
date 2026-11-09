@@ -13,6 +13,8 @@ import type { Scenario, ScenarioModule } from '../lib';
  * it is delivered, and a resolved case that the customer answers is open again.
  */
 async function run(s: Scenario): Promise<void> {
+  // Where a person sees the outcome — proven to the screen by `npm run qa:process-views`.
+  s.shows('the case is in the ticket list', '/admin/tickets', `Battery will not charge ${s.tag}`);
   // D = the latest Mon–Thu that is at least two days back: D and D+1 are business days, both inside the sweep's 7-day lookback.
   const day = (await s.one<{ d: string }>(
     `select to_char(d, 'YYYY-MM-DD') as d from generate_series(current_date - 8, current_date - 2, interval '1 day') d

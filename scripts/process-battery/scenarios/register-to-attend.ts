@@ -14,6 +14,8 @@ import type { Scenario, ScenarioModule } from '../lib';
  * backwards; cancelling waits for a human.
  */
 async function run(s: Scenario): Promise<void> {
+  // Where a person sees the outcome — proven to the screen by `npm run qa:process-views`.
+  s.shows('the held webinar is under Past', '/admin/webinars?tab=past', `Upphandling 101 ${s.tag}`);
   const anon = anonKey();
   const inTwoWeeks = new Date(Date.now() + 14 * 86_400_000).toISOString();
   const mail = (n: string) => `deltagare-${n}-${s.tag}@example.test`;

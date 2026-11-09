@@ -46,7 +46,7 @@ if (unknown.length) {
 assertLocalTarget();
 const db = await connect();
 
-interface ProcessReport { process: string; status: 'pass' | 'fail' | 'owed'; checks: CheckResult[]; aborted?: string; ms: number }
+interface ProcessReport { process: string; status: 'pass' | 'fail' | 'owed'; checks: CheckResult[]; aborted?: string; ms: number; views?: Array<{ label: string; route: string; text: string }> }
 const reports: ProcessReport[] = [];
 
 for (const name of wanted.length ? wanted : processes) {
@@ -70,7 +70,7 @@ for (const name of wanted.length ? wanted : processes) {
     }
   }
   const failed = s.checks.some((c) => c.status === 'fail');
-  reports.push({ process: name, status: failed ? 'fail' : 'pass', checks: s.checks, aborted, ms: Date.now() - started });
+  reports.push({ process: name, status: failed ? 'fail' : 'pass', checks: s.checks, aborted, ms: Date.now() - started, views: s.views });
 }
 await db.end();
 
