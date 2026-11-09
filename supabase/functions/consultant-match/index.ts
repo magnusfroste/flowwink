@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { getServiceClient } from '../_shared/supabase-clients.ts';
+import { publicAiLimit } from '../_shared/rate-limit.ts';
 import { resolveEmbeddingProvider, embedText } from '../_shared/ai-providers.ts';
 
 /**
@@ -143,6 +144,11 @@ async function embedProfiles(
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
+
+  // A paid model call for anyone with the publishable key: counted per visitor
+  // and per instance (_shared/rate-limit.ts). The platform's own calls are not.
+  const limited = await publicAiLimit(req, getServiceClient(), 'consultant-match', corsHeaders);
+  if (limited) return limited;
 
   try {
     const supabase = getServiceClient();

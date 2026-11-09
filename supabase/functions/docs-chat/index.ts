@@ -10,6 +10,7 @@
 // only `messages`, so no caller input can widen it.
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { getServiceClient } from '../_shared/supabase-clients.ts';
+import { publicAiLimit } from '../_shared/rate-limit.ts';
 import { renderContext } from '../_shared/retrieval/index.ts';
 import { retrieveVendorDocs } from '../_shared/retrieval/vendor-docs.ts';
 import { embedQuery } from '../_shared/retrieval/embedder.ts';
@@ -26,6 +27,11 @@ interface Msg { role: "user" | "assistant" | "system"; content: string }
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+
+  // A paid model call for anyone with the publishable key: counted per visitor
+  // and per instance (_shared/rate-limit.ts). The platform's own calls are not.
+  const limited = await publicAiLimit(req, getServiceClient(), 'docs-chat', corsHeaders);
+  if (limited) return limited;
 
   try {
     const { messages = [] } = (await req.json()) as { messages: Msg[] };

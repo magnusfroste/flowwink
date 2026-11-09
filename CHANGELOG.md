@@ -8,6 +8,15 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ## [Unreleased]
 
+### Security
+
+- **The public AI endpoints have a ceiling.** chat-completion, docs-chat and
+  consultant-match answered anyone with the publishable key, a paid model call
+  each, with nothing counting them. Now 30 per visitor per 5 minutes (a hashed
+  IP, never the address) and 600 per instance per hour, a 429 with
+  Retry-After past either; the platform's own calls are never counted. The
+  dial is `site_settings.security.publicAiRateLimit` (0 switches one off).
+
 ### Added
 
 - **A paid order gets its receipt by itself.** The receipt is the order's paid

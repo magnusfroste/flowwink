@@ -83,9 +83,10 @@ describe('Retrieval Engine confidentiality guardrails', () => {
     expect(fn).toMatch(/retrieveVendorDocs\(\s*getServiceClient\(\)/);
     expect(fn, 'docs-chat must not call retrieve() directly').not.toMatch(/[^A-Za-z]retrieve\(/);
     // The service client may appear ONLY for: config reads (embedQuery,
-    // resolveAiConfig) and the vendor-docs retrieval itself.
+    // resolveAiConfig), the vendor-docs retrieval itself, and the public-AI
+    // rate counter (publicAiLimit — it reads the dial and counts, never content).
     const serviceUses = fn.match(/getServiceClient\(\)/g) ?? [];
-    const sanctionedUses = fn.match(/(?:embedQuery|resolveAiConfig|retrieveVendorDocs)\(\s*getServiceClient\(\)/g) ?? [];
+    const sanctionedUses = fn.match(/(?:embedQuery|resolveAiConfig|retrieveVendorDocs)\(\s*getServiceClient\(\)|publicAiLimit\(req,\s*getServiceClient\(\)/g) ?? [];
     expect(serviceUses.length).toBe(sanctionedUses.length);
   });
 
