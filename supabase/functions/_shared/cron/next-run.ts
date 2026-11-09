@@ -63,6 +63,18 @@ export function calculateNextRun(cronExpr?: string, from?: Date, timeZone?: stri
     return new Date(now.getTime() + interval * 60 * 1000).toISOString();
   }
 
+  // Hourly at a fixed minute: M * * * * (the consultants module seeds
+  // '7 * * * *'; until 2026-11-09 it fell through, isSupportedCron said no, and
+  // the dispatcher switched the automation off on its first tick).
+  if (/^\d{1,2}$/.test(minute) && hour === "*" && dayOfMonth === "*" && month === "*" && dayOfWeek === "*") {
+    const m = Math.min(59, parseInt(minute, 10));
+    const next = new Date(now);
+    next.setUTCSeconds(0, 0);
+    next.setUTCMinutes(m);
+    if (next <= now) next.setUTCHours(next.getUTCHours() + 1);
+    return next.toISOString();
+  }
+
   // Every N hours: 0 */N * * *
   if (hour.startsWith("*/")) {
     const interval = parseInt(hour.replace("*/", ""), 10) || 1;
@@ -157,6 +169,7 @@ export function isSupportedCron(cronExpr?: string): boolean {
   if (parts.length < 5) return false;
   const [minute, hour, dayOfMonth, month, dayOfWeek] = parts;
   if (minute.startsWith("*/") && hour === "*") return true;
+  if (/^\d{1,2}$/.test(minute) && hour === "*" && dayOfMonth === "*" && month === "*" && dayOfWeek === "*") return true;
   if (hour.startsWith("*/")) return true;
   const fixedMH = !minute.includes("*") && !hour.includes("*");
   if (dayOfMonth === "*" && month === "*" && dayOfWeek === "*" && fixedMH) return true;
