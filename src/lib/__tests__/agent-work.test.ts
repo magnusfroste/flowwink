@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { summarizeAgentWork, openQuestionTasks, stopReason, isAgentCall, agentLabel, type AgentActivityRow, type TaskCommentRow } from '@/lib/agent-work';
+import { workByArea, agentNameOf, summarizeAgentWork, openQuestionTasks, stopReason, isAgentCall, agentLabel, type AgentActivityRow, type TaskCommentRow } from '@/lib/agent-work';
 
 /**
  * Agent work, in plain words (#869). The panel shows an owner what waits on a
@@ -82,5 +82,41 @@ describe('agent work', () => {
     expect(presets).toMatch(/id: 'agent-work'/);
     expect(presets).toMatch(/admin: \[[^\]]*'agent-work'/);
     expect(readFileSync(join(root, 'src/components/admin/AgentWorkDashboardWidget.tsx'), 'utf-8')).toMatch(/skillShown\(skill, active\)/);
+  });
+
+  it('groups the week by the owning module, changes before lookups, agents by name', () => {
+    const owner: Record<string, string> = { manage_lead: 'crm', manage_invoice: 'invoicing', list_invoices: 'invoicing' };
+    const readers = {
+      ownerOf: (n: string) => owner[n] ?? null,
+      isRead: (n: string, args: Record<string, unknown>) => n.startsWith('list_') || args.action === 'list',
+      agentNames: { k1: 'Hermes' },
+    };
+    const areas = workByArea([
+      row({ skill_name: 'manage_lead', api_key_id: 'k1' }),
+      row({ skill_name: 'manage_lead', api_key_id: 'k1', created_at: '2026-11-10T11:00:00Z' }),
+      row({ skill_name: 'manage_lead', agent: 'flowpilot', action: 'list' }),   // a manage_* read
+      row({ skill_name: 'manage_invoice', agent: 'flowpilot' }),
+      row({ skill_name: 'list_invoices', agent: 'flowpilot' }),
+      row({ skill_name: 'search_web', agent: 'flowpilot' }),                     // no owner: the platform's
+      row({ skill_name: 'manage_lead', status: 'failed' }),                      // not work done
+    ], readers);
+    expect(areas.map((a) => a.module)).toEqual(['crm', 'invoicing', 'platform']);
+    expect(areas[0]).toMatchObject({ changes: 2, lookups: 1, agents: ['Hermes', 'FlowPilot'], topChanges: ['manage_lead'], lastAt: '2026-11-10T11:00:00Z' });
+    expect(areas[1]).toMatchObject({ changes: 1, lookups: 1 });
+    // Without a read rule nothing is waved away as a lookup.
+    expect(workByArea([row({ skill_name: 'list_invoices' })])[0]).toMatchObject({ module: 'platform', changes: 1, lookups: 0 });
+    expect(agentNameOf({ agent: 'mcp', api_key_id: 'k1' }, { k1: 'Hermes' })).toBe('Hermes');
+    expect(agentNameOf({ agent: 'mcp', api_key_id: 'k2' }, { k1: 'Hermes' })).toBe('Connected agent');
+  });
+
+  it('the summary names the connected agent and hides an off module from the areas', () => {
+    const s = summarizeAgentWork({
+      ...base,
+      shown: (skill) => skill !== 'manage_invoice',
+      readers: { ownerOf: (n) => (n === 'manage_lead' ? 'crm' : 'invoicing'), agentNames: { k1: 'Hermes' } },
+      activity: [row({ api_key_id: 'k1' }), row({ skill_name: 'manage_invoice' })],
+    });
+    expect(s.agentsToday).toEqual(['Hermes']);
+    expect(s.areas.map((a) => a.module)).toEqual(['crm']);
   });
 });
