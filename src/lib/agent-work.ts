@@ -23,6 +23,11 @@ export interface AgentActivityRow {
   error_message: string | null;
   output: unknown;
   created_at: string;
+  /** The connected agent's key (agent_activity.api_key_id), when the call came over the gateway. */
+  api_key_id?: string | null;
+  /** The call's `action` and `dry_run` arguments — what makes a manage_* call a read. */
+  action?: string | null;
+  dry_run?: string | boolean | null;
 }
 
 export interface TaskCommentRow {
@@ -53,6 +58,80 @@ export interface AgentWorkSummary {
   failed: number;
   /** The latest stopped calls, newest first. */
   stopped: StoppedCall[];
+  /** The window's successful work per business area, most changes first. */
+  areas: AreaWork[];
+}
+
+/** What the agents did in one business area (a module) over the window. */
+export interface AreaWork {
+  /** The owning module's id, or 'platform' for a skill no module owns. */
+  module: string;
+  /** Calls that changed something. */
+  changes: number;
+  /** Calls that only looked. */
+  lookups: number;
+  /** Who did it, most active first. */
+  agents: string[];
+  /** The skills that changed something, most used first (at most three). */
+  topChanges: string[];
+  lastAt: string;
+}
+
+export interface AgentWorkReaders {
+  /** The module that owns a skill (the generated owner map); null for a platform skill. */
+  ownerOf?: (skillName: string) => string | null;
+  /** Is this call a read? (the platform's one read rule, classifyCall) */
+  isRead?: (skillName: string, args: Record<string, unknown>) => boolean;
+  /** A connected agent's name by its key id (a2a_peers.name). */
+  agentNames?: Record<string, string>;
+}
+
+/** The agent as a person names it: the connected agent's own name when its key is known. */
+export function agentNameOf(row: Pick<AgentActivityRow, 'agent' | 'api_key_id'>, names?: Record<string, string>): string {
+  const named = row.api_key_id ? names?.[row.api_key_id] : undefined;
+  return named || agentLabel(row.agent);
+}
+
+function callArgs(row: AgentActivityRow): Record<string, unknown> {
+  const args: Record<string, unknown> = {};
+  if (row.action) args.action = row.action;
+  if (row.dry_run === true || row.dry_run === 'true') args.dry_run = true;
+  return args;
+}
+
+/**
+ * Successful agent calls grouped by the module that owns the skill: changes
+ * first, lookups as a count. Without a read rule every call counts as a change
+ * (nothing is hidden as "only a lookup" on a guess).
+ */
+export function workByArea(rows: AgentActivityRow[], readers: AgentWorkReaders = {}): AreaWork[] {
+  const areas = new Map<string, { changes: number; lookups: number; agents: Map<string, number>; skills: Map<string, number>; lastAt: string }>();
+  for (const r of rows) {
+    if (r.status !== 'success' || !r.skill_name) continue;
+    const module = readers.ownerOf?.(r.skill_name) || 'platform';
+    const a = areas.get(module) ?? { changes: 0, lookups: 0, agents: new Map(), skills: new Map(), lastAt: r.created_at };
+    const read = readers.isRead ? readers.isRead(r.skill_name, callArgs(r)) : false;
+    if (read) a.lookups += 1;
+    else {
+      a.changes += 1;
+      a.skills.set(r.skill_name, (a.skills.get(r.skill_name) ?? 0) + 1);
+    }
+    const who = agentNameOf(r, readers.agentNames);
+    a.agents.set(who, (a.agents.get(who) ?? 0) + 1);
+    if (r.created_at > a.lastAt) a.lastAt = r.created_at;
+    areas.set(module, a);
+  }
+  const byCount = (m: Map<string, number>) => [...m].sort((x, y) => y[1] - x[1] || x[0].localeCompare(y[0])).map(([k]) => k);
+  return [...areas]
+    .map(([module, a]) => ({
+      module,
+      changes: a.changes,
+      lookups: a.lookups,
+      agents: byCount(a.agents),
+      topChanges: byCount(a.skills).slice(0, 3),
+      lastAt: a.lastAt,
+    }))
+    .sort((x, y) => y.changes - x.changes || y.lookups - x.lookups || x.module.localeCompare(y.module));
 }
 
 /** Callers that are not agents: a person at the admin, the scheduler, the platform itself. */
@@ -121,11 +200,13 @@ export function summarizeAgentWork(input: {
   /** Is this skill's module on? (module-visibility's skillShown) */
   shown: (skillName: string | null) => boolean;
   stoppedLimit?: number;
+  readers?: AgentWorkReaders;
 }): AgentWorkSummary {
+  const names = input.readers?.agentNames;
   const rows = input.activity.filter((r) => isAgentCall(r) && input.shown(r.skill_name));
   const today = rows.filter((r) => r.created_at >= input.todayStart && r.status === 'success');
   const perAgent = new Map<string, number>();
-  for (const r of today) perAgent.set(agentLabel(r.agent), (perAgent.get(agentLabel(r.agent)) ?? 0) + 1);
+  for (const r of today) perAgent.set(agentNameOf(r, names), (perAgent.get(agentNameOf(r, names)) ?? 0) + 1);
 
   const stoppedRows = rows.filter((r) => r.status === 'refused' || r.status === 'failed');
   const stopped = stoppedRows
@@ -134,7 +215,7 @@ export function summarizeAgentWork(input: {
     .slice(0, input.stoppedLimit ?? 5)
     .map((r) => ({
       id: r.id,
-      agent: agentLabel(r.agent),
+      agent: agentNameOf(r, names),
       skill: r.skill_name ?? 'unknown skill',
       outcome: r.status as 'refused' | 'failed',
       reason: stopReason(r),
@@ -149,5 +230,6 @@ export function summarizeAgentWork(input: {
     refused: stoppedRows.filter((r) => r.status === 'refused').length,
     failed: stoppedRows.filter((r) => r.status === 'failed').length,
     stopped,
+    areas: workByArea(rows, input.readers),
   };
 }
