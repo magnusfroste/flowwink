@@ -15531,7 +15531,7 @@
         },
         {
           "name": "assign_lead",
-          "description": "Assign a lead to a person — set who the seller/owner is. Takes the lead's email or id and the assignee's EMAIL (resolved to a user id server-side), so a shared agent can act on \"magnus@froste.eu is the seller on this one\". Use when: someone says who owns/handles/sells a lead; distributing inbound leads among colleagues. NOT for: assigning companies (assign_company); changing lead status (manage_leads).",
+          "description": "Assign a lead to a person — set who the seller/owner is. Takes the lead's email or id and the assignee's EMAIL (resolved to a user id server-side), so a shared agent can act on \"anna@example.com is the seller on this one\". Use when: someone says who owns/handles/sells a lead; distributing inbound leads among colleagues. NOT for: assigning companies (assign_company); changing lead status (manage_leads).",
           "category": "crm",
           "handler": "rpc:assign_lead",
           "scope": "internal",

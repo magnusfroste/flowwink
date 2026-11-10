@@ -4,7 +4,7 @@
 -- are uuid columns nothing agent-facing could write, because manage_leads never
 -- declared the parameter and account_owner expects a uuid no agent has. So on a
 -- shared-agent instance ("one OpenClaw, several colleagues") there was no way
--- to say "magnus@froste.eu is the seller on this one", and no way to ask "what
+-- to say "anna@example.com is the seller on this one", and no way to ask "what
 -- has slipped through the cracks" — a lead untouched for three weeks looked
 -- identical to one from yesterday.
 --

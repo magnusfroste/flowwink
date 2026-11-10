@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 /**
- * magnus@froste.eu: born without signup metadata → the trigger's fail-closed
+ * A user account created without signup metadata → the trigger's fail-closed
  * path assigned 'customer'; an admin then granted 'sales'. Result: the panel
  * said "Customer" forever (primary role = FIRST ROW, and the customer row is
  * always oldest) and the role could not be removed (the manage-roles popover
