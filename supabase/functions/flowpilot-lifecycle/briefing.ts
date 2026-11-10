@@ -122,14 +122,17 @@ export async function handler(req: Request): Promise<Response> {
         .eq("status", "confirmed")
         .gte("confirmed_at", weekAgo.toISOString()),
 
-      // Revenue
+      // Revenue: an order is revenue when it is PAID (#259) — the same basis as
+      // the Orders page and sales_summary. 'completed' is the older closed state
+      // and stays counted; counting it alone lost every paid order not yet
+      // delivered.
       supabase.from("orders").select("total_cents, currency", { count: "exact" })
         .gte("created_at", weekAgo.toISOString())
-        .eq("status", "completed"),
+        .in("status", ["paid", "completed"]),
       supabase.from("orders").select("total_cents", { count: "exact" })
         .gte("created_at", prevWeek.toISOString())
         .lt("created_at", weekAgo.toISOString())
-        .eq("status", "completed"),
+        .in("status", ["paid", "completed"]),
 
       // Bookings
       supabase.from("bookings").select("id", { count: "exact", head: true })
