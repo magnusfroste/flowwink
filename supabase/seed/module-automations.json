@@ -48,7 +48,8 @@
           "description": "Background job that embeds consultant profiles flagged as stale so semantic search stays fresh.",
           "trigger_type": "cron",
           "trigger_config": {
-            "expression": "7 * * * *"
+            "expression": "7 * * * *",
+            "work_probe": "consultant_profiles_stale"
           },
           "skill_name": "reindex_consultants",
           "skill_arguments": {
@@ -594,7 +595,8 @@
           "trigger_type": "cron",
           "trigger_config": {
             "cron": "*/15 * * * *",
-            "expression": "*/15 * * * *"
+            "expression": "*/15 * * * *",
+            "work_probe": "sla_policies_enabled"
           },
           "skill_name": "sla_check",
           "skill_arguments": {},
