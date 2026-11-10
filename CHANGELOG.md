@@ -76,6 +76,11 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Fixed
 
+- **An invoice dated in a closed month is refused again.** Yesterday's change
+  for books kept elsewhere let a sent invoice through whenever its booking
+  failed, so one dated in a closed month was issued and left unbooked. Only
+  the missing accounting grant is let through now; a closed month refuses the
+  send and the invoice stays a draft. Found by the night's fresh install.
 - **Sending an invoice no longer needs the accounting grant.** A salesperson
   without it was refused ("Requires the accounting module") because the booking
   behind the send could not run. The invoice is sent, the booking is caught up.

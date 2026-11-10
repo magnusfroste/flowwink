@@ -60,4 +60,13 @@ describe('external ledger', () => {
     // The one deliberate refusal stays.
     expect(sent).toMatch(/LIKE 'No exchange rate%'/);
   });
+
+  it('only the missing grant is let through — a closed month still refuses the issue', () => {
+    // 20261110120000 caught everything, so an invoice dated in a closed month
+    // was issued and left unbooked (the night of 2026-11-10, record-to-report).
+    const body = fns.get('on_invoice_status_book')!.body;
+    const sent = body.slice(body.indexOf("IF NEW.status = 'sent'::invoice_status THEN", body.indexOf("TG_OP = 'UPDATE'")));
+    expect(sent.slice(0, sent.indexOf("ELSIF NEW.status = 'paid'")))
+      .toMatch(/EXCEPTION WHEN others THEN\s+IF SQLERRM NOT LIKE 'Requires the accounting module%' THEN\s+RAISE;\s+END IF;/);
+  });
 });
