@@ -157,13 +157,17 @@ export interface CronHealthOptions {
  * absent and always judged. A job for a module that is off still ticks (its
  * target answers MODULE_DISABLED or does nothing); its failures are that
  * module's, and the module is off.
+ *
+ * `flowpilot-daily-briefing` is NOT here although it carries the name (#262):
+ * the briefing is the business, a platform surface that runs and speaks as
+ * "FlowWink" with FlowPilot off. Its job is judged and required on every
+ * instance. The heartbeat and learn are FlowPilot's and skip themselves.
  */
 export const CRON_JOB_MODULE: Readonly<Record<string, string>> = Object.freeze({
   'booking-reminders': 'bookings',
   'calendar-reminders': 'calendar',
   'enqueue-contract-billing-tasks': 'contracts',
   'enqueue-subscription-billing-tasks': 'subscriptions',
-  'flowpilot-daily-briefing': 'flowpilot',
   'flowpilot-heartbeat': 'flowpilot',
   'flowpilot-heartbeat-12h': 'flowpilot',
   'flowpilot-learn': 'flowpilot',

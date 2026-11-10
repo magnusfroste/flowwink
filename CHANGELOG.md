@@ -65,6 +65,10 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Fixed
 
+- **The daily briefing's schedule is the platform's, not FlowPilot's.** The cron
+  health filed the briefing job under FlowPilot, so with FlowPilot off a stopped
+  briefing was never flagged and never required — while the briefing itself runs
+  without FlowPilot. It is judged on every instance now.
 - **A receipt is not unbooked work.** A paid order is booked when it is paid,
   and its receipt is an invoice born paid. The booking functions already skipped
   it, but `check_books` reported it as "a customer invoice without a voucher"
