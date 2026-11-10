@@ -51,9 +51,9 @@ export function FulfillmentActions({
       // `status = 'shipped'`, which erased 'paid' — the same overwrite
       // ship_picking did in SQL, and the one manage_orders was fixed for on
       // 2026-08-20. orders.status carries money and lifecycle; it is not ours.
-      // ('delivered' still closes the lifecycle as 'completed' — that IS a
-      // payment-axis value, and the weekly briefing counts revenue on it.)
-      if (next.key === 'delivered') update.status = 'completed';
+      // 'delivered' does not touch it either (#259): it used to write
+      // 'completed', which erased 'paid' the same way — and turned an UNPAID
+      // delivered order into revenue. Revenue is counted on paid.
 
       const { error } = await supabase
         .from('orders')

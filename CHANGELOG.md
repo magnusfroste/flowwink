@@ -65,6 +65,12 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Fixed
 
+- **An order is revenue when it is paid.** Marking an order delivered wrote
+  `completed` over its payment status — losing `paid`, and turning an unpaid
+  delivered order into revenue — and the weekly briefing counted revenue on
+  `completed` alone, so a paid order not yet delivered was missing. Delivery no
+  longer touches the payment status, and the briefing counts what the Orders
+  page counts.
 - **A receipt is not unbooked work.** A paid order is booked when it is paid,
   and its receipt is an invoice born paid. The booking functions already skipped
   it, but `check_books` reported it as "a customer invoice without a voucher"
