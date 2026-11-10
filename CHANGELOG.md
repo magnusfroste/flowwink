@@ -65,6 +65,12 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Fixed
 
+- **A receipt is not unbooked work.** A paid order is booked when it is paid,
+  and its receipt is an invoice born paid. The booking functions already skipped
+  it, but `check_books` reported it as "a customer invoice without a voucher"
+  (high), `month_close_checklist` would have failed the month on it and
+  `book_unbooked_invoices` listed it every run, booking nothing. One rule,
+  `invoice_booked_with_its_order`, now answers for all three.
 - **Consultant profiles are re-embedded every hour again.** The consultants
   module schedules its reindex at `7 * * * *` (minute 7 of every hour), a shape
   the dispatcher's cron parser had no branch for, so it switched the automation
