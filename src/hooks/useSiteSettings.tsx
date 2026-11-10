@@ -1166,6 +1166,12 @@ export interface AccountingPreferences {
    * of guessing a company form.
    */
   legalForm: '' | 'limited_company' | 'sole_trader' | 'partnership' | 'other';
+  /**
+   * Where the books are kept. 'external' = another system (Fortnox, Visma …)
+   * carries the ledger: FlowWink books nothing by itself and check_books has
+   * nothing to say. The database reads it through books_kept_here().
+   */
+  ledger?: 'internal' | 'external';
 }
 
 export const defaultAccountingPreferences: AccountingPreferences = {
@@ -1179,6 +1185,7 @@ export const defaultAccountingPreferences: AccountingPreferences = {
   rounding: 'half-up',
   vatReturnPeriod: 'quarterly',
   legalForm: '',
+  ledger: 'internal',
 };
 
 export function useAccountingPreferences() {
