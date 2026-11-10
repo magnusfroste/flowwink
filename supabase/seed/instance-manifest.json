@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261110090001",
-      "migrations_count": 755,
+      "migration_head": "20261110120000",
+      "migrations_count": 756,
       "migrations": [
         {
           "version": "00000000000000",
@@ -3025,6 +3025,10 @@
         {
           "version": "20261110090001",
           "name": "kvittot-ar-redan-bokat"
+        },
+        {
+          "version": "20261110120000",
+          "name": "bockerna-fors-nagon-annanstans"
         }
       ]
     },
