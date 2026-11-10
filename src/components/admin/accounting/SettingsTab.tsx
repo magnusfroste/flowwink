@@ -277,6 +277,25 @@ export function SettingsTab() {
                   lists VAT and employer declarations only and says why.
                 </p>
               </div>
+
+              <div className="space-y-2">
+                <Label>Ledger</Label>
+                <Select
+                  value={draft.ledger ?? 'internal'}
+                  onValueChange={(v) => patch({ ledger: v as AccountingPreferences['ledger'] })}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="internal">Kept here</SelectItem>
+                    <SelectItem value="external">Kept in another system</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Choose another system when the books are kept in Fortnox, Visma or similar. Invoices, orders
+                  and vendor invoices are then not booked here, and the books check stays quiet. Vouchers
+                  already booked are left as they are.
+                </p>
+              </div>
             </div>
 
             <div className="flex justify-end gap-2 pt-2 border-t">

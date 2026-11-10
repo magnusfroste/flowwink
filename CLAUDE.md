@@ -594,6 +594,14 @@ beside its payload, so an operator branches instead of guessing:
   functional role is granted on first sign-in. The edge function admits the
   platform's own call (service key + `_skill`) beside an admin session.
   `check_operations` points at it when `assignable` is empty.
+- **The books may be kept somewhere else (2026-11-10, #862).**
+  `accounting_preferences.ledger = 'external'` (Accounting → Settings) is a
+  declared fact with one reader, `books_kept_here()`. Every trigger that books
+  by itself asks it first (`on_invoice_status_book`, `on_order_paid_book`,
+  `book_vendor_invoice_on_register`; a guard discovers any new one), and
+  `check_books` / `book_unbooked_invoices` answer `external_ledger: true`
+  instead of listing unbooked work. An explicit booking skill still books — the
+  dial stops what happens by itself, not what a person asks for.
 - **Born right (2026-10-27).** `manage_invoice create` without `due_date`
   gets one from the payment terms (`net30` → 30 days after the issue date,
   30 when the terms say nothing). Every commercial `currency` column is
