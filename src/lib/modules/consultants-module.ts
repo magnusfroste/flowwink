@@ -328,7 +328,7 @@ export const consultantsModule = defineModule<ConsultantMatchInput, ConsultantMa
       trigger_type: 'cron',
       // Hourly, not every ten minutes: on autoversio this fired 5 841 times for a
       // handful of stale rows, and each fire is a dispatcher pulse (2026-09-04).
-      trigger_config: { expression: '7 * * * *' },
+      trigger_config: { expression: '7 * * * *', work_probe: 'consultant_profiles_stale' },
       skill_name: 'reindex_consultants',
       skill_arguments: { action: 'reindex_stale', limit: 25 },
       executor: 'platform',
