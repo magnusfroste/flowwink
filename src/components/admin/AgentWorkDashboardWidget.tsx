@@ -37,7 +37,7 @@ export function AgentWorkDashboardWidget() {
           .order('created_at', { ascending: false })
           .limit(2000),
         supabase
-          .from('project_task_comments')
+          .from('project_task_comments' as never)
           .select('task_id, project_id, kind, author_type, author_name, created_at')
           .gte('created_at', since)
           .limit(2000),
@@ -45,7 +45,7 @@ export function AgentWorkDashboardWidget() {
       ]);
       return summarizeAgentWork({
         activity: (activity.data ?? []) as AgentActivityRow[],
-        comments: (comments.data ?? []) as TaskCommentRow[],
+        comments: (comments.data ?? []) as unknown as TaskCommentRow[],
         stagedCount: staged.count ?? 0,
         todayStart,
         shown: (skill) => skillShown(skill, active),
