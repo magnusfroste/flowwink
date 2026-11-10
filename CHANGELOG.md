@@ -57,6 +57,12 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Added
 
+- **Agent work on the dashboard.** A panel for an owner, not a developer: how
+  much the agents did today and which ones, what is waiting for a person
+  (operations an agent staged, questions an agent asked on a task that nobody
+  has answered), and the calls that were refused or failed in the last seven
+  days with the reason in words. Scheduled jobs and a person's own clicks are
+  not counted, and a module that is off stays out of it.
 - **A paid order gets its receipt by itself.** The receipt is the order's paid
   invoice, sent by the new automation `Receipt on paid order` in the language the
   customer ordered in (`order_receipt` template, en + sv). It can be switched off
