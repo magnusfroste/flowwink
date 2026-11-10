@@ -32,6 +32,7 @@ import { ChatFeedbackDashboardWidget } from '@/components/admin/ChatFeedbackDash
 import { ChatAnalyticsDashboardWidget } from '@/components/admin/ChatAnalyticsDashboardWidget';
 import { AutomationHealthDashboardWidget } from '@/components/admin/AutomationHealthDashboardWidget';
 import { FlowPilotDashboardWidget } from '@/components/admin/FlowPilotDashboardWidget';
+import { AgentWorkDashboardWidget } from '@/components/admin/AgentWorkDashboardWidget';
 import { BusinessPulseWidget } from '@/components/admin/BusinessPulseWidget';
 import { LiveSupportDashboardWidget } from '@/components/admin/LiveSupportDashboardWidget';
 import { usePages } from '@/hooks/usePages';
@@ -180,6 +181,7 @@ export default function AdminDashboard() {
     'aeo': true,
     'automation-health': true,
     'flowpilot': true,
+    'agent-work': true,
     'recent-pages': true,
     'quick-actions': true,
   };
@@ -303,6 +305,9 @@ export default function AdminDashboard() {
 
       case 'automation-health':
         return <AutomationHealthDashboardWidget key={widgetId} />;
+
+      case 'agent-work':
+        return <AgentWorkDashboardWidget key={widgetId} />;
 
       case 'flowpilot':
         return flowpilotEnabled ? <FlowPilotDashboardWidget key={widgetId} /> : null;

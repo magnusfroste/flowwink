@@ -34,6 +34,7 @@ export const DASHBOARD_WIDGETS: DashboardWidgetMeta[] = [
   { id: 'aeo', title: 'AEO Insights', description: 'Answer Engine Optimization', moduleId: 'pages' },
   { id: 'automation-health', title: 'Automation Health', description: 'Automation run counts and error rates' },
   { id: 'flowpilot', title: 'FlowPilot', description: 'AI agent activity and goals' },
+  { id: 'agent-work', title: 'Agent work', description: 'What agents did today, what waits on you, and where an agent was stopped' },
   { id: 'recent-pages', title: 'Recent Pages', description: 'Recently updated pages', moduleId: 'pages' },
   // Wire id kept ('quick-actions' lives in stored layouts); the ungated
   // shortcut card it once named was removed — the top bar's QuickCreateMenu is
@@ -54,7 +55,7 @@ export const DEFAULT_WIDGET_ORDER = DASHBOARD_WIDGETS.map((w) => w.id);
  * are still available (togglable in Customize) but start hidden.
  */
 export const ROLE_PRESETS: Partial<Record<AppRole | 'admin', string[]>> = {
-  admin: ['my-day', 'business-pulse', 'needs-attention', 'finance', 'tickets', 'approvals', 'content-overview', 'leads', 'live-support', 'flowpilot', 'automation-health', 'chat-analytics', 'chat-feedback', 'aeo', 'recent-pages', 'quick-actions'],
+  admin: ['my-day', 'business-pulse', 'needs-attention', 'finance', 'tickets', 'approvals', 'agent-work', 'content-overview', 'leads', 'live-support', 'flowpilot', 'automation-health', 'chat-analytics', 'chat-feedback', 'aeo', 'recent-pages', 'quick-actions'],
   sales: ['my-day', 'needs-attention', 'leads', 'finance', 'business-pulse'],
   marketing: ['my-day', 'content-overview', 'aeo', 'leads', 'chat-analytics', 'chat-feedback', 'recent-pages'],
   support: ['my-day', 'needs-attention', 'tickets', 'live-support', 'chat-analytics', 'chat-feedback'],

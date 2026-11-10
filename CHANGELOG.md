@@ -57,6 +57,12 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Added
 
+- **Agent work on the dashboard.** A panel for an owner, not a developer: how
+  much the agents did today and which ones, what is waiting for a person
+  (operations an agent staged, questions an agent asked on a task that nobody
+  has answered), and the calls that were refused or failed in the last seven
+  days with the reason in words. Scheduled jobs and a person's own clicks are
+  not counted, and a module that is off stays out of it.
 - **The books can be kept somewhere else.** Accounting → Settings → Ledger:
   with "Kept in another system" (Fortnox, Visma …) FlowWink no longer books
   invoices, paid orders or vendor invoices by itself, and the books check stays
