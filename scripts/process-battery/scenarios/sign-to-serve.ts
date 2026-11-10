@@ -69,8 +69,8 @@ async function run(s: Scenario): Promise<void> {
   // yet). A literal '2026-09-01' here passed every day of September and billed the period twice on
   // 2026-10-01 — the nightly fresh install's first run, and its first finding about the battery itself.
   const period = await s.one<{ first: string; next: string }>(
-    `select date_trunc('month', current_date)::date::text as first,
-            (date_trunc('month', current_date) + interval '1 month')::date::text as next`);
+    `select date_trunc('month', public.platform_today())::date::text as first,
+            (date_trunc('month', public.platform_today()) + interval '1 month')::date::text as next`);
   if (!period) throw new Error('sign-to-serve: could not read the billing calendar from the database');
   await s.must('the recurring fee is seeded: 10 000 kr a month, 25 % VAT, billing on', 'manage_contract', {
     action: 'update', contract_id: contractId, billing_enabled: true, billing_amount_cents: 1_000_000, billing_interval: 'month',
