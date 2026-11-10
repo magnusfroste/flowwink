@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261110120000",
-      "migrations_count": 756,
+      "migration_head": "20261110140000",
+      "migrations_count": 757,
       "migrations": [
         {
           "version": "00000000000000",
@@ -3029,6 +3029,10 @@
         {
           "version": "20261110120000",
           "name": "bockerna-fors-nagon-annanstans"
+        },
+        {
+          "version": "20261110140000",
+          "name": "stangd-manad-nekar-utskicket"
         }
       ]
     },
