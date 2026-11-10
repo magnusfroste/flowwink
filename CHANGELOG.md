@@ -63,6 +63,11 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
   has answered), and the calls that were refused or failed in the last seven
   days with the reason in words. Scheduled jobs and a person's own clicks are
   not counted, and a module that is off stays out of it.
+- **The books can be kept somewhere else.** Accounting → Settings → Ledger:
+  with "Kept in another system" (Fortnox, Visma …) FlowWink no longer books
+  invoices, paid orders or vendor invoices by itself, and the books check stays
+  quiet instead of listing every invoice as unbooked. Vouchers already booked
+  are left alone; switching back lets the catch-up book what was skipped.
 - **A paid order gets its receipt by itself.** The receipt is the order's paid
   invoice, sent by the new automation `Receipt on paid order` in the language the
   customer ordered in (`order_receipt` template, en + sv). It can be switched off
@@ -71,6 +76,19 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Fixed
 
+- **Sending an invoice no longer needs the accounting grant.** A salesperson
+  without it was refused ("Requires the accounting module") because the booking
+  behind the send could not run. The invoice is sent, the booking is caught up.
+- **An order is revenue when it is paid.** Marking an order delivered wrote
+  `completed` over its payment status — losing `paid`, and turning an unpaid
+  delivered order into revenue — and the weekly briefing counted revenue on
+  `completed` alone, so a paid order not yet delivered was missing. Delivery no
+  longer touches the payment status, and the briefing counts what the Orders
+  page counts.
+- **The daily briefing's schedule is the platform's, not FlowPilot's.** The cron
+  health filed the briefing job under FlowPilot, so with FlowPilot off a stopped
+  briefing was never flagged and never required — while the briefing itself runs
+  without FlowPilot. It is judged on every instance now.
 - **A receipt is not unbooked work.** A paid order is booked when it is paid,
   and its receipt is an invoice born paid. The booking functions already skipped
   it, but `check_books` reported it as "a customer invoice without a voucher"

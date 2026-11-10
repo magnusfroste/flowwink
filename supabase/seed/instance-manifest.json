@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261110090001",
-      "migrations_count": 755,
+      "migration_head": "20261110120000",
+      "migrations_count": 756,
       "migrations": [
         {
           "version": "00000000000000",
@@ -3025,6 +3025,10 @@
         {
           "version": "20261110090001",
           "name": "kvittot-ar-redan-bokat"
+        },
+        {
+          "version": "20261110120000",
+          "name": "bockerna-fors-nagon-annanstans"
         }
       ]
     },
@@ -3035,7 +3039,7 @@
     },
     "edge_functions": {
       "count": 76,
-      "shared_hash": "sha256:c65cb6aa0e4cd7f592ec0c3d6fdf4bcc233a69b4e765ba17384b45bd97eda5cc",
+      "shared_hash": "sha256:16f35e3005b5d09b8adc6006cd6b7b6b4deb5bebe012a39cf374d59ca97f58f2",
       "functions": {
         "agent-execute": "sha256:e8216b4ae075a9d43142a31c16d8a77099fb5acaf6ba60ee169f26eeff3aaf9c",
         "agent-operate": "sha256:4320e02dd3e6a0a1706b42dc1905b631c61e6a4cbe3556c701f474c278c89e1a",
@@ -3070,7 +3074,7 @@
         "extract-pdf-text": "sha256:fb2e1a10f79fb0b150cd547a08fc3b1e11b79c09771f2d13d748c08b4e93f34c",
         "federation-invite-peer": "sha256:475817522c4d1b7a2faed2a0a4fbe03ac5f340479eb246febe0456f3d0596b21",
         "flowpilot-heartbeat": "sha256:c233b4c6b0ae60a266741fbc90d626baa1479e34adf359ef1aa555569828390f",
-        "flowpilot-lifecycle": "sha256:31af7a9f62a186583de549553af43e06a601fd3452893dc920f17d1ecfcf6649",
+        "flowpilot-lifecycle": "sha256:ec0e77839be7066f15ae47d96daa10abbb6bd4e4e53d866a7e3e41db461f0259",
         "gatewayapi-ingest": "sha256:d6f74c384f0baac936737762d330c470636502afcc9af418b1c43db26134e4fe",
         "generate-invoice-pdf": "sha256:788baea5630795df69dd7b69f4177b12fd1432a061dca2e0bf2cc562fb6ffb2d",
         "get-page": "sha256:3e42751911164c9d6c350b931a4e64a4824166a6bef8d02e526ad378c8f3921b",
