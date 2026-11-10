@@ -73,6 +73,16 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 - **Sending an invoice no longer needs the accounting grant.** A salesperson
   without it was refused ("Requires the accounting module") because the booking
   behind the send could not run. The invoice is sent, the booking is caught up.
+- **An order is revenue when it is paid.** Marking an order delivered wrote
+  `completed` over its payment status — losing `paid`, and turning an unpaid
+  delivered order into revenue — and the weekly briefing counted revenue on
+  `completed` alone, so a paid order not yet delivered was missing. Delivery no
+  longer touches the payment status, and the briefing counts what the Orders
+  page counts.
+- **The daily briefing's schedule is the platform's, not FlowPilot's.** The cron
+  health filed the briefing job under FlowPilot, so with FlowPilot off a stopped
+  briefing was never flagged and never required — while the briefing itself runs
+  without FlowPilot. It is judged on every instance now.
 - **A receipt is not unbooked work.** A paid order is booked when it is paid,
   and its receipt is an invoice born paid. The booking functions already skipped
   it, but `check_books` reported it as "a customer invoice without a voucher"

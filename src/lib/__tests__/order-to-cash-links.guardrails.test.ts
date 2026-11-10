@@ -197,8 +197,16 @@ describe('an order has two status axes and nothing writes across', () => {
       'utf8',
     );
     expect(ui).toContain('fulfillment_status: next.key');
-    expect(ui.replace(/\/\/[^\n]*/g, ''), "marking an order shipped must not touch orders.status")
-      .not.toMatch(/update\.status\s*=\s*'shipped'/);
+    // Not 'shipped' (#249) and not 'completed' on delivery either (#259): the
+    // button writes no value at all on the money axis. The shape, not a value.
+    expect(ui.replace(/\/\/[^\n]*/g, ''), "a fulfillment step must not touch orders.status")
+      .not.toMatch(/update\.status\s*=/);
+  });
+
+  it('the briefing counts revenue on paid, as every other reader does (#259)', () => {
+    const briefing = readFileSync(join(root, 'supabase/functions/flowpilot-lifecycle/briefing.ts'), 'utf8');
+    expect(briefing).not.toMatch(/from\("orders"\)[\s\S]{0,260}\.eq\("status", "completed"\)/);
+    expect(briefing.match(/\.in\("status", \["paid", "completed"\]\)/g)?.length).toBe(2);
   });
 
   it('revenue is counted on the money axis only', () => {
