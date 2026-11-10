@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261110090000",
-      "migrations_count": 754,
+      "migration_head": "20261110090001",
+      "migrations_count": 755,
       "migrations": [
         {
           "version": "00000000000000",
@@ -3021,6 +3021,10 @@
         {
           "version": "20261110090000",
           "name": "fler-svep-fragar-om-arbete"
+        },
+        {
+          "version": "20261110090001",
+          "name": "kvittot-ar-redan-bokat"
         }
       ]
     },
