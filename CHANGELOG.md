@@ -97,6 +97,12 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Fixed
 
+- **Three morning reviews are reads.** `support_list_conversations`,
+  `deal_stale_check` and `lead_pipeline_review` only select, but no read rule
+  knew them. Each run by a connected agent was logged as "an agent acted on its
+  own", and a read-only key or FlowWork refused them. They now join the read
+  list. Their writing neighbours (`support_assign_conversation`, `add_lead`,
+  `manage_deal`) stay staged.
 - **Fewer wasted agent calls.** From what agents actually failed on across
   four live sites: the blog skill now accepts the `id` it hands back itself
   and says plainly when an address matches no post (it used to answer "post_id

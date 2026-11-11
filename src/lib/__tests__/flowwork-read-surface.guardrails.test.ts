@@ -80,6 +80,17 @@ describe('the read surface is fail-closed', () => {
     }
   });
 
+  it('the morning reviews liteit\'s operator runs are reads (2026-11-11, handlers verified: select only)', () => {
+    for (const name of ['support_list_conversations', 'deal_stale_check', 'lead_pipeline_review']) {
+      expect(isReadSkill(name), name).toBe(true);
+      expect(classifyCall(name, {}), name).toBe('read');
+    }
+    // The neighbours that write stay staged.
+    for (const name of ['support_assign_conversation', 'add_lead', 'manage_deal']) {
+      expect(isReadSkill(name), name).toBe(false);
+    }
+  });
+
   it('explicit extras are reads even without the prefix', () => {
     for (const name of ['accounting_reports', 'ar_aging_report', 'year_end_readiness', 'prepare_vat_return']) {
       expect(isReadSkill(name), name).toBe(true);
