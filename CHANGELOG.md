@@ -97,6 +97,13 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Fixed
 
+- **A blog post id that names nothing is "not found".** `manage_blog_posts`
+  update, publish, unpublish and delete with a `post_id` no post on the site
+  carries answered "Update post failed: Cannot coerce the result to a single
+  JSON object". Hermes got that nine times on www while setting covers on
+  another site's posts. It is now `NOT_FOUND`, never retried, and the hint
+  says to check which site the agent is connected to. Nothing is written. The
+  slug case was already handled (#998).
 - **Three morning reviews are reads.** `support_list_conversations`,
   `deal_stale_check` and `lead_pipeline_review` only select, but no read rule
   knew them. Each run by a connected agent was logged as "an agent acted on its
