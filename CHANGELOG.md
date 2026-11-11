@@ -97,6 +97,16 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Fixed
 
+- **A plan step runs only when it carries what its skill needs.** A plan
+  writes each step's arguments before anything has been read, so a step whose
+  arguments come from a read was stored half-empty. On optic, FlowPilot's plan
+  for watching Peter's projects ran `comment_on_task` as `{kind: 'question'}`
+  twice a day and failed with "body is required", while the same heartbeat
+  asked the right question in its own turn. `advance_plan` now checks the
+  step's arguments against the skill's declared `required` list. A step that
+  leaves one empty is handed to the reasoning loop (`needs_reasoning`, step
+  `handed_off`). It is not run, not counted as a failure, and still finishes
+  the plan. A skill it cannot read runs as before.
 - **A blog post id that names nothing is "not found".** `manage_blog_posts`
   update, publish, unpublish and delete with a `post_id` no post on the site
   carries answered "Update post failed: Cannot coerce the result to a single
