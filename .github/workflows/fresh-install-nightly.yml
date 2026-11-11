@@ -16,8 +16,29 @@ name: Fresh install (nightly)
 
 on:
   schedule:
-    # 02:37 UTC — after the fork sync (01:23) and before the sandbox rebuild (04:00).
+    # 02:37 UTC on paper; GitHub's queue lands it around 10 UTC. This run is
+    # the day's second look at main. The proof a DEPLOY waits for is not this
+    # schedule: Nightly fork sync calls this workflow itself (workflow_call
+    # below) and syncs only what it proved.
     - cron: '37 2 * * *'
+  # Called by nightly-fork-sync.yml: the fleet is synced only after this is
+  # green on the main it is about to hand out (2026-11-11 — a change reached
+  # six sites on the night of 11-10 hours before this job found it red).
+  workflow_call:
+    inputs:
+      template:
+        type: string
+        default: flowwink-platform
+      country:
+        type: string
+        default: SE
+      stamp:
+        type: boolean
+        default: true
+    outputs:
+      proven_sha:
+        description: The commit of main this run installed from zero and proved.
+        value: ${{ jobs.fresh-install.outputs.proven_sha }}
   workflow_dispatch:
     inputs:
       template:
@@ -46,6 +67,8 @@ jobs:
     runs-on: ubuntu-latest
     if: github.repository == 'magnusfroste/flowwink' || vars.FLEET_WORKFLOWS == 'true'
     timeout-minutes: 75
+    outputs:
+      proven_sha: ${{ steps.proven.outputs.sha }}
     env:
       BATTERY_TEMPLATE: ${{ inputs.template || 'flowwink-platform' }}
       BATTERY_COUNTRY: ${{ inputs.country || 'SE' }}
@@ -59,6 +82,11 @@ jobs:
         with:
           ref: main
           fetch-depth: 0
+
+      # What this run proves is THIS commit — the caller compares main with it before it deploys.
+      - name: Note the commit under test
+        id: proven
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
