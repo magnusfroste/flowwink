@@ -49,7 +49,7 @@ describe('feedback module — on by default, endpoint upstream', () => {
     // failed ping — and the receiver stores exactly that field.
     expect(src).toMatch(/await supabase\.rpc\('instance_sync_status'\)/);
     expect(src).toMatch(/return \{ app: 'flowwink', skills_sha, migration_head, modules_enabled, module_count: modules_enabled\.length \};/);
-    expect(src).toMatch(/skills_sha: version\.skills_sha, migration_head: version\.migration_head,/);
+    expect(src).toMatch(/p_skills_sha: version\.skills_sha,\n\s*p_migration_head: version\.migration_head,/);
     expect(read('supabase/functions/content-api/index.ts')).toMatch(/p_migration_head: typeof body\.migration_head === 'string'/);
     expect(read('src/pages/admin/FeedbackPage.tsx')).toMatch(/\{r\.migration_head \?\? '—'\}/);
     // The ping carries the site's name — the one Branding or Business Identity
@@ -66,6 +66,17 @@ describe('feedback module — on by default, endpoint upstream', () => {
     expect(page).toMatch(/\{r\.site_name && <div className="font-medium">\{r\.site_name\}<\/div>\}/);
     expect(page).toMatch(/isLocalSite\(r\.site_url\) && /);
   });
+  it('the receiver records its own ping with the function every other ping goes through — so it counts', () => {
+    // www is the endpoint, so its ping never crosses content-api. It wrote
+    // feedback_instances with a hand-made upsert that never touched ping_count:
+    // the fleet view read 1 for www for its whole life (2026-11-11). One writer.
+    const src = read('supabase/functions/_shared/execute/core.ts');
+    const branch = src.slice(src.indexOf("case 'feedback_ping': {"), src.indexOf("const r = await postTo('feedback/ping', payload);"));
+    expect(branch).toMatch(/if \(receiveHere\) \{[\s\S]*await supabase\.rpc\('feedback_record_ping', \{/);
+    expect(src).not.toMatch(/from\('feedback_instances'\)\.(upsert|insert|update)\(/);
+    expect(read('supabase/functions/content-api/index.ts')).toMatch(/admin\.rpc\('feedback_record_ping', \{/);
+  });
+
   it('the receiving side: tables with public read, content-api routes, the Vercel proxy, the pages', () => {
     const sql = read('supabase/migrations/20261027190000_feedbackbradan.sql');
     for (const t of ['feedback_posts', 'feedback_votes', 'feedback_comments', 'feedback_instances']) expect(sql).toContain(`CREATE TABLE IF NOT EXISTS public.${t}`);

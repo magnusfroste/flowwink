@@ -81,6 +81,11 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Fixed
 
+- **The receiving instance counts its own ping.** The feedback endpoint (www)
+  records its own daily ping without crossing content-api, and did so with a
+  hand-written upsert that never touched `ping_count`, so the fleet view read 1
+  for it however many days it had pinged. It now goes through
+  `feedback_record_ping`, the function every other instance's ping reaches.
 - **An invoice dated in a closed month is refused again.** Yesterday's change
   for books kept elsewhere let a sent invoice through whenever its booking
   failed, so one dated in a closed month was issued and left unbooked. Only
