@@ -18195,8 +18195,13 @@ async function logActivity(
     log_type?: string;
     /** The connected agent's key, when the call came over MCP — what agent_day() reads. */
     api_key_id?: string | null;
+    /** Set on the retry for an instance whose migration lags the edge deploy (no `module` column yet). */
+    _withoutModule?: boolean;
   },
 ): Promise<string | null> {
+  // The module that owns the skill: staff read agent work per module (the RLS
+  // policy of 20261111090000). Platform skills carry none and stay admin-only.
+  const owner = activity._withoutModule ? null : ownerModuleOf(activity.skill_name);
   const { data, error } = await supabase.from('agent_activity').insert({
     agent: activity.agent,
     skill_id: activity.skill_id,
@@ -18216,7 +18221,14 @@ async function logActivity(
     trace_id: activity.trace_id || null,
     ...(activity.log_type ? { log_type: activity.log_type } : {}),
     ...(activity.api_key_id ? { api_key_id: activity.api_key_id } : {}),
+    ...(owner && owner !== 'platform' ? { module: owner } : {}),
   }).select('id').single();
+
+  // The `module` column arrives with 20261111090000; where the edge deploy got
+  // there first, keep the row without it rather than lose the journal.
+  if (error && owner && !activity._withoutModule && /module/i.test(String(error.message)) && /PGRST204|42703|column/i.test(`${error.code} ${error.message}`)) {
+    return logActivity(supabase, { ...activity, _withoutModule: true });
+  }
 
   // 'refused' joined the enum in 20261028090037; on an instance whose
   // migration lags the edge deploy, keep the row (as success — its output
