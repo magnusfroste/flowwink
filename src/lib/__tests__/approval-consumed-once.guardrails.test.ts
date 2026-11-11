@@ -141,11 +141,13 @@ describe('every executor goes through the one door', () => {
     expect(claimAt).toBeLessThan(routeAt);
   });
 
-  it('a refused claim returns the verdict status and leaves a failed activity row (a visible trail)', () => {
+  it('a refused claim returns the verdict status and leaves an activity row (a visible trail)', () => {
     const block = agentExecute.slice(claimAt, stagedConsumeAt);
     expect(block).toMatch(/status: verdict\.httpStatus/);
-    expect(block).toMatch(/status: 'refused'/);
-    expect(block).toMatch(/status: 'failed'/);
+    // The trail is a row in the journal — as a REFUSAL since 2026-11-11: nothing
+    // ran and nothing is broken, so it must not count as a failure of the skill.
+    expect(block).toMatch(/await logActivity\(supabase, \{[\s\S]*status: 'refused', conversation_id/);
+    expect(block).not.toMatch(/status: 'failed'/);
   });
 
   it('the consumed ticket is settled by agent-execute after the handler ran', () => {
