@@ -34,6 +34,11 @@ DECLARE
 BEGIN
   BEGIN
     INSERT INTO auth.users (id, email) VALUES (v_user, 'proof-agent-work@example.test');
+    -- On a virgin instance handle_new_user makes the FIRST account the admin —
+    -- and an admin reads everything, so the proof read 3 rows and stopped every
+    -- fresh install (2026-11-11, found by the pull-request battery). The proof
+    -- is about a plain sales role: take the operator's role away again.
+    DELETE FROM public.user_roles WHERE user_id = v_user;
     INSERT INTO public.user_roles (user_id, role) VALUES (v_user, 'sales'::public.app_role);
     INSERT INTO public.role_module_access (role, module_id) VALUES ('sales'::public.app_role, 'deals') ON CONFLICT DO NOTHING;
     DELETE FROM public.role_module_access WHERE role = 'sales'::public.app_role AND module_id = 'accounting';
