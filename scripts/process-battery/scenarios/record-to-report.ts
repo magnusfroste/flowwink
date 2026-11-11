@@ -259,9 +259,12 @@ async function run(s: Scenario): Promise<void> {
   const forecast = await s.must('a 13-week cash-flow forecast', 'cash_flow_forecast', { p_weeks: 13 });
   const weeks = (forecast.by_week ?? []) as Array<{ net_cents: number; closing_cents: number }>;
   s.equal('it answers thirteen weeks', weeks.length, 13);
+  // "Today" is the business's day (platform_today), as the forecast reads it since 20261026020000 —
+  // not the UTC session's: between 23:00 and midnight UTC the two differ, and a run started then
+  // (2026-11-10 23:41 UTC) missed the receipts already dated the business's tomorrow-in-UTC.
   const bankNow = await s.one<{ cents: string }>(
     `select coalesce(sum(l.debit_cents - l.credit_cents), 0) as cents from journal_entry_lines l join journal_entries e on e.id = l.journal_entry_id
-      where e.status = 'posted' and e.entry_date <= current_date
+      where e.status = 'posted' and e.entry_date <= public.platform_today()
         and l.account_code in (select account_code from account_roles where role in ('bank', 'cash_register'))`);
   s.equal('it starts from the posted bank and cash balance', Number(forecast.opening_cents), Number(bankNow?.cents));
   s.check('every week closes at the previous balance plus its net',
