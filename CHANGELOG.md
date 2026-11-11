@@ -97,6 +97,12 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Fixed
 
+- **Fewer wasted agent calls.** From what agents actually failed on across
+  four live sites: the blog skill now accepts the `id` it hands back itself
+  and says plainly when an address matches no post (it used to answer "post_id
+  or slug required" to both); a request that is still waiting for approval is
+  recorded as a refusal, not a failure, so it no longer counts toward
+  switching the skill off; and an unknown approvals action names the real ones.
 - **A change is proved before it reaches the fleet.** The nightly fork sync
   now installs main from zero and runs every process first, and syncs only
   when that is green. Until now the sync ran hours before the proof, so a
