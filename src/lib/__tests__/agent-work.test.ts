@@ -139,4 +139,26 @@ describe('agent work', () => {
     // A check that was not run (module off, role refused) contributes nothing.
     expect(mergeFlags({ operations: null, books: null })).toMatchObject({ total: 0, top: [] });
   });
+
+  it('findings of the same kind fold into one row, and stop crowding the list', () => {
+    const f = (o: Partial<CheckFinding>): CheckFinding => ({ id: 'x', severity: 'high', count: 1, label: 'something', ...o });
+    const filing = { skill: 'manage_statutory_filing' };
+    const flags = mergeFlags({
+      operations: [f({ id: 'urgent_unassigned', area: 'support', label: '3 urgent tickets with no owner', fix: { skill: 'manage_ticket' } })],
+      books: [
+        f({ id: 'deadline_overdue:agi-2025-09', label: 'AGI Sep 2025 not recorded as filed', fix: filing }),
+        f({ id: 'deadline_overdue:agi-2025-10', label: 'AGI Oct 2025 not recorded as filed', fix: filing }),
+        f({ id: 'deadline_overdue:agi-2025-11', label: 'AGI Nov 2025 not recorded as filed', fix: filing }),
+        f({ id: 'deadline_overdue:vat-2025-q3', label: 'VAT Q3 not recorded as filed', severity: 'medium', fix: filing }), // another severity: its own row
+        f({ id: 'unbooked_invoices', label: '2 invoices not booked', severity: 'medium', fix: { skill: 'book_unbooked_invoices' } }),
+      ],
+    }, 5);
+    expect(flags).toMatchObject({ high: 4, medium: 2, total: 6, rows: 4 });       // every finding still counted
+    expect(flags.top.map((x) => [x.key, x.same])).toEqual([
+      ['operations:urgent_unassigned', 1],
+      ['books:deadline_overdue:agi-2025-09', 3],                                  // the first speaks for three
+      ['books:deadline_overdue:vat-2025-q3', 1],
+      ['books:unbooked_invoices', 1],
+    ]);
+  });
 });

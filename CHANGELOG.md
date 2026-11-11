@@ -73,6 +73,7 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
   contracts, support, field service, automations, chat) and, when Accounting
   is on, the books — highest severity first, each with a link to its area and
   the skill that fixes it. A finding with no fix is marked as yours to decide.
+  Findings of the same kind (one overdue filing per month) fold into one row.
 - **The books can be kept somewhere else.** Accounting → Settings → Ledger:
   with "Kept in another system" (Fortnox, Visma …) FlowWink no longer books
   invoices, paid orders or vendor invoices by itself, and the books check stays

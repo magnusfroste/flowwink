@@ -254,6 +254,8 @@ export interface Flag {
   label: string;
   /** The skill that fixes it, when the check names one; null means it is the owner's to decide. */
   fixSkill: string | null;
+  /** How many findings of the same kind this row stands for (1 = just this one). */
+  same: number;
 }
 
 export interface FlagSummary {
@@ -261,6 +263,8 @@ export interface FlagSummary {
   medium: number;
   low: number;
   total: number;
+  /** Rows after findings of the same kind are folded into one. */
+  rows: number;
   /** Highest severity first, the checks' own order within a severity. */
   top: Flag[];
 }
@@ -279,22 +283,34 @@ export function mergeFlags(
   limit = 5,
 ): FlagSummary {
   const all: Flag[] = [];
+  // Findings of the same kind fold into one row: a check that reports one
+  // finding per period (`deadline_overdue:agi-2025-09`, …-10, …-11) would
+  // otherwise fill the list and push everything else out of sight. The kind is
+  // the id up to its colon; severity and fix must agree too.
+  const rows = new Map<string, Flag>();
   for (const source of ['operations', 'books'] as const) {
     for (const f of checks[source] ?? []) {
       if (!f || !f.id || !f.label) continue;
       const severity = f.severity in SEVERITY_ORDER ? f.severity : 'low';
-      all.push({
+      const flag: Flag = {
         key: `${source}:${f.id}`,
         source,
         area: f.area || (source === 'books' ? 'books' : 'operations'),
         severity,
         label: f.label,
         fixSkill: f.fix?.skill ?? null,
-      });
+        same: 1,
+      };
+      all.push(flag);
+      const kind = f.id.includes(':') ? f.id.slice(0, f.id.indexOf(':')) : f.id;
+      const rowKey = `${source}:${kind}:${severity}:${flag.fixSkill ?? ''}`;
+      const row = rows.get(rowKey);
+      if (row) row.same += 1;
+      else rows.set(rowKey, { ...flag });
     }
   }
   // Stable: Array.prototype.sort keeps the checks' own order within a severity.
-  const sorted = all.slice().sort((a, b) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity]);
+  const sorted = [...rows.values()].sort((a, b) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity]);
   const count = (s: Flag['severity']) => all.filter((f) => f.severity === s).length;
-  return { high: count('high'), medium: count('medium'), low: count('low'), total: all.length, top: sorted.slice(0, limit) };
+  return { high: count('high'), medium: count('medium'), low: count('low'), total: all.length, rows: sorted.length, top: sorted.slice(0, limit) };
 }

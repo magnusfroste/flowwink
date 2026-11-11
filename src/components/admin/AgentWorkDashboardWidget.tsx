@@ -210,6 +210,7 @@ export function AgentWorkDashboardWidget() {
                 <FlagIcon className={`h-3 w-3 shrink-0 ${f.severity === 'high' ? 'text-destructive' : 'text-muted-foreground'}`} />
                 <span className="truncate flex-1">
                   {href ? <Link to={href} className="hover:underline">{f.label}</Link> : f.label}
+                  {f.same > 1 && <span className="font-medium"> and {f.same - 1} more like it</span>}
                   <span className="text-muted-foreground">
                     {' · '}{AREA_NAME[f.area] ?? f.area}
                     {f.fixSkill ? <> · fix: <span className="font-mono">{f.fixSkill}</span></> : <> · for you to decide</>}
@@ -218,8 +219,8 @@ export function AgentWorkDashboardWidget() {
               </div>
             );
           })}
-          {flags.total > flags.top.length && (
-            <p className="text-xs text-muted-foreground">and {flags.total - flags.top.length} more</p>
+          {flags.rows > flags.top.length && (
+            <p className="text-xs text-muted-foreground">and {flags.rows - flags.top.length} more</p>
           )}
         </div>
       )}
