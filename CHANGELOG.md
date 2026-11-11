@@ -82,8 +82,8 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
   way. Calls made before this update stay visible to admins only.
 - **Agent work opens the record.** A new "Latest changes" list in the panel
   shows the last calls that changed something — skill, action, which agent —
-  and links straight to the lead, deal, company, contract, ticket, quote, page,
-  article or candidate it touched.
+  and links straight to the lead, deal, company, contract, ticket, quote,
+  invoice, order, project, page, article or candidate it touched.
 - **The books can be kept somewhere else.** Accounting → Settings → Ledger:
   with "Kept in another system" (Fortnox, Visma …) FlowWink no longer books
   invoices, paid orders or vendor invoices by itself, and the books check stays

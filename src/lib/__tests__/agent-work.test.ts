@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { objectOf, latestChanges, OBJECT_ROUTES, type ChangeRow, mergeFlags, type CheckFinding, workByArea, agentNameOf, summarizeAgentWork, openQuestionTasks, stopReason, isAgentCall, agentLabel, type AgentActivityRow, type TaskCommentRow } from '@/lib/agent-work';
@@ -188,7 +188,9 @@ describe('agent work', () => {
     expect(objectOf('manage_ticket', { action: 'create' }, { item: U1 })?.href).toBe(`/admin/tickets?ticket=${U1}`);   // result.item.id
     expect(objectOf('add_lead', { email: 'a@b.c' }, { lead_id: U1 })?.href).toBe(`/admin/leads/${U1}`);               // result.lead_id
     // result.id belongs to the skill's own record, never to another kind.
-    expect(objectOf('manage_invoice', { action: 'create' }, { id: U1 })).toBeNull();
+    expect(objectOf('manage_invoice', { action: 'create' }, { id: U1 })?.href).toBe(`/admin/invoices?invoice=${U1}`);
+    expect(objectOf('manage_expenses', { action: 'create' }, { id: U1 })).toBeNull();
+    expect(objectOf('manage_orders', { order_id: U2 })?.href).toBe(`/admin/orders?order=${U2}`);
     // A placeholder or a name is not an address.
     expect(objectOf('manage_deal', { deal_id: '<deal_id>' })).toBeNull();
     expect(objectOf('manage_deal', { deal_id: '../../settings' })).toBeNull();
@@ -221,8 +223,25 @@ describe('agent work', () => {
         const page = app.match(new RegExp(`path: "${path}", element: <(\\w+)`))?.[1];
         const file = app.match(new RegExp(`const ${page} = lazy\\(\\(\\) => import\\("\\./pages/admin/([\\w/.-]+)"`))?.[1];
         expect(file, `page for ${path}`).toBeTruthy();
-        expect(readFileSync(join(__dirname, `../../pages/admin/${file}.tsx`), 'utf-8')).toContain(`searchParams.get('${key}')`);
+        // …either itself, or through the shared hook (useSelectOnQueryParam).
+        const src = readFileSync(join(__dirname, `../../pages/admin/${file}.tsx`), 'utf-8');
+        expect(src, `${file} reads ?${key}=`).toMatch(new RegExp(`searchParams\\.get\\('${key}'\\)|useSelectOnQueryParam\\(\\s*'${key}'`));
       }
     }
+  });
+
+  it('every list page that opens a record from its address is linked to (discovered, not listed)', () => {
+    // A page that takes ?invoice=<id> exists so that something can point at it.
+    // The panel said "invoices and orders have no page of their own" for a day
+    // because its list was written by hand and the pages were not read.
+    const dir = join(__dirname, '../../pages/admin');
+    const linked = new Set(OBJECT_ROUTES.map((r) => r.href('ID')).filter((h) => h.includes('?')).map((h) => h.split('?')[1].split('=')[0]));
+    const missing: string[] = [];
+    for (const file of readdirSync(dir).filter((f) => f.endsWith('.tsx'))) {
+      for (const m of readFileSync(join(dir, file), 'utf-8').matchAll(/useSelectOnQueryParam\(\s*'([a-z_]+)'/g)) {
+        if (!linked.has(m[1])) missing.push(`${file}: ?${m[1]}=`);
+      }
+    }
+    expect(missing).toEqual([]);
   });
 });
