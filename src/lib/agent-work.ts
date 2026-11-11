@@ -233,3 +233,84 @@ export function summarizeAgentWork(input: {
     areas: workByArea(rows, input.readers),
   };
 }
+
+/** One thing a check flags: check_operations / check_books' finding, as both return it. */
+export interface CheckFinding {
+  id: string;
+  area?: string | null;
+  severity: 'high' | 'medium' | 'low';
+  count: number;
+  label: string;
+  detail?: string | null;
+  fix?: { skill: string; args?: Record<string, unknown> } | null;
+}
+
+export interface Flag {
+  /** Unique across the checks: `<source>:<id>`. */
+  key: string;
+  source: 'operations' | 'books';
+  area: string;
+  severity: 'high' | 'medium' | 'low';
+  label: string;
+  /** The skill that fixes it, when the check names one; null means it is the owner's to decide. */
+  fixSkill: string | null;
+  /** How many findings of the same kind this row stands for (1 = just this one). */
+  same: number;
+}
+
+export interface FlagSummary {
+  high: number;
+  medium: number;
+  low: number;
+  total: number;
+  /** Rows after findings of the same kind are folded into one. */
+  rows: number;
+  /** Highest severity first, the checks' own order within a severity. */
+  top: Flag[];
+}
+
+const SEVERITY_ORDER = { high: 0, medium: 1, low: 2 } as const;
+
+/**
+ * What the checks flag, as one list (#869 point 3). The same findings an agent
+ * reads from check_operations and check_books — a person sees what the agent
+ * was told, with the skill that would fix it. A check that was not run (its
+ * module is off, or the reader's role may not ask it) is passed as null and
+ * contributes nothing.
+ */
+export function mergeFlags(
+  checks: { operations?: CheckFinding[] | null; books?: CheckFinding[] | null },
+  limit = 5,
+): FlagSummary {
+  const all: Flag[] = [];
+  // Findings of the same kind fold into one row: a check that reports one
+  // finding per period (`deadline_overdue:agi-2025-09`, …-10, …-11) would
+  // otherwise fill the list and push everything else out of sight. The kind is
+  // the id up to its colon; severity and fix must agree too.
+  const rows = new Map<string, Flag>();
+  for (const source of ['operations', 'books'] as const) {
+    for (const f of checks[source] ?? []) {
+      if (!f || !f.id || !f.label) continue;
+      const severity = f.severity in SEVERITY_ORDER ? f.severity : 'low';
+      const flag: Flag = {
+        key: `${source}:${f.id}`,
+        source,
+        area: f.area || (source === 'books' ? 'books' : 'operations'),
+        severity,
+        label: f.label,
+        fixSkill: f.fix?.skill ?? null,
+        same: 1,
+      };
+      all.push(flag);
+      const kind = f.id.includes(':') ? f.id.slice(0, f.id.indexOf(':')) : f.id;
+      const rowKey = `${source}:${kind}:${severity}:${flag.fixSkill ?? ''}`;
+      const row = rows.get(rowKey);
+      if (row) row.same += 1;
+      else rows.set(rowKey, { ...flag });
+    }
+  }
+  // Stable: Array.prototype.sort keeps the checks' own order within a severity.
+  const sorted = [...rows.values()].sort((a, b) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity]);
+  const count = (s: Flag['severity']) => all.filter((f) => f.severity === s).length;
+  return { high: count('high'), medium: count('medium'), low: count('low'), total: all.length, rows: sorted.length, top: sorted.slice(0, limit) };
+}

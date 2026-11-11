@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { workByArea, agentNameOf, summarizeAgentWork, openQuestionTasks, stopReason, isAgentCall, agentLabel, type AgentActivityRow, type TaskCommentRow } from '@/lib/agent-work';
+import { mergeFlags, type CheckFinding, workByArea, agentNameOf, summarizeAgentWork, openQuestionTasks, stopReason, isAgentCall, agentLabel, type AgentActivityRow, type TaskCommentRow } from '@/lib/agent-work';
 
 /**
  * Agent work, in plain words (#869). The panel shows an owner what waits on a
@@ -118,5 +118,47 @@ describe('agent work', () => {
     });
     expect(s.agentsToday).toEqual(['Hermes']);
     expect(s.areas.map((a) => a.module)).toEqual(['crm']);
+  });
+
+  it('what the checks flag is one list, highest severity first, each with its fix', () => {
+    const f = (o: Partial<CheckFinding>): CheckFinding => ({ id: 'x', severity: 'low', count: 1, label: 'something', ...o });
+    const flags = mergeFlags({
+      operations: [
+        f({ id: 'quotes_without_expiry', area: 'sales', severity: 'medium', label: '2 sent quotes without a validity date', fix: { skill: 'manage_quote' } }),
+        f({ id: 'urgent_unassigned', area: 'support', severity: 'high', label: '1 urgent ticket with no owner', fix: null }),
+      ],
+      books: [
+        f({ id: 'unbooked_invoices', severity: 'high', label: '3 invoices not booked', fix: { skill: 'book_unbooked_invoices' } }),
+        f({ id: 'no_label', label: '' }),                                  // malformed: dropped
+      ],
+    }, 2);
+    expect(flags).toMatchObject({ high: 2, medium: 1, low: 0, total: 3 });
+    expect(flags.top.map((x) => x.key)).toEqual(['operations:urgent_unassigned', 'books:unbooked_invoices']);
+    expect(flags.top[0]).toMatchObject({ area: 'support', fixSkill: null });
+    expect(flags.top[1]).toMatchObject({ area: 'books', fixSkill: 'book_unbooked_invoices' });
+    // A check that was not run (module off, role refused) contributes nothing.
+    expect(mergeFlags({ operations: null, books: null })).toMatchObject({ total: 0, top: [] });
+  });
+
+  it('findings of the same kind fold into one row, and stop crowding the list', () => {
+    const f = (o: Partial<CheckFinding>): CheckFinding => ({ id: 'x', severity: 'high', count: 1, label: 'something', ...o });
+    const filing = { skill: 'manage_statutory_filing' };
+    const flags = mergeFlags({
+      operations: [f({ id: 'urgent_unassigned', area: 'support', label: '3 urgent tickets with no owner', fix: { skill: 'manage_ticket' } })],
+      books: [
+        f({ id: 'deadline_overdue:agi-2025-09', label: 'AGI Sep 2025 not recorded as filed', fix: filing }),
+        f({ id: 'deadline_overdue:agi-2025-10', label: 'AGI Oct 2025 not recorded as filed', fix: filing }),
+        f({ id: 'deadline_overdue:agi-2025-11', label: 'AGI Nov 2025 not recorded as filed', fix: filing }),
+        f({ id: 'deadline_overdue:vat-2025-q3', label: 'VAT Q3 not recorded as filed', severity: 'medium', fix: filing }), // another severity: its own row
+        f({ id: 'unbooked_invoices', label: '2 invoices not booked', severity: 'medium', fix: { skill: 'book_unbooked_invoices' } }),
+      ],
+    }, 5);
+    expect(flags).toMatchObject({ high: 4, medium: 2, total: 6, rows: 4 });       // every finding still counted
+    expect(flags.top.map((x) => [x.key, x.same])).toEqual([
+      ['operations:urgent_unassigned', 1],
+      ['books:deadline_overdue:agi-2025-09', 3],                                  // the first speaks for three
+      ['books:deadline_overdue:vat-2025-q3', 1],
+      ['books:unbooked_invoices', 1],
+    ]);
   });
 });

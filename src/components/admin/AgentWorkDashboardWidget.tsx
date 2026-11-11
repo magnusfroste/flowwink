@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { Bot, Ban, AlertTriangle } from 'lucide-react';
+import { Bot, Ban, AlertTriangle, Flag as FlagIcon } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { WidgetShell, MetricTile } from '@/components/admin/DashboardWidgetShell';
@@ -10,7 +10,7 @@ import { logger } from '@/lib/logger';
 import { navigationGroups } from '@/components/admin/adminNavigation';
 import { classifyCall } from '../../../supabase/functions/_shared/skills/read-surface';
 import { useBusinessClock } from '@/hooks/useBusinessClock';
-import { summarizeAgentWork, type AgentActivityRow, type TaskCommentRow } from '@/lib/agent-work';
+import { summarizeAgentWork, mergeFlags, type AgentActivityRow, type TaskCommentRow, type CheckFinding } from '@/lib/agent-work';
 
 /**
  * Agent work, in plain words (#869): what the agents did today, what waits on
@@ -31,6 +31,37 @@ function modulePage(moduleId: string): string | null {
     if (item) return item.href;
   }
   return null;
+}
+
+/** Where a person goes to deal with a flagged area — the area's own page. */
+const AREA_PAGE: Record<string, string> = {
+  sales: '/admin/deals',
+  receivables: '/admin/invoices',
+  contracts: '/admin/contracts',
+  support: '/admin/tickets',
+  field_service: '/admin/field-service',
+  automations: '/admin/automations',
+  chat: '/admin/chat',
+  books: '/admin/accounting',
+};
+const AREA_NAME: Record<string, string> = {
+  sales: 'Sales', receivables: 'Receivables', contracts: 'Contracts', support: 'Support',
+  field_service: 'Field service', automations: 'Automations', chat: 'Chat', books: 'Books', operations: 'Operations',
+};
+
+/**
+ * One check, as the reader: the RPC judges only the modules that are on and
+ * refuses a role that may not ask. A refusal is not an error to show — the
+ * panel simply has nothing from that check.
+ */
+async function runCheck(name: 'check_operations' | 'check_books'): Promise<CheckFinding[] | null> {
+  const { data, error } = await supabase.rpc(name as never);
+  if (error) {
+    logger.warn(`[agent-work] ${name} not read`, error.message);
+    return null;
+  }
+  const findings = (data as { findings?: unknown } | null)?.findings;
+  return Array.isArray(findings) ? (findings as CheckFinding[]) : [];
 }
 
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
@@ -87,6 +118,21 @@ export function AgentWorkDashboardWidget() {
           agentNames,
         },
       });
+    },
+  });
+
+  // What the checks flag — the list an agent starts its day from. The books
+  // are asked only when Accounting is on.
+  const booksOn = moduleShown('accounting', active);
+  const { data: flags } = useQuery({
+    queryKey: ['dashboard', 'agent-work', 'flags', booksOn],
+    staleTime: 5 * 60_000,
+    queryFn: async () => {
+      const [operations, books] = await Promise.all([
+        runCheck('check_operations'),
+        booksOn ? runCheck('check_books') : Promise.resolve(null),
+      ]);
+      return mergeFlags({ operations, books });
     },
   });
 
@@ -148,6 +194,33 @@ export function AgentWorkDashboardWidget() {
           })}
           {data.areas.length > AREA_LIMIT && (
             <p className="text-xs text-muted-foreground">and {plural(data.areas.length - AREA_LIMIT, 'more area', 'more areas')}</p>
+          )}
+        </div>
+      )}
+
+      {flags && flags.total > 0 && (
+        <div className="mt-3 space-y-1">
+          <p className="text-xs font-medium text-muted-foreground">
+            Flagged · {[flags.high && `${flags.high} high`, flags.medium && `${flags.medium} medium`, flags.low && `${flags.low} low`].filter(Boolean).join(', ')}
+          </p>
+          {flags.top.map((f) => {
+            const href = AREA_PAGE[f.area];
+            return (
+              <div key={f.key} className="flex items-center gap-2 text-xs py-1">
+                <FlagIcon className={`h-3 w-3 shrink-0 ${f.severity === 'high' ? 'text-destructive' : 'text-muted-foreground'}`} />
+                <span className="truncate flex-1">
+                  {href ? <Link to={href} className="hover:underline">{f.label}</Link> : f.label}
+                  {f.same > 1 && <span className="font-medium"> and {f.same - 1} more like it</span>}
+                  <span className="text-muted-foreground">
+                    {' · '}{AREA_NAME[f.area] ?? f.area}
+                    {f.fixSkill ? <> · fix: <span className="font-mono">{f.fixSkill}</span></> : <> · for you to decide</>}
+                  </span>
+                </span>
+              </div>
+            );
+          })}
+          {flags.rows > flags.top.length && (
+            <p className="text-xs text-muted-foreground">and {flags.rows - flags.top.length} more</p>
           )}
         </div>
       )}
