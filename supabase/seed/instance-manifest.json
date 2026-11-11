@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261110140000",
-      "migrations_count": 757,
+      "migration_head": "20261111090000",
+      "migrations_count": 758,
       "migrations": [
         {
           "version": "00000000000000",
@@ -3033,6 +3033,10 @@
         {
           "version": "20261110140000",
           "name": "stangd-manad-nekar-utskicket"
+        },
+        {
+          "version": "20261111090000",
+          "name": "agentarbetet-las-per-modul"
         }
       ]
     },
@@ -3043,7 +3047,7 @@
     },
     "edge_functions": {
       "count": 76,
-      "shared_hash": "sha256:eeb9e132514838f8dd757e675fea49a01cf563ae2e85d3875a9c8d4e1b8aa68b",
+      "shared_hash": "sha256:973985f02f6e29d08aa6b81b9ebc88d2540af33897618bca2635a2af9b1ca221",
       "functions": {
         "agent-execute": "sha256:274e5a9dbb301cab154f19ceec15cac4a082296e868c041d685d54867d735c9f",
         "agent-operate": "sha256:4320e02dd3e6a0a1706b42dc1905b631c61e6a4cbe3556c701f474c278c89e1a",
