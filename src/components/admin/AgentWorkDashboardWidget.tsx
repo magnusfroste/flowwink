@@ -12,7 +12,7 @@ import { useModuleAccess } from '@/hooks/useRoleModuleAccess';
 import { navigationGroups } from '@/components/admin/adminNavigation';
 import { classifyCall } from '../../../supabase/functions/_shared/skills/read-surface';
 import { useBusinessClock } from '@/hooks/useBusinessClock';
-import { summarizeAgentWork, mergeFlags, type AgentActivityRow, type TaskCommentRow, type CheckFinding } from '@/lib/agent-work';
+import { summarizeAgentWork, mergeFlags, latestChanges, OBJECT_ROUTES, type AgentActivityRow, type ChangeRow, type TaskCommentRow, type CheckFinding } from '@/lib/agent-work';
 
 /**
  * Agent work, in plain words (#869): what the agents did today, what waits on
@@ -71,6 +71,16 @@ async function runCheck(name: 'check_operations' | 'check_books'): Promise<Check
   return Array.isArray(findings) ? (findings as CheckFinding[]) : [];
 }
 
+/** The ids a call answered with, read as fields — never the whole answer (a list read's can be large). */
+const ANSWERED_KEYS = ['id', 'item', ...OBJECT_ROUTES.flatMap((r) => [r.param, r.entity])];
+// The journal stores the skill's result itself as `output` (no envelope).
+const ANSWERED_IDS = [
+  'id:output->>id',
+  'item:output->item->>id',
+  ...OBJECT_ROUTES.flatMap((r) => [`${r.param}:output->>${r.param}`, `${r.entity}:output->${r.entity}->>id`]),
+].join(', ');
+const LATEST_LIMIT = 5;
+
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
 export function AgentWorkDashboardWidget() {
@@ -89,7 +99,7 @@ export function AgentWorkDashboardWidget() {
     queryFn: async () => {
       const since = new Date(Date.now() - WINDOW_DAYS * 86_400_000).toISOString();
       const todayStart = toInstant(`${today()}T00:00`) ?? new Date(new Date().setHours(0, 0, 0, 0)).toISOString();
-      const [activity, comments, staged] = await Promise.all([
+      const [activity, comments, staged, recent] = await Promise.all([
         supabase
           // api_key_id is newer than the generated types; the arguments are read as two fields, never the whole input.
           .from('agent_activity' as never)
@@ -104,7 +114,17 @@ export function AgentWorkDashboardWidget() {
           .gte('created_at', since)
           .limit(2000),
         supabase.from('pending_operations').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+        // The latest successful calls with what they were sent and the ids they answered — enough to
+        // find the record each one touched. A short page: most are lookups and are dropped below.
+        supabase
+          .from('agent_activity' as never)
+          .select(`id, agent, skill_name, status, created_at, api_key_id, input, ${ANSWERED_IDS}`)
+          .gte('created_at', since)
+          .eq('status', 'success')
+          .order('created_at', { ascending: false })
+          .limit(60),
       ]);
+      if (recent.error) logger.warn('[agent-work] latest changes not read', recent.error.message);
       const rows = (activity.data ?? []) as unknown as AgentActivityRow[];
       const keyIds = [...new Set(rows.map((r) => r.api_key_id).filter((k): k is string => !!k))];
       const agentNames: Record<string, string> = {};
@@ -116,18 +136,26 @@ export function AgentWorkDashboardWidget() {
           if (p.api_key_id) agentNames[p.api_key_id] = p.name;
         }
       }
-      return summarizeAgentWork({
+      const readers = {
+        ownerOf: ownerModuleOf,
+        isRead: (skill: string, args: Record<string, unknown>) => classifyCall(skill, args) === 'read',
+        agentNames,
+      };
+      const recentRows = ((recent.data ?? []) as unknown as Array<ChangeRow & Record<string, unknown>>).map((r) => ({
+        ...r,
+        error_message: null,
+        output: null,
+        answered: Object.fromEntries(ANSWERED_KEYS.map((k) => [k, r[k]])),
+      }));
+      const summary = summarizeAgentWork({
         activity: rows,
         comments: (comments.data ?? []) as unknown as TaskCommentRow[],
         stagedCount: staged.count ?? 0,
         todayStart,
         shown: (skill) => skillShown(skill, active),
-        readers: {
-          ownerOf: ownerModuleOf,
-          isRead: (skill, args) => classifyCall(skill, args) === 'read',
-          agentNames,
-        },
+        readers,
       });
+      return { ...summary, latest: latestChanges(recentRows, readers, (skill) => skillShown(skill, active), LATEST_LIMIT) };
     },
   });
 
@@ -210,6 +238,29 @@ export function AgentWorkDashboardWidget() {
           {data.areas.length > AREA_LIMIT && (
             <p className="text-xs text-muted-foreground">and {plural(data.areas.length - AREA_LIMIT, 'more area', 'more areas')}</p>
           )}
+        </div>
+      )}
+
+      {data && data.latest.length > 0 && (
+        <div className="mt-3 space-y-1">
+          <p className="text-xs font-medium text-muted-foreground">Latest changes</p>
+          {data.latest.map((c) => (
+            <div key={c.id} className="flex items-center gap-2 text-xs py-1">
+              <span className="truncate flex-1">
+                <span className="font-mono">{c.skill}</span>
+                <span className="text-muted-foreground">{c.action ? ` · ${c.action}` : ''} · {c.agent}</span>
+                {c.object && (
+                  <>
+                    <span className="text-muted-foreground"> · </span>
+                    <Link to={c.object.href} className="font-medium hover:underline">Open the {c.object.label}</Link>
+                  </>
+                )}
+              </span>
+              <span className="text-muted-foreground shrink-0">
+                {formatDistanceToNow(new Date(c.at), { addSuffix: true })}
+              </span>
+            </div>
+          ))}
         </div>
       )}
 

@@ -80,6 +80,10 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
   that owns its skill, and staff read the calls of the modules their role is
   granted under Users → Role Permissions; flagged findings are scoped the same
   way. Calls made before this update stay visible to admins only.
+- **Agent work opens the record.** A new "Latest changes" list in the panel
+  shows the last calls that changed something — skill, action, which agent —
+  and links straight to the lead, deal, company, contract, ticket, quote, page,
+  article or candidate it touched.
 - **The books can be kept somewhere else.** Accounting → Settings → Ledger:
   with "Kept in another system" (Fortnox, Visma …) FlowWink no longer books
   invoices, paid orders or vendor invoices by itself, and the books check stays
