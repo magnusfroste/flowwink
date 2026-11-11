@@ -97,6 +97,10 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Fixed
 
+- **A change is proved before it reaches the fleet.** The nightly fork sync
+  now installs main from zero and runs every process first, and syncs only
+  when that is green. Until now the sync ran hours before the proof, so a
+  faulty change could be live on every site before anything had tested it.
 - **The receiving instance counts its own ping.** The feedback endpoint (www)
   records its own daily ping without crossing content-api, and did so with a
   hand-written upsert that never touched `ping_count`, so the fleet view read 1
