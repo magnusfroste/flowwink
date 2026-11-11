@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { mergeFlags, type CheckFinding, workByArea, agentNameOf, summarizeAgentWork, openQuestionTasks, stopReason, isAgentCall, agentLabel, type AgentActivityRow, type TaskCommentRow } from '@/lib/agent-work';
+import { objectOf, latestChanges, OBJECT_ROUTES, type ChangeRow, mergeFlags, type CheckFinding, workByArea, agentNameOf, summarizeAgentWork, openQuestionTasks, stopReason, isAgentCall, agentLabel, type AgentActivityRow, type TaskCommentRow } from '@/lib/agent-work';
 
 /**
  * Agent work, in plain words (#869). The panel shows an owner what waits on a
@@ -172,5 +172,57 @@ describe('agent work', () => {
     expect(sales.top.map((x) => x.key)).toEqual(['operations:a']);
     expect(sales).toMatchObject({ total: 1, high: 1 });
     expect(mergeFlags(checks).total).toBe(4);                                     // an admin: everything
+  });
+
+  const U1 = '11111111-1111-4111-8111-111111111111';
+  const U2 = '22222222-2222-4222-8222-222222222222';
+
+  it('a call opens the record it was about', () => {
+    expect(objectOf('manage_deal', { action: 'update', deal_id: U1 })).toEqual({ label: 'deal', href: `/admin/deals/${U1}` });
+    // Several records named: the one the skill is about wins.
+    expect(objectOf('manage_deal', { company_id: U2, deal_id: U1 })?.href).toBe(`/admin/deals/${U1}`);
+    expect(objectOf('manage_company', { company_id: U2, deal_id: U1 })?.href).toBe(`/admin/companies/${U2}`);
+    // A create sends no id: the answer's does.
+    expect(objectOf('manage_deal', { action: 'create' }, { deal: U1 })?.href).toBe(`/admin/deals/${U1}`);
+    expect(objectOf('manage_ticket', { action: 'create' }, { id: U1 })?.href).toBe(`/admin/tickets?ticket=${U1}`);
+    expect(objectOf('manage_ticket', { action: 'create' }, { item: U1 })?.href).toBe(`/admin/tickets?ticket=${U1}`);   // result.item.id
+    expect(objectOf('add_lead', { email: 'a@b.c' }, { lead_id: U1 })?.href).toBe(`/admin/leads/${U1}`);               // result.lead_id
+    // result.id belongs to the skill's own record, never to another kind.
+    expect(objectOf('manage_invoice', { action: 'create' }, { id: U1 })).toBeNull();
+    // A placeholder or a name is not an address.
+    expect(objectOf('manage_deal', { deal_id: '<deal_id>' })).toBeNull();
+    expect(objectOf('manage_deal', { deal_id: '../../settings' })).toBeNull();
+    expect(objectOf('search_web', { query: 'x' })).toBeNull();
+  });
+
+  it('latest changes are the writes, newest first, with their record', () => {
+    const c = (o: Partial<ChangeRow>): ChangeRow => ({ ...row({}), input: {}, ...o });
+    const out = latestChanges([
+      c({ id: 'a', skill_name: 'manage_deal', input: { action: 'update', deal_id: U1 }, created_at: '2026-11-10T10:00:00Z', api_key_id: 'k1' }),
+      c({ id: 'b', skill_name: 'manage_deal', input: { action: 'list' }, created_at: '2026-11-10T11:00:00Z' }),   // a lookup
+      c({ id: 'c', skill_name: 'write_blog_post', input: {}, created_at: '2026-11-10T12:00:00Z', agent: 'flowpilot' }),
+      c({ id: 'd', skill_name: 'manage_deal', input: { deal_id: U1 }, status: 'failed' }),                        // not a change
+      c({ id: 'e', skill_name: 'manage_deal', input: { deal_id: U1 }, agent: 'admin_ui' }),                       // a person
+    ], { isRead: (_n, args) => args.action === 'list', agentNames: { k1: 'Hermes' } });
+    expect(out.map((x) => x.id)).toEqual(['c', 'a']);
+    expect(out[1]).toMatchObject({ agent: 'Hermes', action: 'update', object: { label: 'deal', href: `/admin/deals/${U1}` } });
+    expect(out[0].object).toBeNull();
+  });
+
+  it('every record page the panel links to is a page the router serves', () => {
+    const app = readFileSync(join(__dirname, '../../App.tsx'), 'utf-8');
+    for (const r of OBJECT_ROUTES) {
+      const href = r.href('ID');
+      const path = href.split('?')[0].replace('/ID', '/:id');
+      expect(app, `${r.param} → ${href}`).toContain(`path: "${path}"`);
+      if (href.includes('?')) {
+        // A list page that opens a record from its query string must read that key.
+        const key = href.split('?')[1].split('=')[0];
+        const page = app.match(new RegExp(`path: "${path}", element: <(\\w+)`))?.[1];
+        const file = app.match(new RegExp(`const ${page} = lazy\\(\\(\\) => import\\("\\./pages/admin/([\\w/.-]+)"`))?.[1];
+        expect(file, `page for ${path}`).toBeTruthy();
+        expect(readFileSync(join(__dirname, `../../pages/admin/${file}.tsx`), 'utf-8')).toContain(`searchParams.get('${key}')`);
+      }
+    }
   });
 });
