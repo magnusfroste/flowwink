@@ -125,6 +125,11 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
   request that touches migrations, edge functions, skills or templates now
   runs the whole process battery against a site installed from zero. Such
   changes used to run for the first time the night after the merge.
+- **You are told when the sites were not updated.** The nightly sync waits
+  for the proof, so a failed proof deploys nothing — and used to say nothing.
+  An issue now opens when a sync did not go through or none has succeeded for
+  a day and a half, says which step to look at, and closes itself when a sync
+  succeeds.
 - **The receiving instance counts its own ping.** The feedback endpoint (www)
   records its own daily ping without crossing content-api, and did so with a
   hand-written upsert that never touched `ping_count`, so the fleet view read 1
