@@ -5726,12 +5726,22 @@ async function executeFeedbackAction(
       const payload = { instance_id, site_url: siteUrl || null, site_name, ...version };
       const machine_room = await fileMachineRoomReports(supabase, (report) => executeFeedbackAction(supabase, 'submit_feedback', report));
       if (receiveHere) {
-        const { error } = await supabase.from('feedback_instances').upsert({
-          instance_id, site_url: payload.site_url, site_name, app: version.app, skills_sha: version.skills_sha, migration_head: version.migration_head,
-          modules_enabled: version.modules_enabled, module_count: version.module_count, last_seen_at: new Date().toISOString(),
-        }, { onConflict: 'instance_id' });
+        // The receiver's own ping is recorded by the same function every other
+        // instance's ping reaches through content-api — it counts, keeps a name a
+        // nameless ping would erase, and stamps last_seen_at. A hand-written
+        // upsert here never counted: www read ping_count 1 for its whole life.
+        const { data: pinged, error } = await supabase.rpc('feedback_record_ping', {
+          p_instance_id: instance_id,
+          p_site_url: payload.site_url,
+          p_app: version.app,
+          p_skills_sha: version.skills_sha,
+          p_migration_head: version.migration_head,
+          p_modules_enabled: version.modules_enabled,
+          p_site_name: site_name,
+        });
         if (error) throw new Error(`Ping record failed: ${error.message}`);
-        return { sent_to: 'this instance', instance_id, ...version, machine_room };
+        const ping_count = (pinged as { ping_count?: number } | null)?.ping_count ?? null;
+        return { sent_to: 'this instance', instance_id, ping_count, ...version, machine_room };
       }
       const r = await postTo('feedback/ping', payload);
       return { sent_to: endpoint, instance_id, ...version, endpoint_url: r.url, machine_room };
