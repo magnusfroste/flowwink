@@ -32,6 +32,20 @@ describe('the failures the fleet showed', () => {
     expect(blog.slice(notFound - 400, notFound + 400)).toMatch(/\['update', 'publish', 'unpublish', 'delete'\]\.includes\(String\(action\)\)[\s\S]*code: 'NOT_FOUND', retryable: false,/);
   });
 
+  it('an id that names no post is NOT_FOUND too, never "Cannot coerce the result" (www, 2026-11-11)', () => {
+    // Hermes sent post_id with each of nine cover updates for another site's
+    // posts; the slug check above never ran, and the update's .single() threw.
+    const notFound = blog.indexOf('No blog post with id');
+    expect(notFound).toBeGreaterThan(-1);
+    expect(notFound).toBeLessThan(blog.indexOf("if (action === 'update') {"));
+    const block = blog.slice(notFound - 700, notFound + 300);
+    expect(block).toMatch(/if \(post_id && \['update', 'publish', 'unpublish', 'delete'\]\.includes\(String\(action\)\)\)/);
+    expect(block).toMatch(/\.from\('blog_posts'\)\.select\('id'\)\.eq\('id', post_id\)\.maybeSingle\(\)/);
+    // A non-uuid id is "not found", any other lookup error is reported as it is.
+    expect(block).toMatch(/idErr && idErr\.code !== '22P02'/);
+    expect(block).toMatch(/code: 'NOT_FOUND', retryable: false,/);
+  });
+
   it('a refused approval redemption is a refusal in the journal', () => {
     const at = exec.indexOf('A refused redemption leaves a trail');
     const block = exec.slice(at, exec.indexOf('claimedApprovalRequestId = verdict.requestId;', at));
