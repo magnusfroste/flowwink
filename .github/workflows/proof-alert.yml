@@ -1,0 +1,126 @@
+# The nightly fork sync waits for the fresh-install proof (2026-11-11). A red
+# proof is therefore SAFE — nothing unproved reaches a site — and silent: the
+# fleet stays on yesterday's main and nobody is told. This watches the result.
+#
+# Opens ONE issue when the latest sync did not go through, or when no sync has
+# succeeded for a day and a half (a schedule that never fired looks exactly
+# like a quiet night), keeps it current, and closes it when a sync succeeds.
+# The decision lives in scripts/proof-alert.mjs so it can be unit-tested
+# (src/lib/__tests__/proof-alert.test.ts). Same shape as main-red-alert.yml.
+name: proof alert
+
+on:
+  workflow_run:
+    workflows: ['Nightly fork sync']
+    types: [completed]
+  schedule:
+    # Safety net for the run that never happened. Four times a day is plenty
+    # for a 36-hour limit; off the :00 mark, where the queue is longest.
+    - cron: '17 */6 * * *'
+  workflow_dispatch:
+    inputs:
+      stale_hours:
+        description: 'Hours the fleet may go without a successful sync'
+        required: false
+        default: '36'
+
+permissions:
+  actions: read
+  issues: write
+
+concurrency:
+  group: proof-alert
+  cancel-in-progress: false
+
+jobs:
+  evaluate:
+    name: Evaluate the nightly proof and sync
+    # Only the source repo syncs the fleet; a fork has nothing to watch.
+    if: github.repository == 'magnusfroste/flowwink'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout (decision logic only)
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: scripts/proof-alert.mjs
+          sparse-checkout-cone-mode: false
+
+      - name: Evaluate and alert
+        uses: actions/github-script@v7
+        env:
+          STALE_HOURS: ${{ github.event.inputs.stale_hours || '36' }}
+        with:
+          script: |
+            const { decide, issueBody } = await import(
+              `${process.env.GITHUB_WORKSPACE}/scripts/proof-alert.mjs`
+            );
+
+            const LABEL = 'proof-red';
+            const TITLE = '🔴 the fleet was not synced — the nightly proof did not go through';
+            const staleHours = Number(process.env.STALE_HOURS) || 36;
+
+            const { data } = await github.rest.actions.listWorkflowRuns({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'nightly-fork-sync.yml',
+              status: 'completed',
+              per_page: 30,
+            });
+            const verdict = decide(data.workflow_runs, Date.now(), staleHours);
+            core.info(`sync is ${verdict.state}` + (verdict.hoursSinceGreen !== null ? ` (${verdict.hoursSinceGreen} h since the last green)` : ''));
+
+            const open = await github.rest.issues.listForRepo({
+              owner: context.repo.owner, repo: context.repo.repo,
+              state: 'open', labels: LABEL, per_page: 5,
+            });
+            const existing = open.data[0];
+
+            if (verdict.state === 'unknown') {
+              // An empty answer looks exactly like "all is well". Stay quiet.
+              core.info('No conclusive sync runs found — taking no action.');
+              return;
+            }
+
+            if (verdict.state === 'ok') {
+              if (existing) {
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner, repo: context.repo.repo,
+                  issue_number: existing.number,
+                  body: `✅ A sync went through: ${verdict.url}`,
+                });
+                await github.rest.issues.update({
+                  owner: context.repo.owner, repo: context.repo.repo,
+                  issue_number: existing.number, state: 'closed',
+                });
+                core.info(`Closed #${existing.number}.`);
+              }
+              return;
+            }
+
+            // red or stale
+            const body = issueBody(verdict, staleHours);
+            if (existing) {
+              // One issue, kept current — never a new one per night.
+              if (existing.body !== body) {
+                await github.rest.issues.update({
+                  owner: context.repo.owner, repo: context.repo.repo,
+                  issue_number: existing.number, body,
+                });
+                core.info(`Updated #${existing.number}.`);
+              }
+              return;
+            }
+            try {
+              await github.rest.issues.getLabel({ owner: context.repo.owner, repo: context.repo.repo, name: LABEL });
+            } catch {
+              await github.rest.issues.createLabel({
+                owner: context.repo.owner, repo: context.repo.repo,
+                name: LABEL, color: 'b60205', description: 'The nightly proof or fork sync did not go through',
+              });
+            }
+            const created = await github.rest.issues.create({
+              owner: context.repo.owner, repo: context.repo.repo,
+              title: TITLE, body, labels: [LABEL],
+            });
+            core.info(`Opened #${created.data.number}.`);

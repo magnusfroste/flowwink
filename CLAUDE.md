@@ -1040,6 +1040,9 @@ and the sync runs only when it is green and main is still the proved commit
 (plus the bot's stamp); a red proof syncs nothing. `unproven: true` on a hand
 run is the one way around it. Before, the sync ran at ~01:30 UTC and the fresh
 install that would have caught a bad change at ~10 UTC.
+`proof-alert.yml` watches the result (decision in `scripts/proof-alert.mjs`): one
+issue, label `proof-red`, when the latest sync did not go through or none has
+succeeded for 36 hours; it closes itself on the next green sync.
 Fleet-only workflows (docker image, release, main-red alert, MCP regression) carry
 `if: github.repository == 'magnusfroste/flowwink'` so forks stop running them.
 
