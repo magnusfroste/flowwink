@@ -89,9 +89,9 @@ describe('advance_plan hands a step it cannot fill to the reasoning loop', async
 
   it('empty strings and null count as missing; a declared-optional field does not', async () => {
     const sb = db({ agent_skills: [commentSkill] }, []);
-    expect(await H.planStepMissingArgs(sb, 'comment_on_task', { body: '  ' })).toEqual(['body']);
-    expect(await H.planStepMissingArgs(sb, 'comment_on_task', { body: null })).toEqual(['body']);
-    expect(await H.planStepMissingArgs(sb, 'comment_on_task', { body: 'x' })).toEqual([]);
+    expect(await H.planStepMissingArgs(sb as never, 'comment_on_task', { body: '  ' })).toEqual(['body']);
+    expect(await H.planStepMissingArgs(sb as never, 'comment_on_task', { body: null })).toEqual(['body']);
+    expect(await H.planStepMissingArgs(sb as never, 'comment_on_task', { body: 'x' })).toEqual([]);
   });
 
   it('a handed-off step finishes the plan like a done one', () => {

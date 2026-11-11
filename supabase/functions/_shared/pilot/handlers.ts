@@ -432,14 +432,22 @@ export async function handleDecomposeObjective(supabase: any, args: { objective_
 // the stored arguments are a call; when they are not, the step goes to the
 // reasoning loop that has the read in front of it. No skill is named here.
 
+/** The one read planStepMissingArgs makes: the skill row's tool_definition. */
+type SkillDefinitionReader = {
+  from(table: string): {
+    select(columns: string): { eq(column: string, value: string): { maybeSingle(): PromiseLike<{ data: unknown; error: unknown }> } };
+  };
+};
+
 /** The required parameters of `skillName` that `args` leaves empty. [] when the skill cannot be read: run the step as before. */
-export async function planStepMissingArgs(supabase: any, skillName: string, args: Record<string, unknown> | null | undefined): Promise<string[]> {
+export async function planStepMissingArgs(supabase: SkillDefinitionReader, skillName: string, args: Record<string, unknown> | null | undefined): Promise<string[]> {
   try {
     const { data, error } = await supabase.from('agent_skills').select('tool_definition').eq('name', skillName).maybeSingle();
     if (error) return []; // the skill cannot be read: run the step as before
-    const required = data?.tool_definition?.function?.parameters?.required;
+    const row = data as { tool_definition?: { function?: { parameters?: { required?: unknown } } } } | null;
+    const required = row?.tool_definition?.function?.parameters?.required;
     if (!Array.isArray(required)) return [];
-    return required.filter((k: unknown) => {
+    return required.filter((k: unknown): k is string => {
       if (typeof k !== 'string') return false;
       const v = args?.[k];
       return v === undefined || v === null || (typeof v === 'string' && !v.trim());
