@@ -589,6 +589,13 @@ beside its payload, so an operator branches instead of guessing:
   owner, never anon — behind **Activity** on the Agents page and
   `agent_day_report(agent, hours)` over MCP. `get_agent_trace` stays the
   per-run decision log.
+- **Agent work is read per module (2026-11-11, #869).** `logActivity` stamps
+  `agent_activity.module` with the skill's owning module (`ownerModuleOf`;
+  platform skills carry none), and an RLS policy lets staff read the rows of
+  the modules their role is granted (`can_access_module`). The dashboard's
+  Agent work panel reads the table directly, as the reader. A new writer of
+  skill calls goes through `logActivity`; a row without a module is the
+  admin's.
 - **`invite_colleague`** (platform, trust `approve`): an agent asks, a person
   approves under /admin/approvals, Supabase Auth mails the invitation and the
   functional role is granted on first sign-in. The edge function admits the

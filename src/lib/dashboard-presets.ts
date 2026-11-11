@@ -56,14 +56,14 @@ export const DEFAULT_WIDGET_ORDER = DASHBOARD_WIDGETS.map((w) => w.id);
  */
 export const ROLE_PRESETS: Partial<Record<AppRole | 'admin', string[]>> = {
   admin: ['my-day', 'business-pulse', 'needs-attention', 'finance', 'tickets', 'approvals', 'agent-work', 'content-overview', 'leads', 'live-support', 'flowpilot', 'automation-health', 'chat-analytics', 'chat-feedback', 'aeo', 'recent-pages', 'quick-actions'],
-  sales: ['my-day', 'needs-attention', 'leads', 'finance', 'business-pulse'],
-  marketing: ['my-day', 'content-overview', 'aeo', 'leads', 'chat-analytics', 'chat-feedback', 'recent-pages'],
-  support: ['my-day', 'needs-attention', 'tickets', 'live-support', 'chat-analytics', 'chat-feedback'],
-  accounting: ['my-day', 'needs-attention', 'finance', 'approvals', 'business-pulse'],
-  hr: ['my-day', 'needs-attention', 'hr', 'approvals'],
-  warehouse: ['my-day', 'needs-attention', 'inventory'],
-  purchasing: ['my-day', 'needs-attention', 'purchasing', 'approvals', 'inventory'],
-  projects: ['my-day', 'needs-attention', 'projects'],
+  sales: ['my-day', 'needs-attention', 'leads', 'finance', 'business-pulse', 'agent-work'],
+  marketing: ['my-day', 'content-overview', 'aeo', 'leads', 'chat-analytics', 'chat-feedback', 'recent-pages', 'agent-work'],
+  support: ['my-day', 'needs-attention', 'tickets', 'live-support', 'chat-analytics', 'chat-feedback', 'agent-work'],
+  accounting: ['my-day', 'needs-attention', 'finance', 'approvals', 'business-pulse', 'agent-work'],
+  hr: ['my-day', 'needs-attention', 'hr', 'approvals', 'agent-work'],
+  warehouse: ['my-day', 'needs-attention', 'inventory', 'agent-work'],
+  purchasing: ['my-day', 'needs-attention', 'purchasing', 'approvals', 'inventory', 'agent-work'],
+  projects: ['my-day', 'needs-attention', 'projects', 'agent-work'],
 };
 
 /**

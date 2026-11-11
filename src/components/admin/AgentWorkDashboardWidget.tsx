@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Bot, Ban, AlertTriangle, Flag as FlagIcon } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
@@ -7,6 +8,7 @@ import { Link } from 'react-router-dom';
 import { useActiveModules, skillShown, moduleShown, ownerModuleOf } from '@/lib/module-visibility';
 import { useModules } from '@/hooks/useModules';
 import { logger } from '@/lib/logger';
+import { useModuleAccess } from '@/hooks/useRoleModuleAccess';
 import { navigationGroups } from '@/components/admin/adminNavigation';
 import { classifyCall } from '../../../supabase/functions/_shared/skills/read-surface';
 import { useBusinessClock } from '@/hooks/useBusinessClock';
@@ -17,9 +19,9 @@ import { summarizeAgentWork, mergeFlags, type AgentActivityRow, type TaskComment
  * a person, and where an agent was stopped — for an owner, not a developer.
  * The reading is src/lib/agent-work.ts; this only fetches and draws.
  *
- * Admin-only by the data's own policy (agent_activity is readable by admins):
- * for anyone else the queries come back empty and the panel says nothing is
- * waiting, which is true of what they can see.
+ * Role-scoped by the data's own policy: an admin reads everything, staff read
+ * the agent work of the modules their role is granted (agent_activity.module,
+ * 20261111090000). What a reader may not see is simply not in the answer.
  */
 const WINDOW_DAYS = 7;
 const AREA_LIMIT = 6;
@@ -43,6 +45,11 @@ const AREA_PAGE: Record<string, string> = {
   automations: '/admin/automations',
   chat: '/admin/chat',
   books: '/admin/accounting',
+};
+/** The module a flagged area belongs to in the role matrix. Automations are the admin's. */
+const AREA_MODULE: Record<string, string> = {
+  sales: 'deals', receivables: 'invoicing', contracts: 'contracts', support: 'tickets',
+  field_service: 'fieldService', chat: 'chat', books: 'accounting',
 };
 const AREA_NAME: Record<string, string> = {
   sales: 'Sales', receivables: 'Receivables', contracts: 'Contracts', support: 'Support',
@@ -68,6 +75,9 @@ const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one :
 
 export function AgentWorkDashboardWidget() {
   const active = useActiveModules();
+  // The Agents page is the admin's; everyone else reads the panel without its door.
+  const { isAdmin, canAccess } = useModuleAccess();
+  const agentsHref = isAdmin ? '/admin/agents' : undefined;
   const { today, toInstant } = useBusinessClock();
   const { data: modules } = useModules();
   const moduleName = (id: string) =>
@@ -124,32 +134,37 @@ export function AgentWorkDashboardWidget() {
   // What the checks flag — the list an agent starts its day from. The books
   // are asked only when Accounting is on.
   const booksOn = moduleShown('accounting', active);
-  const { data: flags } = useQuery({
-    queryKey: ['dashboard', 'agent-work', 'flags', booksOn],
+  const { data: checks } = useQuery({
+    queryKey: ['dashboard', 'agent-work', 'flags', booksOn, isAdmin],
     staleTime: 5 * 60_000,
     queryFn: async () => {
       const [operations, books] = await Promise.all([
         runCheck('check_operations'),
         booksOn ? runCheck('check_books') : Promise.resolve(null),
       ]);
-      return mergeFlags({ operations, books });
+      return { operations, books };
     },
   });
+  // A check answers for the whole business; a reader sees the areas their role is granted.
+  const flags = useMemo(
+    () => (checks ? mergeFlags(checks, 5, (area) => isAdmin || (AREA_MODULE[area] ? canAccess(AREA_MODULE[area]) : false)) : null),
+    [checks, isAdmin, canAccess],
+  );
 
   const waiting = (data?.staged ?? 0) + (data?.openQuestions ?? 0);
 
   return (
-    <WidgetShell title="Agent work" icon={Bot} href="/admin/agents" linkLabel="Agents" isLoading={isLoading} tileCount={4}>
+    <WidgetShell title="Agent work" icon={Bot} href={agentsHref} linkLabel="Agents" isLoading={isLoading} tileCount={4}>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <MetricTile label="Actions today" value={data?.actionsToday ?? 0} href="/admin/agents" />
+        <MetricTile label="Actions today" value={data?.actionsToday ?? 0} href={agentsHref} />
         <MetricTile
           label="Waiting for you"
           value={waiting}
           tone={waiting > 0 ? 'warning' : 'default'}
           href={(data?.staged ?? 0) > 0 ? '/admin/approvals' : '/admin/projects'}
         />
-        <MetricTile label="Refused (7 days)" value={data?.refused ?? 0} tone={(data?.refused ?? 0) > 0 ? 'warning' : 'default'} href="/admin/agents" />
-        <MetricTile label="Failed (7 days)" value={data?.failed ?? 0} tone={(data?.failed ?? 0) > 0 ? 'destructive' : 'default'} href="/admin/agents" />
+        <MetricTile label="Refused (7 days)" value={data?.refused ?? 0} tone={(data?.refused ?? 0) > 0 ? 'warning' : 'default'} href={agentsHref} />
+        <MetricTile label="Failed (7 days)" value={data?.failed ?? 0} tone={(data?.failed ?? 0) > 0 ? 'destructive' : 'default'} href={agentsHref} />
       </div>
 
       {data && (data.agentsToday.length > 0 || waiting > 0) && (

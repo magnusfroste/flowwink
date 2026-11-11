@@ -281,6 +281,8 @@ const SEVERITY_ORDER = { high: 0, medium: 1, low: 2 } as const;
 export function mergeFlags(
   checks: { operations?: CheckFinding[] | null; books?: CheckFinding[] | null },
   limit = 5,
+  /** May the reader see this area? (the role matrix) Omitted: everything the checks answered. */
+  mayRead?: (area: string) => boolean,
 ): FlagSummary {
   const all: Flag[] = [];
   // Findings of the same kind fold into one row: a check that reports one
@@ -292,10 +294,13 @@ export function mergeFlags(
     for (const f of checks[source] ?? []) {
       if (!f || !f.id || !f.label) continue;
       const severity = f.severity in SEVERITY_ORDER ? f.severity : 'low';
+      const area = f.area || (source === 'books' ? 'books' : 'operations');
+      // A check answers for the whole business; a reader sees their own areas.
+      if (mayRead && !mayRead(area)) continue;
       const flag: Flag = {
         key: `${source}:${f.id}`,
         source,
-        area: f.area || (source === 'books' ? 'books' : 'operations'),
+        area,
         severity,
         label: f.label,
         fixSkill: f.fix?.skill ?? null,

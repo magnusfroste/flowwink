@@ -161,4 +161,16 @@ describe('agent work', () => {
       ['books:unbooked_invoices', 1],
     ]);
   });
+
+  it('a reader is shown the flags of their own areas', () => {
+    const f = (o: Partial<CheckFinding>): CheckFinding => ({ id: 'x', severity: 'high', count: 1, label: 'something', ...o });
+    const checks = {
+      operations: [f({ id: 'a', area: 'sales' }), f({ id: 'b', area: 'support' }), f({ id: 'c', area: 'automations' })],
+      books: [f({ id: 'd' })],
+    };
+    const sales = mergeFlags(checks, 5, (area) => area === 'sales');
+    expect(sales.top.map((x) => x.key)).toEqual(['operations:a']);
+    expect(sales).toMatchObject({ total: 1, high: 1 });
+    expect(mergeFlags(checks).total).toBe(4);                                     // an admin: everything
+  });
 });
