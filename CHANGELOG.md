@@ -101,6 +101,10 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
   now installs main from zero and runs every process first, and syncs only
   when that is green. Until now the sync ran hours before the proof, so a
   faulty change could be live on every site before anything had tested it.
+- **A database or server change is proved before it is merged.** A pull
+  request that touches migrations, edge functions, skills or templates now
+  runs the whole process battery against a site installed from zero. Such
+  changes used to run for the first time the night after the merge.
 - **The receiving instance counts its own ping.** The feedback endpoint (www)
   records its own daily ping without crossing content-api, and did so with a
   hand-written upsert that never touched `ping_count`, so the fleet view read 1
