@@ -1,0 +1,50 @@
+name: Process battery (pull request)
+
+# A change to the database or the edge layer is proved BEFORE it is merged.
+#
+# PR CI is offline on purpose (type check, lint, unit and guard tests, build):
+# a migration's first real execution, a trigger's behaviour, a skill's handler
+# only ever ran in the night's fresh install — after the merge. On 2026-11-10
+# that is how a trigger change that let an invoice dated in a closed month be
+# issued got to main, and from main to six sites, before anything had run it.
+# The sync now waits for the proof (nightly-fork-sync.yml); this moves the
+# finding one step earlier still, to the pull request that causes it.
+#
+# The job IS the fresh install (workflow_call), on the pull request's merge
+# ref — main with this change applied — with the browser steps left out:
+# stack from zero, every migration, the template, quiet-by-default, open
+# access, the process battery, the skill smoke and the MCP regression. Nothing
+# is stamped and nothing is pushed.
+#
+# Only pull requests that touch what the battery exercises pay for it.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - 'supabase/migrations/**'
+      - 'supabase/functions/**'
+      - 'supabase/config.toml'
+      - 'scripts/process-battery/**'
+      - 'scripts/generated-artifacts.ts'
+      - 'src/lib/modules/**'
+      - 'src/lib/platform-seeds.ts'
+      - 'src/data/templates/**'
+      - '.github/workflows/fresh-install-nightly.yml'
+      - '.github/workflows/pr-process-battery.yml'
+
+jobs:
+  battery:
+    name: prove this change from zero
+    # Same-repository pull requests only: a fork's token is read-only, and the
+    # called workflow asks for contents: write (main's stamp — never taken here).
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    uses: ./.github/workflows/fresh-install-nightly.yml
+    permissions:
+      contents: write
+      packages: read
+    secrets: inherit
+    with:
+      ref: refs/pull/${{ github.event.pull_request.number }}/merge
+      scope: battery
+      stamp: false

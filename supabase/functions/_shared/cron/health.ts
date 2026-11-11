@@ -139,6 +139,46 @@ export function schedulerAgeHours(report: CronHealthReport): number | null {
 /** "Never ran" is a verdict only once the scheduler has had a day to run the job. */
 export const NEVER_RAN_GRACE_HOURS = 24;
 
+/**
+ * Since when the absence of a run is evidence (2026-11-10). Until
+ * 20261106080000 the nightly purge dropped every run older than three days,
+ * the job's last one included; since then it keeps each job's newest run. So
+ * a run from before 2026-11-03 08:00 UTC may have existed and been purged,
+ * and "no row" says nothing about it. Optic, 2026-11-09/10:
+ * purge-stale-prospects (the 1st, 03:15) ran on 1 November, the row was gone
+ * by the 4th, and every instance reported it "never ran" upstream every night
+ * — it would have until 1 December.
+ */
+export const RUN_HISTORY_COMPLETE_SINCE = '2026-11-03T08:00:00Z';
+
+/**
+ * The longest a job can go between runs by its schedule, in days — an UPPER
+ * BOUND read from which fields are restricted, never a next-run prediction
+ * (no arithmetic, no dialect: the River rule stands, and pg_cron's own rows
+ * remain the only evidence). A restricted month: a year. A day of month: a
+ * month (`*\/n`: n days). A day of week: a week. Otherwise a day. A schedule
+ * it does not recognise (pg_cron's `30 seconds`) counts as a day, which is
+ * the verdict as it was. It can only WITHHOLD a "never ran" verdict, never
+ * raise one: a monthly job is not judged until the run history has covered a
+ * month. A daily job's bound is the newborn grace it already had.
+ */
+export function longestGapDays(schedule: string | null | undefined): number {
+  const s = String(schedule ?? '').trim().toLowerCase();
+  if (s === '@yearly' || s === '@annually') return 366;
+  if (s === '@monthly') return 31;
+  if (s === '@weekly') return 7;
+  const f = s.split(/\s+/);
+  if (f.length !== 5) return 1;
+  const [, , dom, month, dow] = f;
+  if (month !== '*') return 366;
+  const step = /^\*\/(\d+)$/.exec(dom);
+  const domGap = dom === '*' ? null : step ? Math.min(31, Math.max(1, Number(step[1]))) : 31;
+  const dowGap = dow === '*' ? null : 7;
+  // Day of month and day of week both restricted: pg_cron fires when EITHER matches.
+  if (domGap !== null && dowGap !== null) return Math.min(domGap, dowGap);
+  return domGap ?? dowGap ?? 1;
+}
+
 export interface CronHealthOptions {
   /** When the instance was born (`loadInstanceBornAt`): the grace for an instance whose pg_cron has no run on record yet. */
   bornAt?: string | Date | null;
@@ -203,6 +243,11 @@ export function enrichCronHealth(report: CronHealthReport, now: Date = new Date(
   const bornMs = opts.bornAt ? Date.parse(String(opts.bornAt instanceof Date ? opts.bornAt.toISOString() : opts.bornAt)) : NaN;
   const instanceAge = Number.isFinite(bornMs) ? Math.max(0, (now.getTime() - bornMs) / 3600_000) : null;
   const newborn = (age !== null && age < NEVER_RAN_GRACE_HOURS) || (instanceAge !== null && instanceAge < NEVER_RAN_GRACE_HOURS);
+  // How long the run history has held every run (the later of the complete
+  // history's start and the instance's birth): a job is "stranded" only once
+  // that span covers its longest gap, and an hour for the run to be recorded.
+  const coveredSinceMs = Math.max(Date.parse(RUN_HISTORY_COMPLETE_SINCE), Number.isFinite(bornMs) ? bornMs : -Infinity);
+  const coveredDays = Math.max(0, (now.getTime() - coveredSinceMs) / 86_400_000);
   const jobs: CronJobEnriched[] = (report.jobs || []).map((j) => {
     const owner = CRON_JOB_MODULE[j.jobname];
     if (owner && opts.moduleOn && !opts.moduleOn(owner)) {
@@ -210,9 +255,12 @@ export function enrichCronHealth(report: CronHealthReport, now: Date = new Date(
     }
     const reasons: string[] = [];
     if (j.foreign_host) reasons.push(`targets a foreign host (${j.target_host})`);
-    const stranded = j.never_ran && j.active && !newborn;
+    const gap = longestGapDays(j.schedule);
+    const slotCovered = coveredDays >= gap + 1 / 24;
+    const stranded = j.never_ran && j.active && !newborn && slotCovered;
     if (stranded) reasons.push('never ran (no run recorded in job_run_details)');
-    else if (j.never_ran && j.active) reasons.push(`not run yet (the instance is ${Math.round(Math.min(age ?? Infinity, instanceAge ?? Infinity))} h old)`);
+    else if (j.never_ran && j.active && newborn) reasons.push(`not run yet (the instance is ${Math.round(Math.min(age ?? Infinity, instanceAge ?? Infinity))} h old)`);
+    else if (j.never_ran && j.active) reasons.push(`not run yet (it can go ${gap} days between runs — ${j.schedule} — and the run history covers ${Math.floor(coveredDays)})`);
     if (!j.active) reasons.push('disabled');
     const last_failed = j.last_status === 'failed';
     if (last_failed) {

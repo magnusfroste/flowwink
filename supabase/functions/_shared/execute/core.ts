@@ -1295,15 +1295,21 @@ export async function executeSkillRequest(input: ExecuteRequest, auth: ExecuteAu
         await logActivity(supabase, {
           agent: agent_type, skill_id: skill.id, skill_name: skill.name,
         api_key_id: caller_api_key_id || null,
-          input: args, output: { refused: verdict.reason, approval_request_id: verdict.requestId ?? null, claim: claimResult },
+          input: args, output: { status: 'refused', code: `APPROVAL_${String(verdict.reason ?? 'refused').toUpperCase()}`, refused: verdict.reason, approval_request_id: verdict.requestId ?? null, claim: claimResult },
           trace_id: trace_id || undefined,
-          status: 'failed', conversation_id, duration_ms: Date.now() - startTime,
+          // A refusal, not a failure: nothing ran and nothing is broken — the
+          // request is waiting for a person. Journaled as 'failed' it counted
+          // toward self-healing's disable threshold and read as a defect in
+          // every failure report (manage_modules, reply_to_email on the fleet).
+          status: 'refused', conversation_id, duration_ms: Date.now() - startTime,
           error_message: (verdict.message ?? '').slice(0, 500),
         });
         // A Response built with `status: undefined` answered 200; the verdict's
         // refusals always carry 403 or 409, so the fallback is never reached.
         return { status: verdict.httpStatus ?? 200, body: {
           status: 'refused',
+          code: `APPROVAL_${String(verdict.reason ?? 'refused').toUpperCase()}`,
+          retryable: false,
           reason: verdict.reason,
           approval_request_id: verdict.requestId ?? null,
           skill: skill.name,
@@ -6426,7 +6432,11 @@ async function executeApprovalsAction(
     return { rules: data || [] };
   }
 
-  return { error: `Unknown approvals action: ${action}` };
+  return {
+    error: `Unknown approvals action: ${action}`,
+    code: 'INVALID_INPUT', retryable: true,
+    hint: 'Actions: list_pending (what waits for a decision), list_for_entity, request, approve | reject | cancel, evaluate_rule, create_rule, list_rules.',
+  };
 }
 
 // =============================================================================
@@ -11846,6 +11856,13 @@ async function executeBlogPostsManagement(
   supabase: SupabaseClient,
   args: Record<string, unknown>,
 ): Promise<unknown> {
+  // `id` is what the row is called everywhere else, and what `get` answers with:
+  // an agent that read a post and sent its `id` back was told "post_id or slug
+  // required" 29 times in one evening (www, 2026-10-29). It is the post's id.
+  if (typeof args.id === 'string' && args.post_id === undefined) {
+    const { id, ...rest } = args;
+    args = { ...rest, post_id: id };
+  }
   const { action = 'list', post_id, slug, new_slug, status, title, excerpt, content, content_json, featured_image, featured_image_alt, category, published_at, locale, retranslate, seo_title, meta_description, og_image, meta_json, limit = 20 } = args as any;
 
   if (action === 'list') {
@@ -11879,6 +11896,17 @@ async function executeBlogPostsManagement(
     const { data } = await supabase.from('blog_posts').select('id').eq('slug', slug).maybeSingle();
     return data?.id;
   })() : null);
+
+  // A slug WAS sent and names no post: say that, not "post_id or slug required"
+  // (an agent pointed at the wrong site retried eight addresses against that
+  // answer, www 2026-11-11). Not found is not retryable as is.
+  if (!resolvedPostId && typeof slug === 'string' && slug && ['update', 'publish', 'unpublish', 'delete'].includes(String(action))) {
+    return {
+      error: `No blog post with slug "${slug}" on this site — nothing was changed.`,
+      code: 'NOT_FOUND', retryable: false,
+      hint: 'manage_blog_posts list shows this site\'s posts with their slug and id. A translated address (/<lang>/blog/…) belongs to an overlay: pass the post\'s own slug or its post_id.',
+    };
+  }
 
   if (action === 'update') {
     if (!resolvedPostId) throw new Error('post_id or slug required for update');

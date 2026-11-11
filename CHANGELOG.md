@@ -97,10 +97,28 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Fixed
 
+- **Fewer wasted agent calls.** From what agents actually failed on across
+  four live sites: the blog skill now accepts the `id` it hands back itself
+  and says plainly when an address matches no post (it used to answer "post_id
+  or slug required" to both); a request that is still waiting for approval is
+  recorded as a refusal, not a failure, so it no longer counts toward
+  switching the skill off; and an unknown approvals action names the real ones.
+- **A monthly job is not "never ran" before its month has come.** Every
+  instance reported `purge-stale-prospects` (the 1st, 03:15) upstream as "never
+  ran" each night: its 1 November run was purged on the 4th, before the
+  history began keeping each job's last run (20261106080000), and it would have
+  stayed red until 1 December. The cron health judge now gives "never ran" a
+  verdict only once the complete run history covers the job's longest gap, an
+  upper bound read from the schedule (a month, a week, a day). It can only
+  withhold that verdict, and a failed run or a foreign host is red as before.
 - **A change is proved before it reaches the fleet.** The nightly fork sync
   now installs main from zero and runs every process first, and syncs only
   when that is green. Until now the sync ran hours before the proof, so a
   faulty change could be live on every site before anything had tested it.
+- **A database or server change is proved before it is merged.** A pull
+  request that touches migrations, edge functions, skills or templates now
+  runs the whole process battery against a site installed from zero. Such
+  changes used to run for the first time the night after the merge.
 - **The receiving instance counts its own ping.** The feedback endpoint (www)
   records its own daily ping without crossing content-api, and did so with a
   hand-written upsert that never touched `ping_count`, so the fleet view read 1

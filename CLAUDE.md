@@ -1023,7 +1023,12 @@ there is no shared dev backend to keep in step any more. **PR CI is offline** �
 type check, correctness lint, the ESLint ratchet (findings may only shrink — `npm run
 lint:ratchet`, baseline in src/lib/__tests__/fixtures/eslint-baseline.json), 3900
 unit/guardrail tests, skill linter, artifact freshness, build; a single business process
-does not earn a live step on every PR. The Docker image builds on release tags only.
+does not earn a live step on every PR. **A PR that touches the database or the edge layer
+is the exception (2026-11-11):** `pr-process-battery.yml` runs the fresh install itself
+(`workflow_call`, `scope: battery`: stack from zero, quiet, open access, the battery, the
+skill smoke, the MCP regression — no browser steps, no stamp) on the PR's merge ref when
+`supabase/migrations`, `supabase/functions`, the battery, a module's skills or a template
+changed. The Docker image builds on release tags only.
 **Fork syncs run once a day, at night** (`nightly-fork-sync.yml`, cron 20:53 UTC, which
 GitHub's queue lands around 01:30 UTC; one fork early = Actions → Nightly fork sync →
 Run workflow with `fork` and `force`, as optic got MFA on 2026-10-29): a sync is
