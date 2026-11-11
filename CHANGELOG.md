@@ -97,6 +97,14 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Fixed
 
+- **A monthly job is not "never ran" before its month has come.** Every
+  instance reported `purge-stale-prospects` (the 1st, 03:15) upstream as "never
+  ran" each night: its 1 November run was purged on the 4th, before the
+  history began keeping each job's last run (20261106080000), and it would have
+  stayed red until 1 December. The cron health judge now gives "never ran" a
+  verdict only once the complete run history covers the job's longest gap, an
+  upper bound read from the schedule (a month, a week, a day). It can only
+  withhold that verdict, and a failed run or a foreign host is red as before.
 - **A change is proved before it reaches the fleet.** The nightly fork sync
   now installs main from zero and runs every process first, and syncs only
   when that is green. Until now the sync ran hours before the proof, so a

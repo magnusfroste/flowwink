@@ -49,7 +49,9 @@ describe('cron_health_report reads the latest run over the whole history', () =>
     // "Never ran" is still pg_cron's own row (lr.status IS NULL); since
     // 2026-11-07 it gets a day's grace measured by pg_cron's own history
     // (the pulse profile), never by a parser's prediction.
-    expect(judge).toMatch(/const stranded = j\.never_ran && j\.active && !newborn;/);
+    // Since 2026-11-10 it is also withheld until the complete run history
+    // covers the job's longest gap (a monthly job's purged November run).
+    expect(judge).toMatch(/const stranded = j\.never_ran && j\.active && !newborn && slotCovered;/);
     expect(judge).toMatch(/const red = j\.foreign_host \|\| stranded \|\| last_failed;/);
   });
   it('anon holds no EXECUTE on it', () => {
