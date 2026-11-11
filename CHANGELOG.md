@@ -97,6 +97,9 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Fixed
 
+- **The Agent work panel downloads far less.** It used to fetch every call's
+  whole answer to show four numbers; it now reads only the fields it draws
+  (less than half the data on a test site, more where agents list a lot).
 - **Three morning reviews are reads.** `support_list_conversations`,
   `deal_stale_check` and `lead_pipeline_review` only select, but no read rule
   knew them. Each run by a connected agent was logged as "an agent acted on its

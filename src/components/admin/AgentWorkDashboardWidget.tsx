@@ -79,6 +79,8 @@ const ANSWERED_IDS = [
   'item:output->item->>id',
   ...OBJECT_ROUTES.flatMap((r) => [`${r.param}:output->>${r.param}`, `${r.entity}:output->${r.entity}->>id`]),
 ].join(', ');
+/** Why a call stopped, as fields of its answer (stopReason reads exactly these four). */
+const STOP_FIELDS = 'out_code:output->>code, out_error:output->>error, result_code:output->result->>code, result_error:output->result->>error';
 const LATEST_LIMIT = 5;
 
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
@@ -101,9 +103,11 @@ export function AgentWorkDashboardWidget() {
       const todayStart = toInstant(`${today()}T00:00`) ?? new Date(new Date().setHours(0, 0, 0, 0)).toISOString();
       const [activity, comments, staged, recent] = await Promise.all([
         supabase
-          // api_key_id is newer than the generated types; the arguments are read as two fields, never the whole input.
+          // api_key_id is newer than the generated types. Arguments and answer are read as FIELDS, never
+          // whole: a list read's answer runs to tens of kilobytes, and two thousand of them were megabytes
+          // sent to draw four numbers. What the panel needs of an answer is why a call stopped.
           .from('agent_activity' as never)
-          .select('id, agent, skill_name, status, error_message, output, created_at, api_key_id, action:input->>action, dry_run:input->>dry_run')
+          .select(`id, agent, skill_name, status, error_message, created_at, api_key_id, action:input->>action, dry_run:input->>dry_run, ${STOP_FIELDS}`)
           .gte('created_at', since)
           .in('status', ['success', 'refused', 'failed'])
           .order('created_at', { ascending: false })
@@ -125,7 +129,11 @@ export function AgentWorkDashboardWidget() {
           .limit(60),
       ]);
       if (recent.error) logger.warn('[agent-work] latest changes not read', recent.error.message);
-      const rows = (activity.data ?? []) as unknown as AgentActivityRow[];
+      const rows = ((activity.data ?? []) as unknown as Array<AgentActivityRow & Record<string, unknown>>).map((r) => ({
+        ...r,
+        // The shape stopReason reads: the answer's own code/error, or its result's.
+        output: { code: r.out_code, error: r.out_error, result: { code: r.result_code, error: r.result_error } },
+      })) as AgentActivityRow[];
       const keyIds = [...new Set(rows.map((r) => r.api_key_id).filter((k): k is string => !!k))];
       const agentNames: Record<string, string> = {};
       // A connected agent's name is Federation's (a2a_peers): asked for only when that module is on.
