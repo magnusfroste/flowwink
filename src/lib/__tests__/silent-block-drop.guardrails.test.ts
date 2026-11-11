@@ -65,4 +65,32 @@ describe('silent block drops are banned', () => {
     expect(upd).toMatch(/dropped.*throw|throw[\s\S]{0,200}dropped/i); // loud refusal
     expect(upd).toContain('nothing was written');
   });
+
+  it('migrate-page REPORTS dropped blocks in its response (drop-and-report, not console-only)', () => {
+    // The importer's posture is manage_page_blocks batch-add's (report beside
+    // the result), not manage_page's (refuse wholesale) — AI-extracted content
+    // earns a partial import, but every drop must reach the caller. Until
+    // 2026-11-11 the stripRemovedBlocks return value was discarded here and an
+    // import that lost blocks read as a full success.
+    const src = readFileSync(join(process.cwd(), 'supabase/functions/migrate-page/index.ts'), 'utf-8');
+
+    // Anchor on text unique to migrate-page's Step 5d–5e section, through the
+    // success response that must carry the reasons.
+    const start = src.indexOf('// Step 5d–5e: shared normalizer');
+    expect(start).toBeGreaterThan(-1);
+    const end = src.indexOf('_next_action', start);
+    expect(end).toBeGreaterThan(start);
+    const slice = src.slice(start, end);
+
+    // The return value is captured, not discarded…
+    expect(slice).toMatch(/const\s+\w+\s*=\s*stripRemovedBlocks\(blocks\)/);
+    expect(slice).not.toMatch(/^\s*stripRemovedBlocks\(blocks\);/m);
+    // …and reaches the response body.
+    expect(slice).toContain('dropped_blocks');
+
+    // The Step 5b dedup pass (hallucination guard) reports its removals too.
+    const dedup = src.slice(src.indexOf('// Step 5b: Detect duplicate data'), start);
+    expect(dedup).toContain('duplicateBlocksRemoved.push');
+    expect(slice).toContain('duplicate_blocks_removed');
+  });
 });
