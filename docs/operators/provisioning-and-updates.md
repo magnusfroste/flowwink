@@ -88,6 +88,13 @@ because that determines how a change reaches it:
 - **The production fleet is still deployed per instance** (the steps below) —
   the auto-deploy above points at ONE ref. Point it at prod, or extend it to a
   matrix, only deliberately.
+- **A sync waits for the proof (2026-11-11).** The nightly sync first runs the
+  fresh install (`fresh-install-nightly.yml`, called as its `proof` job: main
+  installed from zero, every process, the skill smoke, the MCP regression, the
+  view sweep — about fifteen minutes) and syncs only when it is green AND main
+  is still the commit that was proved. A red proof syncs nothing: the fleet
+  keeps yesterday's main. A hand-run sync takes the same road; `unproven: true`
+  skips the proof for a fix that cannot wait.
 - **Fork syncs happen ONCE a day, at night.** `.github/workflows/nightly-fork-sync.yml`
   runs `scripts/sync-forks.sh` (cron 20:53 UTC; GitHub's scheduler debt lands it
   around 01:30 UTC) with per-fork tokens from the

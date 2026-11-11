@@ -45,33 +45,48 @@ on:
         type: boolean
         required: false
         default: false
+      unproven:
+        description: 'Sync WITHOUT the fresh-install proof (an emergency fix that cannot wait 15 minutes)'
+        type: boolean
+        required: false
+        default: false
+
+# ── Prove, then deploy ────────────────────────────────────────────────────────
+# A sync is a production deploy on six sites. Until 2026-11-11 it ran on its
+# own clock, and the fresh install that proves main ran hours LATER (its 02:37
+# cron lands around 10 UTC): on the night of 11-10 a change that let an invoice
+# dated in a closed month be issued reached every fork at 01:30 and was found
+# red at 10:17. Now the order is the point: gate → proof → sync. The proof is
+# the fresh-install workflow itself, called here; the sync hands out main only
+# when main is still the commit that was proved (plus the bot's own stamp).
 
 jobs:
-  sync:
-    name: merge-upstream on every fork
+  # ── One sync per UTC day, whoever asks ──────────────────────────────────────
+  # A late schedule and a hand dispatch are not two requests; they are the
+  # same night's sync arriving twice. On 2026-09-11 both ran — a dispatch
+  # at 02:12 and the delayed schedule at 06:04 — a second production deploy
+  # across six customer sites at 08:04 CEST, exactly what the schedule
+  # exists to prevent. The clock is what is unreliable; this makes the
+  # unreliability harmless. Asked FIRST, so a second arrival does not spend a
+  # fifteen-minute proof either.
+  #
+  # Counts SUCCESSFUL runs of this workflow created today (UTC), excluding
+  # this one. `force: true` is the deliberate override.
+  gate:
+    name: already synced today?
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 5
     # Fleet-only: forks inherit this file but must never sync each other.
     if: github.repository == 'magnusfroste/flowwink'
-    # The guard below reads this workflow's own run history; that needs
+    # The guard reads this workflow's own run history; that needs
     # actions:read, which a repo on restricted default permissions would not
     # hand out. Named here so the guard cannot fail closed by surprise.
     permissions:
       actions: read
       contents: read
+    outputs:
+      skip: ${{ steps.once.outputs.skip }}
     steps:
-      - uses: actions/checkout@v4
-
-      # ── One sync per UTC day, whoever asks ────────────────────────────────
-      # A late schedule and a hand dispatch are not two requests; they are the
-      # same night's sync arriving twice. On 2026-09-11 both ran — a dispatch
-      # at 02:12 and the delayed schedule at 06:04 — a second production deploy
-      # across six customer sites at 08:04 CEST, exactly what the schedule
-      # exists to prevent. The clock is what is unreliable; this makes the
-      # unreliability harmless.
-      #
-      # Counts SUCCESSFUL runs of this workflow created today (UTC), excluding
-      # this one. `force: true` is the deliberate override.
       - name: Already synced today?
         id: once
         env:
@@ -93,8 +108,65 @@ jobs:
             echo "skip=false" >> "$GITHUB_OUTPUT"
           fi
 
+  # ── The proof: main, installed from zero, every process run ─────────────────
+  proof:
+    name: prove main from zero
+    needs: gate
+    if: needs.gate.outputs.skip != 'true' && inputs.unproven != true
+    uses: ./.github/workflows/fresh-install-nightly.yml
+    permissions:
+      contents: write   # the green stamp is committed to main
+      packages: read
+    secrets: inherit
+    with:
+      stamp: true
+
+  sync:
+    name: merge-upstream on every fork
+    needs: [gate, proof]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Runs after a GREEN proof — or, deliberately, without one (unproven: true).
+    # A red or cancelled proof syncs nothing: the fleet keeps yesterday's main.
+    if: >-
+      always() && github.repository == 'magnusfroste/flowwink'
+      && needs.gate.outputs.skip != 'true'
+      && (needs.proof.result == 'success' || (needs.proof.result == 'skipped' && inputs.unproven == true))
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      # merge-upstream hands a fork whatever main is NOW, not the commit that
+      # was proved. A merge that landed during the proof would ride along
+      # unproven — so main must still be the proved commit, give or take the
+      # bot's own stamp. Anything else stops the sync, red: run it again and
+      # the new main is proved first.
+      - name: Is main still what was proved?
+        if: needs.proof.result == 'success'
+        env:
+          PROVEN: ${{ needs.proof.outputs.proven_sha }}
+        run: |
+          set -euo pipefail
+          if [ -z "${PROVEN}" ]; then
+            echo "::error::the proof did not say which commit it proved — not syncing."; exit 1
+          fi
+          since="$(git diff --name-only "${PROVEN}" HEAD | grep -vxF 'scripts/process-battery/last-green.json' || true)"
+          if [ -n "${since}" ]; then
+            echo "::error::main moved during the proof (proved ${PROVEN}, now $(git rev-parse HEAD)). Not syncing an unproved main — run this workflow again."
+            echo "${since}" | head -40
+            exit 1
+          fi
+          echo "main is the proved commit ${PROVEN} (plus the stamp, if any)."
+
+      - name: Unproved sync, on request
+        if: needs.proof.result == 'skipped'
+        run: echo "::warning::unproven=true — syncing main WITHOUT the fresh-install proof, as asked."
+
       - name: Sync
-        if: steps.once.outputs.skip != 'true'
         env:
           FORK_TOKEN_WWW: ${{ secrets.FORK_TOKEN_WWW }}
           FORK_TOKEN_OPTIC: ${{ secrets.FORK_TOKEN_OPTIC }}

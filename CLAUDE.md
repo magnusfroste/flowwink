@@ -1029,6 +1029,12 @@ GitHub's queue lands around 01:30 UTC; one fork early = Actions → Nightly fork
 Run workflow with `fork` and `force`, as optic got MFA on 2026-10-29): a sync is
 a production deploy, and deploying six times in an evening while an operator works
 is how "sometimes I get errors in the project view" happens (optic, 2026-09-04).
+**The sync waits for the proof (2026-11-11):** `nightly-fork-sync.yml` is gate →
+proof → sync. The proof is `fresh-install-nightly.yml` itself (`workflow_call`),
+and the sync runs only when it is green and main is still the proved commit
+(plus the bot's stamp); a red proof syncs nothing. `unproven: true` on a hand
+run is the one way around it. Before, the sync ran at ~01:30 UTC and the fresh
+install that would have caught a bad change at ~10 UTC.
 Fleet-only workflows (docker image, release, main-red alert, MCP regression) carry
 `if: github.repository == 'magnusfroste/flowwink'` so forks stop running them.
 
