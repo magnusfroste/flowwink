@@ -233,3 +233,68 @@ export function summarizeAgentWork(input: {
     areas: workByArea(rows, input.readers),
   };
 }
+
+/** One thing a check flags: check_operations / check_books' finding, as both return it. */
+export interface CheckFinding {
+  id: string;
+  area?: string | null;
+  severity: 'high' | 'medium' | 'low';
+  count: number;
+  label: string;
+  detail?: string | null;
+  fix?: { skill: string; args?: Record<string, unknown> } | null;
+}
+
+export interface Flag {
+  /** Unique across the checks: `<source>:<id>`. */
+  key: string;
+  source: 'operations' | 'books';
+  area: string;
+  severity: 'high' | 'medium' | 'low';
+  label: string;
+  /** The skill that fixes it, when the check names one; null means it is the owner's to decide. */
+  fixSkill: string | null;
+}
+
+export interface FlagSummary {
+  high: number;
+  medium: number;
+  low: number;
+  total: number;
+  /** Highest severity first, the checks' own order within a severity. */
+  top: Flag[];
+}
+
+const SEVERITY_ORDER = { high: 0, medium: 1, low: 2 } as const;
+
+/**
+ * What the checks flag, as one list (#869 point 3). The same findings an agent
+ * reads from check_operations and check_books — a person sees what the agent
+ * was told, with the skill that would fix it. A check that was not run (its
+ * module is off, or the reader's role may not ask it) is passed as null and
+ * contributes nothing.
+ */
+export function mergeFlags(
+  checks: { operations?: CheckFinding[] | null; books?: CheckFinding[] | null },
+  limit = 5,
+): FlagSummary {
+  const all: Flag[] = [];
+  for (const source of ['operations', 'books'] as const) {
+    for (const f of checks[source] ?? []) {
+      if (!f || !f.id || !f.label) continue;
+      const severity = f.severity in SEVERITY_ORDER ? f.severity : 'low';
+      all.push({
+        key: `${source}:${f.id}`,
+        source,
+        area: f.area || (source === 'books' ? 'books' : 'operations'),
+        severity,
+        label: f.label,
+        fixSkill: f.fix?.skill ?? null,
+      });
+    }
+  }
+  // Stable: Array.prototype.sort keeps the checks' own order within a severity.
+  const sorted = all.slice().sort((a, b) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity]);
+  const count = (s: Flag['severity']) => all.filter((f) => f.severity === s).length;
+  return { high: count('high'), medium: count('medium'), low: count('low'), total: all.length, top: sorted.slice(0, limit) };
+}
