@@ -137,6 +137,50 @@ describe('1. pg_cron is judged by its own evidence — never the automation pars
     expect(enrichCronHealth(failed).jobs[0].red).toBe(true);
   });
 
+  it('a monthly job is not "never ran" before the complete run history covers a month (optic, 2026-11-10)', () => {
+    // purge-stale-prospects ran on 1 November; the old purge dropped the row
+    // on the 4th, and every instance reported it upstream every night after.
+    const stale = makeReport([{ jobname: 'purge-stale-prospects', schedule: '15 3 1 * *', never_ran: true, last_status: null, last_run: null }]);
+    const born = { bornAt: '2026-06-01T00:00:00Z' };
+    const nov10 = enrichCronHealth(stale, new Date('2026-11-10T02:17:00Z'), born);
+    expect(nov10.jobs[0].red).toBe(false);
+    expect(nov10.jobs[0].reasons.join(' ')).toMatch(/not run yet \(it can go 31 days/);
+    expect(formatCronHealthSummary(nov10)).toBeNull();
+    // Had it not run on 1 December either, it is red once the history covers a month.
+    expect(enrichCronHealth(stale, new Date('2026-12-06T02:17:00Z'), born).jobs[0].red).toBe(true);
+    // A weekly job: a week; a daily or hourly job is judged as before.
+    const weekly = makeReport([{ schedule: '30 4 * * 1', never_ran: true, last_status: null, last_run: null }]);
+    expect(enrichCronHealth(weekly, new Date('2026-11-10T02:17:00Z'), born).jobs[0].red).toBe(false);
+    expect(enrichCronHealth(weekly, new Date('2026-11-12T02:17:00Z'), born).jobs[0].red).toBe(true);
+    const hourly = makeReport([{ schedule: '0 * * * *', never_ran: true, last_status: null, last_run: null }]);
+    expect(enrichCronHealth(hourly, new Date('2026-11-05T00:00:00Z'), born).jobs[0].red).toBe(true);
+    // An instance born after the history became complete counts from its birth.
+    expect(enrichCronHealth(stale, new Date('2026-12-20T00:00:00Z'), { bornAt: '2026-12-01T00:00:00Z' }).jobs[0].red).toBe(false);
+  });
+
+  it('the longest-gap bound only ever withholds a "never ran" verdict, never raises one', () => {
+    const now = new Date('2026-11-10T02:17:00Z');
+    const schedules = ['* * * * *', '*/5 * * * *', '0 3 * * *', '30 4 * * 1', '15 3 1 * *', '0 3 1,15 * *', '0 6 1 1,4,7,10 *', '0 0 */2 * *', '30 2 * * sat', '0 0 1 * 1', '30 seconds', '@monthly', '', 'garbage'];
+    for (const bornAt of [undefined, '2026-01-01T00:00:00Z', '2026-11-08T00:00:00Z']) {
+      for (const schedule of schedules) {
+        for (const j of [
+          { never_ran: true, last_status: null, last_run: null },
+          { last_status: 'failed' },
+          { foreign_host: true },
+          {},
+        ]) {
+          const r = enrichCronHealth(makeReport([{ schedule, ...j }]), now, { bornAt });
+          const red = r.jobs[0].red;
+          // Without the bound (a daily gap), the same job would be at least as red.
+          const daily = enrichCronHealth(makeReport([{ schedule: '0 3 * * *', ...j }]), now, { bornAt }).jobs[0].red;
+          if (red) expect(daily, `${schedule} red but its daily twin is not`).toBe(true);
+          // Evidence other than absence is never withheld.
+          if (j.last_status === 'failed' || j.foreign_host) expect(red).toBe(true);
+        }
+      }
+    }
+  });
+
   it('the health brain no longer touches the agent-automation cron parser', () => {
     // The domain-rule comment may NAME next-run.ts; importing or calling it is
     // what reintroduces the incident.
