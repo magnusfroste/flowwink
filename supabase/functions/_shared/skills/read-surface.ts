@@ -71,6 +71,15 @@ const READ_EXTRAS = new Set([
   'summarize_candidate_pipeline',
   'validate_address',
   'verify_document_integrity',
+  // 2026-11-11, liteit's morning operator: three reviews an MCP agent runs
+  // every morning were logged as "an agent acted on its own" (notify) because
+  // no read rule knew them. Handlers verified in _shared/execute/core.ts:
+  // support_list_conversations selects chat_conversations (its neighbour
+  // support_assign_conversation updates and stays staged), deal_stale_check
+  // selects deals, executeLeadPipelineReview selects leads. No writes.
+  'support_list_conversations',
+  'deal_stale_check',
+  'lead_pipeline_review',
 ]);
 
 /**
