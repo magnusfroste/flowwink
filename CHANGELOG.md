@@ -97,6 +97,14 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Fixed
 
+- **The Agent work panel counts the whole week.** It read the week's agent calls
+  as rows and counted them in the browser, and the API answers at most a
+  thousand rows: on an instance where the agents made more calls than that in
+  seven days, "This week, by area" and the refused and failed tiles were too
+  low, silently. The week is now counted in the database
+  (`agent_work_counts`, invoker rights — the reader's own sight decides what is
+  counted) and arrives as a few hundred groups whatever the volume.
+
 - **The Agent work panel downloads far less.** It used to fetch every call's
   whole answer to show four numbers; it now reads only the fields it draws
   (less than half the data on a test site, more where agents list a lot).

@@ -83,6 +83,22 @@ const ANSWERED_IDS = [
 const STOP_FIELDS = 'out_code:output->>code, out_error:output->>error, result_code:output->result->>code, result_error:output->result->>error';
 const LATEST_LIMIT = 5;
 
+/** Stopped calls read as rows: the list shows five, after the module filter. */
+const STOPPED_PAGE = 40;
+
+/** One counted group of agent_work_counts (newer than the generated types). */
+interface CountRow {
+  agent: string | null;
+  api_key_id: string | null;
+  skill_name: string | null;
+  status: string | null;
+  action: string | null;
+  dry_run: string | null;
+  is_today: boolean;
+  calls: number;
+  last_at: string;
+}
+
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
 export function AgentWorkDashboardWidget() {
@@ -101,17 +117,20 @@ export function AgentWorkDashboardWidget() {
     queryFn: async () => {
       const since = new Date(Date.now() - WINDOW_DAYS * 86_400_000).toISOString();
       const todayStart = toInstant(`${today()}T00:00`) ?? new Date(new Date().setHours(0, 0, 0, 0)).toISOString();
-      const [activity, comments, staged, recent] = await Promise.all([
+      const [counts, stoppedRead, comments, staged, recent] = await Promise.all([
+        // The week is COUNTED in the database, one row per agent, skill and outcome. Read as rows it
+        // was the newest thousand (PostgREST's ceiling) called a week: too low on a busy instance.
+        // Invoker rights — the reader's own sight of agent_activity decides what is counted.
+        supabase.rpc('agent_work_counts' as never, { p_since: since, p_today: todayStart } as never),
+        // Why the latest calls stopped: single rows, a short page. Arguments and answer are read as
+        // FIELDS, never whole — a list read's answer runs to tens of kilobytes.
         supabase
-          // api_key_id is newer than the generated types. Arguments and answer are read as FIELDS, never
-          // whole: a list read's answer runs to tens of kilobytes, and two thousand of them were megabytes
-          // sent to draw four numbers. What the panel needs of an answer is why a call stopped.
           .from('agent_activity' as never)
-          .select(`id, agent, skill_name, status, error_message, created_at, api_key_id, action:input->>action, dry_run:input->>dry_run, ${STOP_FIELDS}`)
+          .select(`id, agent, skill_name, status, error_message, created_at, api_key_id, ${STOP_FIELDS}`)
           .gte('created_at', since)
-          .in('status', ['success', 'refused', 'failed'])
+          .in('status', ['refused', 'failed'])
           .order('created_at', { ascending: false })
-          .limit(2000),
+          .limit(STOPPED_PAGE),
         supabase
           .from('project_task_comments' as never)
           .select('task_id, project_id, kind, author_type, author_name, created_at')
@@ -129,7 +148,23 @@ export function AgentWorkDashboardWidget() {
           .limit(60),
       ]);
       if (recent.error) logger.warn('[agent-work] latest changes not read', recent.error.message);
-      const rows = ((activity.data ?? []) as unknown as Array<AgentActivityRow & Record<string, unknown>>).map((r) => ({
+      if (counts.error) logger.warn('[agent-work] the week could not be counted', counts.error.message);
+      if (stoppedRead.error) logger.warn('[agent-work] stopped calls not read', stoppedRead.error.message);
+      const rows = ((counts.data ?? []) as unknown as CountRow[]).map((g, i) => ({
+        id: `group-${i}`,
+        agent: g.agent,
+        skill_name: g.skill_name,
+        status: g.status,
+        error_message: null,
+        output: null,
+        // The group's newest call: on or after the day's start exactly when the group is today's.
+        created_at: g.last_at,
+        api_key_id: g.api_key_id,
+        action: g.action,
+        dry_run: g.dry_run,
+        calls: Number(g.calls),
+      })) as AgentActivityRow[];
+      const stoppedDetail = ((stoppedRead.data ?? []) as unknown as Array<AgentActivityRow & Record<string, unknown>>).map((r) => ({
         ...r,
         // The shape stopReason reads: the answer's own code/error, or its result's.
         output: { code: r.out_code, error: r.out_error, result: { code: r.result_code, error: r.result_error } },
@@ -162,6 +197,7 @@ export function AgentWorkDashboardWidget() {
         todayStart,
         shown: (skill) => skillShown(skill, active),
         readers,
+        stoppedDetail,
       });
       return { ...summary, latest: latestChanges(recentRows, readers, (skill) => skillShown(skill, active), LATEST_LIMIT) };
     },

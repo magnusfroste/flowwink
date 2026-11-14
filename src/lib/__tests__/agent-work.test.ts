@@ -245,15 +245,55 @@ describe('agent work', () => {
     expect(missing).toEqual([]);
   });
 
-  it('the week of calls is read as fields — never whole arguments or answers', () => {
-    // Two thousand list answers were megabytes sent to draw four numbers.
+  it('the week is counted in the database — never as rows under PostgREST\'s thousand', () => {
+    // Read as rows the panel counted the newest thousand and called it the week.
     const widget = readFileSync(join(__dirname, '../../components/admin/AgentWorkDashboardWidget.tsx'), 'utf-8');
-    const big = widget.slice(widget.indexOf(".from('agent_activity' as never)"), widget.indexOf('.limit(2000)'));
+    expect(widget).toMatch(/supabase\.rpc\('agent_work_counts' as never/);
+    // Every row read of agent_activity is a short page.
+    const reads = [...widget.matchAll(/\.from\('agent_activity' as never\)[\s\S]*?\.limit\(([A-Z_0-9]+)\)/g)].map((m) => m[1]);
+    expect(reads).toEqual(['STOPPED_PAGE', '60']);
+    const migration = readFileSync(join(__dirname, '../../../supabase/migrations/20261114100000_agentarbetet-raknas-i-databasen.sql'), 'utf-8');
+    // The reader's own sight decides what is counted: invoker rights, no definer.
+    expect(migration).toMatch(/SECURITY INVOKER/);
+    expect(migration).not.toMatch(/SECURITY DEFINER/);
+  });
+
+  it('a counted group weighs its calls: tiles, areas and the most active agent', () => {
+    const g = (over: Partial<AgentActivityRow>): AgentActivityRow => ({
+      id: Math.random().toString(36), agent: 'mcp', skill_name: 'manage_leads', status: 'success',
+      error_message: null, output: null, created_at: '2026-11-14T10:00:00Z', ...over,
+    });
+    const s = summarizeAgentWork({
+      activity: [
+        g({ calls: 1200, action: 'list' }),
+        g({ calls: 300, action: 'create' }),
+        g({ calls: 40, agent: 'flowpilot', skill_name: 'manage_deal', action: 'update' }),
+        g({ calls: 7, status: 'refused', created_at: '2026-11-12T10:00:00Z' }),
+        g({ calls: 2, status: 'failed', created_at: '2026-11-12T10:00:00Z' }),
+        g({ calls: 500, created_at: '2026-11-12T10:00:00Z', action: 'create' }),
+      ],
+      comments: [], stagedCount: 0, todayStart: '2026-11-14T00:00:00Z', shown: () => true,
+      readers: { ownerOf: (k) => (k === 'manage_deal' ? 'deals' : 'crm'), isRead: (_k, a) => a.action === 'list' },
+      stoppedDetail: [g({ id: 'x1', status: 'refused', output: { code: 'MODULE_DISABLED' }, created_at: '2026-11-12T10:00:00Z' })],
+    });
+    expect(s.actionsToday).toBe(1540);
+    // 1500 calls against 40: the most active agent first.
+    expect(s.agentsToday).toEqual(['Connected agent', 'FlowPilot']);
+    expect(s.refused).toBe(7);
+    expect(s.failed).toBe(2);
+    expect(s.stopped).toEqual([expect.objectContaining({ id: 'x1', reason: 'module disabled' })]);
+    const crm = s.areas.find((a) => a.module === 'crm');
+    expect(crm).toMatchObject({ changes: 800, lookups: 1200 });
+    expect(s.areas.find((a) => a.module === 'deals')).toMatchObject({ changes: 40, lookups: 0 });
+  });
+
+  it('stopped calls are still read as fields — never whole arguments or answers', () => {
+    const widget = readFileSync(join(__dirname, '../../components/admin/AgentWorkDashboardWidget.tsx'), 'utf-8');
+    const big = widget.slice(widget.indexOf(".from('agent_activity' as never)"), widget.indexOf('.limit(STOPPED_PAGE)'));
     const select = big.slice(big.indexOf('.select('), big.indexOf('.gte('));
     expect(select).not.toMatch(/[`', ]output[,`' ]/);
     expect(select).not.toMatch(/[`', ]input[,`' ]/);
     expect(select).toContain('${STOP_FIELDS}');
-    // …and the four fields are the ones stopReason reads.
     expect(widget).toMatch(/out_code:output->>code, out_error:output->>error, result_code:output->result->>code, result_error:output->result->>error/);
   });
 });

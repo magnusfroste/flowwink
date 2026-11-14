@@ -28,7 +28,19 @@ export interface AgentActivityRow {
   /** The call's `action` and `dry_run` arguments — what makes a manage_* call a read. */
   action?: string | null;
   dry_run?: string | boolean | null;
+  /**
+   * How many calls this row stands for. The panel reads the week as counted
+   * groups (agent_work_counts), never as rows: PostgREST answers at most a
+   * thousand rows, and a week of a busy instance is more. Absent means one.
+   */
+  calls?: number | null;
 }
+
+/** The calls a row stands for: its group's count, or one. */
+export const callsOf = (row: Pick<AgentActivityRow, 'calls'>): number => {
+  const n = Number(row.calls ?? 1);
+  return Number.isFinite(n) && n > 0 ? n : 1;
+};
 
 export interface TaskCommentRow {
   task_id: string;
@@ -111,13 +123,14 @@ export function workByArea(rows: AgentActivityRow[], readers: AgentWorkReaders =
     const module = readers.ownerOf?.(r.skill_name) || 'platform';
     const a = areas.get(module) ?? { changes: 0, lookups: 0, agents: new Map(), skills: new Map(), lastAt: r.created_at };
     const read = readers.isRead ? readers.isRead(r.skill_name, callArgs(r)) : false;
-    if (read) a.lookups += 1;
+    const n = callsOf(r);
+    if (read) a.lookups += n;
     else {
-      a.changes += 1;
-      a.skills.set(r.skill_name, (a.skills.get(r.skill_name) ?? 0) + 1);
+      a.changes += n;
+      a.skills.set(r.skill_name, (a.skills.get(r.skill_name) ?? 0) + n);
     }
     const who = agentNameOf(r, readers.agentNames);
-    a.agents.set(who, (a.agents.get(who) ?? 0) + 1);
+    a.agents.set(who, (a.agents.get(who) ?? 0) + n);
     if (r.created_at > a.lastAt) a.lastAt = r.created_at;
     areas.set(module, a);
   }
@@ -201,15 +214,23 @@ export function summarizeAgentWork(input: {
   shown: (skillName: string | null) => boolean;
   stoppedLimit?: number;
   readers?: AgentWorkReaders;
+  /**
+   * The latest stopped calls as single rows, with why each stopped. Given when
+   * `activity` is counted groups (which carry no reason); absent, the list is
+   * read from `activity` itself.
+   */
+  stoppedDetail?: AgentActivityRow[];
 }): AgentWorkSummary {
   const names = input.readers?.agentNames;
   const rows = input.activity.filter((r) => isAgentCall(r) && input.shown(r.skill_name));
   const today = rows.filter((r) => r.created_at >= input.todayStart && r.status === 'success');
   const perAgent = new Map<string, number>();
-  for (const r of today) perAgent.set(agentNameOf(r, names), (perAgent.get(agentNameOf(r, names)) ?? 0) + 1);
+  for (const r of today) perAgent.set(agentNameOf(r, names), (perAgent.get(agentNameOf(r, names)) ?? 0) + callsOf(r));
 
-  const stoppedRows = rows.filter((r) => r.status === 'refused' || r.status === 'failed');
-  const stopped = stoppedRows
+  const isStopped = (r: AgentActivityRow) => r.status === 'refused' || r.status === 'failed';
+  const stoppedRows = rows.filter(isStopped);
+  const total = (list: AgentActivityRow[]) => list.reduce((sum, r) => sum + callsOf(r), 0);
+  const stopped = (input.stoppedDetail ? input.stoppedDetail.filter((r) => isAgentCall(r) && input.shown(r.skill_name) && isStopped(r)) : stoppedRows)
     .slice()
     .sort((a, b) => b.created_at.localeCompare(a.created_at))
     .slice(0, input.stoppedLimit ?? 5)
@@ -223,12 +244,12 @@ export function summarizeAgentWork(input: {
     }));
 
   return {
-    actionsToday: today.length,
+    actionsToday: total(today),
     agentsToday: [...perAgent].sort((a, b) => b[1] - a[1]).map(([name]) => name),
     staged: input.stagedCount,
     openQuestions: openQuestionTasks(input.comments).length,
-    refused: stoppedRows.filter((r) => r.status === 'refused').length,
-    failed: stoppedRows.filter((r) => r.status === 'failed').length,
+    refused: total(stoppedRows.filter((r) => r.status === 'refused')),
+    failed: total(stoppedRows.filter((r) => r.status === 'failed')),
     stopped,
     areas: workByArea(rows, input.readers),
   };
