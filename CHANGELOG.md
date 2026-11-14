@@ -57,6 +57,14 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Added
 
+- **Invoices out to another bookkeeping system.** When the books are kept in
+  Fortnox, Visma or elsewhere, the issued invoices can now be handed over:
+  Invoices → *Export basis* downloads a period as a CSV file (one row per
+  invoice line, with the buyer's organisation number) and marks the invoices as
+  handed over, so the next export offers only what is new. An agent or a bridge
+  does the same over the gateway (`list_invoice_basis`,
+  `mark_invoice_basis_exported`) and writes the other system's invoice number
+  back with `confirm_invoice_export` — the same invoice is never imported twice.
 - **Agent work on the dashboard.** A panel for an owner, not a developer: how
   much the agents did today and which ones, what is waiting for a person
   (operations an agent staged, questions an agent asked on a task that nobody
