@@ -609,6 +609,17 @@ beside its payload, so an operator branches instead of guessing:
   `check_books` / `book_unbooked_invoices` answer `external_ledger: true`
   instead of listing unbooked work. An explicit booking skill still books — the
   dial stops what happens by itself, not what a person asks for.
+- **Invoice basis out, the external number back (2026-11-14, #862).** No new
+  entity: an ISSUED invoice is the basis, with three facts on it —
+  `exported_at`, `external_ref`, `external_confirmed_at` — that are the whole
+  state (ready → exported → confirmed). `list_invoice_basis(p_from, p_to,
+  p_status)` is the read (lines, totals, the buyer's org/VAT number as the join
+  key), `mark_invoice_basis_exported(p_invoice_ids)` hands a batch over, and
+  `confirm_invoice_export(p_external_ref, p_invoice_id | p_invoice_number)`
+  writes the other system's number back: the same reference again is a no-op,
+  another one or one that belongs elsewhere is refused (`ALREADY_EXISTS`), so
+  the same basis is never imported twice. Invoices → **Export basis** is the
+  same read as a CSV. Nothing names a ledger — the bridge lives outside.
 - **Born right (2026-10-27).** `manage_invoice create` without `due_date`
   gets one from the payment terms (`net30` → 30 days after the issue date,
   30 when the terms say nothing). Every commercial `currency` column is

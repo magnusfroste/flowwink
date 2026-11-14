@@ -4,13 +4,14 @@ import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { AdminPageContainer } from '@/components/admin/AdminPageContainer';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Clock } from 'lucide-react';
+import { Plus, Clock, FileOutput } from 'lucide-react';
 import { useInvoices, getInvoiceCustomerName, getInvoiceCustomerEmail, getInvoiceCompanyName, type InvoiceStatus } from '@/hooks/useInvoices';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { InvoiceDetailSheet } from '@/components/admin/invoices/InvoiceDetailSheet';
 import { CreateInvoiceDialog } from '@/components/admin/invoices/CreateInvoiceDialog';
 import { InvoiceFromTimesheetsDialog } from '@/components/admin/invoices/InvoiceFromTimesheetsDialog';
+import { InvoiceBasisExportDialog } from '@/components/admin/invoices/InvoiceBasisExportDialog';
 import { EinvoiceSettingsCard } from '@/components/admin/invoices/EinvoiceSettingsCard';
 import { ArAgingReportTab } from '@/components/admin/invoices/ArAgingReportTab';
 import { useOpenOnQueryParam } from '@/hooks/useOpenOnQueryParam';
@@ -38,6 +39,7 @@ export default function InvoicesPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [timesheetOpen, setTimesheetOpen] = useState(false);
+  const [basisOpen, setBasisOpen] = useState(false);
   useOpenOnQueryParam('new', '1', () => setCreateOpen(true));
   // Deep link from SLA Monitor: /admin/invoices?invoice=<id>
   useSelectOnQueryParam('invoice', setSelectedId);
@@ -51,6 +53,9 @@ export default function InvoicesPage() {
     <AdminLayout>
       <AdminPageContainer>
         <AdminPageHeader title="Invoices">
+          <Button variant="outline" size="sm" onClick={() => setBasisOpen(true)}>
+            <FileOutput className="h-4 w-4 mr-1" /> Export basis
+          </Button>
           <Button variant="outline" size="sm" onClick={() => setTimesheetOpen(true)}>
             <Clock className="h-4 w-4 mr-1" /> From Timesheets
           </Button>
@@ -157,6 +162,7 @@ export default function InvoicesPage() {
 
         <CreateInvoiceDialog open={createOpen} onOpenChange={setCreateOpen} />
         <InvoiceFromTimesheetsDialog open={timesheetOpen} onOpenChange={setTimesheetOpen} />
+        <InvoiceBasisExportDialog open={basisOpen} onOpenChange={setBasisOpen} />
       </AdminPageContainer>
     </AdminLayout>
   );

@@ -231,6 +231,79 @@ Locale-specific: ${getActivePack().ai_instructions.invoicing}`,
     instructions: 'Parameters: p_invoice_id (uuid), p_amount_cents (integer cents), p_method (one of cash|swish|card|manual), p_paid_at (optional ISO timestamp), p_reference (optional idempotency key). ALWAYS pass a stable p_reference when there is any chance of a retry/double-submit — a repeat call with the same reference is a no-op (idempotent:true), preventing double-counted payments. Partial payments accumulate in paid_amount_cents; the invoice flips to paid only when fully settled (partially_paid in between). Overpayment is rejected (use create_credit_note for corrections). Complements the bank-reconciliation payment path. Admin/approver/service-role only.',
   },
   {
+    name: 'list_invoice_basis',
+    description: 'The invoices that are basis for an EXTERNAL ledger (Fortnox, Visma …): every issued invoice in a period with its lines, totals, the buyer\'s org/VAT number and where it stands — ready (not handed over), exported (handed over) or confirmed (the other system\'s number is written back). Read-only. Use when: the books are kept in another system and its invoices must be created there; a bridge or an accountant asks "what is to be invoiced/booked this month"; checking which invoices never reached the books. NOT for: booking in FlowWink\'s own ledger (book_unbooked_invoices); who owes money (ar_aging_report); one invoice\'s details (manage_invoice get).',
+    category: 'commerce',
+    handler: 'rpc:list_invoice_basis',
+    scope: 'internal',
+    tool_definition: {
+      "risk":"low",
+      type: 'function',
+      function: {
+        name: 'list_invoice_basis',
+        description: 'Issued invoices as basis for an external ledger. Returns { counts: {ready, exported, confirmed}, invoices: [{invoice_id, invoice_number, issue_date, due_date, currency, customer_name, org_number, vat_number, lines, subtotal_cents, tax_cents, total_cents, contract_id, subscription_id, export_status, external_ref}], next }.',
+        parameters: {
+          type: 'object',
+          properties: {
+            p_from: { type: 'string', description: 'Issue date from, YYYY-MM-DD (omit for no lower bound)' },
+            p_to: { type: 'string', description: 'Issue date to, YYYY-MM-DD (omit for no upper bound)' },
+            p_status: { type: 'string', enum: ['ready', 'exported', 'confirmed', 'all'], description: 'Default ready: what has not been handed over yet.' },
+            p_limit: { type: 'number', description: 'Default 500, max 2000. `truncated: true` means there is more — narrow the period.' },
+          },
+        },
+      },
+    },
+    instructions: 'Drafts and cancelled invoices are never basis. `org_number` / `vat_number` come from the invoice\'s company and are the join key to the other system; they are null when the invoice has no company — ask before inventing one. Amounts are in hundredths of `currency`; a credit note is a row with negative totals and `credited_invoice_id`. The flow: list ready → create them in the other system → mark_invoice_basis_exported(p_invoice_ids) → confirm_invoice_export(p_external_ref, p_invoice_id) with the number the other system gave each. Reading changes nothing: the same call answers the same rows until they are marked.',
+  },
+  {
+    name: 'mark_invoice_basis_exported',
+    description: 'Mark invoices as handed over to the external ledger (ready → exported), so the next list_invoice_basis no longer offers them. Idempotent: an invoice already marked stays as it was. Use when: a batch from list_invoice_basis has been taken by the other system (file imported, API call accepted). NOT for: writing the other system\'s invoice number (confirm_invoice_export); sending the invoice to the customer (send_invoice_email).',
+    category: 'commerce',
+    handler: 'rpc:mark_invoice_basis_exported',
+    scope: 'internal',
+    tool_definition: {
+      "risk":"low", "reversible":true, "reversal":"an admin clears exported_at on the invoice; nothing leaves FlowWink by marking",
+      type: 'function',
+      function: {
+        name: 'mark_invoice_basis_exported',
+        description: 'Sets exported_at on issued invoices not yet marked. Returns { marked, already_exported, not_basis, invoice_ids }.',
+        parameters: {
+          type: 'object',
+          required: ['p_invoice_ids'],
+          properties: {
+            p_invoice_ids: { type: 'array', items: { type: 'string', format: 'uuid' }, description: 'The invoice_id values list_invoice_basis answered.' },
+          },
+        },
+      },
+    },
+    instructions: 'Pass the invoice_id values exactly as list_invoice_basis returned them (uuids, not invoice numbers). `not_basis` counts ids that are drafts, cancelled or unknown — nothing was marked for those. Mark only what the other system actually took: an invoice marked exported disappears from the ready list.',
+  },
+  {
+    name: 'confirm_invoice_export',
+    description: 'Write the external ledger\'s own invoice number back on a FlowWink invoice (→ confirmed). This is what makes the hand-over idempotent: the same reference again is a no-op, and a reference another invoice carries is refused, so the same basis is never imported twice. Use when: the other system (Fortnox, Visma …) has created the invoice and answered with its number. NOT for: marking a batch as handed over without a number yet (mark_invoice_basis_exported); recording a payment (record_invoice_payment). Requires one of: p_invoice_id or p_invoice_number.',
+    category: 'commerce',
+    handler: 'rpc:confirm_invoice_export',
+    scope: 'internal',
+    tool_definition: {
+      "risk":"low", "reversible":true, "reversal":"an admin clears external_ref on the invoice",
+      type: 'function',
+      function: {
+        name: 'confirm_invoice_export',
+        description: 'Sets external_ref on an issued invoice, by p_invoice_id or p_invoice_number. Returns { confirmed, idempotent, invoice_number, external_ref }, or a refusal (NOT_FOUND | INVALID_INPUT | ALREADY_EXISTS).',
+        parameters: {
+          type: 'object',
+          required: ['p_external_ref'],
+          properties: {
+            p_external_ref: { type: 'string', description: 'The other system\'s number for this invoice, exactly as it gave it.' },
+            p_invoice_id: { type: 'string', format: 'uuid', description: 'The invoice (or pass p_invoice_number).' },
+            p_invoice_number: { type: 'string', description: 'FlowWink\'s invoice number, when the id is not at hand.' },
+          },
+        },
+      },
+    },
+    instructions: 'One of p_invoice_id / p_invoice_number is required. Only what the other system SAID is written — never a number you made up. Refusals are answers, not errors: ALREADY_EXISTS means this invoice already has another reference, or this reference belongs to another invoice (the hint names it) — stop and ask a person. A draft or cancelled invoice is refused (INVALID_INPUT).',
+  },
+  {
     name: 'ar_aging_report',
     description: 'Accounts-receivable aging: open (not fully paid) invoices bucketed per customer into current / 1-30 / 31-60 / 61-90 / 90+ days overdue. Use when: "who owes us money", collections review, month-end AR review. NOT for: a single invoice balance (invoice_outstanding via manage_invoice get) or bank reconciliation status (reconciliation_report).',
     category: 'commerce',
