@@ -244,4 +244,16 @@ describe('agent work', () => {
     }
     expect(missing).toEqual([]);
   });
+
+  it('the week of calls is read as fields — never whole arguments or answers', () => {
+    // Two thousand list answers were megabytes sent to draw four numbers.
+    const widget = readFileSync(join(__dirname, '../../components/admin/AgentWorkDashboardWidget.tsx'), 'utf-8');
+    const big = widget.slice(widget.indexOf(".from('agent_activity' as never)"), widget.indexOf('.limit(2000)'));
+    const select = big.slice(big.indexOf('.select('), big.indexOf('.gte('));
+    expect(select).not.toMatch(/[`', ]output[,`' ]/);
+    expect(select).not.toMatch(/[`', ]input[,`' ]/);
+    expect(select).toContain('${STOP_FIELDS}');
+    // …and the four fields are the ones stopReason reads.
+    expect(widget).toMatch(/out_code:output->>code, out_error:output->>error, result_code:output->result->>code, result_error:output->result->>error/);
+  });
 });

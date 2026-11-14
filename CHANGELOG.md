@@ -97,6 +97,9 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Fixed
 
+- **The Agent work panel downloads far less.** It used to fetch every call's
+  whole answer to show four numbers; it now reads only the fields it draws
+  (less than half the data on a test site, more where agents list a lot).
 - **A plan step runs only when it carries what its skill needs.** A plan
   writes each step's arguments before anything has been read, so a step whose
   arguments come from a read was stored half-empty. On optic, FlowPilot's plan
