@@ -11907,6 +11907,22 @@ async function executeBlogPostsManagement(
       hint: 'manage_blog_posts list shows this site\'s posts with their slug and id. A translated address (/<lang>/blog/…) belongs to an overlay: pass the post\'s own slug or its post_id.',
     };
   }
+  // An id that names no post gets the same answer. Until 2026-11-12 it reached
+  // the update's .single() and came back "Update post failed: Cannot coerce
+  // the result to a single JSON object": Hermes on www, 2026-11-11, setting
+  // covers on eight posts of another site, nine calls. An id that is not a
+  // uuid at all (22P02) names no post either.
+  if (post_id && ['update', 'publish', 'unpublish', 'delete'].includes(String(action))) {
+    const { data: byId, error: idErr } = await supabase.from('blog_posts').select('id').eq('id', post_id).maybeSingle();
+    if (idErr && idErr.code !== '22P02') throw new Error(`Post lookup failed: ${idErr.message}`);
+    if (!byId) {
+      return {
+        error: `No blog post with id "${post_id}" on this site — nothing was changed.`,
+        code: 'NOT_FOUND', retryable: false,
+        hint: 'manage_blog_posts list shows this site\'s posts with their slug and id. An id from another site (or another instance\'s gateway) names nothing here: check which site you are connected to.',
+      };
+    }
+  }
 
   if (action === 'update') {
     if (!resolvedPostId) throw new Error('post_id or slug required for update');

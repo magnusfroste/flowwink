@@ -221,6 +221,7 @@ export async function collectObjectiveEvidence(supabase: any, objectiveId: strin
     steps: {
       total: steps.length,
       done: steps.filter((s: any) => s.status === 'done').length,
+      handed_off: steps.filter((s: any) => s.status === 'handed_off').length,
       pending: steps.filter((s: any) => s.status === 'pending').length,
       failed: steps.filter((s: any) => s.status === 'failed').length,
     },
@@ -419,6 +420,46 @@ export async function handleDecomposeObjective(supabase: any, args: { objective_
   return { status: 'planned', objective_id: args.objective_id, steps: plan.steps.length, plan: plan.steps };
 }
 
+// ─── A plan step is a call only when it carries what the call needs ──────────
+//
+// decompose_objective writes each step's skill and arguments BEFORE anything
+// has been read, so a step whose arguments come from a read (which task, what
+// to say) is stored without them. advance_plan ran it as stored: on optic,
+// 2026-11-10 and 11-11, "Watch Peter's projects" ran comment_on_task as
+// {kind: 'question'} twice a day, "body is required" each time, while the
+// same heartbeat asked the right question on the right task in its own turn.
+// The required list the skill itself declares (tool_definition) says whether
+// the stored arguments are a call; when they are not, the step goes to the
+// reasoning loop that has the read in front of it. No skill is named here.
+
+/** The one read planStepMissingArgs makes: the skill row's tool_definition. */
+type SkillDefinitionReader = {
+  from(table: string): {
+    select(columns: string): { eq(column: string, value: string): { maybeSingle(): PromiseLike<{ data: unknown; error: unknown }> } };
+  };
+};
+
+/** The required parameters of `skillName` that `args` leaves empty. [] when the skill cannot be read: run the step as before. */
+export async function planStepMissingArgs(supabase: SkillDefinitionReader, skillName: string, args: Record<string, unknown> | null | undefined): Promise<string[]> {
+  try {
+    const { data, error } = await supabase.from('agent_skills').select('tool_definition').eq('name', skillName).maybeSingle();
+    if (error) return []; // the skill cannot be read: run the step as before
+    const row = data as { tool_definition?: { function?: { parameters?: { required?: unknown } } } } | null;
+    const required = row?.tool_definition?.function?.parameters?.required;
+    if (!Array.isArray(required)) return [];
+    return required.filter((k: unknown): k is string => {
+      if (typeof k !== 'string') return false;
+      const v = args?.[k];
+      return v === undefined || v === null || (typeof v === 'string' && !v.trim());
+    });
+  } catch {
+    return [];
+  }
+}
+
+/** A step that is finished: run, or handed to the reasoning loop because the plan could not carry its arguments. */
+export const planStepFinished = (s: { status?: unknown }) => s.status === 'done' || s.status === 'handed_off';
+
 // ─── Atomic Task Checkout ─────────────────────────────────────────────────────
 
 export async function checkoutObjective(supabase: any, objectiveId: string): Promise<boolean> {
@@ -477,6 +518,29 @@ export async function handleAdvancePlan(supabase: any, supabaseUrl: string, serv
         return { status: 'all_done', message: 'All plan steps completed.', chain_results: chainResults };
       }
 
+      // Arguments the plan could not know are the reasoning loop's to fill:
+      // handed off, never run half-empty and never counted a failure.
+      const missing = nextStep.skill_name ? await planStepMissingArgs(supabase, nextStep.skill_name, nextStep.skill_args) : [];
+      if (missing.length) {
+        nextStep.status = 'handed_off';
+        nextStep.result = { status: 'needs_reasoning', missing };
+        nextStep.completed_at = new Date().toISOString();
+        plan.current_step = nextStep.order;
+        plan.completed = plan.steps.every(planStepFinished);
+        progress.plan = plan;
+        progress.last_updated = new Date().toISOString();
+        await supabase.from('agent_objectives').update({ progress }).eq('id', objective_id);
+        chainResults.push({ step: nextStep.description, skill: nextStep.skill_name, status: 'handed_off', missing });
+        return {
+          status: 'needs_reasoning',
+          step: nextStep.description,
+          skill: nextStep.skill_name,
+          missing,
+          hint: `The plan stored ${nextStep.skill_name} without ${missing.join(', ')}, which come from what you read now. Run ${nextStep.skill_name} yourself with them (read_skill ${nextStep.skill_name} for the shape). The step is marked handed off, not failed.`,
+          chain_results: chainResults,
+        };
+      }
+
       nextStep.status = 'running';
       plan.current_step = nextStep.order;
       await supabase.from('agent_objectives').update({ progress }).eq('id', objective_id);
@@ -510,7 +574,7 @@ export async function handleAdvancePlan(supabase: any, supabaseUrl: string, serv
       nextStep.result = result;
       nextStep.completed_at = new Date().toISOString();
 
-      const allDone = plan.steps.every((s: any) => s.status === 'done');
+      const allDone = plan.steps.every(planStepFinished);
       const anyFailed = plan.steps.some((s: any) => s.status === 'failed');
       plan.completed = allDone;
       plan.has_failures = anyFailed;

@@ -1084,14 +1084,20 @@ Respond only with JSON.`;
     // (hallucination/duplicate detection below is migration-specific and stays here)
 
     // Step 5b: Detect duplicate data across blocks (AI hallucination guard — migrate-page only)
+    // Removals here are REPORTED in the response (duplicate_blocks_removed), never console-only.
+    const duplicateBlocksRemoved: string[] = [];
     if (blocks.length > 2) {
       const dataFingerprints = blocks.map((b: Record<string, unknown>) => JSON.stringify(b.data));
       const uniqueFingerprints = new Set(dataFingerprints);
       if (uniqueFingerprints.size === 1 && blocks.length > 1) {
         console.error('[QUALITY] CRITICAL: All blocks have identical data — AI hallucination detected');
         const heroBlock = blocks[0];
+        const removedCount = blocks.length - 1;
         blocks.length = 0;
         blocks.push(heroBlock);
+        duplicateBlocksRemoved.push(
+          `All ${removedCount + 1} blocks had identical data (AI hallucination) — reduced to the first block only. Re-migration recommended.`,
+        );
         console.warn('[QUALITY] Reduced to single hero block. Re-migration recommended.');
       } else if (uniqueFingerprints.size < blocks.length * 0.5) {
         console.warn(`[QUALITY] WARNING: Only ${uniqueFingerprints.size} unique data objects for ${blocks.length} blocks — possible duplication`);
@@ -1100,6 +1106,9 @@ Respond only with JSON.`;
           if (dataFingerprints[i] !== dataFingerprints[i - 1]) {
             deduped.push(blocks[i]);
           } else {
+            duplicateBlocksRemoved.push(
+              `"${blocks[i].type}" block at index ${i}: removed as a duplicate of the preceding block (identical data)`,
+            );
             console.warn(`[QUALITY] Removed duplicate block at index ${i} (type: ${blocks[i].type})`);
           }
         }
@@ -1129,7 +1138,10 @@ Respond only with JSON.`;
     // but applyIconFallbacks + validateBlockContracts run here)
     applyIconFallbacks(blocks);
     validateBlockContracts(blocks);
-    stripRemovedBlocks(blocks);
+    // Importer posture: drop-and-REPORT (the manage_page_blocks batch-add shape),
+    // not refuse-wholesale (manage_page's shape) — AI-extracted content earns a
+    // partial import, but every drop travels back to the caller as a reason.
+    const droppedBlocks = stripRemovedBlocks(blocks);
 
     console.log('Step 5: Successfully mapped', blocks.length, 'blocks');
     console.log('Block types:', blocks.map((b: Record<string, unknown>) => b.type).join(', '));
@@ -1217,6 +1229,9 @@ Respond only with JSON.`;
         sourceUrl: formattedUrl,
         title: pageTitle,
         blocks,
+        // Blocks removed during normalization — reported, never silent. Omitted when empty.
+        ...(droppedBlocks.length > 0 ? { dropped_blocks: droppedBlocks } : {}),
+        ...(duplicateBlocksRemoved.length > 0 ? { duplicate_blocks_removed: duplicateBlocksRemoved } : {}),
         companyProfile: companyProfile || null,
         branding: extractedBrand || null,
         otherPages,  // FlowPilot can use this to proactively offer migration of more pages

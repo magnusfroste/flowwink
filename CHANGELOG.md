@@ -100,6 +100,23 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 - **The Agent work panel downloads far less.** It used to fetch every call's
   whole answer to show four numbers; it now reads only the fields it draws
   (less than half the data on a test site, more where agents list a lot).
+- **A plan step runs only when it carries what its skill needs.** A plan
+  writes each step's arguments before anything has been read, so a step whose
+  arguments come from a read was stored half-empty. On optic, FlowPilot's plan
+  for watching Peter's projects ran `comment_on_task` as `{kind: 'question'}`
+  twice a day and failed with "body is required", while the same heartbeat
+  asked the right question in its own turn. `advance_plan` now checks the
+  step's arguments against the skill's declared `required` list. A step that
+  leaves one empty is handed to the reasoning loop (`needs_reasoning`, step
+  `handed_off`). It is not run, not counted as a failure, and still finishes
+  the plan. A skill it cannot read runs as before.
+- **A blog post id that names nothing is "not found".** `manage_blog_posts`
+  update, publish, unpublish and delete with a `post_id` no post on the site
+  carries answered "Update post failed: Cannot coerce the result to a single
+  JSON object". Hermes got that nine times on www while setting covers on
+  another site's posts. It is now `NOT_FOUND`, never retried, and the hint
+  says to check which site the agent is connected to. Nothing is written. The
+  slug case was already handled (#998).
 - **Three morning reviews are reads.** `support_list_conversations`,
   `deal_stale_check` and `lead_pipeline_review` only select, but no read rule
   knew them. Each run by a connected agent was logged as "an agent acted on its
