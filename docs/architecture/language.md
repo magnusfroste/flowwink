@@ -239,8 +239,15 @@ move, but new templates use the section.
 On the same rail since: invoice_email, invoice_reminder and order_confirmation
 (migration `20260903210000`), and order_receipt, the paid order's receipt
 (`20261108120000`). Still hardcoded: contact_email, csat_dispatch and survey_send
-in comms-send, and the labels of `generate-invoice-pdf` — same recipe when they
-matter.
+in comms-send — same recipe when they matter.
+
+The invoice PDF (`generate-invoice-pdf`) is not a template: its words are
+visitor texts, the `invoice.*` keys the invoice page reads, resolved by the
+same resolver (`_shared/locale/ui-text.ts`, which the app re-exports) in the
+customer's language — the order's, else the party's, else the site's — and its
+amounts and dates are written the way that language writes them. A paid
+invoice is headed as the receipt and shows no due date. The catalogue reads
+edge files that import the resolver, so the PDF's keys are in Visitor texts.
 
 ## Knowledge base
 

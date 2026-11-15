@@ -1,7 +1,6 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { pickLocale, baseSubtag } from '@/lib/pick-locale';
 import { logger } from '@/lib/logger';
 
 /**
@@ -57,10 +56,9 @@ import { logger } from '@/lib/logger';
  * both correct and free.
  */
 
-/** A base-layer string, or a per-language overlay under an `@<locale>` key. */
-export type UiTextMap = Record<string, string | Record<string, string>>;
+import { resolveUiText, type UiTextMap } from '../../supabase/functions/_shared/locale/ui-text';
 
-const OVERLAY_PREFIX = '@';
+export { resolveUiText, type UiTextMap };
 
 interface UiTextValue {
   map: UiTextMap;
@@ -143,47 +141,6 @@ export function useSetUiTextLang() {
  * The English fallback is required and lives at the call site, so the code
  * stays readable and a missing pack is invisible rather than broken.
  */
-/**
- * The resolver, as a plain function so it can be exercised without mounting a
- * provider or a query client. `useUiText` is a thin wrapper around it.
- */
-export function resolveUiText(
-  map: UiTextMap,
-  lang: string,
-  siteLang: string,
-): (key: string, fallback: string) => string {
-  const overlay = (tag: string | null): Record<string, string> | null => {
-    if (!tag) return null;
-    const entry = map?.[OVERLAY_PREFIX + tag];
-    return entry && typeof entry === 'object' ? entry as Record<string, string> : null;
-  };
-  const tag = String(lang || '').toLowerCase();
-
-  // Same ladder as everywhere else — exact tag, then the same language — but
-  // deliberately WITHOUT a fallback: falling through to the site's own overlay
-  // is the flat base layer's job below, and only when the language matches.
-  const available = Object.keys(map ?? {})
-    .filter((k) => k.startsWith(OVERLAY_PREFIX) && typeof map[k] === 'object')
-    .map((k) => k.slice(OVERLAY_PREFIX.length));
-  const exact = overlay(pickLocale({ available, wanted: tag }));
-  const base = null;
-  // The base layer is written in the site's own language. Falling through to it
-  // from a DIFFERENT language would wrap English content in Swedish chrome.
-  const useFlatLayer = baseSubtag(tag) === baseSubtag(siteLang);
-
-  return (key: string, fallback: string): string => {
-    const fromExact = exact?.[key];
-    if (typeof fromExact === 'string' && fromExact) return fromExact;
-    const fromBase = base?.[key];
-    if (typeof fromBase === 'string' && fromBase) return fromBase;
-    if (useFlatLayer) {
-      const flat = map?.[key];
-      if (typeof flat === 'string' && flat) return flat;
-    }
-    return fallback;
-  };
-}
-
 /**
  * The language the visitor is reading, and the one the site's own strings are
  * written in. Needed wherever an operator-authored setting competes with the
