@@ -122,6 +122,16 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
   is headed RECEIPT with no due date. Ten keys are new (`invoice.billTo`,
   `invoice.unitPrice` …): a site that wants them in its language adds them under
   Visitor texts; until then they are English.
+- **A rule the database keeps no longer reads as a broken skill.** A taken
+  booking slot, a full or closed webinar and a vendor bill that is not yet
+  approved were answered by the database on purpose, but classified
+  `HANDLER_ERROR` — so three visitors in a row on a taken slot were a
+  self-healing streak that would switch the public booking off, and the process
+  battery's deliberate refusals were filed on the fleet's board as "Skill
+  failing" (51 posts). An `rpc:` skill's RAISE EXCEPTION (SQLSTATE P0001) or its
+  own `{ success: false, error }` is now `RULE_REFUSED` where no more specific
+  code fits; self-healing and the machine room skip it.
+
 - **The fleet list forgets test stacks.** The endpoint's list of instances read
   35 where 8 were real: the rest were test installs that pinged once. An
   instance that pinged once and has not been seen for a week is now forgotten,
