@@ -100,3 +100,20 @@ describe('the receiver joins a report to the open post that says it', () => {
     expect(merge).toMatch(/source IN \('instance', 'agent'\)/);
   });
 });
+
+describe('the fleet forgets an instance that pinged once', () => {
+  // www listed 35 instances; 27 were test stacks on localhost with one ping each.
+  const sql = read('supabase/migrations/20261115150000_fleeten-glommer-engangsinstanser.sql');
+  const fn = sql.slice(sql.indexOf('CREATE OR REPLACE FUNCTION public.feedback_forget_one_time_instances'), sql.indexOf('REVOKE ALL ON FUNCTION public.feedback_forget_one_time_instances'));
+
+  it('one ping and unseen for a week — and nothing names localhost', () => {
+    expect(fn).toMatch(/coalesce\(ping_count, 1\) <= 1 AND last_seen_at < now\(\) - interval '7 days'/);
+    // A self-hoster on a laptop pings daily and stays: the rule is the evidence, never the address.
+    expect(fn).not.toMatch(/localhost|127\.0\.0\.1/);
+  });
+
+  it('runs in the one nightly housekeeping job, after the thinning', () => {
+    expect(sql).toMatch(/cron\.schedule\('prune-logs', '50 3 \* \* \*',\s*\$cmd\$SELECT public\.prune_logs\(\); SELECT public\.feedback_forget_one_time_instances\(\)\$cmd\$\)/);
+    expect(sql).toMatch(/REVOKE ALL ON FUNCTION public\.feedback_forget_one_time_instances\(boolean\) FROM PUBLIC, anon, authenticated;/);
+  });
+});
