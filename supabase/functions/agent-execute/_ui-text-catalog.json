@@ -971,6 +971,11 @@
       "fallback": "Your name and e-mail are stored with the post so the team can answer you. Nothing else is collected."
     },
     {
+      "key": "feedback.reportedTimes",
+      "group": "feedback",
+      "fallback": "Reported {count} times"
+    },
+    {
       "key": "feedback.search",
       "group": "feedback",
       "fallback": "Search…"
