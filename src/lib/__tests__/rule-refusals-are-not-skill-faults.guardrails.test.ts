@@ -85,7 +85,7 @@ describe('a rule the database keeps is not a broken skill', () => {
     const at = core.indexOf('await supabase.rpc(fnName, rpcArgs)');
     expect(at).toBeGreaterThan(0);
     const rpc = core.slice(at, core.indexOf('Unknown handler type: ${handler}', at));
-    expect(rpc).toMatch(/code\s*===\s*RAISE_EXCEPTION_SQLSTATE\)[\s\S]*classifyRuleRefusal\(rpcErr\.message\)/);
+    expect(rpc).toMatch(/code\s*===\s*RAISE_EXCEPTION_SQLSTATE[\s\S]*classifyRuleRefusal\(rpcErr\.message\)/);
     expect(rpc).toMatch(/success\s*===\s*false[\s\S]*typeof answered\.code !== 'string'[\s\S]*classifyRuleRefusal\(answered\.error\)/);
   });
 });

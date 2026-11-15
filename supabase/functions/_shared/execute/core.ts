@@ -1545,20 +1545,18 @@ export async function executeSkillRequest(input: ExecuteRequest, auth: ExecuteAu
                     : ` Pass the exact p_-prefixed parameter names from this skill's input schema.`);
             }
           }
-          result = { error: rpcMsg, status: 'failed' };
           // A RAISE EXCEPTION is the function keeping a rule, not breaking:
           // classified by its SQLSTATE, not by guessing at its wording.
-          if ((rpcErr as { code?: string }).code === RAISE_EXCEPTION_SQLSTATE) {
-            result = { ...result, ...classifyRuleRefusal(rpcErr.message) };
-          }
+          result = (rpcErr as { code?: string }).code === RAISE_EXCEPTION_SQLSTATE
+            ? { error: rpcMsg, status: 'failed', ...classifyRuleRefusal(rpcErr.message) }
+            : { error: rpcMsg, status: 'failed' };
         } else {
-          result = (rpcData as Record<string, unknown>) ?? { success: true };
+          const answered = (rpcData as Record<string, unknown>) ?? { success: true };
           // The function's own "no" ({ success: false, error }) is the same
           // kind of answer; a code the function set itself wins.
-          const answered = result as { success?: unknown; error?: unknown; code?: unknown };
-          if (answered.success === false && typeof answered.error === 'string' && answered.error && typeof answered.code !== 'string') {
-            result = { ...result, ...classifyRuleRefusal(answered.error) };
-          }
+          result = answered.success === false && typeof answered.error === 'string' && answered.error && typeof answered.code !== 'string'
+            ? { ...answered, ...classifyRuleRefusal(answered.error) }
+            : answered;
         }
 
       } else {
