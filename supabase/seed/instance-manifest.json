@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261114100000",
-      "migrations_count": 760,
+      "migration_head": "20261115090000",
+      "migrations_count": 761,
       "migrations": [
         {
           "version": "00000000000000",
@@ -3045,6 +3045,10 @@
         {
           "version": "20261114100000",
           "name": "agentarbetet-raknas-i-databasen"
+        },
+        {
+          "version": "20261115090000",
+          "name": "loggarna-gallras"
         }
       ]
     },
@@ -3055,7 +3059,7 @@
     },
     "edge_functions": {
       "count": 76,
-      "shared_hash": "sha256:72817c0734304c08787c4291698e19a836d6c6cd0fb3ee14508dc5e55443ddbc",
+      "shared_hash": "sha256:5847aa6b571a47c084db84e56babd1a041ba3cf9b0e6a208bd767a45fb5fc0bc",
       "functions": {
         "agent-execute": "sha256:c8098f7dc233619c98f1c09d056078944f9bc4a824caaed0fe0e2c9cfc619f3e",
         "agent-operate": "sha256:4320e02dd3e6a0a1706b42dc1905b631c61e6a4cbe3556c701f474c278c89e1a",
