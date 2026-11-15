@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261115120000",
-      "migrations_count": 762,
+      "migration_head": "20261115150000",
+      "migrations_count": 763,
       "migrations": [
         {
           "version": "00000000000000",
@@ -3053,6 +3053,10 @@
         {
           "version": "20261115120000",
           "name": "lika-rapporter-ar-ett-inlagg"
+        },
+        {
+          "version": "20261115150000",
+          "name": "fleeten-glommer-engangsinstanser"
         }
       ]
     },
