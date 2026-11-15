@@ -115,6 +115,15 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Fixed
 
+- **A sweep with no work is idle, not overdue.** `check_operations` told www,
+  optic and liteit every hour that 2–5 scheduled automations were overdue
+  (high). Each was a sweep with a work probe that found nothing to do: it keeps
+  its due time on purpose so it runs the minute work appears, and the
+  dispatcher notes it idle on every tick. `manage_automations list` now answers
+  `idle` for it, the admin's automation health no longer calls it stale, and
+  `check_operations` stops counting it — one rule in all three. When the
+  dispatcher stops, the note stops and the sweep is overdue again.
+
 - **A rule the database keeps no longer reads as a broken skill.** A taken
   booking slot, a full or closed webinar and a vendor bill that is not yet
   approved were answered by the database on purpose, but classified

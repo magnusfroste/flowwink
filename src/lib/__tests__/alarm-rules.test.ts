@@ -31,8 +31,10 @@ describe('late is against the job\'s own schedule', () => {
     expect(isAutomationOverdue(cron({ enabled: false }), SUNDAY)).toBe(false);
   });
   it('agrees with what manage_automations tells an agent', () => {
-    expect(read('supabase/functions/_shared/execute/core.ts')).toMatch(/next < now - 15 \* 60 \* 1000 \? 'overdue'/);
-    expect(read('src/lib/alarm-rules.ts')).toMatch(/OVERDUE_GRACE_MS = 15 \* 60 \* 1000/);
+    // One rule, read by both: _shared/automations/schedule-state.ts.
+    expect(read('supabase/functions/_shared/execute/core.ts')).toMatch(/state: scheduleState\(r, now\)/);
+    expect(read('src/lib/alarm-rules.ts')).toMatch(/import \{ scheduleState, type ScheduledAutomation \} from '\.\.\/\.\.\/supabase\/functions\/_shared\/automations\/schedule-state'/);
+    expect(read('supabase/functions/_shared/automations/schedule-state.ts')).toMatch(/OVERDUE_GRACE_MS = 15 \* 60 \* 1000/);
   });
 });
 

@@ -14,9 +14,13 @@ describe('manage_automations list — a job is judged by its schedule, not the c
   const src = read('supabase/functions/_shared/execute/core.ts');
   it('returns the run evidence and a state per automation', () => {
     expect(src).toMatch(/select\('id, name, description, trigger_type, trigger_config, skill_name, enabled, executor, created_at, last_triggered_at, next_run_at, last_work_at, run_count, idle_run_count, last_error'\)/);
-    expect(src).toMatch(/const state = !r\.enabled \? 'disabled'/);
-    expect(src).toMatch(/next < now - 15 \* 60 \* 1000 \? 'overdue'/);
-    expect(src).toMatch(/state_legend:/);
+    // The rule itself lives in _shared/automations/schedule-state.ts (shared
+    // with the admin's health view and check_operations' SQL twin).
+    expect(src).toMatch(/state: scheduleState\(r, now\)/);
+    expect(src).toMatch(/state_legend: SCHEDULE_STATE_LEGEND/);
+    const rule = read('supabase/functions/_shared/automations/schedule-state.ts');
+    expect(rule).toMatch(/if \(!row\.enabled\) return 'disabled'/);
+    expect(rule).toMatch(/next >= nowMs - OVERDUE_GRACE_MS\) return 'on_schedule'/);
   });
   it('the seed tells an agent to judge by state', () => {
     const seed = read('src/lib/modules/flowpilot-module.ts');
