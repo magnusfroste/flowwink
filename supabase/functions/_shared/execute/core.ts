@@ -28,7 +28,7 @@ import { titleSimilarity } from '../domains/content-memory.ts';
 import { retiredSkillResult } from '../skills/retired-skills.ts';
 import { hideSkills, isMissingQuarantineColumn, isQuarantined } from '../skills/skill-visibility.ts';
 import { isIdleScheduledRun, declaredWorkDone } from '../activity/work-done.ts';
-import { stampAgentError } from '../agent-errors.ts';
+import { stampAgentError, classifyRuleRefusal, RAISE_EXCEPTION_SQLSTATE } from '../agent-errors.ts';
 import { fetchPublic } from '../net/outbound-url.ts';
 import { classifySkillModule } from '../mcp/groups.ts';
 import { readAllRows } from '../read-all-rows.ts';
@@ -1545,9 +1545,18 @@ export async function executeSkillRequest(input: ExecuteRequest, auth: ExecuteAu
                     : ` Pass the exact p_-prefixed parameter names from this skill's input schema.`);
             }
           }
-          result = { error: rpcMsg, status: 'failed' };
+          // A RAISE EXCEPTION is the function keeping a rule, not breaking:
+          // classified by its SQLSTATE, not by guessing at its wording.
+          result = (rpcErr as { code?: string }).code === RAISE_EXCEPTION_SQLSTATE
+            ? { error: rpcMsg, status: 'failed', ...classifyRuleRefusal(rpcErr.message) }
+            : { error: rpcMsg, status: 'failed' };
         } else {
-          result = (rpcData as Record<string, unknown>) ?? { success: true };
+          const answered = (rpcData as Record<string, unknown>) ?? { success: true };
+          // The function's own "no" ({ success: false, error }) is the same
+          // kind of answer; a code the function set itself wins.
+          result = answered.success === false && typeof answered.error === 'string' && answered.error && typeof answered.code !== 'string'
+            ? { ...answered, ...classifyRuleRefusal(answered.error) }
+            : answered;
         }
 
       } else {

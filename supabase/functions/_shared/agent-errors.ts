@@ -42,6 +42,11 @@ export type AgentErrorCode =
   // An optional integration the skill needs is not connected (sync_ad_metrics
   // without Meta Ads): nothing to do, not a fault — the hint says what to connect.
   | 'NOT_CONNECTED'
+  // The database said no by a rule it was written to keep: a RAISE EXCEPTION
+  // (SQLSTATE P0001) or an RPC's own { success: false, error } answer — a taken
+  // slot, a full webinar, a bill not yet approved. The skill did its job; the
+  // request does not fit the state. Never a reason to quarantine the skill.
+  | 'RULE_REFUSED'
   | 'TRANSIENT'
   | 'HANDLER_ERROR';
 
@@ -135,3 +140,27 @@ export function stampAgentError<T extends Record<string, unknown>>(result: T): T
   if (typeof out.hint !== 'string' && c.hint) out.hint = c.hint;
   return out as T;
 }
+
+const RULE_REFUSED_HINT = 'The database refused this by one of its rules (the message names which: a taken slot, a full webinar, a bill not yet approved). The skill works — change the request, or first change the state the message names, then call again. Repeating the same call gets the same answer.';
+
+/**
+ * Classify a refusal the database answered on purpose — a RAISE EXCEPTION
+ * (PostgREST code P0001) or an RPC's own { success: false, error }. The message
+ * rules still win (an "already paid" is ALREADY_EXISTS, "Only admins" is
+ * FORBIDDEN); what they cannot name is RULE_REFUSED, never HANDLER_ERROR — the
+ * function did not break, it kept a rule. A real crash speaks another SQLSTATE
+ * (42703 undefined column, 23502 not null, …) and stays a skill fault.
+ *
+ * Found 2026-11-14: book_appointment_slot ("slot_unavailable: …"),
+ * register_webinar ("webinar is full …") and pay_vendor_invoice ("… is not a
+ * legal step") were HANDLER_ERROR, so three visitors in a row on a taken slot
+ * were a self-healing streak that switches the public booking off, and the
+ * process battery's deliberate refusals were filed upstream as "Skill failing".
+ */
+export function classifyRuleRefusal(message: string | null | undefined): ClassifiedError {
+  const c = classifyAgentError(message);
+  return c.code === 'HANDLER_ERROR' ? { code: 'RULE_REFUSED', retryable: false, hint: RULE_REFUSED_HINT } : c;
+}
+
+/** PostgREST's code for a user RAISE EXCEPTION without its own SQLSTATE. */
+export const RAISE_EXCEPTION_SQLSTATE = 'P0001';
