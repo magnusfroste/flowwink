@@ -90,24 +90,53 @@ export const NOT_A_SKILL_FAULT: ReadonlySet<string> = new Set([
   'TRANSIENT', 'READ_ONLY_KEY', 'READ_ONLY_RUN',
 ]);
 
-export interface ActivityRow { skill_name?: string | null; status?: string | null; code?: string | null }
+export interface ActivityRow { skill_name?: string | null; status?: string | null; code?: string | null; created_at?: string | null }
+
+/** A streak whose newest failure is older than this says the skill WAS failing, not that it is. */
+export const SELF_HEAL_FRESH_HOURS = 24;
+
+export interface SelfHealEvidence {
+  /**
+   * When each skill's row last changed (agent_skills.updated_at): a deploy that
+   * rewrote it, or a person's re-enable. A failure from before that is evidence
+   * against the OLD skill and ends the streak.
+   */
+  changedAt?: Record<string, string | null | undefined>;
+  now?: Date;
+}
 
 /**
  * Skills whose latest `threshold` counted runs all failed with a skill fault
  * (HANDLER_ERROR, or no code). Rows newest first. Any run that did not fail —
  * success, refused, pending — ends the skill's streak.
+ *
+ * Only FRESH evidence counts (2026-11-15). www lost manage_blog_posts for
+ * four days: eight calls failed on 11-11 at 02:20, the fix was deployed that
+ * night, the deploy lifted the quarantine — and the next heartbeat read the
+ * same eight rows out of its three-day window and quarantined the fixed skill
+ * again. So a failure from before the skill's row last changed ends the
+ * streak, and a streak whose newest failure is over a day old is history: a
+ * skill that is broken fails again when it is next called.
  */
-export function selfHealCandidates(rows: ActivityRow[], threshold: number): Array<{ name: string; streak: number }> {
+export function selfHealCandidates(rows: ActivityRow[], threshold: number, evidence: SelfHealEvidence = {}): Array<{ name: string; streak: number }> {
   const streak = new Map<string, number>();
   const settled = new Set<string>();
+  const stale = new Set<string>();
+  const now = (evidence.now ?? new Date()).getTime();
+  const ms = (iso: string | null | undefined) => (iso ? Date.parse(iso) : NaN);
   for (const r of rows) {
     const name = r.skill_name;
     if (!name || settled.has(name)) continue;
     if (r.status !== 'failed') { settled.add(name); continue; }
+    const at = ms(r.created_at);
+    const changed = ms(evidence.changedAt?.[name]);
+    if (Number.isFinite(at) && Number.isFinite(changed) && at <= changed) { settled.add(name); continue; }
     if (r.code && NOT_A_SKILL_FAULT.has(r.code)) continue;
+    // The first counted failure is the newest: over a day old, the streak is history.
+    if (!streak.has(name) && Number.isFinite(at) && now - at > SELF_HEAL_FRESH_HOURS * 3600_000) { stale.add(name); settled.add(name); continue; }
     const n = (streak.get(name) ?? 0) + 1;
     streak.set(name, n);
     if (n >= threshold) settled.add(name);
   }
-  return [...streak].filter(([, n]) => n >= threshold).map(([name, n]) => ({ name, streak: n }));
+  return [...streak].filter(([name, n]) => n >= threshold && !stale.has(name)).map(([name, n]) => ({ name, streak: n }));
 }

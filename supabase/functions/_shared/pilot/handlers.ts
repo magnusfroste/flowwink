@@ -1053,7 +1053,21 @@ export async function runSelfHealing(supabase: any): Promise<string> {
 
   if (!recentActivity?.length) return '';
 
-  const candidates = selfHealCandidates(recentActivity, SELF_HEAL_THRESHOLD);
+  // When each failing skill's row last changed: a failure from before a deploy
+  // or a person's re-enable is evidence against the old skill (skill-visibility.ts).
+  const failing = [...new Set((recentActivity as Array<{ skill_name?: string | null; status?: string | null }>)
+    .filter((r) => r.status === 'failed' && r.skill_name).map((r) => r.skill_name as string))];
+  const changedAt: Record<string, string | null> = {};
+  if (failing.length) {
+    const { data: rows, error: changedErr } = await supabase.from('agent_skills').select('name, updated_at').in('name', failing);
+    if (changedErr) {
+      console.warn('[self-heal] agent_skills unreadable:', changedErr.message);
+      return '';
+    }
+    for (const r of (rows ?? []) as Array<{ name: string; updated_at: string | null }>) changedAt[r.name] = r.updated_at;
+  }
+
+  const candidates = selfHealCandidates(recentActivity, SELF_HEAL_THRESHOLD, { changedAt });
   if (!candidates.length) return '';
 
   // Only skills still in service: a skill already off (a person's switch, a

@@ -115,6 +115,15 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Fixed
 
+- **Self-healing no longer takes a fixed skill away again.** An instance lost
+  `manage_blog_posts` for four days: calls failed one night, the fix was
+  deployed (which lifted the quarantine), and the next heartbeat quarantined
+  the fixed skill on the same old failures. Only fresh evidence counts now: a
+  failure from before the skill last changed (a deploy, or a person's
+  re-enable) ends the streak, and a streak whose newest failure is over a day
+  old is history. "… required for update" is read as the caller's missing
+  argument, not a broken skill.
+
 - **The fleet list forgets test stacks.** The endpoint's list of instances read
   35 where 8 were real: the rest were test installs that pinged once. An
   instance that pinged once and has not been seen for a week is now forgotten,

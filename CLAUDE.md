@@ -478,6 +478,16 @@ beside its payload, so an operator branches instead of guessing:
   `feedback_ping` (`_shared/feedback/machine-room-reports.ts`, behind
   `share_usage`, under `submit_feedback`'s cadence); titles name the defect,
   bodies never carry error text.
+- **Self-healing judges fresh evidence only (2026-11-15).** Three consecutive
+  skill faults quarantine a skill (`selfHealCandidates`,
+  `_shared/skills/skill-visibility.ts`) — but a failure from before the skill's
+  row last changed (`agent_skills.updated_at`: a deploy that rewrote it, a
+  person's re-enable) ends the streak, and a streak whose newest failure is
+  over 24 h old is history. Before, a deploy lifted the quarantine and the
+  next heartbeat re-quarantined the fixed skill on the same rows (www,
+  `manage_blog_posts`, four days). A quarantined skill is out of the gateway's
+  list ("Unknown skill") until a person re-enables it from the Self-Healing
+  alert on the FlowPilot page.
 - **A module that is off is off for agents (2026-11-06).** The gate is the
   skill's OWNING module (`skillModuleOn` in `_shared/skills/module-gate.ts`,
   from the generated owner map), not its category: the gateway's discovery

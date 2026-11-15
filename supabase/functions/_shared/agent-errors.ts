@@ -72,7 +72,7 @@ const RULES: Rule[] = [
   },
   {
     code: 'MISSING_REQUIRED_PARAMETER', retryable: true,
-    test: /missing required parameter|is required\b|are required\b|required argument/i,
+    test: /missing required parameter|is required\b|are required\b|required argument|\brequired for\b/i,
     hint: 'Supply the named parameter explicitly with the exact name the skill declares; do not rely on a default.',
   },
   {
