@@ -518,6 +518,15 @@ beside its payload, so an operator branches instead of guessing:
   RECEIVES: the public board at `/feedback`, `manage_feedback` (list /
   set_status / comment / delete / `instances` — the fleet that pings) and
   `/admin/feedback`. One code path for the admin form and an agent.
+  **The same report is one post (2026-11-15):** a report from an instance or
+  an agent joins the OPEN post that already carries its title
+  (`feedback_join_report`: `reports_count`, `reporters`), on the wire and on
+  the receiver itself; a person's post on the board is never merged. A
+  newborn instance (under 24 h) files no machine-room defect, and a test
+  stack tells the fleet nothing: `qa:prep` sets `feedback.share_usage` off
+  and every workflow that serves the edge functions passes
+  `FEEDBACK_SHARE_USAGE=false` — each CI run is a new instance, and for four
+  days they filed the battery's deliberate failures on www's board.
 - **A need with alternatives is a capability (2026-11-07).** A module
   states `requiredCapabilities: ['email' | 'web:read' | 'web:search']`
   (`useModules.tsx`, `CAPABILITY_PROVIDERS`) and any provider of it

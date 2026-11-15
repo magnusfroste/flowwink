@@ -136,6 +136,7 @@ export default function FeedbackBoardPage() {
                       <span>· {p.author_name || t('feedback.anonymous', 'Anonymous')}</span>
                       <span>· {formatDate(p.created_at)}</span>
                       <span className="inline-flex items-center gap-1">· <MessageSquare className="h-3 w-3" /> {p.comments_count}</span>
+                      {(p.reports_count ?? 1) > 1 && <span>· {t('feedback.reportedTimes', 'Reported {count} times').replace('{count}', String(p.reports_count))}</span>}
                     </div>
                   </div>
                 </article>

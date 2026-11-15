@@ -24,6 +24,9 @@ export interface FeedbackPost {
   source?: 'board' | 'instance' | 'agent';
   votes_count: number;
   comments_count: number;
+  /** How many times this was reported; lika rapporter är ett inlägg (20261115120000). */
+  reports_count?: number | null;
+  reporters?: Array<{ instance_id?: string; site_url?: string; at?: string }> | null;
   created_at: string;
   updated_at: string;
 }

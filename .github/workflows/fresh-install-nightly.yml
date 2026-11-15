@@ -179,7 +179,10 @@ jobs:
 
       - name: Serve the edge functions
         run: |
-          nohup supabase functions serve --no-verify-jwt > "$RUNNER_TEMP/functions.log" 2>&1 &
+          # A CI stack tells the fleet nothing: no ping, no defect reports on
+          # www's board (qa:prep sets the same on the instance — two locks).
+          echo "FEEDBACK_SHARE_USAGE=false" > "$RUNNER_TEMP/functions.env"
+          nohup supabase functions serve --no-verify-jwt --env-file "$RUNNER_TEMP/functions.env" > "$RUNNER_TEMP/functions.log" 2>&1 &
           for i in $(seq 1 60); do grep -q "Serving functions" "$RUNNER_TEMP/functions.log" && break; sleep 2; done
           grep -q "Serving functions" "$RUNNER_TEMP/functions.log" || { echo "::error::functions runtime did not come up"; tail -40 "$RUNNER_TEMP/functions.log"; exit 1; }
 

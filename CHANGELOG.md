@@ -115,6 +115,15 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Fixed
 
+- **The feedback board no longer fills with the same report.** The public
+  board on the fleet's endpoint read 62 open bugs; 60 were three titles filed
+  four times a day by CI test stacks — every run is a new instance, fails
+  skills on purpose and reported it. A report from an instance now joins the
+  open post that already says it (the post shows "Reported N times"; a
+  person's post is never merged), existing duplicates are merged where nobody
+  voted or commented, an instance under a day old files no defect, and test
+  stacks send nothing.
+
 - **The Agent work panel counts the whole week.** It read the week's agent calls
   as rows and counted them in the browser, and the API answers at most a
   thousand rows: on an instance where the agents made more calls than that in

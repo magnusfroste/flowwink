@@ -42,6 +42,7 @@ export function ReceivedFeedbackTable({ posts }: { posts: FeedbackPost[] }) {
                   {p.origin_site_url ? <> · from <a className="underline" href={p.origin_site_url} target="_blank" rel="noreferrer">{p.origin_site_url.replace(/^https?:\/\//, '')}</a></> : null}
                   {origin.skills_sha ? <> · <code>{origin.skills_sha}</code>{origin.migration_head ? <> · schema <code>{origin.migration_head}</code></> : null}{typeof origin.module_count === 'number' ? ` · ${origin.module_count} modules` : ''}</> : null}
                   {' · '}{new Date(p.created_at).toLocaleDateString()} · {p.votes_count} vote{p.votes_count === 1 ? '' : 's'} · {p.comments_count} comment{p.comments_count === 1 ? '' : 's'}
+                  {(p.reports_count ?? 1) > 1 ? ` · reported ${p.reports_count} times by ${Math.max(1, new Set((p.reporters ?? []).map((r) => r.instance_id ?? r.site_url)).size)} instance(s)` : ''}
                 </p>
               </div>
               <div className="flex items-center gap-2">
