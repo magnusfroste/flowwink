@@ -115,6 +115,11 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Fixed
 
+- **The fleet list forgets test stacks.** The endpoint's list of instances read
+  35 where 8 were real: the rest were test installs that pinged once. An
+  instance that pinged once and has not been seen for a week is now forgotten,
+  nightly; an instance that pings daily stays, wherever it runs.
+
 - **The feedback board no longer fills with the same report.** The public
   board on the fleet's endpoint read 62 open bugs; 60 were three titles filed
   four times a day by CI test stacks — every run is a new instance, fails

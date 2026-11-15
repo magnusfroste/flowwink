@@ -527,6 +527,9 @@ beside its payload, so an operator branches instead of guessing:
   and every workflow that serves the edge functions passes
   `FEEDBACK_SHARE_USAGE=false` — each CI run is a new instance, and for four
   days they filed the battery's deliberate failures on www's board.
+  The fleet list forgets an instance that pinged once and has not been seen
+  for a week (`feedback_forget_one_time_instances`, in the nightly
+  `prune-logs` job) — a real instance pings daily; nothing names localhost.
 - **A need with alternatives is a capability (2026-11-07).** A module
   states `requiredCapabilities: ['email' | 'web:read' | 'web:search']`
   (`useModules.tsx`, `CAPABILITY_PROVIDERS`) and any provider of it
