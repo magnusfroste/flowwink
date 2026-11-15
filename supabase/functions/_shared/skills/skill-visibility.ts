@@ -87,7 +87,7 @@ export const NOT_A_SKILL_FAULT: ReadonlySet<string> = new Set([
   'PERIOD_LOCKED', 'RETENTION_LOCKED', 'MISSING_EXCHANGE_RATE',
   'MISSING_REQUIRED_PARAMETER', 'UNKNOWN_PARAMETERS', 'FORBIDDEN', 'NOT_FOUND',
   'ALREADY_EXISTS', 'INVALID_INPUT', 'APPROVAL_REQUIRED', 'NOT_CONNECTED',
-  'TRANSIENT', 'READ_ONLY_KEY', 'READ_ONLY_RUN',
+  'TRANSIENT', 'READ_ONLY_KEY', 'READ_ONLY_RUN', 'RULE_REFUSED',
 ]);
 
 export interface ActivityRow { skill_name?: string | null; status?: string | null; code?: string | null }

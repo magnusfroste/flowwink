@@ -37,7 +37,7 @@ export const SKILL_FAILURES_TO_REPORT = 3;
 export interface MachineRoomInput {
   jobs: Array<{ jobname: string; reasons: string[]; last_status: string | null; last_run: string | null }>;
   pulse: { starving: boolean; starved_hours_24h?: number };
-  failures: Array<{ skill_name: string | null; error_message: string | null }>;
+  failures: Array<{ skill_name: string | null; error_message: string | null; code?: string | null }>;
 }
 
 export interface MachineRoomReport { title: string; body: string }
@@ -60,10 +60,12 @@ export function machineRoomReports(input: MachineRoomInput): MachineRoomReport[]
   }));
 
   // Only what the classifier cannot lay on the caller: a bad argument, a
-  // closed period or a refused permission is not the platform's defect.
+  // closed period, a refused permission or a rule the database kept (the
+  // envelope's stored code, RULE_REFUSED) is not the platform's defect. The
+  // stored code wins over re-reading the message: it knew the SQLSTATE.
   const counts = new Map<string, number>();
   for (const f of input.failures) {
-    if (!f.skill_name || classifyAgentError(f.error_message).code !== 'HANDLER_ERROR') continue;
+    if (!f.skill_name || (f.code || classifyAgentError(f.error_message).code) !== 'HANDLER_ERROR') continue;
     counts.set(f.skill_name, (counts.get(f.skill_name) ?? 0) + 1);
   }
   const skills = [...counts]
@@ -93,7 +95,7 @@ export async function fileMachineRoomReports(
       ? enrichCronHealth(cron as CronHealthReport, new Date(), { bornAt, moduleOn: await loadEnabledModules(supabase) })
       : null;
     const { data: failures, error: failuresErr } = await supabase.from('agent_activity')
-      .select('skill_name, error_message')
+      .select('skill_name, error_message, code:output->>code')
       .eq('status', 'failed')
       .gte('created_at', new Date(Date.now() - 86400000).toISOString())
       .limit(500);
