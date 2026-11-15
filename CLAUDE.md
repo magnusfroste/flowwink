@@ -901,6 +901,21 @@ managed-ledger lessons still apply to every fork's Supabase integration:
   executable by authenticated, body without `service_role` / `has_role(` /
   `can_access_module(` / `is_staff(` / `auth.uid() =` — then check pg_policy,
   invoker-side functions, views, defaults and constraints before revoking.
+- **The logs are thinned; a change never is (2026-11-15).** `prune_logs()` runs
+  nightly (pg_cron `prune-logs`, bounded per night). What a row of
+  `agent_activity` PROVES decides how long it lives: a change is kept whole; a
+  lookup's answer is cut to its identifying fields after `answers_days` (30)
+  and the row goes after `rows_days` (90); a refused or failed call and a
+  scheduled tick (agent `cron`) go after `rows_days`. Never touched: a row an
+  objective counts, a row tied to an approval, an unacknowledged notify row, a
+  row of unknown kind. `kind` (read | write) is `classifyCall`'s verdict,
+  stamped by `logActivity`; an older row learns it from a stamped row of the
+  same shape. The dial is `site_settings.data_retention` (per instance,
+  Observability → Database size); `database_size_report()` is the read — size
+  against the quota (500 MB on Free), the largest tables, the last run. A new
+  journal table states its retention in `prune_logs` in the same PR; a new
+  writer of skill calls goes through `logActivity`, or its rows are never
+  thinned.
 - **A scheduled function admits three callers (2026-11-09).** The service
   key, a staff session, or `x-cron-secret` — a random secret the database
   makes in its own vault (`CRON_SECRET`, migration 20261109160000) and adds to

@@ -57,6 +57,16 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Added
 
+- **The logs are thinned every night, and the database says how full it is.**
+  Nothing thinned the agent log: on one instance 92 % of its rows were scheduled
+  sweeps answering "nothing to do", kept since August. A change an agent or a
+  person made is kept whole; a lookup's answer is shortened after 30 days and
+  the row removed after 90, as are refused and failed calls and scheduled
+  ticks. Rows an objective counts, rows tied to an approval and rows of unknown
+  kind are never touched. Observability → **Database size** shows the size
+  against the quota, the largest tables and what the last night removed, and
+  carries the dial (days, quota, on/off) per instance.
+
 - **Invoices out to another bookkeeping system.** When the books are kept in
   Fortnox, Visma or elsewhere, the issued invoices can now be handed over:
   Invoices → *Export basis* downloads a period as a CSV file (one row per

@@ -94,6 +94,7 @@ export const ADMIN_ONLY_RPCS: Readonly<Record<string, string>> = {
   knowledge_index_stats: 'Systemdiagnostik över alla källor — Observability är adminOnly, ingen modulyta.',
   // ── Plattformsläsare (2026-10-29, definer-svepet): systemets eget tillstånd, ingen moduls ──
   audit_logs_retention_status: 'Räknar auditloggens rader och gallringsläge — systemdiagnostik, Observability är adminOnly.',
+  database_size_report: 'Läser databasens storlek mot kvoten, de största tabellerna och loggallringens läge — systemdiagnostik, Observability är adminOnly.',
   get_recent_migrations: 'Läser migrationsledgern (supabase_migrations) — plattformens version, ingen modulyta.',
   get_bootstrap_health: 'Läser en moduls bootstrap-hälsa mot seedarna — Modules-sidan är adminOnly.',
   demo_cycle_cron_status: 'Läser cron.job för demo-cykeln — plattformens schema, samma admin-grind som enable_demo_cycle_cron.',

@@ -16,6 +16,7 @@ import { McpActivityPanel } from '@/components/admin/developer/McpActivityPanel'
 import { InstanceReadinessChecklist } from '@/components/admin/InstanceReadinessChecklist';
 import { IntegrationHealthCard } from '@/components/admin/system/IntegrationHealthCard';
 import { PerformanceModeCard } from '@/components/admin/system/PerformanceModeCard';
+import { DatabaseSizeCard } from '@/components/admin/system/DatabaseSizeCard';
 import { PLATFORM_SKILL_NAMES } from '@/lib/platform-seeds';
 import { useActiveModules, skillShown, moduleShown } from '@/lib/module-visibility';
 
@@ -717,6 +718,7 @@ export function ObservabilityTab() {
       <InstanceSyncCard />
       <CronHealthCard />
       <PerformanceModeCard />
+      <DatabaseSizeCard />
       <div className="pt-4 border-t">
         <div className="mb-3">
           <h3 className="font-serif text-base font-semibold">MCP Activity</h3>

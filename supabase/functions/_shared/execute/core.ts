@@ -18241,6 +18241,8 @@ async function logActivity(
     api_key_id?: string | null;
     /** Set on the retry for an instance whose migration lags the edge deploy (no `module` column yet). */
     _withoutModule?: boolean;
+    /** Set on the retry for an instance without the `kind` column yet (20261115090000). */
+    _withoutKind?: boolean;
   },
 ): Promise<string | null> {
   // The module that owns the skill: staff read agent work per module (the RLS
@@ -18266,7 +18268,16 @@ async function logActivity(
     ...(activity.log_type ? { log_type: activity.log_type } : {}),
     ...(activity.api_key_id ? { api_key_id: activity.api_key_id } : {}),
     ...(owner && owner !== 'platform' ? { module: owner } : {}),
+    // Lookup or change, by the platform's one read rule — what the nightly
+    // thinning (prune_logs) reads: a lookup's row is thinned, a change is kept.
+    ...(activity._withoutKind ? {} : { kind: classifyCall(activity.skill_name, activity.input) === 'read' ? 'read' : 'write' }),
   }).select('id').single();
+
+  // The `kind` column arrives with 20261115090000; where the edge deploy got
+  // there first, keep the row without it rather than lose the journal.
+  if (error && !activity._withoutKind && /\bkind\b/i.test(String(error.message)) && /PGRST204|42703|column/i.test(`${error.code} ${error.message}`)) {
+    return logActivity(supabase, { ...activity, _withoutKind: true });
+  }
 
   // The `module` column arrives with 20261111090000; where the edge deploy got
   // there first, keep the row without it rather than lose the journal.
