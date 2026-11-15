@@ -2222,14 +2222,18 @@ Deno.serve(async (req) => {
         const qText = (url.searchParams.get('q') || '').replace(/[%_]/g, '').trim();
         const sort = url.searchParams.get('sort') === 'top' ? 'top' : 'newest';
         const lim = Math.min(Math.max(Number(url.searchParams.get('limit')) || 50, 1), 200);
-        let q = supabase.from('feedback_posts')
-          .select('id, board, title, body, status, author_name, votes_count, comments_count, created_at, updated_at')
-          .limit(lim);
-        if (FEEDBACK_BOARDS.has(board)) q = q.eq('board', board);
-        if (FEEDBACK_STATUSES.has(status)) q = q.eq('status', status);
-        if (qText) q = q.ilike('title', `%${qText}%`);
-        q = sort === 'top' ? q.order('votes_count', { ascending: false }).order('created_at', { ascending: false }) : q.order('created_at', { ascending: false });
-        const { data, error } = await q;
+        const list = (columns: string) => {
+          let q = supabase.from('feedback_posts').select(columns).limit(lim);
+          if (FEEDBACK_BOARDS.has(board)) q = q.eq('board', board);
+          if (FEEDBACK_STATUSES.has(status)) q = q.eq('status', status);
+          if (qText) q = q.ilike('title', `%${qText}%`);
+          return sort === 'top' ? q.order('votes_count', { ascending: false }).order('created_at', { ascending: false }) : q.order('created_at', { ascending: false });
+        };
+        const BOARD_COLUMNS = 'id, board, title, body, status, author_name, votes_count, comments_count, created_at, updated_at';
+        // reports_count arrives with 20261115120000; where the edge deploy got
+        // there first the board still answers, without the count.
+        let { data, error } = await list(`${BOARD_COLUMNS}, reports_count`);
+        if (error && /reports_count/.test(String(error.message))) ({ data, error } = await list(BOARD_COLUMNS));
         if (error) throw error;
         return feedbackJson({ posts: data ?? [], count: (data ?? []).length });
       }
@@ -2261,6 +2265,22 @@ Deno.serve(async (req) => {
           const text = String(body.body ?? '').slice(0, 10000);
           const originUrl = typeof body.origin_site_url === 'string' && /^https?:\/\//.test(body.origin_site_url) ? body.origin_site_url.slice(0, 300) : null;
           const origin = body.origin && typeof body.origin === 'object' ? body.origin : {};
+          // The same report is one post: what an instance files joins the open
+          // post that already carries its title (20261115120000). A new
+          // instance per CI run filed three titles sixty times in four days;
+          // the sender's cadence cannot hold against that, the receiver's can.
+          // A person's post on the board (no origin) is never merged.
+          if (originUrl) {
+            const instanceId = typeof body.instance_id === 'string' ? body.instance_id.slice(0, 64)
+              : typeof (origin as { instance_id?: unknown }).instance_id === 'string' ? String((origin as { instance_id?: unknown }).instance_id).slice(0, 64) : null;
+            const { data: joined, error: joinErr } = await admin.rpc('feedback_join_report', {
+              p_board: board, p_title: title, p_instance_id: instanceId, p_site_url: originUrl,
+            });
+            // The join arrives with its migration; without it a report is a post, as before.
+            if (joinErr) console.warn('[feedback] join skipped:', joinErr.message);
+            const hit = joined as { id?: string; status?: string; reports_count?: number } | null;
+            if (hit?.id) return feedbackJson({ success: true, id: hit.id, status: hit.status, merged: true, reports_count: hit.reports_count ?? null }, 200);
+          }
           const { data, error } = await admin.from('feedback_posts').insert({
             board, title, body: text,
             author_name: typeof body.author_name === 'string' ? body.author_name.slice(0, 120) : null,

@@ -122,6 +122,16 @@ try {
   }
   console.log(`   ${rows[0]?.enabled ?? ids.length}/${ids.length} modules enabled`);
 
+  // A test stack tells the fleet nothing. Every run is a new instance, and the
+  // battery fails skills on purpose: for four days in 2026-11 each run filed
+  // those failures on the fleet's board as bugs (60 posts from twenty CI
+  // instance ids) and registered itself as one more instance in the fleet.
+  await db.query(
+    `insert into site_settings (key, value) values ('feedback', '{"share_usage": false}'::jsonb)
+     on conflict (key) do update set value = site_settings.value || '{"share_usage": false}'::jsonb`,
+  );
+  console.log('   feedback.share_usage off — a test stack pings nobody');
+
   syncSkills('4/4');
 
   const { rows: counts } = await db.query(
