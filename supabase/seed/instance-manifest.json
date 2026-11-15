@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261114090000",
-      "migrations_count": 759,
+      "migration_head": "20261114100000",
+      "migrations_count": 760,
       "migrations": [
         {
           "version": "00000000000000",
@@ -3041,6 +3041,10 @@
         {
           "version": "20261114090000",
           "name": "fakturaunderlag-ut"
+        },
+        {
+          "version": "20261114100000",
+          "name": "agentarbetet-raknas-i-databasen"
         }
       ]
     },
