@@ -157,13 +157,17 @@ export function unauthorized(corsHeaders: Record<string, string>): Response {
  * (`cron_secret_header()`, the vault's CRON_SECRET — born by the migration
  * 20261109160000, never shown to a browser). A WRONG secret is refused at once.
  *
- * A call with none of them was how pg_cron called these until today (the
- * publishable key). For one week it is let through and logged with
- * `[cron-secret]` so the fleet's logs show any caller still without it; then
- * CRON_SECRET_REQUIRED turns true and it is refused. Answers null to go on,
- * or the 401 to return.
+ * A call with none of them was how pg_cron called these until 2026-11-09 (the
+ * publishable key). For one week it was let through and logged with
+ * `[cron-secret]`; since 2026-11-16 it is refused. Answers null to go on, or
+ * the 401 to return.
  */
-export const CRON_SECRET_REQUIRED = false; // turns true after 2026-11-16, once the fleet's logs are clean
+// Required since 2026-11-16. Read on four instances that day (sandbox, www,
+// nordbrygg, liteit): every active pg_cron job that posts to an edge function
+// carries cron_secret_header(), and the scheduled calls of the last six hours
+// answered 200. A job without it is rewritten by cron_jobs_carry_the_secret()
+// on the dispatcher's next tick.
+export const CRON_SECRET_REQUIRED = true;
 
 export async function requireScheduledCaller(
   req: Request,

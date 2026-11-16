@@ -28,6 +28,11 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Security
 
+- **A scheduled function refuses a call without credentials.** The week of
+  grace after the cron secret is over: a call that carries neither the service
+  key, a staff session nor the database's cron secret is answered 401. Until
+  now it was let through and logged.
+
 - **A scheduled call carries a secret the database made itself.** The nine
   functions pg_cron calls (the automation, event and signal dispatchers, the
   knowledge indexer, dunning, contract and subscription billing, quote-expiry
