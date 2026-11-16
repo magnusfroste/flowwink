@@ -21,7 +21,12 @@ await c.end();
 // action RPC called with empty args (no zero-arg overload), i.e. expected here.
 const EXPECTED = /required|must be|must contain|is required|provide|only admins|admin|not found|no .* found|invalid|cannot be empty|missing|expected|specify|at least|unauthorized|permission|forbidden|already exists|not enabled for this instance|no active|without parameters in the schema cache|not configured|not connected|no user_id|insufficient privileges|violates (not-null|foreign key|check) constraint/i;
 // Patterns that mean a real handler/dispatch bug.
-const BUG = /unknown db table|generic crud is not enabled|could not find the (table|relation)|unknown handler|unknown skill|unknown module|unknown .* skill|does not exist in the schema|p__|undefined is not|cannot read prop|TypeError|ReferenceError|relation .* does not exist|column .* does not exist/i;
+// A function Postgres cannot find from INSIDE SQL ("function public.x(boolean,
+// some_enum, …) does not exist") is one of them: 2026-11-16, check_operations
+// called a text function with an enum column, the smoke filed it under "other
+// errors" and stayed green, and the night's proof went red on the view sweep.
+// (PostgREST's wrong-parameter-names answer says "Could not find the function".)
+const BUG = /unknown db table|generic crud is not enabled|could not find the (table|relation)|unknown handler|unknown skill|unknown module|unknown .* skill|does not exist in the schema|p__|undefined is not|cannot read prop|TypeError|ReferenceError|relation .* does not exist|column .* does not exist|function \S+\(.*\) does not exist/i;
 
 const bugs: Array<{ name: string; handler: string; error: string }> = [];
 const errors: Array<{ name: string; handler: string; error: string }> = [];
