@@ -59,7 +59,7 @@ async function fetchAutomationHealth(): Promise<AutomationHealthSummary> {
   const [automationsRes, activityRes] = await Promise.all([
     supabase
       .from('agent_automations')
-      .select('id, name, skill_name, trigger_type, enabled, run_count, last_triggered_at, next_run_at, last_error')
+      .select('id, name, skill_name, trigger_type, trigger_config, enabled, run_count, last_triggered_at, next_run_at, last_error')
       .order('created_at', { ascending: false }),
     supabase
       .from('agent_activity')

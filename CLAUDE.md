@@ -396,8 +396,16 @@ beside its payload, so an operator branches instead of guessing:
   an open period), `MISSING_EXCHANGE_RATE` (set the rate, then retry the same
   call), `MISSING_REQUIRED_PARAMETER` / `UNKNOWN_PARAMETERS` (the PGRST202
   pair), `FORBIDDEN`, `NOT_FOUND`, `ALREADY_EXISTS`, `INVALID_INPUT`,
-  `APPROVAL_REQUIRED`, `TRANSIENT`, `HANDLER_ERROR`, `RETENTION_LOCKED`. A
-  handler's own `code`/`hint` wins over the classifier.
+  `APPROVAL_REQUIRED`, `TRANSIENT`, `HANDLER_ERROR`, `RETENTION_LOCKED`,
+  `RULE_REFUSED`. A handler's own `code`/`hint` wins over the classifier.
+  **A rule the database keeps is not a broken skill (2026-11-15):** an `rpc:`
+  skill whose function says no — a RAISE EXCEPTION (SQLSTATE `P0001`) or its
+  own `{ success: false, error }` — answers `RULE_REFUSED` where the message
+  rules name nothing more specific (`classifyRuleRefusal`); it never counts
+  toward self-healing or the machine room's "Skill failing", which reads the
+  stored code. A taken slot, a full webinar or an unapproved bill used to be
+  HANDLER_ERROR: three in a row would quarantine the public booking. A real
+  crash speaks another SQLSTATE and stays HANDLER_ERROR.
 - A refusal is not a failure: `{ status: 'refused', code, retryable: false, hint }`
   with NO `error`, so the ReAct self-repair never retries it and self-healing
   never counts it toward disabling the skill (the same shape as
@@ -956,7 +964,12 @@ managed-ledger lessons still apply to every fork's Supabase integration:
   wakes agent-execute. No probe, an unknown probe or a probe that raises means
   there IS work. An idle probed row stays due (the minute work appears the lane
   pulses) and `note_idle_automations()` keeps its `last_triggered_at` fresh, so
-  idle never reads as stale. A new every-N-minutes sweep ships its probe in the
+  idle never reads as stale — and never as late: an enabled cron row with a
+  probe whose `last_triggered_at` is at or after its `next_run_at` and within
+  15 minutes is `idle`, not `overdue`, in all three readers
+  (`_shared/automations/schedule-state.ts`, `public.automation_is_overdue` in
+  `check_operations`; 2026-11-16, after every instance read 2–5 "overdue"
+  sweeps). A new every-N-minutes sweep ships its probe in the
   same PR; a daily-at-a-time job does not take one (it would run when work
   appears, not at its hour). The dispatcher also skips an automation whose
   skill's owning module is off (`skillModuleOn`).

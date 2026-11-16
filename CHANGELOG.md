@@ -123,6 +123,24 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
   re-enable) ends the streak, and a streak whose newest failure is over a day
   old is history. "… required for update" is read as the caller's missing
   argument, not a broken skill.
+- **A sweep with no work is idle, not overdue.** `check_operations` told www,
+  optic and liteit every hour that 2–5 scheduled automations were overdue
+  (high). Each was a sweep with a work probe that found nothing to do: it keeps
+  its due time on purpose so it runs the minute work appears, and the
+  dispatcher notes it idle on every tick. `manage_automations list` now answers
+  `idle` for it, the admin's automation health no longer calls it stale, and
+  `check_operations` stops counting it — one rule in all three. When the
+  dispatcher stops, the note stops and the sweep is overdue again.
+
+- **A rule the database keeps no longer reads as a broken skill.** A taken
+  booking slot, a full or closed webinar and a vendor bill that is not yet
+  approved were answered by the database on purpose, but classified
+  `HANDLER_ERROR` — so three visitors in a row on a taken slot were a
+  self-healing streak that would switch the public booking off, and the process
+  battery's deliberate refusals were filed on the fleet's board as "Skill
+  failing" (51 posts). An `rpc:` skill's RAISE EXCEPTION (SQLSTATE P0001) or its
+  own `{ success: false, error }` is now `RULE_REFUSED` where no more specific
+  code fits; self-healing and the machine room skip it.
 
 - **The fleet list forgets test stacks.** The endpoint's list of instances read
   35 where 8 were real: the rest were test installs that pinged once. An

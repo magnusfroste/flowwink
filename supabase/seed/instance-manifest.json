@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261115150000",
-      "migrations_count": 763,
+      "migration_head": "20261116090000",
+      "migrations_count": 764,
       "migrations": [
         {
           "version": "00000000000000",
@@ -3057,19 +3057,23 @@
         {
           "version": "20261115150000",
           "name": "fleeten-glommer-engangsinstanser"
+        },
+        {
+          "version": "20261116090000",
+          "name": "ett-svep-utan-arbete-ar-inte-forsenat"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:d4c393efb1bec4b1ff7100f9257ae23f2578494a4c9d03143cf69257b6b3a880",
+      "seed_hash": "sha256:de0630635655deb47604fb266938debf70122703b229500d95dc960a1a4c4384",
       "skill_count": 672,
       "module_count": 69
     },
     "edge_functions": {
       "count": 76,
-      "shared_hash": "sha256:9e3142a462dda4b149f745dca0d4615fc2dfec37a3c25dfeeac9fba6f707d16f",
+      "shared_hash": "sha256:2fc53e594ef6a341a4a6fbd45988f6e47c78e945dc4bff700c9d255e7cb2d941",
       "functions": {
-        "agent-execute": "sha256:dfaa30caa43748cfa25ccdf94c52fb0280d266ef31dd97db2fe65c813dc39d6f",
+        "agent-execute": "sha256:2069792ca64b71d06ddd8b7cf31267d7e0e333c1faaad21a77174b997822c7cf",
         "agent-operate": "sha256:4320e02dd3e6a0a1706b42dc1905b631c61e6a4cbe3556c701f474c278c89e1a",
         "ai-task": "sha256:ce3aacdef625bba758f4323da3e49104a1b94a3d3d77d800e89dacd0b803d65e",
         "automation-dispatcher": "sha256:d905660cd907c6f1ef5c7cac0a97ed44a4e4187ef4d5179089fa2714b2751443",

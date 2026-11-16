@@ -7,30 +7,25 @@
  * last run, any failure in the past week, any notice nobody had closed.
  */
 
-export interface ScheduledAutomation {
-  enabled: boolean;
-  trigger_type: string;
-  last_triggered_at: string | null;
-  next_run_at: string | null;
-}
+import { scheduleState, type ScheduledAutomation } from '../../supabase/functions/_shared/automations/schedule-state';
+
+export type { ScheduledAutomation };
 
 /** Who runs an automation. A person's or a connected agent's call of the same skill says nothing about it. */
 export const AUTOMATION_RUNNERS = ['cron', 'automation'] as const;
 
-const OVERDUE_GRACE_MS = 15 * 60 * 1000;
-
 /**
  * Late against its OWN schedule: the run the dispatcher promised is more than
- * 15 minutes in the past, or a cron job has neither run nor been given a next
- * run. Hours since the last run is not the question: a monthly job read that
- * way is dead 29 days of 30, a weekday job every Sunday. The same rule as the
- * `state` manage_automations answers an agent.
+ * 15 minutes in the past and nothing noted it idle, or a cron job has neither
+ * run nor been given a next run. Hours since the last run is not the question:
+ * a monthly job read that way is dead 29 days of 30, a weekday job every
+ * Sunday, and a sweep with no work keeps its due next_run_at on purpose. The
+ * same rule as the `state` manage_automations answers an agent
+ * (_shared/automations/schedule-state.ts).
  */
 export function isAutomationOverdue(row: ScheduledAutomation, nowMs: number): boolean {
-  if (!row.enabled || row.trigger_type !== 'cron') return false;
-  const next = row.next_run_at ? new Date(row.next_run_at).getTime() : null;
-  if (!row.last_triggered_at && next === null) return true;
-  return next !== null && next < nowMs - OVERDUE_GRACE_MS;
+  const state = scheduleState(row, nowMs);
+  return state === 'overdue' || state === 'never_ran';
 }
 
 export interface AutomationRunSummary {
