@@ -2,6 +2,9 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { getServiceClient } from '../_shared/supabase-clients.ts';
 import { homeFormat } from '../_shared/locale/home.ts';
 import { loadHome } from '../_shared/locale/load-home.ts';
+import { resolveUiText } from '../_shared/locale/ui-text.ts';
+import { customerLanguage, loadUiText } from '../_shared/locale/load-ui-text.ts';
+import { invoicePdfLabels } from '../_shared/invoices/pdf-labels.ts';
 import { requireServiceOrModule, unauthorized } from '../_shared/edge-auth.ts';
 import { PDFDocument, StandardFonts, rgb } from "https://esm.sh/pdf-lib@1.17.1";
 
@@ -32,12 +35,9 @@ Deno.serve(async (req) => {
     }
 
     const supabase = getServiceClient();
-    // The PDF's labels are English; amounts and dates are the business's own
-    // (en-SE: 1 234,50 kr, 2026-07-03), dates on its clock. Helvetica here is
-    // WinAnsi, which has no U+202F (French/Swiss grouping) — swap it for the
-    // no-break space it does have.
+    // Helvetica here is WinAnsi, which has no U+202F (French/Swiss grouping) —
+    // swap it for the no-break space it does have.
     const homeRow = await loadHome(supabase);
-    const home = homeFormat(homeRow, 'en');
     const ansi = (t: string) => t.replace(/\u202f/g, '\u00a0');
     const NUMERIC_DATE = { year: 'numeric', month: '2-digit', day: '2-digit' } as const;
 
@@ -72,6 +72,25 @@ Deno.serve(async (req) => {
         }
       );
     }
+
+    // The words are the customer's: the visitor texts (invoice.*, the keys the
+    // invoice page reads) in the language they ordered in, else their party's,
+    // else the site's — the receipt mail's ladder. Amounts and dates are the
+    // business's own, written the way that language writes them (sv-SE:
+    // 1 234,50 kr), on its clock. A paid invoice is the order's receipt.
+    let orderRow: { lang?: string | null; partner_id?: string | null } | null = null;
+    if (invoice.order_id) {
+      const { data, error: orderErr } = await supabase.from("orders").select("lang, partner_id").eq("id", invoice.order_id).maybeSingle();
+      if (orderErr) console.warn("[generate-invoice-pdf] could not read the order's language, using the site's:", orderErr.message);
+      orderRow = data;
+    }
+    const texts = await loadUiText(supabase);
+    const lang = (await customerLanguage(supabase, {
+      orderLang: orderRow?.lang,
+      partnerId: orderRow?.partner_id || invoice.partner_id,
+    })) || texts.siteLang;
+    const L = invoicePdfLabels(resolveUiText(texts.map, lang, texts.siteLang), String(invoice.status));
+    const home = homeFormat(homeRow, lang);
 
     // Fetch company settings
     const { data: companyNameRow } = await supabase
@@ -117,7 +136,7 @@ Deno.serve(async (req) => {
       primaryColor.b / 255
     );
 
-    // --- Header: Company name + INVOICE label ---
+    // --- Header: Company name + INVOICE / RECEIPT label ---
     page.drawText(companyName, {
       x: margin,
       y,
@@ -126,8 +145,8 @@ Deno.serve(async (req) => {
       color: primary,
     });
 
-    page.drawText("INVOICE", {
-      x: width - margin - helveticaBold.widthOfTextAtSize("INVOICE", 28),
+    page.drawText(L.heading, {
+      x: width - margin - helveticaBold.widthOfTextAtSize(L.heading, 28),
       y,
       size: 28,
       font: helveticaBold,
@@ -184,7 +203,7 @@ Deno.serve(async (req) => {
     const metaRight = width / 2 + 30;
 
     // Left: Bill To
-    page.drawText("BILL TO", {
+    page.drawText(L.billTo, {
       x: metaLeft,
       y,
       size: 8,
@@ -231,16 +250,16 @@ Deno.serve(async (req) => {
     // Right: Invoice details
     let metaY = y + 14 + 13 + (customerCompany ? 13 : 0);
     const detailLines = [
-      ["Invoice #", invoice.invoice_number],
-      ["Status", (invoice.status as string).toUpperCase()],
+      [L.number, invoice.invoice_number],
+      [L.status, L.statusValue],
       [
-        "Date",
+        L.date,
         ansi(home.dateTime(invoice.created_at, NUMERIC_DATE)),
       ],
-      ...(invoice.due_date
+      ...(invoice.due_date && L.showDue
         ? [
             [
-              "Due Date",
+              L.due,
               ansi(home.date(invoice.due_date, NUMERIC_DATE)),
             ],
           ]
@@ -289,28 +308,28 @@ Deno.serve(async (req) => {
     });
 
     const headerY = y;
-    page.drawText("Description", {
+    page.drawText(L.description, {
       x: colX.desc + 8,
       y: headerY,
       size: 9,
       font: helveticaBold,
       color: rgb(1, 1, 1),
     });
-    page.drawText("Qty", {
+    page.drawText(L.qty, {
       x: colX.qty,
       y: headerY,
       size: 9,
       font: helveticaBold,
       color: rgb(1, 1, 1),
     });
-    page.drawText("Unit Price", {
+    page.drawText(L.unitPrice, {
       x: colX.price,
       y: headerY,
       size: 9,
       font: helveticaBold,
       color: rgb(1, 1, 1),
     });
-    page.drawText("Amount", {
+    page.drawText(L.amount, {
       x: colX.total,
       y: headerY,
       size: 9,
@@ -385,7 +404,7 @@ Deno.serve(async (req) => {
     const totalsX = colX.price - 10;
     const totalsValX = colX.total;
 
-    page.drawText("Subtotal", {
+    page.drawText(L.subtotal, {
       x: totalsX,
       y,
       size: 10,
@@ -401,7 +420,7 @@ Deno.serve(async (req) => {
     });
     y -= 16;
 
-    page.drawText(`Tax (${Math.round(invoice.tax_rate * 100)}%)`, {
+    page.drawText(`${L.tax} (${Math.round(invoice.tax_rate * 100)}%)`, {
       x: totalsX,
       y,
       size: 10,
@@ -423,7 +442,7 @@ Deno.serve(async (req) => {
     const fxRate = Number(invoice.exchange_rate ?? 0);
     const foreign = String(invoice.currency || homeRow.currency).toUpperCase() !== homeRow.currency;
     if (foreign && fxRate > 0 && fxRate !== 1 && Number(invoice.tax_cents) !== 0) {
-      page.drawText(`VAT in ${homeRow.currency} (rate ${fxRate.toFixed(4)})`, {
+      page.drawText(L.vatInHome(homeRow.currency, fxRate.toFixed(4)), {
         x: totalsX, y, size: 9, font: helvetica, color: gray,
       });
       page.drawText(ansi(home.money(Math.round(Number(invoice.tax_cents) * fxRate), homeRow.currency)), {
@@ -440,7 +459,7 @@ Deno.serve(async (req) => {
       color: primary,
     });
 
-    page.drawText("TOTAL", {
+    page.drawText(L.total, {
       x: totalsX,
       y: y - 10,
       size: 12,
@@ -459,7 +478,7 @@ Deno.serve(async (req) => {
 
     // Notes
     if (invoice.notes) {
-      page.drawText("Notes", {
+      page.drawText(L.notes, {
         x: margin,
         y,
         size: 9,
@@ -499,7 +518,7 @@ Deno.serve(async (req) => {
 
     // Footer
     page.drawText(
-      `${companyName} — Generated ${ansi(home.dateTime(new Date(), NUMERIC_DATE))}`,
+      `${companyName} — ${L.generated} ${ansi(home.dateTime(new Date(), NUMERIC_DATE))}`,
       {
         x: margin,
         y: 30,

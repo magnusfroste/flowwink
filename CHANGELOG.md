@@ -115,6 +115,13 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Fixed
 
+- **The invoice PDF is in the customer's language.** Its labels were English
+  ("INVOICE", "BILL TO") whatever the customer ordered in. They are now the
+  `invoice.*` visitor texts the invoice page reads, in the order's language,
+  else the party's, else the site's, and a paid invoice, the order's receipt,
+  is headed RECEIPT with no due date. Ten keys are new (`invoice.billTo`,
+  `invoice.unitPrice` …): a site that wants them in its language adds them under
+  Visitor texts; until then they are English.
 - **Self-healing no longer takes a fixed skill away again.** An instance lost
   `manage_blog_posts` for four days: calls failed one night, the fix was
   deployed (which lifted the quarantine), and the next heartbeat quarantined
