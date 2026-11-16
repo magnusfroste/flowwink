@@ -115,6 +115,13 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Fixed
 
+- **`check_operations` answers again.** The "idle, not overdue" rule was
+  declared for a text trigger type and called with the table's enum, so every
+  call raised "function … does not exist". The night's proof went red on it and
+  no instance was synced, so it reached nobody. The rule now answers for the
+  enum too, and the skill smoke treats a function SQL cannot find as a bug —
+  it had filed this one as a review item and stayed green.
+
 - **A sweep with no work is idle, not overdue.** `check_operations` told www,
   optic and liteit every hour that 2–5 scheduled automations were overdue
   (high). Each was a sweep with a work probe that found nothing to do: it keeps
