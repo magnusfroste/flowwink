@@ -122,6 +122,21 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
   is headed RECEIPT with no due date. Ten keys are new (`invoice.billTo`,
   `invoice.unitPrice` …): a site that wants them in its language adds them under
   Visitor texts; until then they are English.
+- **Self-healing no longer takes a fixed skill away again.** An instance lost
+  `manage_blog_posts` for four days: calls failed one night, the fix was
+  deployed (which lifted the quarantine), and the next heartbeat quarantined
+  the fixed skill on the same old failures. Only fresh evidence counts now: a
+  failure from before the skill last changed (a deploy, or a person's
+  re-enable) ends the streak, and a streak whose newest failure is over a day
+  old is history. "… required for update" is read as the caller's missing
+  argument, not a broken skill.
+- **`check_operations` answers again.** The "idle, not overdue" rule was
+  declared for a text trigger type and called with the table's enum, so every
+  call raised "function … does not exist". The night's proof went red on it and
+  no instance was synced, so it reached nobody. The rule now answers for the
+  enum too, and the skill smoke treats a function SQL cannot find as a bug —
+  it had filed this one as a review item and stayed green.
+
 - **A sweep with no work is idle, not overdue.** `check_operations` told www,
   optic and liteit every hour that 2–5 scheduled automations were overdue
   (high). Each was a sweep with a work probe that found nothing to do: it keeps

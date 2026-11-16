@@ -177,6 +177,45 @@ describe('selfHealCandidates counts skill faults only', () => {
     expect(NOT_A_SKILL_FAULT.has('HANDLER_ERROR')).toBe(false);
   });
 
+  describe('only fresh evidence counts', () => {
+    // www, 2026-11-11/12: eight failures at 02:20, the fix deployed that night
+    // (which lifted the quarantine), and the next heartbeat quarantined the
+    // fixed skill again on the same eight rows. It stayed off for four days.
+    const now = new Date('2026-11-12T06:00:00Z');
+    const at = (iso: string, code?: string) => ({ skill_name: 'manage_blog_posts', status: 'failed', code: code ?? null, created_at: iso });
+    const old = [at('2026-11-11T02:23:46Z'), at('2026-11-11T02:20:46Z'), at('2026-11-11T02:20:42Z'), at('2026-11-11T02:20:37Z')];
+
+    it('a failure from before the skill last changed ends the streak', () => {
+      expect(selfHealCandidates(old, 3, { now, changedAt: { manage_blog_posts: '2026-11-11T23:30:00Z' } })).toEqual([]);
+      // …and failures after the change count as before.
+      const again = [at('2026-11-12T05:50:00Z'), at('2026-11-12T05:40:00Z'), at('2026-11-12T05:30:00Z'), ...old];
+      expect(selfHealCandidates(again, 3, { now, changedAt: { manage_blog_posts: '2026-11-11T23:30:00Z' } })).toEqual([{ name: 'manage_blog_posts', streak: 3 }]);
+      // Two after the change and the rest before: not three.
+      expect(selfHealCandidates(again.slice(1), 3, { now, changedAt: { manage_blog_posts: '2026-11-11T23:30:00Z' } })).toEqual([]);
+    });
+
+    it('a streak whose newest failure is over a day old is history', () => {
+      expect(selfHealCandidates(old, 3, { now })).toEqual([]);
+      expect(selfHealCandidates(old, 3, { now: new Date('2026-11-11T06:00:00Z') })).toEqual([{ name: 'manage_blog_posts', streak: 3 }]);
+    });
+
+    it('rows without a time are judged as before', () => {
+      expect(selfHealCandidates([f('a'), f('a'), f('a')], 3, { now, changedAt: { a: '2026-11-11T23:30:00Z' } })).toEqual([{ name: 'a', streak: 3 }]);
+    });
+
+    it('the heartbeat hands the rule each failing skill\'s last change', () => {
+      const src = readFileSync(join(ROOT, 'supabase/functions/_shared/pilot/handlers.ts'), 'utf-8');
+      expect(src).toMatch(/selfHealCandidates\(recentActivity, SELF_HEAL_THRESHOLD, \{ changedAt \}\)/);
+      expect(src).toMatch(/select\('name, updated_at'\)\.in\('name', failing\)/);
+    });
+  });
+
+  it('"post_id or slug required for update" is the caller\'s missing argument, not a broken skill', async () => {
+    const { classifyAgentError } = await import('../../../supabase/functions/_shared/agent-errors');
+    expect(classifyAgentError('Handler exception: post_id or slug required for update').code).toBe('MISSING_REQUIRED_PARAMETER');
+    expect(NOT_A_SKILL_FAULT.has(classifyAgentError('post_id or slug required for update').code)).toBe(true);
+  });
+
   it('a quarantine is a disabled row with the marker', () => {
     expect(isQuarantined({ enabled: false, quarantined_at: '2026-11-05T10:00:00Z' })).toBe(true);
     expect(isQuarantined({ enabled: true, quarantined_at: '2026-11-05T10:00:00Z' })).toBe(false);

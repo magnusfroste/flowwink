@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261116090000",
-      "migrations_count": 764,
+      "migration_head": "20261116100000",
+      "migrations_count": 765,
       "migrations": [
         {
           "version": "00000000000000",
@@ -3061,6 +3061,10 @@
         {
           "version": "20261116090000",
           "name": "ett-svep-utan-arbete-ar-inte-forsenat"
+        },
+        {
+          "version": "20261116100000",
+          "name": "forsenat-tar-triggertypen-som-den-ar"
         }
       ]
     },
@@ -3071,7 +3075,7 @@
     },
     "edge_functions": {
       "count": 76,
-      "shared_hash": "sha256:2fc53e594ef6a341a4a6fbd45988f6e47c78e945dc4bff700c9d255e7cb2d941",
+      "shared_hash": "sha256:936af31c9b14cca7ff9d604a368e38a17b06b701f8f8216a84ebffaf3dc28a58",
       "functions": {
         "agent-execute": "sha256:2069792ca64b71d06ddd8b7cf31267d7e0e333c1faaad21a77174b997822c7cf",
         "agent-operate": "sha256:4320e02dd3e6a0a1706b42dc1905b631c61e6a4cbe3556c701f474c278c89e1a",
