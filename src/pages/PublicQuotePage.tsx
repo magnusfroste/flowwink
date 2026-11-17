@@ -232,6 +232,20 @@ export default function PublicQuotePage() {
                   {(quote as { title: string | null }).title && (
                     <p className="text-muted-foreground mt-1">{(quote as { title: string }).title}</p>
                   )}
+                  {/* Whose offer it is and who it is for — the customer opens this
+                      from a mail, often days later, and the page said only a number. */}
+                  {(() => {
+                    const q = quote as { seller_name?: string | null; customer_name?: string | null; customer_company?: string | null };
+                    const to = [q.customer_name, q.customer_company].filter(Boolean).join(', ');
+                    if (!q.seller_name && !to) return null;
+                    return (
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {q.seller_name && <>{t('quote.from', 'From')} <span className="text-foreground">{q.seller_name}</span></>}
+                        {q.seller_name && to && ' · '}
+                        {to && <>{t('quote.to', 'To')} <span className="text-foreground">{to}</span></>}
+                      </p>
+                    );
+                  })()}
                 </div>
               </div>
               <div className="flex items-center gap-2 print:hidden">

@@ -72,3 +72,37 @@ describe('the battery reads what the customer got', () => {
     expect(read('scripts/process-battery/scenarios/book-to-meet.ts')).toMatch(/s\.pulse\('event-dispatcher'/);
   });
 });
+
+describe('the customer sees what the quote is, whose it is and on what terms', () => {
+  // Found by opening the mail's link in a browser as the customer (2026-11-17).
+  const sql = read('supabase/migrations/20261117120000_kunden-ser-vad-offerten-ar.sql');
+  const page = read('src/pages/PublicQuotePage.tsx');
+
+  it('every field the quote page draws is in the view it is handed', () => {
+    const drawn = [...page.matchAll(/quote as \{ (\w+)[?]?:/g)].map((m) => m[1]).filter((f) => !f.startsWith('_'));
+    expect(drawn).toEqual(expect.arrayContaining(['title', 'intro_text', 'terms_text']));
+    const view = sql.slice(sql.indexOf("'quote', jsonb_build_object("), sql.indexOf("'items', v_items"));
+    const missing = [...new Set(drawn)].filter((f) => !new RegExp(`'${f}',`).test(view));
+    expect(missing, `the page reads these from the quote, and get_public_quote does not return them: ${missing.join(', ')}`).toEqual([]);
+  });
+
+  it('the view names both sides and still carries nothing internal', () => {
+    const view = sql.slice(sql.indexOf("'quote', jsonb_build_object("), sql.indexOf("'items', v_items"));
+    expect(view).toMatch(/'seller_name', public\.business_name\(\)/);
+    expect(view).toMatch(/'customer_name', v_quote\.customer_name/);
+    for (const internal of ['owner_id', 'lead_id', 'deal_id', 'accept_token', 'approval_request_id', 'customer_email', 'created_by']) {
+      expect(view, internal).not.toMatch(new RegExp(`'${internal}'`));
+    }
+  });
+
+  it('the signing page names the seller and the counterparty — never "you and" the reader', () => {
+    const contract = read('src/pages/PublicContractPage.tsx');
+    expect(contract).not.toMatch(/Between you and \{/);
+    expect(contract).toMatch(/useBusinessName\(\)/);
+  });
+
+  it('the customer path runs in the night, in a browser', () => {
+    expect(read('.github/workflows/fresh-install-nightly.yml')).toMatch(/run: npm run qa:customer-path/);
+    expect(read('package.json')).toMatch(/"qa:customer-path": "bun run scripts\/customer-path\/index\.ts"/);
+  });
+});

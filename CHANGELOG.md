@@ -120,6 +120,13 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Fixed
 
+- **The customer sees what a quote is, whose it is and on what terms.** The
+  page behind the link in the quote mail showed a number, the lines and a
+  total — not the sender, the recipient, the title, the introduction or the
+  terms the seller had written. It shows them now.
+- **The signing page names both parties.** It read "Between you and" followed
+  by the reader's own name; it now reads the seller and the counterparty.
+
 - **A booking is confirmed to the customer whoever made it.** The confirmation
   mail was sent by the page that booked; a booking an agent made over the
   gateway gave the customer nothing, and no lead. An automation now confirms
