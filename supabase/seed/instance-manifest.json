@@ -3075,9 +3075,9 @@
     },
     "edge_functions": {
       "count": 76,
-      "shared_hash": "sha256:936af31c9b14cca7ff9d604a368e38a17b06b701f8f8216a84ebffaf3dc28a58",
+      "shared_hash": "sha256:2b776a0532cb08dfff7b5f518fa47fbec884753136f032c2979e65764578a821",
       "functions": {
-        "agent-execute": "sha256:2069792ca64b71d06ddd8b7cf31267d7e0e333c1faaad21a77174b997822c7cf",
+        "agent-execute": "sha256:7d540f747f70e9300b3019a5840bdbbd36bd0aad73e95f07554007050fd5de38",
         "agent-operate": "sha256:4320e02dd3e6a0a1706b42dc1905b631c61e6a4cbe3556c701f474c278c89e1a",
         "ai-task": "sha256:ce3aacdef625bba758f4323da3e49104a1b94a3d3d77d800e89dacd0b803d65e",
         "automation-dispatcher": "sha256:d905660cd907c6f1ef5c7cac0a97ed44a4e4187ef4d5179089fa2714b2751443",
@@ -3112,7 +3112,7 @@
         "flowpilot-heartbeat": "sha256:c233b4c6b0ae60a266741fbc90d626baa1479e34adf359ef1aa555569828390f",
         "flowpilot-lifecycle": "sha256:ec0e77839be7066f15ae47d96daa10abbb6bd4e4e53d866a7e3e41db461f0259",
         "gatewayapi-ingest": "sha256:d6f74c384f0baac936737762d330c470636502afcc9af418b1c43db26134e4fe",
-        "generate-invoice-pdf": "sha256:788baea5630795df69dd7b69f4177b12fd1432a061dca2e0bf2cc562fb6ffb2d",
+        "generate-invoice-pdf": "sha256:271a3b8f655b276b13c111886c2f985e729a26f418df565dbde35d216e42f1e5",
         "get-page": "sha256:3e42751911164c9d6c350b931a4e64a4824166a6bef8d02e526ad378c8f3921b",
         "gmail-oauth-callback": "sha256:b4a2f44055f3bf287d6ba357e96f4c8b808c2e95438940c8b231b5d346d5edb1",
         "instance-health": "sha256:a858bc6d53163e56cfcd68084fe2e269af9ce3017df1331776766ecd2e3353c3",

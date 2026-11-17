@@ -1196,9 +1196,29 @@
       "fallback": "Hi {name}, pick a time for your interview"
     },
     {
+      "key": "invoice.amount",
+      "group": "invoice",
+      "fallback": "Amount"
+    },
+    {
+      "key": "invoice.billTo",
+      "group": "invoice",
+      "fallback": "Bill to"
+    },
+    {
       "key": "invoice.cancelled",
       "group": "invoice",
       "fallback": "This invoice has been cancelled."
+    },
+    {
+      "key": "invoice.date",
+      "group": "invoice",
+      "fallback": "Date"
+    },
+    {
+      "key": "invoice.description",
+      "group": "invoice",
+      "fallback": "Description"
     },
     {
       "key": "invoice.downloadPdf",
@@ -1209,6 +1229,11 @@
       "key": "invoice.due",
       "group": "invoice",
       "fallback": "Due"
+    },
+    {
+      "key": "invoice.generated",
+      "group": "invoice",
+      "fallback": "Generated"
     },
     {
       "key": "invoice.items",
@@ -1236,6 +1261,11 @@
       "fallback": "Invoice not found"
     },
     {
+      "key": "invoice.number",
+      "group": "invoice",
+      "fallback": "Invoice #"
+    },
+    {
       "key": "invoice.paidReceipt",
       "group": "invoice",
       "fallback": "Paid in full. This is your receipt — thank you!"
@@ -1251,9 +1281,19 @@
       "fallback": "Payment received — confirming…"
     },
     {
+      "key": "invoice.qty",
+      "group": "invoice",
+      "fallback": "Qty"
+    },
+    {
       "key": "invoice.receipt",
       "group": "invoice",
       "fallback": "Receipt"
+    },
+    {
+      "key": "invoice.status",
+      "group": "invoice",
+      "fallback": "Status"
     },
     {
       "key": "invoice.statusCancelled",
@@ -1289,6 +1329,16 @@
       "key": "invoice.total",
       "group": "invoice",
       "fallback": "Total"
+    },
+    {
+      "key": "invoice.unitPrice",
+      "group": "invoice",
+      "fallback": "Unit price"
+    },
+    {
+      "key": "invoice.vatInHome",
+      "group": "invoice",
+      "fallback": "VAT in {currency} (rate {rate})"
     },
     {
       "key": "kb.allCategories",

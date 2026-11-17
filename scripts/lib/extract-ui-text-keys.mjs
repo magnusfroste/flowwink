@@ -10,7 +10,9 @@
  *
  * Only files that import `useUiText` are scanned. A bare `t(...)` elsewhere is
  * somebody else's variable, and a catalogue that swept those in would offer an
- * editor keys that nothing reads.
+ * editor keys that nothing reads. On the edge the marker is the shared resolver
+ * (`_shared/locale/ui-text.ts`): a document the customer gets — the invoice
+ * PDF — reads the same pack, and its keys belong in the same editor.
  */
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
@@ -38,10 +40,15 @@ function walk(dir, out = []) {
  */
 export function extractUiTextKeys(root) {
   const found = new Map();
-  for (const file of walk(join(root, 'src'))) {
+  const files = [
+    ...walk(join(root, 'src')).map((file) => ({ file, marker: 'useUiText' })),
+    ...walk(join(root, 'supabase', 'functions')).map((file) => ({ file, marker: 'locale/ui-text.ts' })),
+  ];
+  for (const { file, marker } of files) {
     const source = readFileSync(file, 'utf8');
-    // The hook is the marker. Without it, `t` is not this `t`.
-    if (!source.includes('useUiText')) continue;
+    // The hook (or, on the edge, the shared resolver) is the marker. Without
+    // it, `t` is not this `t`.
+    if (!source.includes(marker)) continue;
     if (relative(root, file).includes('__tests__')) continue;
     for (const re of [SINGLE, DOUBLE]) {
       re.lastIndex = 0;

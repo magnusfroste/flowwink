@@ -50,6 +50,7 @@ describe('the ledger is in the business currency', () => {
   });
 
   it('the PDF states the VAT in the business currency on a foreign invoice', () => {
-    expect(read('supabase/functions/generate-invoice-pdf/index.ts')).toMatch(/VAT in \$\{homeRow\.currency\}/);
+    expect(read('supabase/functions/generate-invoice-pdf/index.ts')).toMatch(/vatInHome\(homeRow\.currency,/);
+    // The words are the customer's (invoice.vatInHome); the currency stays the business's.
   });
 });
