@@ -80,3 +80,19 @@ describe('data retention — the rule', () => {
     expect(core).toMatch(/_withoutKind: true/);
   });
 });
+
+describe('data retention — the proof passes on an instance with history', () => {
+  // 2026-11-17: the proof ran prune_logs() (bounded, oldest first) and asserted
+  // on its own 45-day rows; on www they sat behind 22 169 real ones. The
+  // migration failed and every later one stayed unapplied after a green sync.
+  const proof = migration.slice(migration.indexOf('DO $proof$'));
+
+  it('does not run where the log already holds history', () => {
+    const guard = proof.indexOf("WHERE created_at < now() - interval '30 days'");
+    expect(guard).toBeGreaterThan(0);
+    expect(proof).toMatch(/IF v_history > 0 THEN\s+RAISE NOTICE [^;]+;\s+RETURN;\s+END IF;/);
+    // …and the check comes before the proof writes or thins anything.
+    expect(guard).toBeLessThan(proof.indexOf('INSERT INTO public.agent_activity'));
+    expect(guard).toBeLessThan(proof.indexOf('public.prune_logs('));
+  });
+});

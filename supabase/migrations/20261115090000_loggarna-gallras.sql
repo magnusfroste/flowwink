@@ -278,6 +278,15 @@ END
 $do$;
 
 -- ── Proof, rolled back ──────────────────────────────────────────────────────
+-- Runs only where the log holds no history older than the dial's first limit
+-- (a fresh install: the nightly proof and the battery on a pull request).
+-- 2026-11-17: on www, nordbrygg and liteit this proof stopped the migration —
+-- and with it every later one — for a whole sync. prune_logs works off the
+-- OLDEST rows first, a bounded batch a night; the proof's own 45-day rows sat
+-- behind 10 000–22 000 real ones, were not reached in one batch, and the proof
+-- read that as "the rule does not work". A proof that runs a housekeeping
+-- function must not depend on how much there is to keep house in — and must
+-- not do a night's worth of deletes on a live instance just to roll them back.
 DO $proof$
 DECLARE
   v jsonb;
@@ -285,7 +294,13 @@ DECLARE
   v_kept uuid;
   v_n int;
   v_out jsonb;
+  v_history bigint;
 BEGIN
+  SELECT count(*) INTO v_history FROM public.agent_activity WHERE created_at < now() - interval '30 days';
+  IF v_history > 0 THEN
+    RAISE NOTICE 'log retention: proof not run here (% rows of history) — it is proven on the fresh install', v_history;
+    RETURN;
+  END IF;
   BEGIN
     -- 120 days old: a change (kept), a lookup, a refusal, a tick, an unknown.
     INSERT INTO public.agent_activity (agent, skill_name, status, kind, created_at, input, output) VALUES
