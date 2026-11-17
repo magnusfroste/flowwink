@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261117150000",
-      "migrations_count": 767,
+      "migration_head": "20261117180000",
+      "migrations_count": 768,
       "migrations": [
         {
           "version": "00000000000000",
@@ -3073,6 +3073,10 @@
         {
           "version": "20261117150000",
           "name": "fakturan-sager-vem-och-hur"
+        },
+        {
+          "version": "20261117180000",
+          "name": "en-nummerserie-per-dokument"
         }
       ]
     },
@@ -3083,7 +3087,7 @@
     },
     "edge_functions": {
       "count": 76,
-      "shared_hash": "sha256:f12079804022b987ea6173e74471e4e1e672cfc8b4c80a54bffb364051195dac",
+      "shared_hash": "sha256:e2e60d24941eb6c6e3a055041596138e502426f999df6d7dab03488be83a69a4",
       "functions": {
         "agent-execute": "sha256:e7f2a8b649c1c3dfeca54228a01e6582c84bcdfaacee7705da2caad892617900",
         "agent-operate": "sha256:4320e02dd3e6a0a1706b42dc1905b631c61e6a4cbe3556c701f474c278c89e1a",
@@ -3138,7 +3142,7 @@
         "process-job-application": "sha256:00dc3927da3901fcad6066cb0b7b965a8cad288733e0c9d4f11519eb41b16856",
         "quote-expiry-reminders": "sha256:c41ef708741bb0c3fa6810d37a005b615b8db76b6bb39b53ba49e91b5f7f90d9",
         "quote-pay": "sha256:eac676922cee4e9ebe19650afd1ec708a48c2b3efd8d56d0f77654d21a272c00",
-        "quote-sign": "sha256:39d7fefbce4d0a711c3b7309803513e1517ed726b733e8c925a02c4649f0c95b",
+        "quote-sign": "sha256:e953faec1ff99e7f2a5b1c86acda3dc932b65db0f731bc4124dd812e3f056736",
         "run-autonomy-tests": "sha256:53426062cbb9c3c6963f6c807c77176ca89f56aea35b7bfab3e84e4dff087cd2",
         "run-platform-tests": "sha256:1ccf588aad1d395da01dce0fc4575a04f4350d586246e9a907a5b59505d286f7",
         "score-visitor-intent": "sha256:da5637476f5334696ed6b8007524182661416f19b2f1735227dcf0b8f0ee4143",
