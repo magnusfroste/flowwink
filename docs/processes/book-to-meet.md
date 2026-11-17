@@ -69,7 +69,11 @@ duration grid with existing bookings, blocked dates and past times removed.
 The visitor picks 10:00; `book_appointment_slot` derives the end time from the
 service's `duration_minutes` and refuses the slot if anyone else grabbed it in
 between (`slot_unavailable` — the agent re-checks and offers the next slot).
-The booking lands as **pending** and the customer gets a confirmation email.
+The booking lands as **pending** and the customer gets a confirmation email —
+whoever made the booking: the automation *Booking confirmation to the customer*
+answers every `booking.created` (`send_booking_confirmation`), and the stamp
+`confirmation_sent_at` makes it one mail per booking even where the page that
+booked already sent it. A cancelled or past booking is not confirmed.
 Staff confirms it (or an agent does), which arms the reminder: a cron sweep
 every 15 minutes finds confirmed bookings starting within 24 hours that were
 never reminded, emails the customer once, and stamps `reminder_sent_at`.

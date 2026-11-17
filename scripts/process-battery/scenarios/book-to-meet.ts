@@ -151,13 +151,38 @@ async function run(s: Scenario): Promise<void> {
   // provider email-send logs the send as simulated, so the sweep runs to completion here too.
   const sweep = await s.must('the 24 h reminder sweep runs through a skill', 'send_booking_reminders', {});
   s.check('the sweep reports no failed reminders', sweep.success === true && Number(sweep.failed ?? 0) === 0, JSON.stringify(sweep).slice(0, 200));
-  s.skip('the confirmation e-mail reaches the customer', 'needs an e-mail provider');
+  // FINDING 2026-11-17: the confirmation was the BROWSER's — the public block and the admin
+  // page called comms-send after they booked. A booking an agent made over the gateway gave
+  // the customer nothing (and no lead). It is the process's now: an automation on
+  // booking.created, one confirmation per booking whoever asks.
+  const auto = await s.one<{ enabled: boolean; skill_name: string }>(
+    `select enabled, skill_name from agent_automations where name = 'Booking confirmation to the customer'`);
+  s.check('every new booking is confirmed by an automation, whoever made it', auto?.enabled === true && auto.skill_name === 'send_booking_confirmation', JSON.stringify(auto ?? null));
+  const confirmed = await s.must('customer A is sent the confirmation', 'send_booking_confirmation', { booking_id: bookingA });
+  const stamp = await s.one<{ at: Date | null }>('select confirmation_sent_at as at from bookings where id = $1', [bookingA]);
+  s.check('the booking is stamped as confirmed', !!stamp?.at, `confirmation_sent_at is null — the skill answered ${JSON.stringify(confirmed).slice(0, 160)}`);
+  const confMail = await s.mail(`kund-a-${s.tag}@example.test`);
+  s.check('the confirmation reaches the customer', !!confMail, 'nothing in outbound_communications for customer A');
+  s.check('…and says the time on the business\'s clock, not the server\'s', /10[:.]00/.test(confMail?.html ?? ''), `no "10:00" in the mail: ${(confMail?.html ?? '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').slice(0, 300)}`);
+  // …and the automation itself, end to end: one pulse of the event dispatcher, and customer
+  // B — whom nobody confirmed by hand — has the mail too.
+  // The stamp is the claim, taken before the send — so wait for the mail itself.
+  const mailedB = async () => !!(await s.mail(`kund-b-${s.tag}@example.test`));
+  const pulse = await s.pulse('event-dispatcher', mailedB);
+  const stampB = await s.one<{ at: Date | null }>('select confirmation_sent_at as at from bookings where id = $1', [bookingB]);
+  s.check('the dispatcher confirms a booking nobody confirmed by hand', !!stampB?.at && !!(await s.mail(`kund-b-${s.tag}@example.test`)),
+    `B's confirmation_sent_at is ${String(stampB?.at)} after the pulse answered ${pulse}`);
+  const again = await s.must('asking for the confirmation again sends nothing', 'send_booking_confirmation', { booking_id: bookingA });
+  s.check('one confirmation per booking', again.skipped === true && again.reason === 'already_confirmed' && (await s.mail(`kund-a-${s.tag}@example.test`))?.count === confMail?.count,
+    `second call answered ${JSON.stringify(again).slice(0, 160)}`);
 
   // ── Cancel frees the slot — once ─────────────────────────────────────────
   await s.must('A calls off', 'manage_bookings', { action: 'cancel', booking_id: bookingA, cancelled_reason: 'sjuk' });
   const gone = await s.one<{ status: string; stamped: boolean; reason: string | null }>(
     'select status, cancelled_at is not null as stamped, cancelled_reason as reason from bookings where id = $1', [bookingA]);
   s.equal('cancelled, stamped, with the reason', `${gone?.status}|${gone?.stamped}|${gone?.reason}`, 'cancelled|true|sjuk');
+  const afterCancel = await s.must('a confirmation asked for after the cancellation', 'send_booking_confirmation', { booking_id: bookingA });
+  s.check('a cancelled booking is not confirmed', afterCancel.skipped === true && afterCancel.reason === 'booking_cancelled', JSON.stringify(afterCancel).slice(0, 160));
   const b3 = await s.must('customer K takes the freed 10:00 (reschedule = cancel + new booking)', 'book_appointment_slot',
     { p_service_id: serviceId, ...customer('k'), p_start_time: at(day, '10:00') });
   const bookingK = s.idOf(b3, 'booking');

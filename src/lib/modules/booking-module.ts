@@ -30,6 +30,29 @@ const BOOKING_SKILLS: SkillSeed[] = [
     instructions: 'No arguments. Same code as the 15-minute cron (comms-send kind booking_reminders). Honours the Bookings module setting reminderEmailEnabled. Without an e-mail provider the send is logged as simulated and the booking is still stamped, so the sweep is safe to run on any instance.',
   },
   {
+    name: 'send_booking_confirmation',
+    description: 'E-mail the customer the confirmation of ONE booking — date and time on the business\'s clock, the service, the price and the meeting link — in their language, and make sure the booking has its lead. Sent once per booking: a second call answers skipped: "already_confirmed" unless resend is true. Use when: a booking was made and the customer should have it in writing; a customer says the confirmation never arrived (resend: true). Runs by itself on every new booking (automation "Booking confirmation to the customer"), whoever made it. NOT for: the 24 h reminder (send_booking_reminders); creating the booking (book_appointment_slot); telling the staff (the "Notify admins on new booking" automation).',
+    category: 'crm',
+    handler: 'edge:comms-send',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'send_booking_confirmation',
+        description: 'E-mail the customer the confirmation of one booking, once.',
+        parameters: {
+          type: 'object',
+          properties: {
+            booking_id: { type: 'string', description: 'UUID of the booking' },
+            resend: { type: 'boolean', description: 'true = send it again although it was already confirmed. Default false.' },
+          },
+          required: ['booking_id'],
+        },
+      },
+    },
+    instructions: 'booking_id is the booking\'s id (manage_bookings list returns it). Honours the Bookings setting confirmationEmailEnabled (answers skipped: "confirmation_email_disabled"). Without an e-mail provider the send is logged as simulated and reaches nobody — check_integrations says whether mail is connected. The stamp is bookings.confirmation_sent_at.',
+  },
+  {
     name: 'book_appointment',
     description: 'Create a simple booking WITHOUT overlap protection — PREFER book_appointment_slot for normal bookings (it derives the end from the service duration and rejects double-bookings). Use when: booking without a defined service, or a workflow explicitly needs ad-hoc date+time. NOT for: normal service bookings (book_appointment_slot); checking availability (check_availability); managing existing bookings (manage_bookings).',
     category: 'crm',
@@ -520,6 +543,15 @@ There is no move action — do: (1) find the booking (list + customer filter), (
 ];
 
 const BOOKING_AUTOMATIONS: AutomationSeed[] = [
+  {
+    name: 'Booking confirmation to the customer',
+    description:
+      'When a booking is created (any writer — the public block, an agent on the gateway, the admin), e-mail the customer the confirmation in their language and make sure the booking has its lead. Once per booking: where the page that made the booking already sent it, this finds the stamp and sends nothing.',
+    trigger_type: 'event',
+    trigger_config: { event: 'booking.created' },
+    skill_name: 'send_booking_confirmation',
+    skill_arguments: { booking_id: '{{event.payload.id}}' },
+  },
   {
     name: 'Notify admins on new booking',
     description:

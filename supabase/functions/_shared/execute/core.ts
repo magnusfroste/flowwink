@@ -15801,15 +15801,43 @@ async function executeDbAction(
           }).eq('id', contract.id);
         if (uErr) throw new Error(`Update contract failed: ${uErr.message}`);
 
-
-
+        // The counterparty is e-mailed the link — by the SKILL, as the quote's
+        // send does. Until 2026-11-17 only the admin's button mailed it: an agent
+        // that "sent" an agreement got a URL back and the counterparty got nothing.
+        // A contract that was already pending is a reminder.
+        const signingUrl = `${origin}/contract/${token}`;
+        let emailSent = false;
+        let emailError: string | undefined;
+        if ((args as { email?: unknown }).email === false) {
+          emailError = 'email: false was passed — no e-mail was sent.';
+        } else if (!contract.counterparty_email) {
+          emailError = 'The contract has no counterparty_email, so nobody could be e-mailed.';
+        } else {
+          try {
+            const mailRes = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/comms-send`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}` },
+              body: JSON.stringify({ kind: 'contract_email', contract_id: contract.id, public_url: signingUrl, reminder: contract.status === 'pending_signature' }),
+            });
+            const mailBody = await mailRes.json().catch(() => ({}));
+            emailSent = mailRes.ok && (mailBody as { success?: boolean }).success === true;
+            if (!emailSent) emailError = String((mailBody as { error?: string }).error ?? `comms-send answered ${mailRes.status}`);
+          } catch (e) {
+            emailError = (e as Error).message;
+          }
+        }
 
         return {
           contract_id: contract.id,
           token,
-          url: `${origin}/contract/${token}`,
+          url: signingUrl,
           status: 'pending_signature',
           version: contract.version || 1,
+          email_sent: emailSent,
+          ...(emailSent ? { emailed_to: contract.counterparty_email } : {}),
+          ...(emailError ? { email_error: emailError } : {}),
+          note: emailSent ? 'The counterparty has been e-mailed the signing link.'
+            : 'The agreement awaits signature and the link works, but NO e-mail went out — pass the link on yourself, or fix the cause in email_error and send again.',
           ...(Array.isArray(readiness?.warnings) && readiness.warnings.length ? { warnings: readiness.warnings } : {}),
         };
       }
