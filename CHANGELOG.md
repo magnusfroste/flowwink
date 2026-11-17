@@ -120,6 +120,29 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Fixed
 
+- **A generic list is sized for the agent that reads it.** On a customer
+  instance an agent paged every project task 31 times to find one: a page of 50
+  was 58–71 KB of briefs and checklists, and a page of documents carried every
+  file's extracted text. Every `db:` skill's `list` (91 skills) now cuts a long
+  text to a preview and leaves a long structure out, naming both per row in
+  `_cut` (`get` returns a row whole, `full: true` lists rows whole, `fields`
+  picks the columns), and answers `total`, `offset`, `limit` and `next_offset`.
+  `updated_since` / `created_since` list what changed. A cut preview written
+  back as an update is refused, so a brief is never shortened by accident. An
+  offset past the last row is an empty page.
+- **The start of an id finds the row it belongs to.** A list filter on a uuid
+  column takes the first 8+ characters (`project_id: "f3b6fce9"` used to answer
+  Postgres' "invalid input syntax for type uuid") and names the whole id under
+  `id_prefix`. `get` by the start of an id, or by one padded with zeros, reads
+  the one row that starts so; `update` and `delete` never act on a guess and
+  answer with the id to re-send — the task rule, for every generic table.
+- **A search is found under the name the caller reaches for.** Four skill
+  schemas declared `search_query` while the engine read `search` alone: the
+  term was dropped as "not a column" and the whole list came back. `query`,
+  `search_query`, `q`, `search_term` and `keyword` are now the search. A
+  document is found by title, file name, description and extracted text (it was
+  file name only); a task by title and brief; a table that declares nothing by
+  what its rows are called. `manage_project_task` advertises `get`.
 - **A person can write a whole quote in the admin.** The quote editor had no
   field for the title, the introduction or the terms the customer's page
   shows — only an agent could set them — and the line description was squeezed

@@ -159,6 +159,11 @@ import { executeAgentTrace } from '../handlers/agent-trace.ts';
 import { buildCrudErrorHint } from '../crud-error-hint.ts';
 import { resolveProjectTask, isUuid } from '../project-task-resolve.ts';
 import {
+  carriesCutMarker, idDidYouMean, isFullUuid, nextOffset, parseFieldList, searchColumnsFor,
+  searchOrFilter, slimListItems, uuidPrefixRange, SEARCH_ALIASES, DERIVED_SEARCH_COLUMNS,
+  type UuidRange,
+} from './list-shape.ts';
+import {
   AGENT_COMMENT_INTERVAL_MS, cadenceRefusalAnswer, decideTaskThreadCadence, nudgedTodayRefusal, personDisplayName,
   readTaskThread, readTaskThreadComments, threadAuthorFor, writePacedComment, type TaskCommentKind,
 } from '../handlers/task-thread-cadence.ts';
@@ -17268,17 +17273,19 @@ const TABLE_ID_ALIASES: Record<string, string[]> = {
   project_tasks: ['task_id'],
 };
 
-/** The column `search` matches, per table. A table without one refuses a search instead of returning everything. */
-const SEARCH_COLUMNS: Record<string, string> = {
-  projects: 'name',
-  project_tasks: 'title',
-  employees: 'name',
-  documents: 'file_name',
-  leads: 'name',
-  companies: 'name',
-  vendors: 'name',
-  products: 'name',
-  wiki_pages: 'title',
+/**
+ * The columns `search` matches, per table — any of them containing the term is
+ * a hit. A table not named here is searched by what its rows are called
+ * (DERIVED_SEARCH_COLUMNS, read from the table's real columns); one with none
+ * of those refuses a search instead of returning everything.
+ */
+const SEARCH_COLUMNS: Record<string, string[]> = {
+  projects: ['name', 'client_name', 'description'],
+  project_tasks: ['title', 'description'],
+  employees: ['name', 'email'],
+  // A document is found by its title, its file, its note — and by what it says.
+  documents: ['title', 'file_name', 'description', 'content_md'],
+  vendors: ['name'],
 };
 
 const COLUMN_ALIASES: Record<string, Record<string, string>> = {
@@ -17580,6 +17587,53 @@ async function executeGenericCrud(
     delete fields.task_title;
   }
 
+  // ── Every other table: the start of an id answers with the row it meant ────
+  // The same rule as a task's, for all generic tables. Hermes asked optic's
+  // archive for document `b0045441-0000-0000-0000-000000000000` — the eight
+  // characters it remembered, padded — and got "not found" with nothing to act
+  // on. A read of the one row that starts so is answered (and says which id it
+  // read); a write never acts on a guess and names the id to re-send.
+  const rowsStartingAs = async (sentId: string): Promise<{ id: string; label?: string | null }[] | null> => {
+    const range = uuidPrefixRange(sentId);
+    if (!range || !(await schemaUuidColumns(table)).includes('id')) return null;
+    const columns = (await schemaColumns())[table] ?? [];
+    const label = [...(SEARCH_COLUMNS[table] ?? []), ...DERIVED_SEARCH_COLUMNS].find((c) => columns.includes(c));
+    const { data, error } = await supabase.from(table).select(label ? `id, ${label}` : 'id')
+      .gte('id', range.lo).lte('id', range.hi).limit(6);
+    if (error) return null;
+    return ((data ?? []) as unknown as Record<string, unknown>[]).map((r) => ({
+      id: String(r.id), label: label && typeof r[label] === 'string' ? r[label] as string : null,
+    }));
+  };
+  let idReadFrom: string | undefined;
+  if (table !== 'project_tasks' && (action === 'get' || action === 'update' || action === 'delete')
+    && typeof id === 'string' && id.trim() && !isFullUuid(id)) {
+    const sentId = id.trim();
+    const candidates = await rowsStartingAs(sentId);
+    if (candidates) {
+      if (action === 'get' && candidates.length === 1) {
+        idReadFrom = sentId;
+        id = candidates[0].id;
+      } else {
+        return { ...idDidYouMean(table, sentId, candidates, 'partial_id'), table, action };
+      }
+    }
+  }
+
+  // A list cuts long values and marks the cut. Written back, the preview would
+  // replace the whole text for good — refused, with the way to the whole value.
+  if (action === 'create' || action === 'update') {
+    const previews = Object.entries(fields).filter(([k, v]) => !k.startsWith('_') && carriesCutMarker(v)).map(([k]) => k);
+    if (previews.length) {
+      return {
+        error: `${previews.join(', ')} ${previews.length === 1 ? 'carries' : 'carry'} a list's cut marker — that is a preview, not the whole value. Nothing was written.`,
+        code: 'INVALID_INPUT', retryable: true,
+        hint: `Read the row with get (or list with full: true), then send the whole ${previews.length === 1 ? 'value' : 'values'}.`,
+        table, action,
+      };
+    }
+  }
+
   const auditEnabled = !!auditCtx && ACCOUNTING_AUDIT_TABLES.has(table);
 
   // Sanitize payload for audit (remove agent-internal _ fields)
@@ -17596,7 +17650,12 @@ async function executeGenericCrud(
   try {
     switch (action) {
       case 'list': {
-        const { limit = 50, offset = 0, order_by = 'created_at', ascending = false, filters, search, ...rest } = fields;
+        const {
+          limit: sentLimit = 50, offset: sentOffset = 0, order_by: sentOrderBy, ascending = false, filters, search,
+          fields: sentFields, full, updated_since, created_since, ...rest
+        } = fields;
+        const limit = Math.max(1, Math.floor(Number(sentLimit)) || 50);
+        const offset = Math.max(0, Math.floor(Number(sentOffset)) || 0);
         // A field the caller hands to a list is a filter. The list used to read
         // `filters` alone and throw every other field away, so
         // manage_project_task list {project_id} answered with tasks from 94
@@ -17609,32 +17668,132 @@ async function executeGenericCrud(
             !k.startsWith('_') && v !== undefined && v !== null && typeof v !== 'object')),
           ...((filters && typeof filters === 'object') ? filters as Record<string, unknown> : {}),
         };
-        const searchTerm = typeof search === 'string' ? search.trim() : '';
-        if (searchTerm && !SEARCH_COLUMNS[table]) {
+
+        // The search, under the name the caller reached for. Four skill schemas
+        // declared `search_query` while the engine read `search` alone: the term
+        // was dropped as "not a column" and the whole list came back (Hermes on
+        // optic's documents, 2026-11). An alias that is a real column of the
+        // table stays a filter.
+        let searchTerm = typeof search === 'string' ? search.trim() : '';
+        let searchSentAs: string | undefined;
+        for (const alias of SEARCH_ALIASES) {
+          const sent = columnFilters[alias];
+          if (typeof sent !== 'string' || !sent.trim()) continue;
+          if (((await schemaColumns())[table] ?? []).includes(alias)) continue;
+          delete columnFilters[alias];
+          if (!searchTerm) { searchTerm = sent.trim(); searchSentAs = alias; }
+        }
+        const searchColumns = !searchTerm ? []
+          : SEARCH_COLUMNS[table] ?? searchColumnsFor(undefined, (await schemaColumns())[table] ?? []);
+        if (searchTerm && !searchColumns.length) {
           return { error: `search is not supported for ${table} — filter by a column instead (e.g. {"status": "active"}).`, table };
         }
+
+        // The start of an id finds the rows it belongs to. With answers the size
+        // a list used to be, a model keeps `f3b6fce9` and loses the rest; as a
+        // filter that was Postgres' "invalid input syntax for type uuid". Only
+        // on a column the schema says is a uuid — a text id is compared as text.
+        const idRanges: Record<string, UuidRange & { sent: string }> = {};
+        for (const [col, val] of Object.entries(columnFilters)) {
+          if (typeof val !== 'string' || isFullUuid(val)) continue;
+          const range = uuidPrefixRange(val);
+          if (!range || !(await schemaUuidColumns(table)).includes(col)) continue;
+          idRanges[col] = { ...range, sent: val };
+          delete columnFilters[col];
+        }
+
+        // "What changed since": a lower bound on the row's own timestamp.
+        const since: Record<string, string> = {};
+        for (const [param, col, sent] of [['updated_since', 'updated_at', updated_since], ['created_since', 'created_at', created_since]] as const) {
+          if (sent === undefined || sent === null || sent === '') continue;
+          const at = new Date(String(sent));
+          if (Number.isNaN(at.getTime())) {
+            return { error: `${param} takes a date or a timestamp (2026-11-17 or 2026-11-17T08:00:00Z); got "${String(sent)}".`, code: 'INVALID_INPUT', retryable: true, hint: `Send ${param} as an ISO date; the list then holds the rows whose ${col} is at or after it.`, table };
+          }
+          since[col] = at.toISOString();
+        }
+        const orderSent = typeof sentOrderBy === 'string' && sentOrderBy ? sentOrderBy : '';
+        let order_by = orderSent || (since.updated_at ? 'updated_at' : 'created_at');
+
+        // The columns: the caller's (`fields`), held to the ones it may read —
+        // a select mask is a ceiling `fields` never lifts.
+        const mask = TABLE_SELECT_MASKS[table];
+        const fieldsNamed = sentFields !== undefined && sentFields !== null && sentFields !== '';
+        let selected: string[] = [];
+        const unknownFields: string[] = [];
+        if (fieldsNamed) {
+          const allowed = mask ? mask.split(',').map((c) => c.trim()) : ((await schemaColumns())[table] ?? []);
+          const chosen = parseFieldList(sentFields, allowed);
+          selected = [...new Set([...chosen.select, ...(chosen.select.length ? Object.keys(idRanges) : [])])];
+          unknownFields.push(...chosen.unknown);
+        }
+
         // No column list is known here, so a field that is not a column is found
         // out by asking — and then named in the answer, never silently ignored.
         const ignored: string[] = [];
         for (let attempt = 0; attempt < 6; attempt++) {
-          let query = supabase.from(table).select(TABLE_SELECT_MASKS[table] ?? '*')
+          let query = supabase.from(table).select(selected.length ? selected.join(', ') : (mask ?? '*'), { count: 'exact' })
             .order(order_by, { ascending })
             .range(offset, offset + limit - 1);
           for (const [col, val] of Object.entries(columnFilters)) query = query.eq(col, val as string);
-          if (searchTerm) query = query.ilike(SEARCH_COLUMNS[table], `%${searchTerm.replace(/[%_]/g, (m) => `\\${m}`)}%`);
-          const { data, error } = await query;
+          for (const [col, range] of Object.entries(idRanges)) query = query.gte(col, range.lo).lte(col, range.hi);
+          for (const [col, at] of Object.entries(since)) query = query.gte(col, at);
+          if (searchTerm) query = query.or(searchOrFilter(searchColumns, searchTerm));
+          const { data, error, count: total } = await query;
           const unknown = error ? /column [\w.]*?\.?(\w+) does not exist/i.exec(error.message)?.[1] : undefined;
           if (unknown && unknown in columnFilters) {
             delete columnFilters[unknown];
             ignored.push(unknown);
             continue;
           }
+          if (unknown && unknown in since) {
+            delete since[unknown];
+            ignored.push(unknown === 'updated_at' ? 'updated_since' : 'created_since');
+            if (!orderSent) order_by = 'created_at';
+            continue;
+          }
+          if (unknown && selected.includes(unknown)) {
+            selected = selected.filter((c) => c !== unknown);
+            unknownFields.push(unknown);
+            continue;
+          }
+          // Counting makes PostgREST answer 416 for an offset past the last
+          // row. To a caller paging to the end that is an empty page, not a
+          // failure — and the answer still says how many rows there are.
+          if (error && (error.code === 'PGRST103' || /range not satisfiable/i.test(error.message))) {
+            const known = /only (\d+) rows?/.exec(String(error.details ?? ''));
+            return {
+              items: [], count: 0, total: known ? Number(known[1]) : null, offset, limit, next_offset: null, table,
+              ...(Object.keys(columnFilters).length ? { filtered_by: columnFilters } : {}),
+              note: 'offset is past the last row.',
+            };
+          }
           if (error) throw new Error(`List ${table} failed: ${error.message}`);
+          const rows = (data ?? []) as unknown as Record<string, unknown>[];
+          // A list is a listing: long values are cut and say so, `get` returns a
+          // row whole. A page of 50 tasks was 58–71 KB of briefs and checklists.
+          const shaped = full === true ? { items: rows, cut: [] as string[] } : slimListItems(rows, { keepNulls: selected.length > 0 });
+          const idPrefix = Object.fromEntries(Object.entries(idRanges).map(([col, range]) => [col, {
+            sent: range.sent,
+            matched: [...new Set(rows.map((r) => r[col]).filter((v) => typeof v === 'string'))],
+          }]));
+          const notes: string[] = [];
+          if (ignored.length) notes.push(`${ignored.join(', ')} ${ignored.length === 1 ? 'is' : 'are'} not ${ignored.length === 1 ? 'a column' : 'columns'} of ${table} and did not filter the list.`);
+          if (unknownFields.length) notes.push(`fields: ${unknownFields.join(', ')} ${unknownFields.length === 1 ? 'is' : 'are'} not ${unknownFields.length === 1 ? 'a column' : 'columns'} of ${table} that can be read.`);
+          if (shaped.cut.length) notes.push(`Long values are cut in a list (${shaped.cut.join(', ')}; each row names its own in _cut). get returns a row whole, full: true lists rows whole, fields: [...] picks the columns.`);
+          if ((args as Record<string, unknown>).action === 'search' && !searchTerm) notes.push(`A search is a list with a term: pass search: "<words>" (matches ${(SEARCH_COLUMNS[table] ?? DERIVED_SEARCH_COLUMNS).join(', ')}).`);
           return {
-            items: data || [], count: (data || []).length, table,
+            items: shaped.items, count: rows.length, total: total ?? null, offset, limit,
+            next_offset: nextOffset({ offset, limit, returned: rows.length, total: total ?? null }),
+            table,
             ...(Object.keys(columnFilters).length ? { filtered_by: columnFilters } : {}),
-            ...(searchTerm ? { search: { column: SEARCH_COLUMNS[table], term: searchTerm } } : {}),
-            ...(ignored.length ? { ignored_filters: ignored, note: `${ignored.join(', ')} ${ignored.length === 1 ? 'is' : 'are'} not ${ignored.length === 1 ? 'a column' : 'columns'} of ${table} and did not filter the list.` } : {}),
+            ...(Object.keys(idPrefix).length ? { id_prefix: idPrefix } : {}),
+            ...(Object.keys(since).length ? { since } : {}),
+            ...(searchTerm ? { search: { column: searchColumns[0], columns: searchColumns, term: searchTerm, ...(searchSentAs ? { sent_as: searchSentAs, parameter: 'search' } : {}) } } : {}),
+            ...(ignored.length ? { ignored_filters: ignored } : {}),
+            ...(unknownFields.length ? { unknown_fields: unknownFields } : {}),
+            ...(shaped.cut.length ? { cut_fields: shaped.cut } : {}),
+            ...(notes.length ? { note: notes.join(' ') } : {}),
           };
         }
         throw new Error(`List ${table} failed: too many fields that are not columns (${ignored.join(', ')})`);
@@ -17645,8 +17804,12 @@ async function executeGenericCrud(
         const { data, error } = await supabase.from(table)
           .select(TABLE_SELECT_MASKS[table] ?? '*').eq('id', id).maybeSingle();
         if (error) throw new Error(`Get ${table} failed: ${error.message}`);
-        if (!data) return { found: false, error: `${table} row ${id} not found` };
-        return { item: data, table };
+        if (!data) {
+          const candidates = typeof id === 'string' ? await rowsStartingAs(id) : null;
+          if (candidates?.length) return { found: false, ...idDidYouMean(table, id, candidates, 'not_found'), table, action };
+          return { found: false, error: `${table} row ${id} not found` };
+        }
+        return { item: data, table, ...(idReadFrom ? { resolved_id: { sent: idReadFrom, id } } : {}) };
       }
 
       case 'create': {
@@ -17779,6 +17942,13 @@ async function executeGenericCrud(
     }
   } catch (err) {
     const errMsg = err instanceof Error ? err.message : String(err);
+    // An update of an id that names no row: PostgREST's "cannot coerce the
+    // result to a single JSON object" says nothing an agent can act on. The
+    // rows that start as the id does are the answer.
+    if (action === 'update' && typeof id === 'string' && /single JSON object|multiple \(or no\) rows/i.test(errMsg)) {
+      const candidates = await rowsStartingAs(id).catch(() => null);
+      if (candidates?.length) return { ...idDidYouMean(table, id, candidates, 'not_found'), table, action };
+    }
     // The generic path used to stop at the driver's message. A model in a loop
     // answers a dead end by looking for another door — the same failure the
     // parameter-contract bounce exists to prevent — so the three write
@@ -17812,6 +17982,12 @@ async function executeGenericCrud(
 let _schemaCache: Record<string, string[]> | null = null;
 /** table → enum column → accepted values; PostgREST lists them per property. Filled with _schemaCache. */
 let _schemaEnums: Record<string, Record<string, string[]>> | null = null;
+/** table → its uuid columns; the columns the start of an id can be looked up in. Filled with _schemaCache. */
+let _schemaUuids: Record<string, string[]> | null = null;
+async function schemaUuidColumns(table: string): Promise<string[]> {
+  await schemaColumns();
+  return _schemaUuids?.[table] ?? [];
+}
 async function schemaColumns(): Promise<Record<string, string[]>> {
   if (_schemaCache) return _schemaCache;
   try {
@@ -17823,9 +17999,15 @@ async function schemaColumns(): Promise<Record<string, string[]>> {
     });
     if (!res.ok) return {};
     const spec = await res.json();
-    const defs = (spec?.definitions ?? {}) as Record<string, { properties?: Record<string, { enum?: unknown }> }>;
+    const defs = (spec?.definitions ?? {}) as Record<string, { properties?: Record<string, { enum?: unknown; format?: unknown }> }>;
     _schemaCache = Object.fromEntries(
       Object.entries(defs).map(([name, def]) => [name, Object.keys(def?.properties ?? {})]),
+    );
+    _schemaUuids = Object.fromEntries(
+      Object.entries(defs).map(([name, def]) => [
+        name,
+        Object.entries(def?.properties ?? {}).filter(([, p]) => p?.format === 'uuid').map(([col]) => col),
+      ]),
     );
     _schemaEnums = Object.fromEntries(
       Object.entries(defs).map(([name, def]) => [

@@ -1053,6 +1053,20 @@ managed-ledger lessons still apply to every fork's Supabase integration:
   (edge-bundled artifact, see Deployment above), so the button is for forcing
   it or for a frontend-only deploy that got ahead of the edge deploy. Neither
   touches `trust_level`, so runtime trust overrides survive a resync.
+- **A generic list is a listing (2026-11-18).** Every `db:` skill's `list`
+  (`executeGenericCrud`, rules in `_shared/execute/list-shape.ts`) cuts a text
+  over 240 characters to a 200-character preview with a marker and leaves a
+  longer array/object out, naming both per row in `_cut`; `get` returns the row
+  whole, `full: true` lists rows whole, `fields` picks columns (never past a
+  select mask). The answer carries `total` and `next_offset`; `updated_since` /
+  `created_since` are lower bounds. A preview written back is refused
+  (`INVALID_INPUT`). The start of an id (8+ hex characters) is a range filter
+  on any column the schema says is a uuid, and resolves a `get`; a write
+  answers "did you mean" and never acts on it. `search` reads its aliases
+  (`query`, `search_query`, `q` …) and matches `SEARCH_COLUMNS[table]`, else
+  the columns a row is called by. Measured on optic: 58–71 KB per page of 50
+  tasks, an agent paging the table 31 times. A new generic behaviour goes in
+  the engine, not in one skill's handler.
 - **Self-correcting RPC errors.** `agent-execute` enriches a PostgREST PGRST202
   ("function not found in schema cache" — the signature of wrong param NAMES)
   with the params the agent sent and the skill's declared parameters, so an

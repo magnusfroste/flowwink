@@ -77,7 +77,7 @@ describe('the generic list keeps the promises its aliases make', () => {
   const list = src.slice(src.indexOf("      case 'list': {"), src.indexOf("      case 'get': {"));
 
   it('every field handed to a list is a filter, not thrown away', () => {
-    expect(list).toMatch(/const \{ limit = 50, offset = 0, order_by = 'created_at', ascending = false, filters, search, \.\.\.rest \} = fields;/);
+    expect(list).toMatch(/filters, search,\s+fields: sentFields, full, updated_since, created_since, \.\.\.rest\s+\} = fields;/);
     expect(list).toMatch(/Object\.entries\(rest\)\.filter/);
     expect(list).toMatch(/query = query\.eq\(col, val as string\)/);
   });
@@ -88,7 +88,7 @@ describe('the generic list keeps the promises its aliases make', () => {
   });
 
   it('a search searches — and a table without a search column refuses instead of returning everything', () => {
-    expect(list).toMatch(/query\.ilike\(SEARCH_COLUMNS\[table\]/);
+    expect(list).toMatch(/query\.or\(searchOrFilter\(searchColumns, searchTerm\)\)/);
     expect(list).toMatch(/search is not supported for \$\{table\}/);
   });
 
