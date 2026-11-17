@@ -73,6 +73,12 @@ export function QuoteDetailSheet({ quoteId, open, onOpenChange }: Props) {
   const [loadedLineCount, setLoadedLineCount] = useState<number | null>(null);
   const [taxRate, setTaxRate] = useState(0.25);
   const [notes, setNotes] = useState('');
+  // What the customer reads on the quote page: what the offer is, a few words
+  // before the lines, and the terms they accept. A person could not write any
+  // of the three here until 2026-11-17 — only an agent could (manage_quote).
+  const [title, setTitle] = useState('');
+  const [introText, setIntroText] = useState('');
+  const [termsText, setTermsText] = useState('');
   const [validUntil, setValidUntil] = useState('');
   const [prepaymentPct, setPrepaymentPct] = useState('');
   const [defaultTerm, setDefaultTerm] = useState('');
@@ -98,6 +104,9 @@ export function QuoteDetailSheet({ quoteId, open, onOpenChange }: Props) {
     setLoadedLineCount(resolvedLines.items.length);
     setTaxRate(quote.tax_rate);
     setNotes(quote.notes || '');
+    setTitle(quote.title || '');
+    setIntroText(quote.intro_text || '');
+    setTermsText(quote.terms_text || '');
     setValidUntil(quote.valid_until || '');
     setPrepaymentPct(quote.prepayment_pct != null ? String(quote.prepayment_pct) : '');
     setDefaultTerm(quote.default_term_months != null ? String(quote.default_term_months) : '');
@@ -150,6 +159,9 @@ export function QuoteDetailSheet({ quoteId, open, onOpenChange }: Props) {
     const payload: Record<string, unknown> = {
       id: quote.id,
       notes: notes || null,
+      title: title.trim() || null,
+      intro_text: introText.trim() || null,
+      terms_text: termsText.trim() || null,
       valid_until: validUntil || null,
       prepayment_pct: pct,
       default_term_months: termMonths != null && Number.isFinite(termMonths) && termMonths > 0
@@ -165,7 +177,7 @@ export function QuoteDetailSheet({ quoteId, open, onOpenChange }: Props) {
       toast.warning(decision.reason);
     }
     updateQuote.mutate(payload as any);
-  }, [quote, lineItems, loadedLineCount, resolvedLines, taxRate, notes, validUntil, prepaymentPct, termMonths, totals, updateQuote]);
+  }, [quote, lineItems, loadedLineCount, resolvedLines, taxRate, notes, title, introText, termsText, validUntil, prepaymentPct, termMonths, totals, updateQuote]);
 
   const handleStatusChange = (next: QuoteStatus) => {
     if (!quote) return;
@@ -233,7 +245,7 @@ export function QuoteDetailSheet({ quoteId, open, onOpenChange }: Props) {
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
+      <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">
             <span className="font-mono">{quote.quote_number}</span>
@@ -254,6 +266,16 @@ export function QuoteDetailSheet({ quoteId, open, onOpenChange }: Props) {
             )}
           </div>
 
+          {/* What the offer is — the customer reads these on the quote page */}
+          <div className="space-y-2">
+            <Label htmlFor="quote-title">Title</Label>
+            <Input id="quote-title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="What the offer is, in a few words" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="quote-intro">Introduction</Label>
+            <Textarea id="quote-intro" value={introText} onChange={(e) => setIntroText(e.target.value)} rows={2} placeholder="A few words to the customer, shown above the lines" />
+          </div>
+
           {/* Line items */}
           <div className="space-y-3">
             <Label>Line Items</Label>
@@ -267,12 +289,13 @@ export function QuoteDetailSheet({ quoteId, open, onOpenChange }: Props) {
               </p>
             )}
             {lineItems.map((item, i) => (
-              <div key={i} className="flex gap-2 items-start">
+              <div key={i} className="flex flex-wrap gap-2 items-start">
+                {/* The description has its own row: beside five other fields it was a 25 px box. */}
                 <Input
                   placeholder="Description"
                   value={item.description}
                   onChange={(e) => updateLineItem(i, 'description', e.target.value)}
-                  className="flex-1"
+                  className="basis-full"
                   disabled={!linesEditable}
                 />
                 <Input
@@ -484,14 +507,21 @@ export function QuoteDetailSheet({ quoteId, open, onOpenChange }: Props) {
             </p>
           </div>
 
+          <div className="space-y-2">
+            <Label htmlFor="quote-terms">Terms</Label>
+            <Textarea id="quote-terms" value={termsText} onChange={(e) => setTermsText(e.target.value)} rows={3} placeholder="Payment and delivery terms the customer accepts with the quote" />
+          </div>
+
           {/* Notes */}
           <div className="space-y-2">
-            <Label>Notes</Label>
+            <Label htmlFor="quote-notes">Internal notes</Label>
             <Textarea
+              id="quote-notes"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
             />
+            <p className="text-xs text-muted-foreground">Not shown to the customer.</p>
           </div>
 
           {/* Attachments */}

@@ -120,6 +120,13 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Fixed
 
+- **A person can write a whole quote in the admin.** The quote editor had no
+  field for the title, the introduction or the terms the customer's page
+  shows — only an agent could set them — and the line description was squeezed
+  to a box too narrow to read. The editor is wider, the description has its own
+  row, and title, introduction and terms can be written; "Notes" is labelled
+  as internal, since the customer never sees it.
+
 - **A quote or invoice made by hand continues the same number series as one an
   agent made.** The admin and the skills each kept their own count: a quote
   created in the admin could get a number already in use (a second QUO-0001),

@@ -45,3 +45,4 @@ scripts/fleet.local.json
 .view-sweep/
 .public-blocks/
 .customer-path/
+.staff-path/

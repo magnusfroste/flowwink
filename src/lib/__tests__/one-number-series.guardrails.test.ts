@@ -52,3 +52,25 @@ describe('a quote or invoice number has one source', () => {
     expect(sql).toMatch(/REVOKE ALL ON FUNCTION public\.next_document_number\(text, text\) FROM anon/);
   });
 });
+
+describe('a person can do the quote by hand', () => {
+  // Found by doing it in a browser as an admin (2026-11-17).
+  const sheet = read('src/components/admin/quotes/QuoteDetailSheet.tsx');
+
+  it('the editor writes what the customer page reads: title, introduction, terms', () => {
+    for (const field of ['title', 'intro_text', 'terms_text']) {
+      expect(sheet, field).toMatch(new RegExp(`${field}: \\w+\\.trim\\(\\) \\|\\| null`));
+      expect(read('src/pages/PublicQuotePage.tsx'), field).toMatch(new RegExp(field));
+    }
+  });
+
+  it('the line description has a row of its own', () => {
+    const line = sheet.slice(sheet.indexOf('placeholder="Description"'), sheet.indexOf('placeholder="Qty"'));
+    expect(line).toMatch(/className="basis-full"/);
+  });
+
+  it('the staff path runs in the night, in a browser', () => {
+    expect(read('.github/workflows/fresh-install-nightly.yml')).toMatch(/run: npm run qa:staff-path/);
+    expect(read('package.json')).toMatch(/"qa:staff-path": "bun run scripts\/staff-path\/index\.ts"/);
+  });
+});

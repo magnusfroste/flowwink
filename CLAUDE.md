@@ -689,6 +689,14 @@ beside its payload, so an operator branches instead of guessing:
   defaults to "Stripe is off") and an invoice is then paid by bank. The PDF
   draws every text through `winAnsi` (`_shared/invoices/winansi.ts`): one
   arrow in a line used to fail the whole PDF and the mail went without it.
+- **And the staff's side is proven in a browser too (`npm run qa:staff-path`,
+  nightly, 2026-11-17):** a step signs in as an admin and does the process
+  with clicks — New Quote for a lead, title, line, terms, Save, Send to
+  Customer — then reads the row, the mail and the page the customer opens. The
+  quote editor (`QuoteDetailSheet`) had no title, introduction or terms (only
+  an agent could write what the customer's page shows) and drew the line
+  description as a 25 px box. "Internal notes" there are never shown to the
+  customer. A process a person does in the admin gets a step there.
 - **One number series per document (2026-11-17).** `next_document_number
   (kind, prefix)` is the only source of a quote or invoice number — the admin,
   every skill (`nextDocumentNumber` in core.ts), `quote-sign` and the invoicing

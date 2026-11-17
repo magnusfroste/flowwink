@@ -252,6 +252,14 @@ jobs:
         if: always() && steps.battery.outcome != 'skipped' && inputs.scope != 'battery'
         run: npm run qa:customer-path
 
+      # The person at the business does the same process with a mouse: a
+      # dialog, a form, Save, Send. The first run by hand numbered a quote
+      # QUO-0001 on an instance whose series stood at 33 and found an editor
+      # with no title, no terms and a 25 px description (2026-11-17).
+      - name: Staff path — a process done by hand in the admin
+        if: always() && steps.battery.outcome != 'skipped' && inputs.scope != 'battery'
+        run: npm run qa:staff-path
+
       - name: Upload reports
         if: always()
         uses: actions/upload-artifact@v4
@@ -267,6 +275,7 @@ jobs:
             .view-sweep/
             .public-blocks/
             .customer-path/
+            .staff-path/
             scripts/process-battery/last-green.json
             ${{ runner.temp }}/smoke.log
             ${{ runner.temp }}/functions.log
