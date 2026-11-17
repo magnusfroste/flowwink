@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261117120000",
-      "migrations_count": 766,
+      "migration_head": "20261117150000",
+      "migrations_count": 767,
       "migrations": [
         {
           "version": "00000000000000",
@@ -3069,19 +3069,23 @@
         {
           "version": "20261117120000",
           "name": "kunden-ser-vad-offerten-ar"
+        },
+        {
+          "version": "20261117150000",
+          "name": "fakturan-sager-vem-och-hur"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:1873a4e5ec33db339e84617966e1423d31701bfa7779533abe83dfb4a6afe1dc",
+      "seed_hash": "sha256:ebc289639c739e80ef5d50e87e72a3f9873a19027e53e4e0e417772c3d35f38d",
       "skill_count": 673,
       "module_count": 69
     },
     "edge_functions": {
       "count": 76,
-      "shared_hash": "sha256:b24234f01a126f50481bcf6570841f6f99c3ca940813595592fcaf67b0bfb8cc",
+      "shared_hash": "sha256:f12079804022b987ea6173e74471e4e1e672cfc8b4c80a54bffb364051195dac",
       "functions": {
-        "agent-execute": "sha256:0ba12a3bb172b7a4d4348059d56ce6f2ee819a9c9dd54e293222754a9ba32d04",
+        "agent-execute": "sha256:e7f2a8b649c1c3dfeca54228a01e6582c84bcdfaacee7705da2caad892617900",
         "agent-operate": "sha256:4320e02dd3e6a0a1706b42dc1905b631c61e6a4cbe3556c701f474c278c89e1a",
         "ai-task": "sha256:ce3aacdef625bba758f4323da3e49104a1b94a3d3d77d800e89dacd0b803d65e",
         "automation-dispatcher": "sha256:d905660cd907c6f1ef5c7cac0a97ed44a4e4187ef4d5179089fa2714b2751443",
@@ -3097,7 +3101,7 @@
         "contract-billing-cron": "sha256:616b750ce0abd97453d47c2610f615e0f1f07a9128b8c8725af6e9fd7f3529bc",
         "contract-sign": "sha256:f4af280386c03f0d21840d528e450208b682c81324e22780a662512eaea7d41f",
         "create-checkout": "sha256:b17c5c0461c1adb8c17b3410929dc7db0ebaf84ec8c443ebf20a589bc97afec9",
-        "create-invoice-payment": "sha256:5c2f20b501eaf36fa3f0238fb388eaeec734ef5c03abff875a2aed7a927d4ed3",
+        "create-invoice-payment": "sha256:a46c82e437303cc1311748da524fa750c4b0068d2ff7e7dc17e365443a51e166",
         "create-user": "sha256:9f6d84e3e07c734a17b261551e1ca825cf84f4238c74d510c9e23de8b3805a61",
         "customer-signup": "sha256:a28e4a612842ca548e8dc645efdea5d9b16e209ceac2fa97177246d392a07724",
         "delete-user": "sha256:30ab94347450ac8d1664234057b39861e825e27af98f1688b21dbcb1262d8edb",
@@ -3116,7 +3120,7 @@
         "flowpilot-heartbeat": "sha256:c233b4c6b0ae60a266741fbc90d626baa1479e34adf359ef1aa555569828390f",
         "flowpilot-lifecycle": "sha256:ec0e77839be7066f15ae47d96daa10abbb6bd4e4e53d866a7e3e41db461f0259",
         "gatewayapi-ingest": "sha256:d6f74c384f0baac936737762d330c470636502afcc9af418b1c43db26134e4fe",
-        "generate-invoice-pdf": "sha256:271a3b8f655b276b13c111886c2f985e729a26f418df565dbde35d216e42f1e5",
+        "generate-invoice-pdf": "sha256:e339f734b02238e900c1a4160b9645e8e24867c2aaf03af7768b07dd62546312",
         "get-page": "sha256:3e42751911164c9d6c350b931a4e64a4824166a6bef8d02e526ad378c8f3921b",
         "gmail-oauth-callback": "sha256:b4a2f44055f3bf287d6ba357e96f4c8b808c2e95438940c8b231b5d346d5edb1",
         "instance-health": "sha256:a858bc6d53163e56cfcd68084fe2e269af9ce3017df1331776766ecd2e3353c3",

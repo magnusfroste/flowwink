@@ -1206,6 +1206,21 @@
       "fallback": "Amount"
     },
     {
+      "key": "invoice.amountToPay",
+      "group": "invoice",
+      "fallback": "Amount"
+    },
+    {
+      "key": "invoice.bankgiro",
+      "group": "invoice",
+      "fallback": "Bankgiro"
+    },
+    {
+      "key": "invoice.bic",
+      "group": "invoice",
+      "fallback": "BIC"
+    },
+    {
       "key": "invoice.billTo",
       "group": "invoice",
       "fallback": "Bill to"
@@ -1236,9 +1251,24 @@
       "fallback": "Due"
     },
     {
+      "key": "invoice.from",
+      "group": "invoice",
+      "fallback": "From"
+    },
+    {
       "key": "invoice.generated",
       "group": "invoice",
       "fallback": "Generated"
+    },
+    {
+      "key": "invoice.howToPay",
+      "group": "invoice",
+      "fallback": "How to pay"
+    },
+    {
+      "key": "invoice.iban",
+      "group": "invoice",
+      "fallback": "IBAN"
     },
     {
       "key": "invoice.items",
@@ -1271,14 +1301,24 @@
       "fallback": "Invoice #"
     },
     {
+      "key": "invoice.orgNumber",
+      "group": "invoice",
+      "fallback": "Org. no."
+    },
+    {
       "key": "invoice.paidReceipt",
       "group": "invoice",
       "fallback": "Paid in full. This is your receipt — thank you!"
     },
     {
-      "key": "invoice.pay",
+      "key": "invoice.payByCard",
       "group": "invoice",
-      "fallback": "Pay"
+      "fallback": "Pay by card"
+    },
+    {
+      "key": "invoice.payContact",
+      "group": "invoice",
+      "fallback": "For payment details, contact {email}."
     },
     {
       "key": "invoice.paymentConfirming",
@@ -1294,6 +1334,11 @@
       "key": "invoice.receipt",
       "group": "invoice",
       "fallback": "Receipt"
+    },
+    {
+      "key": "invoice.reference",
+      "group": "invoice",
+      "fallback": "Reference"
     },
     {
       "key": "invoice.status",
@@ -1344,6 +1389,11 @@
       "key": "invoice.vatInHome",
       "group": "invoice",
       "fallback": "VAT in {currency} (rate {rate})"
+    },
+    {
+      "key": "invoice.vatNumber",
+      "group": "invoice",
+      "fallback": "VAT no."
     },
     {
       "key": "kb.allCategories",
