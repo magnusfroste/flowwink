@@ -14,7 +14,23 @@ const corsHeaders = {
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
   try {
-    const { public_token, return_url } = await req.json();
+    const { public_token, return_url, probe } = await req.json();
+    // Can a card be taken here? The key lives in this runtime, so the invoice
+    // page asks before it draws a button: a key, and an integration the
+    // operator has not switched off (the rule the integrations page states).
+    // Until 2026-11-17 the page drew "Pay" on every instance and the customer
+    // of one without Stripe was answered "Failed to start payment".
+    const cardAvailable = async (): Promise<boolean> => {
+      if (!Deno.env.get('STRIPE_SECRET_KEY')) return false;
+      const { data, error: readErr } = await getServiceClient().from('site_settings').select('value').eq('key', 'integrations').maybeSingle();
+      if (readErr) console.warn('[create-invoice-payment] could not read the integrations row, taking the key as the answer:', readErr.message);
+      return (data?.value as { stripe?: { enabled?: boolean } } | null)?.stripe?.enabled !== false;
+    };
+    if (probe === true) {
+      return new Response(JSON.stringify({ available: await cardAvailable() }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
     if (!public_token) {
       return new Response(JSON.stringify({ error: 'public_token required' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -44,7 +60,11 @@ Deno.serve(async (req) => {
     }
 
     const stripeKey = Deno.env.get('STRIPE_SECRET_KEY');
-    if (!stripeKey) throw new Error('Stripe not configured');
+    if (!stripeKey || !(await cardAvailable())) {
+      return new Response(JSON.stringify({ error: 'Card payment is not available for this invoice', code: 'CARD_NOT_AVAILABLE' }), {
+        status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
     const stripe = new Stripe(stripeKey, { apiVersion: '2024-11-20.acacia' });
 
     const origin = req.headers.get('origin') || return_url || '';

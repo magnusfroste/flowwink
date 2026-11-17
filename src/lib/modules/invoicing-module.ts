@@ -62,6 +62,7 @@ const INVOICING_SKILLS: SkillSeed[] = [
             buyer_reference: { type: 'string', description: "'Er referens' — the buyer's own reference (EN 16931 BT-10). Peppol requires it; without it export_invoice_ubl reports PEPPOL-EN16931-R003 and send_einvoice refuses." },
             notes: { type: 'string' },
             status_filter: { type: 'string', enum: ['draft', 'sent', 'paid', 'overdue', 'cancelled'] },
+            email: { type: 'boolean', description: 'send only. Default true: the customer is e-mailed the invoice (PDF attached, link to the invoice page). false issues the invoice without mailing anyone.' },
           },
           required: ['action'],
         },
@@ -69,6 +70,7 @@ const INVOICING_SKILLS: SkillSeed[] = [
     },
     instructions: `Invoice lifecycle: draft → sent → paid (or cancelled).
 CREATE: line_items MUST use the field names \`qty\` and \`unit_price_cents\` — NOT quantity/unit_price. unit_price_cents is integer cents (15000 = 150.00 kr). subtotal_cents/tax_cents/total_cents are computed automatically from line_items × tax_rate — do NOT pass them yourself. tax_rate is a decimal (0.25 = 25%). The INV-YYYY-NNNNN number is auto-generated. Returns invoice_id + total_cents.
+SEND: issues the invoice (draft → sent) AND e-mails the customer the invoice with its PDF and the link to its page. Read the answer: \`email_sent: true\` + \`emailed_to\`, or \`email_sent: false\` + \`email_error\` saying why (no customer_email, no Public Site URL, the provider) — then the invoice is issued but the customer has NOT been told; fix the cause and send again, or pass \`url\` on yourself. \`email: false\` issues without mailing. Sending again mails again.
 UPDATE: pass invoice_id + only the fields to change; totals recompute automatically when line_items or tax_rate change.
 To RECORD A PAYMENT use record_invoice_payment (not update/mark_paid — mark_paid only flips status, it does not register a paid amount). To credit/refund use create_credit_note.
 Locale-specific: ${getActivePack().ai_instructions.invoicing}`,
@@ -257,7 +259,7 @@ Locale-specific: ${getActivePack().ai_instructions.invoicing}`,
   },
   {
     name: 'mark_invoice_basis_exported',
-    description: 'Mark invoices as handed over to the external ledger (ready → exported), so the next list_invoice_basis no longer offers them. Idempotent: an invoice already marked stays as it was. Use when: a batch from list_invoice_basis has been taken by the other system (file imported, API call accepted). NOT for: writing the other system\'s invoice number (confirm_invoice_export); sending the invoice to the customer (send_invoice_email).',
+    description: 'Mark invoices as handed over to the external ledger (ready → exported), so the next list_invoice_basis no longer offers them. Idempotent: an invoice already marked stays as it was. Use when: a batch from list_invoice_basis has been taken by the other system (file imported, API call accepted). NOT for: writing the other system\'s invoice number (confirm_invoice_export); sending the invoice to the customer (manage_invoice send).',
     category: 'commerce',
     handler: 'rpc:mark_invoice_basis_exported',
     scope: 'internal',
@@ -328,7 +330,7 @@ Locale-specific: ${getActivePack().ai_instructions.invoicing}`,
   {
     name: 'run_month_end_invoicing',
     description:
-      'Run the WHOLE month-end billing run as one deterministic step: (a) every project with billable uninvoiced time in the period gets one invoice draft (bulk_invoice_from_timesheets per project); (b) every active subscription whose paid period has lapsed gets its renewal invoice. Idempotent — invoiced time entries and renewed periods drop out of the next run. Drafts are NOT sent (sending stays behind send_invoice_email / approval). Use when: month-end billing cron, "fakturera månaden", an agent asked to bill the period end-to-end. NOT for: a single project (bulk_invoice_from_timesheets) or a single renewal (generate_subscription_invoice).',
+      'Run the WHOLE month-end billing run as one deterministic step: (a) every project with billable uninvoiced time in the period gets one invoice draft (bulk_invoice_from_timesheets per project); (b) every active subscription whose paid period has lapsed gets its renewal invoice. Idempotent — invoiced time entries and renewed periods drop out of the next run. Drafts are NOT sent (sending stays behind manage_invoice send / approval). Use when: month-end billing cron, "fakturera månaden", an agent asked to bill the period end-to-end. NOT for: a single project (bulk_invoice_from_timesheets) or a single renewal (generate_subscription_invoice).',
     category: 'commerce',
     handler: 'db:run_month_end_invoicing',
     scope: 'internal',

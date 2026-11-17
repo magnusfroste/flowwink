@@ -1,3 +1,4 @@
+import { winAnsi } from '../_shared/invoices/winansi.ts';
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { getServiceClient } from '../_shared/supabase-clients.ts';
 import { homeFormat } from '../_shared/locale/home.ts';
@@ -109,13 +110,26 @@ Deno.serve(async (req) => {
       .eq("key", "branding")
       .single();
 
-    const companyName =
+    const settingName =
       typeof companyNameRow?.value === "string"
         ? companyNameRow.value
-        : (companyNameRow?.value as any)?.company_name || "Company";
+        : (companyNameRow?.value as any)?.company_name || "";
     const profile = (companyProfileRow?.value as any) || {};
     const branding = (brandingRow?.value as any) || {};
     const primaryColor = hexToRgb(branding.primary_color || "#2563eb");
+    // Who is asking and where the money goes: Business Identity and the
+    // e-invoice settings, the two rows the Peppol invoice prints from. Until
+    // 2026-11-17 the PDF carried neither an organisation or VAT number nor
+    // anywhere to pay. A failed read prints the invoice without them.
+    const { data: factsRow, error: factsErr } = await supabase.rpc("invoice_seller_facts");
+    if (factsErr) console.warn("[generate-invoice-pdf] could not read the seller and payment details:", factsErr.message);
+    const facts = (factsRow ?? {}) as { seller?: Record<string, string | undefined>; payment?: Record<string, string | undefined> };
+    const seller = facts.seller ?? {};
+    const bank = facts.payment ?? {};
+    // The name on an invoice is the legal one where the business has stated
+    // it, else the name it trades under — never the literal "Company" the PDF
+    // printed on every instance without a `company_name` setting.
+    const companyName = seller.legal_name || seller.name || settingName || profile.company_name || "";
 
     // Build PDF
     const pdfDoc = await PDFDocument.create();
@@ -123,6 +137,14 @@ Deno.serve(async (req) => {
     const helveticaBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
     const page = pdfDoc.addPage([595.28, 841.89]); // A4
+    // Every text on the page goes through the font's own character set: one
+    // arrow in a line description used to fail the whole PDF (winansi.ts).
+    for (const font of [helvetica, helveticaBold]) {
+      const width = font.widthOfTextAtSize.bind(font);
+      font.widthOfTextAtSize = (text: string, size: number) => width(winAnsi(text), size);
+    }
+    const drawRaw = page.drawText.bind(page);
+    page.drawText = (text: string, options?: Parameters<typeof drawRaw>[1]) => drawRaw(winAnsi(text), options);
     const { width, height } = page.getSize();
     const margin = 50;
     let y = height - margin;
@@ -164,6 +186,15 @@ Deno.serve(async (req) => {
         font: helvetica,
         color: gray,
       });
+      y -= 12;
+    }
+    const sellerLines = [
+      [seller.postal_code, seller.city].filter(Boolean).join(" "),
+      seller.org_number ? `${L.orgNumber} ${seller.org_number}` : "",
+      seller.vat_number ? `${L.vatNumber} ${seller.vat_number}` : "",
+    ].filter(Boolean);
+    for (const line of sellerLines) {
+      page.drawText(line, { x: margin, y, size: 9, font: helvetica, color: gray });
       y -= 12;
     }
     if (profile.contact_email) {
@@ -218,6 +249,7 @@ Deno.serve(async (req) => {
       invoice.leads?.email || invoice.customer_email || "";
     const customerCompany = invoice.leads?.companies?.name || "";
 
+    const metaTop = y;
     page.drawText(customerName, {
       x: metaLeft,
       y,
@@ -248,13 +280,17 @@ Deno.serve(async (req) => {
     }
 
     // Right: Invoice details
-    let metaY = y + 14 + 13 + (customerCompany ? 13 : 0);
+    // The details start on the customer's name line and take the room they
+    // need: with no e-mail on the invoice the fourth line (the due date) used to
+    // be drawn under the table's header.
+    let metaY = metaTop;
     const detailLines = [
       [L.number, invoice.invoice_number],
       [L.status, L.statusValue],
       [
         L.date,
-        ansi(home.dateTime(invoice.created_at, NUMERIC_DATE)),
+        // The invoice date is the date it was issued, where one is stated.
+        ansi(invoice.issue_date ? home.date(invoice.issue_date, NUMERIC_DATE) : home.dateTime(invoice.created_at, NUMERIC_DATE)),
       ],
       ...(invoice.due_date && L.showDue
         ? [
@@ -284,6 +320,7 @@ Deno.serve(async (req) => {
       metaY -= 16;
     }
 
+    y = Math.min(y, metaY + 3);
     y -= 30;
 
     // --- Line items table ---
@@ -344,7 +381,10 @@ Deno.serve(async (req) => {
     const lineItems = (invoice.line_items as any[]) || [];
     for (let i = 0; i < lineItems.length; i++) {
       const item = lineItems[i];
-      const lineTotal = item.qty * item.unit_price_cents;
+      // A line is written `qty` by the invoice skill and `quantity` by the
+      // contract and subscription billing — the page and the mail read both.
+      const qty = Number(item.qty ?? item.quantity ?? 1);
+      const lineTotal = qty * Number(item.unit_price_cents ?? 0);
 
       // Alternating row bg
       if (i % 2 === 0) {
@@ -364,7 +404,7 @@ Deno.serve(async (req) => {
         font: helvetica,
         color: black,
       });
-      page.drawText(String(item.qty), {
+      page.drawText(String(qty), {
         x: colX.qty,
         y,
         size: 9,
@@ -475,6 +515,26 @@ Deno.serve(async (req) => {
     });
 
     y -= 40;
+
+    // How to pay — only on an invoice that is still owed.
+    const payLines: Array<[string, string]> = L.showDue && invoice.status !== "cancelled" && (bank.bankgiro || bank.iban)
+      ? [
+          ...(bank.bankgiro ? [[L.bankgiro, bank.bankgiro] as [string, string]] : []),
+          ...(bank.iban ? [[L.iban, bank.iban] as [string, string]] : []),
+          ...(bank.iban && bank.bic ? [[L.bic, bank.bic] as [string, string]] : []),
+          [L.reference, String(invoice.invoice_number)],
+        ]
+      : [];
+    if (payLines.length > 0) {
+      page.drawText(L.howToPay, { x: margin, y, size: 9, font: helveticaBold, color: gray });
+      y -= 14;
+      for (const [label, value] of payLines) {
+        page.drawText(label, { x: margin, y, size: 9, font: helvetica, color: gray });
+        page.drawText(value, { x: margin + 90, y, size: 9, font: helveticaBold, color: black });
+        y -= 12;
+      }
+      y -= 12;
+    }
 
     // Notes
     if (invoice.notes) {

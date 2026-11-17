@@ -120,6 +120,22 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Fixed
 
+- **An invoice an agent sends reaches the customer.** `manage_invoice send`
+  set the status to sent and e-mailed nobody; only the button in the admin
+  mailed the invoice. The skill now mails it (PDF attached, link to the
+  invoice page) and answers `email_sent` or `email_error`.
+- **The invoice says who it is from and how to pay.** The invoice page and the
+  PDF carried no seller name, organisation number or VAT number, and one way
+  to pay: a card button that failed on every instance without Stripe. They now
+  print the seller from Business Identity and the bankgiro / IBAN from
+  Invoices → E-invoice, with the invoice number as reference; the card button
+  shows only where a card can be taken.
+- **An invoice PDF no longer fails on one character.** A line or a note with a
+  character outside the PDF font (an arrow, an emoji) failed the whole PDF and
+  the invoice mail went out without its attachment. The PDF also printed
+  "Company" as the seller, an empty quantity on contract and subscription
+  invoices, and the due date under the table header.
+
 - **The customer sees what a quote is, whose it is and on what terms.** The
   page behind the link in the quote mail showed a number, the lines and a
   total — not the sender, the recipient, the title, the introduction or the

@@ -676,6 +676,19 @@ beside its payload, so an operator branches instead of guessing:
   a signing page that read "Between you and <the reader's own name>".
   `business_name()` (open to a visitor: it answers the trading name only) is
   the SQL twin of `orgNameFrom`. A new public token page gets a step there.
+  **The invoice (same day):** `manage_invoice send` set the status and mailed
+  nobody — it mails now and answers `email_sent` / `email_error` (`email:
+  false` only issues). The invoice page and the PDF say who is asking and how
+  to pay from the two rows the Peppol invoice prints from
+  (`company_profile`: legal name, org and VAT number; `einvoice`: bankgiro,
+  IBAN, BIC) — `invoice_seller_facts()` for the PDF, `get_invoice_payment_info
+  (p_token)` for whoever holds the link, reference = the invoice number. A card
+  button is drawn only where `create-invoice-payment` answers `{probe: true}`
+  with `available` (a key, and Stripe not switched off). **Stripe switched off
+  is the test mode:** `create-checkout` runs its sandbox (`sandboxMode`
+  defaults to "Stripe is off") and an invoice is then paid by bank. The PDF
+  draws every text through `winAnsi` (`_shared/invoices/winansi.ts`): one
+  arrow in a line used to fail the whole PDF and the mail went without it.
 - **Born right (2026-10-27).** `manage_invoice create` without `due_date`
   gets one from the payment terms (`net30` → 30 days after the issue date,
   30 when the terms say nothing). Every commercial `currency` column is

@@ -185,6 +185,76 @@ async function contractSigned(s: Scenario, browser: Browser, base: string): Prom
   return step.result();
 }
 
+/** The business issues an invoice; the customer opens the mail's link, sees who to pay and how, and the payment shows. */
+async function invoicePaid(s: Scenario, browser: Browser, base: string): Promise<StepResult> {
+  const step = new Step('invoice: the customer sees who is asking and how to pay');
+  const email = `kund-faktura-${s.tag}@example.test`;
+  const name = `Kundväg Faktura ${s.tag}`;
+  // What an invoice prints about the seller has two homes: Business Identity and the e-invoice settings.
+  const merged = await s.skill('manage_site_settings', { action: 'update', key: 'company_profile', value: { legal_name: `Kundväg Säljare AB`, org_number: '556677-8899', vat_number: 'SE556677889901' } });
+  const bank = await s.skill('manage_site_settings', { action: 'update', key: 'einvoice', value: { bankgiro: '123-4567' } });
+  if (!step.check('the business has stated who it is and where to pay', merged.ok && bank.ok, merged.error || bank.error)) return step.result();
+
+  const created = await s.skill('manage_invoice', {
+    action: 'create', customer_name: name, customer_email: email, tax_rate: 0.25,
+    line_items: [{ description: 'Consulting day', qty: 2, unit_price_cents: 100_000 }],
+  });
+  if (!step.check('the business drafts an invoice', created.ok, created.error)) return step.result();
+  const invoiceId = String(created.data.invoice_id ?? created.data.id ?? s.idOf(created.data, 'invoice'));
+  const number = String(created.data.invoice_number ?? '');
+  // FINDING 2026-11-17: `send` set the status and mailed nobody — only the admin's button did.
+  const sent = await s.skill('manage_invoice', { action: 'send', invoice_id: invoiceId });
+  if (!step.check('the business sends it — and the customer is mailed', sent.ok && sent.data.email_sent === true, sent.error || String(sent.data.email_error ?? JSON.stringify(sent.data).slice(0, 200)))) return step.result();
+
+  const mail = await s.mail(email);
+  if (!step.check('the customer is mailed the invoice', !!mail, `nothing in the mail rail for ${email}`)) return step.result();
+  const link = mail!.links.find((l) => /\/invoice\/[^/]+$/.test(new URL(l).pathname));
+  if (!step.check('the mail carries the link to the invoice', !!link, `links in the mail: ${JSON.stringify(mail!.links)}`)) return step.result();
+  step.check('the mail states the amount owed', /2\s?500[,.]00/.test(mail!.html.replace(/&nbsp;|\u00a0/g, ' ')), 'no "2 500,00" in the mail');
+  step.link = link;
+
+  const { page, errors, rendered } = await visit(browser, onThisStack(link!, base), /download pdf|ladda ner pdf/i);
+  try {
+    if (!step.check('the invoice page opens from the link', rendered, `the page never showed; page errors: ${errors.join(' | ') || 'none'}`)) { await snap(page, 'invoice-not-rendered'); return step.result(); }
+    const shows = (text: string) => page.getByText(text, { exact: false }).first().waitFor({ state: 'visible', timeout: 10_000 }).then(() => true, () => false);
+    // FINDING 2026-11-17: the page named the customer and not the seller, and carried no organisation or VAT number.
+    step.check('the page says who the invoice is from', await shows('Kundväg Säljare AB'), 'the seller\'s legal name is not on the page');
+    step.check('…with its organisation and VAT number', (await shows('556677-8899')) && (await shows('SE556677889901')), 'the organisation or VAT number is not on the page');
+    // …and one way to pay, a card button that failed wherever Stripe is not connected.
+    step.check('the page says where to pay', await shows('123-4567'), 'the bankgiro is not on the page');
+    const howToPay = page.getByTestId('invoice-how-to-pay');
+    step.check('…and what to state as reference', !!number && await howToPay.getByText(number).first().isVisible().catch(() => false), `the reference ${number} is not in the payment details`);
+    const card = await fetch(`${process.env.BATTERY_FN_URL ?? `${readStackConfig().supabaseUrl}/functions/v1`}/create-invoice-payment`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${readStackConfig().anonKey}` }, body: JSON.stringify({ probe: true }),
+    }).then((r) => r.json() as Promise<{ available?: boolean }>).catch(() => ({ available: undefined }));
+    const cardButton = await page.getByRole('button', { name: /pay by card|betala med kort/i }).first().isVisible().catch(() => false);
+    step.check('a card button is offered exactly when a card can be taken', card.available !== undefined && cardButton === card.available, `the payment function says available=${card.available}, the page ${cardButton ? 'shows' : 'hides'} the button`);
+    const viewed = async () => !!(await s.one<{ viewed_at: string | null }>('select viewed_at from invoices where id = $1', [invoiceId]))?.viewed_at;
+    let seen = false;
+    for (let i = 0; i < 20 && !(seen = await viewed()); i++) await page.waitForTimeout(500);
+    step.check('the business sees that the customer opened it', seen, 'invoices.viewed_at was never set');
+    const [download] = await Promise.all([
+      page.waitForEvent('download', { timeout: 30_000 }).catch(() => null),
+      page.getByRole('button', { name: /download pdf|ladda ner pdf/i }).first().click(),
+    ]);
+    step.check('the PDF downloads', !!download, 'pressing Download PDF produced no file');
+    await snap(page, 'invoice-open');
+
+    // The customer pays by bank; the business registers it; the same link is now the receipt.
+    const paid = await s.skill('record_invoice_payment', { p_invoice_id: invoiceId, p_amount_cents: 250_000, p_method: 'bank_transfer', p_reference: number });
+    if (step.check('the business registers the bank payment', paid.ok, paid.error)) {
+      await page.reload({ waitUntil: 'domcontentloaded' });
+      step.check('the same link is now the receipt', await shows('Paid in full'), 'the page does not say the invoice is paid');
+      step.check('…and no longer asks for money', !(await page.getByTestId('invoice-how-to-pay').isVisible().catch(() => false)), 'the payment details are still shown on a paid invoice');
+      await snap(page, 'invoice-paid');
+    }
+    step.check('the page raised no error', errors.length === 0, errors.join(' | '));
+  } finally {
+    await page.context().close();
+  }
+  return step.result();
+}
+
 // ── run ─────────────────────────────────────────────────────────────────────
 
 const cfg = readStackConfig();
@@ -206,7 +276,7 @@ try {
   // The same browser the view sweep and the public blocks use: the runner's Chrome, or the one named.
   const executablePath = process.env.VIEW_SWEEP_BROWSER || undefined;
   browser = await chromium.launch({ ...(executablePath ? { executablePath } : { channel: 'chrome' }), headless: !headed });
-  for (const run of [quoteAccepted, contractSigned]) {
+  for (const run of [quoteAccepted, contractSigned, invoicePaid]) {
     try {
       results.push(await run(s, browser, base));
     } catch (e) {
