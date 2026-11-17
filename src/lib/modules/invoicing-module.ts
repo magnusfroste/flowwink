@@ -448,8 +448,9 @@ export const invoicingModule = defineModule<InvoicingInput, InvoicingOutput>({
       const subtotal = lineItems.reduce((s, i) => s + i.qty * i.unit_price_cents, 0);
       const taxRate = 0.25;
       const taxCents = Math.round(subtotal * taxRate);
-      const { count } = await supabase.from('invoices').select('*', { count: 'exact', head: true });
-      const num = `INV-${String((count || 0) + 1).padStart(4, '0')}`;
+      // One series, the database's counter — this path counted every invoice row and added one.
+      const { data: num, error: numErr } = await supabase.rpc('next_document_number', { p_kind: 'invoice', p_prefix: 'INV' });
+      if (numErr || !num) return { success: false, message: `Could not allocate an invoice number: ${numErr?.message ?? 'no number returned'}` };
       const { data, error } = await supabase
         .from('invoices')
         .insert({
