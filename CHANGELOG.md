@@ -120,6 +120,14 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Fixed
 
+- **A quote or invoice made by hand continues the same number series as one an
+  agent made.** The admin and the skills each kept their own count: a quote
+  created in the admin could get a number already in use (a second QUO-0001),
+  and an invoice was numbered INV-0007 from the admin but INV-2026-00007 from
+  an agent. There is one counter now, and it never answers a number that is
+  already taken. Invoices created in the admin follow the yearly series
+  (INV-2026-00045); numbers already issued are unchanged.
+
 - **An invoice an agent sends reaches the customer.** `manage_invoice send`
   set the status to sent and e-mailed nobody; only the button in the admin
   mailed the invoice. The skill now mails it (PDF attached, link to the

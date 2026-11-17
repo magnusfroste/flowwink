@@ -11423,6 +11423,20 @@ async function executeSendEmailToLead(
 // the order (matched on metadata.order_id), it is reused instead of duplicated.
 // Supports dry_run for safe preview.
 
+/**
+ * The next number of a document series — the database's one counter
+ * (next_document_number, 20261117180000). The admin has called it since
+ * 2026-07; the skills each read "the highest number so far, plus one" from the
+ * table, which never told the counter and which two callers at once answered
+ * alike: a person and an agent numbered past each other (a second QUO-0001),
+ * and an invoice was INV-0007 from the admin and INV-2026-00007 from a skill.
+ */
+async function nextDocumentNumber(supabase: SupabaseClient, kind: 'quote' | 'invoice', prefix: 'QUO' | 'INV'): Promise<string> {
+  const { data, error } = await supabase.rpc('next_document_number', { p_kind: kind, p_prefix: prefix });
+  if (error || !data) throw new Error(`Could not allocate a ${kind} number: ${error?.message ?? 'no number returned'}`);
+  return String(data);
+}
+
 async function executeSendInvoiceForOrder(
   supabase: SupabaseClient,
   args: Record<string, unknown>,
@@ -11599,14 +11613,7 @@ async function executeSendInvoiceForOrder(
     // Found by order-to-delivery QA 2026-07-09 (INV-0032 vs INV-2026-000NN).
     // The series year is the business's: on 1 Jan 00:30 in Stockholm the UTC
     // year was still last year, numbering a 2027 invoice into the 2026 series.
-    const yr = Number((await businessToday(supabase)).slice(0, 4));
-    const { data: lastInv } = await supabase.from('invoices')
-      .select('invoice_number').ilike('invoice_number', `INV-${yr}-%`)
-      .order('invoice_number', { ascending: false }).limit(1).maybeSingle();
-    let nextNum = 1;
-    const lm = String(lastInv?.invoice_number || '').match(/INV-\d{4}-(\d+)/);
-    if (lm) nextNum = parseInt(lm[1], 10) + 1;
-    const invoiceNumber = `INV-${yr}-${String(nextNum).padStart(5, '0')}`;
+    const invoiceNumber = await nextDocumentNumber(supabase, 'invoice', 'INV');
     const dueDate = businessDateIn((await loadHomeCached(supabase)).timeZone, Number(due_days) || 0);
 
     const { data: created, error: createErr } = await supabase
@@ -14313,16 +14320,7 @@ async function executeDbAction(
 
       // quotes.quote_number is NOT NULL with no default — the admin UI generates
       // QUO-NNNN client-side, so the skill path must too or create always fails.
-      const generateQuoteNumber = async (): Promise<string> => {
-        const { data } = await supabase.from('quotes')
-          .select('quote_number').order('created_at', { ascending: false }).limit(50);
-        let max = 0;
-        for (const row of (data || []) as Array<{ quote_number: string | null }>) {
-          const m = /(\d+)\s*$/.exec(row.quote_number || '');
-          if (m) max = Math.max(max, parseInt(m[1], 10));
-        }
-        return `QUO-${String(max + 1).padStart(4, '0')}`;
-      };
+      const generateQuoteNumber = (): Promise<string> => nextDocumentNumber(supabase, 'quote', 'QUO');
 
       // Build (and VALIDATE) the quote lines without touching the database.
       //
@@ -14684,14 +14682,7 @@ async function executeDbAction(
         // that case block, so regenerate here).
         // The series year is the business's: on 1 Jan 00:30 in Stockholm the UTC
     // year was still last year, numbering a 2027 invoice into the 2026 series.
-    const yr = Number((await businessToday(supabase)).slice(0, 4));
-        const { data: lastInv } = await supabase.from('invoices')
-          .select('invoice_number').ilike('invoice_number', `INV-${yr}-%`)
-          .order('invoice_number', { ascending: false }).limit(1).maybeSingle();
-        let nextNum = 1;
-        const m = String(lastInv?.invoice_number || '').match(/INV-\d{4}-(\d+)/);
-        if (m) nextNum = parseInt(m[1], 10) + 1;
-        const invoiceNumber = `INV-${yr}-${String(nextNum).padStart(5, '0')}`;
+    const invoiceNumber = await nextDocumentNumber(supabase, 'invoice', 'INV');
         const { data: inv, error: invErr } = await supabase.from('invoices').insert({
           invoice_number: invoiceNumber,
           customer_name: quote.customer_name || '',
@@ -16106,21 +16097,7 @@ async function executeDbAction(
         const tax = Math.round(subtotal * Number(taxRate || 0));
         return { subtotal_cents: subtotal, tax_cents: tax, total_cents: subtotal + tax };
       };
-      const generateInvoiceNumber = async (): Promise<string> => {
-        // The series year is the business's: on 1 Jan 00:30 in Stockholm the UTC
-    // year was still last year, numbering a 2027 invoice into the 2026 series.
-    const yr = Number((await businessToday(supabase)).slice(0, 4));
-        const { data } = await supabase.from('invoices')
-          .select('invoice_number')
-          .ilike('invoice_number', `INV-${yr}-%`)
-          .order('invoice_number', { ascending: false }).limit(1).maybeSingle();
-        let next = 1;
-        if (data?.invoice_number) {
-          const m = String(data.invoice_number).match(/INV-\d{4}-(\d+)/);
-          if (m) next = parseInt(m[1], 10) + 1;
-        }
-        return `INV-${yr}-${String(next).padStart(5, '0')}`;
-      };
+      const generateInvoiceNumber = (): Promise<string> => nextDocumentNumber(supabase, 'invoice', 'INV');
 
       if (action === 'list') {
         const { status_filter, status, deal_id, lead_id, project_id, limit = 50 } = args as any;
@@ -19412,14 +19389,7 @@ async function executeRequestCompanyQuote(
 
   // quotes.quote_number is NOT NULL with no default — same QUO-NNNN scheme as
   // the manage_quote skill so the sequence stays uniform.
-  const { data: recent } = await supabase.from('quotes')
-    .select('quote_number').order('created_at', { ascending: false }).limit(50);
-  let max = 0;
-  for (const row of (recent || []) as Array<{ quote_number: string | null }>) {
-    const m = /(\d+)\s*$/.exec(row.quote_number || '');
-    if (m) max = Math.max(max, parseInt(m[1], 10));
-  }
-  const quoteNumber = `QUO-${String(max + 1).padStart(4, '0')}`;
+  const quoteNumber = await nextDocumentNumber(supabase, 'quote', 'QUO');
 
   const callerEmail = typeof (args as any)._caller_email === 'string' ? (args as any)._caller_email : '';
   const { data: created, error: insErr } = await supabase

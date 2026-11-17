@@ -232,14 +232,11 @@ Deno.serve(async (req: Request) => {
       // customer-invoice numbering. Fixed in the same 2026-07-09 sweep.
       // The series year is the business's: on 1 Jan 00:30 in Stockholm the UTC
     // year was still last year, numbering a 2027 invoice into the 2026 series.
-    const yr = Number((await businessToday(supabase)).slice(0, 4));
-      const { data: lastInv } = await supabase.from('invoices')
-        .select('invoice_number').ilike('invoice_number', `INV-${yr}-%`)
-        .order('invoice_number', { ascending: false }).limit(1).maybeSingle();
-      let nextNum = 1;
-      const lm = String(lastInv?.invoice_number || '').match(/INV-\d{4}-(\d+)/);
-      if (lm) nextNum = parseInt(lm[1], 10) + 1;
-      const invoiceNumber = `INV-${yr}-${String(nextNum).padStart(5, '0')}`;
+      // One series, the database's counter (20261117180000) — this function read
+      // "the highest so far, plus one" and could answer a number already taken.
+      const { data: numbered, error: numErr } = await supabase.rpc('next_document_number', { p_kind: 'invoice', p_prefix: 'INV' });
+      if (numErr || !numbered) throw new Error(`Could not allocate an invoice number: ${numErr?.message ?? 'no number returned'}`);
+      const invoiceNumber = String(numbered);
 
       // Default due date: 14 days on the business's calendar.
       const dueDate = addDaysToDate(await businessToday(supabase), 14);

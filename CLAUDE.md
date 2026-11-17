@@ -689,6 +689,18 @@ beside its payload, so an operator branches instead of guessing:
   defaults to "Stripe is off") and an invoice is then paid by bank. The PDF
   draws every text through `winAnsi` (`_shared/invoices/winansi.ts`): one
   arrow in a line used to fail the whole PDF and the mail went without it.
+- **One number series per document (2026-11-17).** `next_document_number
+  (kind, prefix)` is the only source of a quote or invoice number — the admin,
+  every skill (`nextDocumentNumber` in core.ts), `quote-sign` and the invoicing
+  module's publish all ask it. It answers one above BOTH its counter and the
+  highest number the table carries, so nothing written past it (an import, a
+  restore) is ever answered again; invoices are `INV-YYYY-NNNNN`, one counter
+  row per business year (`invoice:<year>`). Before, the admin asked the
+  counter and the skills read "highest so far plus one": a quote made by hand
+  was a second QUO-0001, and an invoice was INV-0007 from the admin and
+  INV-2026-00007 from a skill. A guard discovers any `` `INV-${ `` /
+  `` `QUO-${ `` built in code. SUB-, CTR-, POS- and credit-note numbers are
+  their own series and stay.
 - **Born right (2026-10-27).** `manage_invoice create` without `due_date`
   gets one from the payment terms (`net30` → 30 days after the issue date,
   30 when the terms say nothing). Every commercial `currency` column is
