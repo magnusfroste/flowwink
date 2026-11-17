@@ -588,6 +588,7 @@
     "search_wiki",
     "seed_module_demo",
     "select_shipping_carrier",
+    "send_booking_confirmation",
     "send_booking_reminders",
     "send_bulk_lead_email",
     "send_channel_message",

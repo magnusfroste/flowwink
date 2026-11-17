@@ -25,8 +25,20 @@ export const handler = async (req: Request): Promise<Response> => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // The booking whose confirmation this call has claimed — released again if
+  // nothing was sent, so a later call (or a person's resend) still can.
+  let claimed: string | null = null;
+  const release = async () => {
+    if (!claimed) return;
+    const { error } = await getServiceClient().from("bookings").update({ confirmation_sent_at: null }).eq("id", claimed);
+    if (error) console.warn("[send-booking-confirmation] could not release the claim:", error.message);
+    claimed = null;
+  };
+
   try {
-    const { bookingId }: BookingConfirmationRequest = await req.json();
+    const raw = (await req.json()) as BookingConfirmationRequest & { booking_id?: string; resend?: boolean };
+    const bookingId = raw.bookingId ?? raw.booking_id;
+    const resend = raw.resend === true;
 
     if (!bookingId) {
       console.error("Missing bookingId");
@@ -57,6 +69,41 @@ export const handler = async (req: Request): Promise<Response> => {
         JSON.stringify({ error: "Booking not found" }),
         { status: 404, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
+    }
+
+    // One confirmation per booking, whoever asks. The public block and the
+    // admin call this right after they book; since 2026-11-17 the automation
+    // "Booking confirmation to the customer" calls it on booking.created too, so
+    // a booking an agent makes is confirmed as well. The claim is the stamp
+    // itself, taken in one statement: the second caller finds it set and sends
+    // nothing. `resend: true` is a person asking for it again.
+    // A booking that is already off, or already over, is not confirmed by
+    // itself: the automation answers every booking.created, and an import of
+    // last year's calendar or a booking cancelled within the minute must not
+    // mail the customer "thank you for your booking".
+    if (!resend) {
+      const status = String((booking as { status?: string }).status ?? '');
+      const over = new Date(booking.end_time ?? booking.start_time).getTime() < Date.now();
+      if (status === 'cancelled' || status === 'no_show' || over) {
+        return new Response(
+          JSON.stringify({ success: true, skipped: true, reason: over ? "booking_in_the_past" : "booking_cancelled" }),
+          { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+    }
+
+    if (!resend) {
+      const { data: claim, error: claimErr } = await supabase.from("bookings")
+        .update({ confirmation_sent_at: new Date().toISOString() })
+        .eq("id", bookingId).is("confirmation_sent_at", null).select("id");
+      if (claimErr) throw new Error(`could not claim the confirmation: ${claimErr.message}`);
+      if (!claim?.length) {
+        return new Response(
+          JSON.stringify({ success: true, skipped: true, reason: "already_confirmed" }),
+          { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+      claimed = bookingId;
     }
 
     // === LEAD GENERATION: Create or update lead from booking ===
@@ -209,6 +256,7 @@ export const handler = async (req: Request): Promise<Response> => {
     const bookingsConfig = (moduleSettings?.value as any)?.bookings;
     if (bookingsConfig && bookingsConfig.confirmationEmailEnabled === false) {
       console.log("[send-booking-confirmation] Confirmation email disabled in module settings");
+      await release();
       return new Response(
         JSON.stringify({ success: true, skipped: true, reason: "confirmation_email_disabled" }),
         { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
@@ -413,6 +461,7 @@ export const handler = async (req: Request): Promise<Response> => {
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     console.error("Error in send-booking-confirmation function:", error);
+    await release();
     return new Response(
       JSON.stringify({ error: errorMessage }),
       { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }

@@ -299,7 +299,7 @@ const CONTRACT_SKILLS: SkillSeed[] = [
   },
   {
     name: 'send_contract_for_signature',
-    description: 'Generate a public signing link for a contract and mark it as pending_signature. Use when: admin or operator wants to send a finished contract to the counterparty for signing. Snapshots the current version, returns a /contract/:token URL the counterparty can visit to accept/reject without logging in. Refused while the agreement or an appendix still carries an unrendered {{token}} or an unresolved [BRACKET] — the error lists each one per part; fill them in and send again. An appendix the text names but nothing carries comes back as a warning. NOT for: creating contracts (use manage_contract) or signing on behalf of someone (signing must be done by the actual signer).',
+    description: 'Send a contract for signature: mark it pending_signature, issue the public signing link and E-MAIL it to the counterparty (counterparty_email) in their language — the answer says email_sent and, when nothing went out, why (email_error). Use when: admin or operator wants to send a finished contract to the counterparty for signing. Snapshots the current version, returns a /contract/:token URL the counterparty can visit to accept/reject without logging in. Refused while the agreement or an appendix still carries an unrendered {{token}} or an unresolved [BRACKET] — the error lists each one per part; fill them in and send again. An appendix the text names but nothing carries comes back as a warning. NOT for: creating contracts (use manage_contract) or signing on behalf of someone (signing must be done by the actual signer).',
     category: 'commerce',
     handler: 'db:contracts',
     scope: 'internal',
@@ -307,11 +307,12 @@ const CONTRACT_SKILLS: SkillSeed[] = [
       type: 'function',
       function: {
         name: 'send_contract_for_signature',
-        description: 'Issue a public signing token + URL for a contract that has body_markdown filled in.',
+        description: 'Send a finished contract for signature: issue the signing link and e-mail it to the counterparty.',
         parameters: {
           type: 'object',
           properties: {
             contract_id: { type: 'string', description: 'UUID of the contract' },
+            email: { type: 'boolean', description: 'false = issue the link without e-mailing the counterparty (you pass it on yourself). Default true.' },
           },
           required: ['contract_id'],
         },

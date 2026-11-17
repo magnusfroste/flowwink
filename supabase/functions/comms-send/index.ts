@@ -90,6 +90,7 @@ const GATED_MODULE: Record<string, string> = {
 const SKILL_TO_KIND: Record<string, string> = {
   send_webinar_reminders: 'webinar_reminders',
   send_booking_reminders: 'booking_reminders',
+  send_booking_confirmation: 'booking_confirmation',
   send_survey: 'survey_send',
   invite_candidate_to_interview: 'interview_invitation',
   send_interview_confirmation: 'interview_confirmation',

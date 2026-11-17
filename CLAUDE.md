@@ -650,6 +650,23 @@ beside its payload, so an operator branches instead of guessing:
   another one or one that belongs elsewhere is refused (`ALREADY_EXISTS`), so
   the same basis is never imported twice. Invoices → **Export basis** is the
   same read as a CSV. Nothing names a ledger — the bridge lives outside.
+- **The mail is the process step's, not the browser's (2026-11-17).** What a
+  customer is sent when a step happens must go out whoever does the step — a
+  person in the admin, the public block, an agent on the gateway, an
+  automation. Two steps mailed only from the browser: a booking made by an
+  agent gave the customer no confirmation (and no lead), and
+  `send_contract_for_signature` issued the link and e-mailed nobody. Now the
+  automation `Booking confirmation to the customer` runs
+  `send_booking_confirmation` on `booking.created` (one mail per booking — the
+  stamp `confirmation_sent_at` is claimed before the send and released when
+  nothing went out; a cancelled or past booking is not confirmed; `resend:
+  true` is a person asking again), and `send_contract_for_signature` mails the
+  counterparty and answers `email_sent` / `email_error` like `manage_quote
+  send` (`email: false` only issues the link). The battery reads what the
+  customer got (`s.mail(recipient)` over `outbound_communications` — a send
+  without a provider is logged as simulated, row and text are real) and ticks a
+  dispatcher itself (`s.pulse('event-dispatcher')`); "no e-mail provider
+  locally" is not a reason to skip a mail step.
 - **Born right (2026-10-27).** `manage_invoice create` without `due_date`
   gets one from the payment terms (`net30` → 30 days after the issue date,
   30 when the terms say nothing). Every commercial `currency` column is

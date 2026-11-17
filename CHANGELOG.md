@@ -120,6 +120,17 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Fixed
 
+- **A booking is confirmed to the customer whoever made it.** The confirmation
+  mail was sent by the page that booked; a booking an agent made over the
+  gateway gave the customer nothing, and no lead. An automation now confirms
+  every new booking, once (a booking the page already confirmed is not mailed
+  again; a cancelled or past one is not confirmed), and
+  `send_booking_confirmation` sends or re-sends it on request.
+- **Sending a contract for signature e-mails the counterparty.** The skill
+  issued the signing link and returned it; only the admin's button mailed it.
+  It now mails the counterparty and says whether it did (`email_sent`,
+  `email_error`).
+
 - **The log-thinning migration applies on an instance with history.** Its own
   proof assumed a nearly empty log: on instances with ten to twenty thousand
   old rows the proof's rows were not reached in one bounded batch, the proof

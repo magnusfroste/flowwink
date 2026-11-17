@@ -209,6 +209,53 @@ export class Scenario {
     this.check(name, same, `expected ${String(expected)}, got ${String(actual)}`);
   }
 
+  /**
+   * What the customer was sent: the newest e-mail the mail rail holds for a
+   * recipient (outbound_communications — without a provider the send is
+   * logged as simulated, the row and its text are real), with the links in
+   * it. The customer's side of a process is its mails and the pages they
+   * link to; "the skill answered success" says nothing about either.
+   */
+  async mail(recipient: string, subjectLike?: string): Promise<{ subject: string; html: string; links: string[]; status: string; count: number } | undefined> {
+    const rows = await this.sql<{ subject: string | null; body_html: string | null; body_text: string | null; status: string }>(
+      `select subject, body_html, body_text, status from outbound_communications
+        where channel = 'email' and lower(recipient) like '%' || lower($1) || '%' and ($2::text is null or subject ilike '%' || $2 || '%')
+        order by created_at desc`, [recipient, subjectLike ?? null]);
+    if (!rows.length) return undefined;
+    const html = String(rows[0].body_html ?? rows[0].body_text ?? '');
+    const links = [...html.matchAll(/href="(https?:\/\/[^"]+)"/g)].map((m) => m[1].replace(/&amp;/g, '&'));
+    return { subject: String(rows[0].subject ?? ''), html, links, status: rows[0].status, count: rows.length };
+  }
+
+  /**
+   * One tick of a scheduled edge function (event-dispatcher, automation-
+   * dispatcher …), as pg_cron gives it — with the service key, which is one of
+   * the three callers a scheduled function admits. Repeated until `until`
+   * holds or half a minute has passed: a dispatcher hands its work on
+   * asynchronously, and a backlog takes more than one batch. Answers what the
+   * last tick said.
+   */
+  async pulse(fn: string, until?: () => Promise<boolean>): Promise<string> {
+    let last = '';
+    const deadline = Date.now() + 30_000;
+    do {
+      try {
+        const res = await fetch(`${FN_URL}/${fn}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${SERVICE_KEY}` },
+          body: '{}',
+          signal: AbortSignal.timeout(60_000),
+        });
+        last = `${res.status} ${(await res.text()).slice(0, 200)}`;
+      } catch (e) {
+        last = `no answer: ${(e as Error).message}`;
+      }
+      if (!until || await until()) return last;
+      await new Promise((r) => setTimeout(r, 2_000));
+    } while (Date.now() < deadline);
+    return last;
+  }
+
   /** An announced skip: the precondition is missing, and the report says so. */
   skip(name: string, why: string): void {
     this.checks.push({ name, status: 'skip', detail: why });

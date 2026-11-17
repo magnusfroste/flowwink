@@ -141,7 +141,14 @@ async function run(s: Scenario): Promise<void> {
   const afterSend = await s.one<{ status: string; accept_token: string | null }>('select status, accept_token from contracts where id = $1', [contractId]);
   s.equal('the agreement awaits signature', afterSend?.status, 'pending_signature');
   const token = String(afterSend?.accept_token ?? '');
-  s.skip('the signing link is e-mailed (comms-send → contract_email)', 'no e-mail provider locally');
+  // FINDING 2026-11-17: only the admin's button mailed the link. An agent that "sent" the
+  // agreement got a URL back and the counterparty got nothing — and this step was skipped as
+  // "no e-mail provider locally", though the mail rail logs a simulated send all the same.
+  s.check('sending says the counterparty was e-mailed', sent.ok && sent.data.email_sent === true, `email_sent ${String(sent.data.email_sent)} — ${String(sent.data.email_error ?? '')}`);
+  const counterparty = (await s.one<{ counterparty_email: string | null }>('select counterparty_email from contracts where id = $1', [contractId]))?.counterparty_email ?? '';
+  const signMail = await s.mail(counterparty);
+  s.check('the counterparty is e-mailed the agreement', !!signMail, `nothing in outbound_communications for ${counterparty}`);
+  s.check('…and the mail carries the signing link that was issued', !!signMail?.links.some((l) => l.endsWith(`/contract/${token}`)), `links in the mail: ${JSON.stringify(signMail?.links ?? [])}`);
 
   // ── Sign ──────────────────────────────────────────────────────────────────
   const wrong = await sign({ accept_token: `${'0'.repeat(47)}1`, action: 'accept', signer_name: 'Nobody', signer_email: customerEmail });
