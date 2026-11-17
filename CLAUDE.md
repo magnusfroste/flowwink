@@ -904,6 +904,17 @@ managed-ledger lessons still apply to every fork's Supabase integration:
   silently — missing functions, a missing `refund_return(...,p_final)`
   overload, admin functions stuck on pre-patch bodies — which is why bodies
   stay idempotent (`CREATE OR REPLACE`) too.
+- **A migration's proof must pass on an instance with history
+  (2026-11-17).** The proof in `20261115090000` ran `prune_logs()` — bounded,
+  oldest first — and then asserted on its own rows; on www, nordbrygg and
+  liteit those rows sat behind 10 000–22 000 real ones, the proof failed, and
+  that migration and every later one stayed unapplied after a green sync. The
+  fresh install cannot catch this: it is empty. A proof that calls a
+  housekeeping or batch function either isolates what it asserts on from the
+  instance's own rows, or does not run where there are any (`RAISE NOTICE`,
+  `RETURN`) — and it never does real work on live data just to roll it back.
+  After a sync, read the migration head on a live instance; a green sync says
+  the forks were pushed, not that their databases took the migrations.
 - **Name-only existence checks miss body/signature drift.** `pg_proc` by name
   says a function exists, not that its body is current or that an overload is
   present. Verify behavior (live call) or the specific signature, not just the name.

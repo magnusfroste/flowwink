@@ -120,6 +120,13 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Fixed
 
+- **The log-thinning migration applies on an instance with history.** Its own
+  proof assumed a nearly empty log: on instances with ten to twenty thousand
+  old rows the proof's rows were not reached in one bounded batch, the proof
+  failed, and the migration — and every one after it — stayed unapplied for a
+  sync. The proof now runs only where there is no history (the fresh install),
+  and no longer does a night's deletes on a live instance to roll them back.
+
 - **The invoice PDF is in the customer's language.** Its labels were English
   ("INVOICE", "BILL TO") whatever the customer ordered in. They are now the
   `invoice.*` visitor texts the invoice page reads, in the order's language,
