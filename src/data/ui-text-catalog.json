@@ -721,6 +721,11 @@
       "fallback": "Appendices"
     },
     {
+      "key": "contract.between",
+      "group": "contract",
+      "fallback": "Between {seller} and {counterparty}"
+    },
+    {
       "key": "contract.decline",
       "group": "contract",
       "fallback": "Decline"
@@ -2046,6 +2051,11 @@
       "fallback": "Deposit paid"
     },
     {
+      "key": "quote.from",
+      "group": "quote",
+      "fallback": "From"
+    },
+    {
       "key": "quote.linkInvalid",
       "group": "quote",
       "fallback": "This quote link is invalid or has expired."
@@ -2074,6 +2084,11 @@
       "key": "quote.subtotal",
       "group": "quote",
       "fallback": "Subtotal"
+    },
+    {
+      "key": "quote.to",
+      "group": "quote",
+      "fallback": "To"
     },
     {
       "key": "room.closedBody",

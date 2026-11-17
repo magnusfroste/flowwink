@@ -19,6 +19,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SignaturePad } from '@/components/public/SignaturePad';
 import { usePublicContract, useSignContract, markContractViewed } from '@/hooks/useContractWorkflow';
 import { useCustomerFormat } from '@/hooks/useCustomerFormat';
+import { useBusinessName } from '@/hooks/useBusinessName';
 
 /** An appendix as the signing customer receives it. */
 interface Appendix {
@@ -34,6 +35,7 @@ interface Appendix {
 export default function PublicContractPage() {
   const { formatDateTime } = useCustomerFormat();
   const t = useUiText();
+  const seller = useBusinessName();
   const { token } = useParams<{ token: string }>();
   const { data: contract, isLoading, refetch } = usePublicContract(token);
   const sign = useSignContract();
@@ -108,7 +110,12 @@ export default function PublicContractPage() {
                 <FileSignature className="h-6 w-6 text-primary" />
                 <div>
                   <CardTitle className="text-2xl">{c.title}</CardTitle>
-                  <p className="text-muted-foreground mt-1">Between you and {c.counterparty_name}</p>
+                  {/* The reader IS the counterparty: "between you and <their own name>" named one party twice. */}
+                  <p className="text-muted-foreground mt-1">
+                    {seller
+                      ? t('contract.between', 'Between {seller} and {counterparty}').replace('{seller}', seller).replace('{counterparty}', c.counterparty_name)
+                      : c.counterparty_name}
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-2 print:hidden">

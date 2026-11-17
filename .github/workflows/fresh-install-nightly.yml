@@ -242,6 +242,16 @@ jobs:
         if: always() && steps.battery.outcome != 'skipped' && inputs.scope != 'battery'
         run: npm run qa:public-blocks
 
+      # The battery works as an agent does and the sweep loads the admin's
+      # pages; neither is the CUSTOMER. This sends a quote and an agreement,
+      # reads the mail the customer got, opens the link in it in a browser with
+      # no session, and accepts and signs. It found a quote page that showed
+      # neither sender nor terms, and a signing page that named the reader
+      # twice (2026-11-17).
+      - name: Customer path — the mail, the link in it, the page it opens
+        if: always() && steps.battery.outcome != 'skipped' && inputs.scope != 'battery'
+        run: npm run qa:customer-path
+
       - name: Upload reports
         if: always()
         uses: actions/upload-artifact@v4
@@ -256,6 +266,7 @@ jobs:
             .qa-output/
             .view-sweep/
             .public-blocks/
+            .customer-path/
             scripts/process-battery/last-green.json
             ${{ runner.temp }}/smoke.log
             ${{ runner.temp }}/functions.log

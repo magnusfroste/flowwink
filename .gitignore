@@ -44,3 +44,4 @@ scripts/fleet.local.json
 # View sweep output (npm run qa:views): report + failure screenshots
 .view-sweep/
 .public-blocks/
+.customer-path/

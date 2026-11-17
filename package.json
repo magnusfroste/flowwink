@@ -53,6 +53,7 @@
     "lint:ratchet": "node scripts/eslint-ratchet.mjs",
     "typecheck:edge": "node scripts/deno-typecheck.mjs",
     "qa:public-blocks": "bun run scripts/public-blocks/index.ts",
+    "qa:customer-path": "bun run scripts/customer-path/index.ts",
     "qa:webmeet": "node scripts/webmeet-call-check/run.mjs"
   },
   "dependencies": {

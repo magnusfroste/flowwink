@@ -1,0 +1,233 @@
+/**
+ * The customer's path — the mail, the link in it, and the page it opens.
+ *
+ * The process battery runs every business process through skills, as an agent
+ * works; the view sweep loads the admin's pages. Neither is the CUSTOMER. A
+ * customer's whole experience of a process is what lands in the inbox and what
+ * happens when the link in it is pressed — and until 2026-11-17 nothing read a
+ * mail or pressed a link: a booking an agent made gave the customer no
+ * confirmation and a contract "sent for signature" was e-mailed to nobody, both
+ * green in the battery.
+ *
+ * This test does one process step as the business does (a skill), reads the
+ * mail the customer was sent out of the mail rail (outbound_communications —
+ * without a provider the send is logged as simulated, row and text are real),
+ * opens the link from that mail in a real headless browser with NO session,
+ * and does what the customer does. A step passes when:
+ *   1. the customer was mailed, and the mail carries a link,
+ *   2. the page behind the link rendered without an uncaught error,
+ *   3. the customer's action went through, and
+ *   4. the process moved on in the database.
+ *
+ * Local stacks only (assertLocal). Every row is scoped to one run id.
+ *
+ *   npm run qa:customer-path             # against the local stack
+ *   npm run qa:customer-path -- --headed # watch it
+ *
+ * Exit 0 = every step passed, 1 = a step failed, 2 = the tool could not run.
+ */
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { join, resolve } from 'node:path';
+import { chromium, type Browser, type Page } from 'playwright-core';
+import { assertLocal } from '../view-sweep/fixtures';
+import { readStackConfig, freePort, startVite } from '../view-sweep/stack';
+import { Scenario, connect } from '../process-battery/lib';
+
+const REPO_ROOT = resolve(import.meta.dirname, '../..');
+const OUT_DIR = join(REPO_ROOT, '.customer-path');
+const headed = process.argv.includes('--headed');
+const baseUrlArg = process.argv.find((a) => a.startsWith('--base-url='))?.split('=')[1];
+
+interface StepResult { step: string; verdict: 'pass' | 'fail'; checks: Array<{ name: string; ok: boolean; detail?: string }>; link?: string }
+
+/** A step's checks, collected — a step fails on its first false one but reports them all. */
+class Step {
+  readonly checks: StepResult['checks'] = [];
+  link?: string;
+  constructor(readonly name: string) {}
+  check(name: string, ok: boolean, detail?: string): boolean {
+    this.checks.push({ name, ok, detail: ok ? undefined : detail });
+    return ok;
+  }
+  result(): StepResult {
+    return { step: this.name, verdict: this.checks.length > 0 && this.checks.every((c) => c.ok) ? 'pass' : 'fail', checks: this.checks, link: this.link };
+  }
+}
+
+/** The mail's link, pointed at this run's browser: the mail names the site's public URL, the test serves the app elsewhere. */
+function onThisStack(link: string, base: string): string {
+  const u = new URL(link);
+  return `${base}${u.pathname}${u.search}`;
+}
+
+/** Open a page as a first-time visitor: no session, tracking declined, uncaught errors kept. */
+async function visit(browser: Browser, url: string, ready: RegExp): Promise<{ page: Page; errors: string[]; rendered: boolean }> {
+  const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const page = await ctx.newPage();
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message.slice(0, 300)));
+  let rendered = false;
+  // The first visit compiles the page's chunk in Vite; give a stuck first load one retry.
+  for (let attempt = 0; attempt < 2 && !rendered; attempt++) {
+    await page.goto(url, { waitUntil: 'domcontentloaded' });
+    rendered = await page.getByRole('button', { name: ready }).first().waitFor({ state: 'visible', timeout: 45_000 }).then(() => true, () => false);
+  }
+  const essential = page.getByRole('button', { name: /essential only|endast nödvändiga/i }).first();
+  if (await essential.waitFor({ state: 'visible', timeout: 3000 }).then(() => true, () => false)) await essential.click().catch(() => {});
+  return { page, errors, rendered };
+}
+
+async function snap(page: Page, name: string): Promise<void> {
+  mkdirSync(OUT_DIR, { recursive: true });
+  await page.screenshot({ path: join(OUT_DIR, `${name}.png`), fullPage: true }).catch(() => {});
+}
+
+/** Fill the name and e-mail the signing form asks for, then press its button. */
+async function signAs(page: Page, name: string, email: string, confirm: RegExp): Promise<void> {
+  const inputs = page.locator('input:visible');
+  await inputs.nth(0).fill(name);
+  await page.locator('input[type="email"]:visible').first().fill(email);
+  await page.waitForTimeout(600);
+  await page.getByRole('button', { name: confirm }).first().click();
+}
+
+// ── the steps ───────────────────────────────────────────────────────────────
+
+/** The business sends a quote; the customer opens the mail's link and accepts it. */
+async function quoteAccepted(s: Scenario, browser: Browser, base: string): Promise<StepResult> {
+  const step = new Step('quote: the customer accepts from the mail');
+  const email = `kund-quote-${s.tag}@example.test`;
+  const name = `Kundväg Offert ${s.tag}`;
+  const created = await s.skill('manage_quote', {
+    action: 'create', customer_name: name, customer_email: email, title: `Customer path ${s.tag}`,
+    valid_until: new Date(Date.now() + 30 * 86_400_000).toISOString().slice(0, 10),
+    intro_text: 'As we agreed on the phone.', terms_text: 'Payment within thirty days of the invoice date.',
+    items: [{ description: 'Consulting day', quantity: 2, unit_price_cents: 100_000, tax_rate_pct: 25 }],
+  });
+  if (!step.check('the business drafts a quote', created.ok, created.error)) return step.result();
+  const quoteId = s.idOf(created.data, 'quote');
+  const sent = await s.skill('manage_quote', { action: 'send', id: quoteId });
+  if (!step.check('the business sends it', sent.ok && sent.data.email_sent === true, sent.error || String(sent.data.email_error ?? JSON.stringify(sent.data).slice(0, 200)))) return step.result();
+
+  const mail = await s.mail(email);
+  if (!step.check('the customer is mailed the quote', !!mail, `nothing in the mail rail for ${email}`)) return step.result();
+  const link = mail!.links.find((l) => /\/quote\/[^/]+$/.test(new URL(l).pathname));
+  if (!step.check('the mail carries the link to the quote', !!link, `links in the mail: ${JSON.stringify(mail!.links)}`)) return step.result();
+  step.check('the mail states the total the customer is asked to accept', /2\s?500[,.]00/.test(mail!.html.replace(/&nbsp;|\u00a0/g, ' ')), 'no "2 500,00" in the mail');
+  step.link = link;
+
+  const { page, errors, rendered } = await visit(browser, onThisStack(link!, base), /accept quote|approve quote|acceptera|godkänn/i);
+  try {
+    if (!step.check('the quote page opens from the link', rendered, `the accept button never showed; page errors: ${errors.join(' | ') || 'none'}`)) { await snap(page, 'quote-not-rendered'); return step.result(); }
+    // FINDING 2026-11-17: the page said "Quote QUO-0024", lines and a total. The title, the
+    // introduction, the TERMS and both names were drawn by the page and never handed to it.
+    step.check('the page says what the offer is', await page.getByText(`Customer path ${s.tag}`).first().isVisible().catch(() => false), 'the quote title is not on the page');
+    step.check('…who it is for', await page.getByText(name).first().isVisible().catch(() => false), `"${name}" is not on the page`);
+    step.check('…and the terms the customer is about to accept', await page.getByText('Payment within thirty days of the invoice date.').first().isVisible().catch(() => false), 'the terms are not on the page');
+    await page.getByRole('button', { name: /accept quote|approve quote|acceptera|godkänn/i }).first().click();
+    await signAs(page, name, email, /accept & sign|approve quote|acceptera|godkänn/i);
+    const accepted = async () => (await s.one<{ status: string }>('select status from quotes where id = $1', [quoteId]))?.status === 'accepted';
+    let ok = false;
+    for (let i = 0; i < 30 && !(ok = await accepted()); i++) await page.waitForTimeout(500);
+    await snap(page, 'quote-accepted');
+    step.check('the customer\'s acceptance lands on the quote', ok, `quotes.status is ${(await s.one<{ status: string }>('select status from quotes where id = $1', [quoteId]))?.status}`);
+    step.check('the page raised no error', errors.length === 0, errors.join(' | '));
+    const thanks = await s.mail(email, 'accepted');
+    step.check('the customer is mailed a receipt of the acceptance', !!thanks, 'no "accepted" mail in the rail');
+  } finally {
+    await page.context().close();
+  }
+  return step.result();
+}
+
+/** The business sends an agreement for signature; the counterparty opens the mail's link and signs. */
+async function contractSigned(s: Scenario, browser: Browser, base: string): Promise<StepResult> {
+  const step = new Step('contract: the counterparty signs from the mail');
+  const email = `kund-avtal-${s.tag}@example.test`;
+  const name = `Kundväg Avtal ${s.tag}`;
+  const created = await s.skill('manage_contract', {
+    action: 'create', title: `Customer path agreement ${s.tag}`, counterparty_name: name, counterparty_email: email,
+    contract_type: 'service', start_date: new Date().toISOString().slice(0, 10),
+    body_markdown: `# Service agreement\n\nThis agreement is made between the supplier and ${name} (the customer).\n\n1. The supplier delivers the service described in the accepted quote, on the dates agreed in writing.\n2. The agreement runs for twelve months from the start date and is renewed one year at a time.\n3. Either party may end it with three months' written notice before a renewal.\n4. Invoices are due thirty days after the invoice date.`,
+  });
+  if (!step.check('the business drafts an agreement', created.ok, created.error)) return step.result();
+  const contractId = s.idOf(created.data, 'contract');
+  const sent = await s.skill('send_contract_for_signature', { contract_id: contractId });
+  if (!step.check('the business sends it for signature — and the counterparty is mailed', sent.ok && sent.data.email_sent === true, sent.error || String(sent.data.email_error ?? JSON.stringify(sent.data).slice(0, 200)))) return step.result();
+
+  const mail = await s.mail(email);
+  if (!step.check('the counterparty is mailed the agreement', !!mail, `nothing in the mail rail for ${email}`)) return step.result();
+  const link = mail!.links.find((l) => /\/contract\/[^/]+$/.test(new URL(l).pathname));
+  if (!step.check('the mail carries the signing link', !!link, `links in the mail: ${JSON.stringify(mail!.links)}`)) return step.result();
+  step.link = link;
+
+  const { page, errors, rendered } = await visit(browser, onThisStack(link!, base), /^\s*(sign|accept|signera|godkänn)/i);
+  try {
+    if (!step.check('the signing page opens from the link', rendered, `the sign button never showed; page errors: ${errors.join(' | ') || 'none'}`)) { await snap(page, 'contract-not-rendered'); return step.result(); }
+    // FINDING 2026-11-17: the page read "Between you and <counterparty>" — to the counterparty, their own name.
+    const sellerName = (await s.one<{ n: string | null }>('select public.business_name() as n'))?.n ?? '';
+    step.check('the page names both parties, the seller first', !!sellerName && await page.getByText(`${sellerName} and ${name}`, { exact: false }).first().isVisible().catch(() => false),
+      `"${sellerName} and ${name}" is not on the page`);
+    step.check('the page shows the agreement text', await page.getByText('The agreement runs for twelve months', { exact: false }).first().isVisible().catch(() => false), 'the agreement body is not on the page');
+    await page.getByRole('button', { name: /^\s*(sign|accept|signera|godkänn)/i }).first().click();
+    await signAs(page, name, email, /sign|accept|signera|godkänn/i);
+    const signed = async () => ['active', 'signed'].includes(String((await s.one<{ status: string }>('select status from contracts where id = $1', [contractId]))?.status));
+    let ok = false;
+    for (let i = 0; i < 30 && !(ok = await signed()); i++) await page.waitForTimeout(500);
+    await snap(page, 'contract-signed');
+    step.check('the signature lands on the agreement', ok, `contracts.status is ${(await s.one<{ status: string }>('select status from contracts where id = $1', [contractId]))?.status}`);
+    step.check('the page raised no error', errors.length === 0, errors.join(' | '));
+    const receipt = await s.mail(email, 'signed');
+    step.check('the counterparty is mailed the signed agreement', !!receipt, 'no "signed" mail in the rail');
+  } finally {
+    await page.context().close();
+  }
+  return step.result();
+}
+
+// ── run ─────────────────────────────────────────────────────────────────────
+
+const cfg = readStackConfig();
+assertLocal(cfg.supabaseUrl, 'the Supabase URL');
+if (baseUrlArg) assertLocal(baseUrlArg, '--base-url');
+const db = await connect();
+const s = new Scenario('customer-path', db);
+let vite: Awaited<ReturnType<typeof startVite>> | null = null;
+let browser: Browser | null = null;
+const results: StepResult[] = [];
+let exit = 0;
+try {
+  // A send can only mail a link it can build — a virgin install has no Public Site URL.
+  const general = await s.skill('manage_site_settings', { action: 'get', key: 'general' });
+  const value = ((general.data.value ?? (general.data.item as { value?: unknown } | undefined)?.value ?? {}) as Record<string, unknown>);
+  if (!value.siteUrl) await s.skill('manage_site_settings', { action: 'update', key: 'general', value: { ...value, siteUrl: 'http://localhost:5173' } });
+
+  const base = baseUrlArg ?? (vite = await startVite(cfg, await freePort(5197))).baseUrl;
+  // The same browser the view sweep and the public blocks use: the runner's Chrome, or the one named.
+  const executablePath = process.env.VIEW_SWEEP_BROWSER || undefined;
+  browser = await chromium.launch({ ...(executablePath ? { executablePath } : { channel: 'chrome' }), headless: !headed });
+  for (const run of [quoteAccepted, contractSigned]) {
+    try {
+      results.push(await run(s, browser, base));
+    } catch (e) {
+      results.push({ step: run.name, verdict: 'fail', checks: [{ name: 'the step ran', ok: false, detail: (e as Error).message.slice(0, 400) }] });
+    }
+  }
+  for (const r of results) {
+    console.log(`\n${r.verdict === 'pass' ? '✅' : '❌'} ${r.step}`);
+    for (const c of r.checks) console.log(`   ${c.ok ? '✓' : '✗'} ${c.name}${c.ok ? '' : `\n        ${c.detail ?? ''}`}`);
+  }
+  const passed = results.filter((r) => r.verdict === 'pass').length;
+  mkdirSync(OUT_DIR, { recursive: true });
+  writeFileSync(join(OUT_DIR, 'report.json'), JSON.stringify({ run: s.tag, results }, null, 2));
+  console.log(`\n${passed}/${results.length} customer steps passed · report: .customer-path/report.json`);
+  exit = passed === results.length ? 0 : 1;
+} catch (e) {
+  console.error(`customer-path: could not run — ${(e as Error).message}`);
+  exit = 2;
+} finally {
+  await browser?.close().catch(() => {});
+  vite?.proc.kill('SIGTERM');
+  await db.end().catch(() => {});
+}
+process.exit(exit);

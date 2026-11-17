@@ -667,6 +667,15 @@ beside its payload, so an operator branches instead of guessing:
   without a provider is logged as simulated, row and text are real) and ticks a
   dispatcher itself (`s.pulse('event-dispatcher')`); "no e-mail provider
   locally" is not a reason to skip a mail step.
+  **And the customer's side is proven in a browser (`npm run qa:customer-path`,
+  nightly):** a step is done as the business does it, the mail is read out of
+  the rail, the link in it is opened with no session and the customer's action
+  is taken — the quote accepted, the agreement signed. The first run found a
+  quote page that showed neither sender, title nor TERMS (`get_public_quote`
+  returns a view and never carried them; the page had drawn them all along) and
+  a signing page that read "Between you and <the reader's own name>".
+  `business_name()` (open to a visitor: it answers the trading name only) is
+  the SQL twin of `orgNameFrom`. A new public token page gets a step there.
 - **Born right (2026-10-27).** `manage_invoice create` without `due_date`
   gets one from the payment terms (`net30` → 30 days after the issue date,
   30 when the terms say nothing). Every commercial `currency` column is
