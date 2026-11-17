@@ -47,6 +47,9 @@ export interface Quote {
   customer_email?: string | null;
   customer_company?: string | null;
   title?: string | null;
+  /** A few words above the lines, and the terms the customer accepts — both drawn on the public quote page. */
+  intro_text?: string | null;
+  terms_text?: string | null;
   leads: InvoiceLead | null;
 }
 
