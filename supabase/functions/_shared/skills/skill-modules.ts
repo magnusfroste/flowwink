@@ -590,6 +590,7 @@ export const SKILL_OWNER_MODULE: Readonly<Record<string, string>> = Object.freez
   "search_wiki": "wiki",
   "seed_module_demo": "developer",
   "select_shipping_carrier": "shipping",
+  "send_booking_confirmation": "bookings",
   "send_booking_reminders": "bookings",
   "send_bulk_lead_email": "leads",
   "send_channel_message": "liveSupport",
