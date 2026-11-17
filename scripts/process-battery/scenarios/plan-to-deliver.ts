@@ -67,6 +67,46 @@ async function run(s: Scenario): Promise<void> {
   s.equal('a list by project holds only that project\'s tasks', listedItems.every((i) => i.project_id === legal) && listedItems.length === 2, true);
   const found = await s.must('the workstreams are searched', 'manage_project', { action: 'search', search: `Legal ${s.tag}` });
   s.equal('a search finds the one it names', ((found.items ?? []) as unknown[]).length, 1);
+
+  // ── A list is sized for an agent ────────────────────────────────────────
+  // On optic a page of 50 tasks was 58–71 KB of briefs and checklists, the
+  // model kept only the start of an id, and looked for the search under
+  // `search_query` (Hermes, 2026-11). A list cuts long values and says so,
+  // counts its rows, takes the columns the caller names, and the start of an
+  // id finds the row it belongs to.
+  type Listing = { items?: Array<Record<string, unknown>>; total?: number; next_offset?: number | null; id_prefix?: Record<string, { matched?: string[] }> };
+  const longBrief = 'Read the signed minutes before filing with Bolagsverket. '.repeat(10).trim();
+  await s.must('the registering task gets a long brief', 'manage_project_task', { action: 'update', task_id: waits, description: longBrief });
+  const slim = await s.must<Listing>('the legal tasks are listed for an agent', 'manage_project_task', { action: 'list', project_id: legal });
+  const slimRow = (slim.items ?? []).find((i) => i.id === waits);
+  const preview = String(slimRow?.description ?? '');
+  s.check('a long brief is cut in the list, and the row says so',
+    preview.length > 0 && preview.length < longBrief.length && ((slimRow?._cut ?? []) as string[]).includes('description'), `${preview.length} of ${longBrief.length} characters, _cut=${JSON.stringify(slimRow?._cut)}`);
+  s.equal('the list says how many rows there are', slim.total, 2);
+  s.equal('…and that this was the last page', slim.next_offset, null);
+  const firstPage = await s.must<Listing>('the legal tasks are listed one at a time', 'manage_project_task', { action: 'list', project_id: legal, limit: 1 });
+  s.equal('a full page names where the next one starts', firstPage.next_offset, 1);
+  const pastEnd = await s.must<Listing>('a page past the last row is asked for', 'manage_project_task', { action: 'list', project_id: legal, offset: 50 });
+  s.equal('…and is an empty page that still knows the total', `${(pastEnd.items ?? []).length}/${pastEnd.total}/${pastEnd.next_offset}`, '0/2/null');
+  const whole = await s.must<Listing>('the legal tasks are listed whole', 'manage_project_task', { action: 'list', project_id: legal, full: true });
+  s.equal('full: true returns the brief uncut', (whole.items ?? []).find((i) => i.id === waits)?.description, longBrief);
+  const picked = await s.must<Listing>('the legal tasks are listed by title and status', 'manage_project_task', { action: 'list', project_id: legal, fields: 'title,status' });
+  s.equal('fields picks the columns — the id rides along', Object.keys((picked.items ?? [])[0] ?? {}).sort().join(','), 'id,status,title');
+  await s.mustRefuse('a list\'s preview is never written back as the brief', 'manage_project_task', { action: 'update', task_id: waits, description: preview }, /cut marker/);
+  s.equal('…and the brief is still whole', (await s.one<{ description: string }>(`select description from project_tasks where id = $1`, [waits]))?.description, longBrief);
+  const byStart = await s.must<Listing>('the legal tasks are listed by the start of the project id', 'manage_project_task', { action: 'list', project_id: legal.slice(0, 13) });
+  s.equal('the start of an id filters as the whole id does', (byStart.items ?? []).length === 2 && (byStart.items ?? []).every((i) => i.project_id === legal), true);
+  s.equal('…and the answer carries the whole id', byStart.id_prefix?.project_id?.matched?.join(','), legal);
+  const changedSince = await s.must<Listing>('what changed since the meeting is listed', 'manage_project_task', { action: 'list', project_id: legal, updated_since: meetingAt });
+  s.check('updated_since holds the task that was just changed', (changedSince.items ?? []).some((i) => i.id === waits), `${(changedSince.items ?? []).length} rows`);
+  const later = await s.must<Listing>('what changes after tomorrow is listed', 'manage_project_task', { action: 'list', project_id: legal, updated_since: new Date(Date.now() + 86_400_000).toISOString() });
+  s.equal('…and nothing that did not change', (later.items ?? []).length, 0);
+  const aliased = await s.must<Listing>('the workstreams are searched under search_query', 'manage_project', { action: 'search', search_query: `Legal ${s.tag}` });
+  s.equal('a search under the name the schema declares is a search', (aliased.items ?? []).length, 1);
+  const readByStart = await s.must<{ item?: { id?: string }; resolved_id?: { id?: string } }>('a workstream is read by the start of its id', 'manage_project', { action: 'get', project_id: legal.slice(0, 13) });
+  s.equal('a read of the one row that starts so is answered', readByStart.item?.id, legal);
+  s.equal('…and says which id it read', readByStart.resolved_id?.id, legal);
+  await s.mustRefuse('a write never acts on the start of an id', 'manage_project', { action: 'update', project_id: legal.slice(0, 13), description: 'guessed' }, /did you mean/);
   await s.must('the minutes are started', 'manage_project_task', { action: 'move', task_id: prereq, status: 'in_progress' });
   s.equal('moving by task_id moves the task', (await s.one<{ status: string }>('select status::text from project_tasks where id = $1', [prereq]))?.status, 'in_progress');
   await s.must('the minutes are signed', 'manage_project_task', { action: 'complete', task_id: prereq });

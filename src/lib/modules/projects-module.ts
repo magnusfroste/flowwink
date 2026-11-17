@@ -73,7 +73,7 @@ const PROJECT_SKILLS: SkillSeed[] = [
   },
   {
     name: 'manage_project_task',
-    description: 'Create, update, move, complete, delete and list tasks within a project. Use when: adding work items, moving tasks on the kanban board, checking task status, removing a task planned by mistake. NOT for: CRM tasks (use crm_task_create / crm_task_update), project-level operations (use manage_project).',
+    description: 'Create, read, update, move, complete, delete and list tasks within a project. Use when: adding work items, moving tasks on the kanban board, checking task status, removing a task planned by mistake. NOT for: CRM tasks (use crm_task_create / crm_task_update), project-level operations (use manage_project).',
     category: 'crm',
     handler: 'db:project_tasks',
     scope: 'internal',
@@ -85,7 +85,7 @@ const PROJECT_SKILLS: SkillSeed[] = [
         parameters: {
           type: 'object',
           properties: {
-            action: { type: 'string', enum: ['create', 'update', 'move', 'list', 'complete', 'delete'] },
+            action: { type: 'string', enum: ['create', 'get', 'update', 'move', 'list', 'complete', 'delete'] },
             task_id: { type: 'string' },
             project_id: { type: 'string' },
             title: { type: 'string' },
@@ -98,6 +98,11 @@ const PROJECT_SKILLS: SkillSeed[] = [
             parent_task_id: { type: 'string', description: 'Parent task UUID — makes this a sub-task' },
             milestone_id: { type: 'string', description: 'Milestone UUID this task belongs to' },
             area: { type: 'string', description: 'The task\'s area — one level of grouping in the project view ("DDC 1.0", "Stokab"). Empty, the view reads the title\'s prefix before " – " as the area; set it when the title carries none. Reuse the project\'s existing areas (list shows them) rather than coining a near-duplicate.' },
+            search: { type: 'string', description: 'list: words to find in the title or the brief.' },
+            fields: { type: 'string', description: 'list: the columns to return, comma-separated ("title,status,priority,assigned_to"). The id always rides along.' },
+            updated_since: { type: 'string', description: 'list: only tasks changed at or after this ISO date/time — what moved since you last looked.' },
+            limit: { type: 'integer', description: 'list: page size (default 50).' },
+            offset: { type: 'integer', description: 'list: where the page starts — use the answer\'s next_offset.' },
           },
           required: ['action'],
           'x-action-required': {
@@ -106,7 +111,7 @@ const PROJECT_SKILLS: SkillSeed[] = [
         },
       },
     },
-    instructions: 'Kanban-style task management within projects. Status flow: todo → in_progress → review → done; there is no blocked status — keep the status and ask on the thread (comment_on_task kind=question) what blocks it. Set completed_at when moving to done. For move action, update sort_order. Set parent_task_id to create a sub-task, milestone_id to attach a task to a milestone. AREA is one level of grouping (the Areas tab): a task whose title reads "Område – Titel" is already in that area; pass area only to set or move one, and reuse the names list returns. PRIORITY means what this team says it means — read project_priority_guide (also carried by project_attention and project_portfolio_brief) before choosing, and use its words: urgent is what the project view flags as needing attention, high matters but does not block. Do not leave everything on medium; do not mark urgent to get attention.',
+    instructions: 'Kanban-style task management within projects. Status flow: todo → in_progress → review → done; there is no blocked status — keep the status and ask on the thread (comment_on_task kind=question) what blocks it. Set completed_at when moving to done. For move action, update sort_order. Set parent_task_id to create a sub-task, milestone_id to attach a task to a milestone. AREA is one level of grouping (the Areas tab): a task whose title reads "Område – Titel" is already in that area; pass area only to set or move one, and reuse the names list returns. PRIORITY means what this team says it means — read project_priority_guide (also carried by project_attention and project_portfolio_brief) before choosing, and use its words: urgent is what the project view flags as needing attention, high matters but does not block. Do not leave everything on medium; do not mark urgent to get attention. LIST is a listing, not every task whole: a long brief is cut and a long checklist left out, each row naming them in _cut — read ONE task whole with get {task_id} before you change its brief or checklist; a cut preview is refused as a write. Never page the whole table to find a task: filter (project_id, status, assigned_to, priority), search (title and brief), or updated_since. The answer carries total and next_offset. project_id may be the first 8+ characters of the id; the answer names the whole id under id_prefix.',
   },
   {
     name: 'comment_on_task',

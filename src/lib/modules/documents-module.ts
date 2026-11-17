@@ -79,7 +79,12 @@ const DOCS_SKILLS: SkillSeed[] = [
             description: { type: 'string', description: 'Notes / summary of the document' },
             related_entity_type: { type: 'string', description: 'e.g. contract, employee, project, deal' },
             related_entity_id: { type: 'string' },
-            search_query: { type: 'string' },
+            search: { type: 'string', description: 'list/search: words to find — matches title, file name, description and the extracted text. search_query and query are read as this.' },
+            search_query: { type: 'string', description: 'Alias for search.' },
+            fields: { type: 'string', description: 'list: the columns to return, comma-separated ("title,category,updated_at"). The id always rides along.' },
+            updated_since: { type: 'string', description: 'list: only documents changed at or after this ISO date/time.' },
+            limit: { type: 'integer', description: 'list: page size (default 50).' },
+            offset: { type: 'integer', description: 'list: where the page starts — use the answer\'s next_offset.' },
           },
           required: ['action'],
           'x-action-required': {
@@ -88,7 +93,7 @@ const DOCS_SKILLS: SkillSeed[] = [
         },
       },
     },
-    instructions: 'Central document store. action=create REQUIRES title + file_url + category; file_name auto-fills from title. Categories: contract→Contracts, hr→HR, finance→Expenses/Invoicing, project→Projects. Use related_entity_type to link to a record (e.g. "deal" + deal_id). For PDFs from chat attachments, pass the attachment URL as file_url. The body/markdown of the document is NOT stored — only the file URL. Swedish: "dokument", "fil", "arkiv", "mapp".',
+    instructions: 'Central document store. action=create REQUIRES title + file_url + category; file_name auto-fills from title. Categories: contract→Contracts, hr→HR, finance→Expenses/Invoicing, project→Projects. Use related_entity_type to link to a record (e.g. "deal" + deal_id). For PDFs from chat attachments, pass the attachment URL as file_url. The body/markdown of the document is NOT stored — only the file URL. LIST is a listing: the extracted text (content_md) and other long values are cut and named in _cut — get returns a document whole. Find one with search (title, file name, description, extracted text) rather than paging; the answer carries total and next_offset. An id may be given by its first 8+ characters: get answers the one document that starts so, update/delete name the whole id to re-send. Swedish: "dokument", "fil", "arkiv", "mapp".',
   },
   {
     name: 'extract_pdf_text',
