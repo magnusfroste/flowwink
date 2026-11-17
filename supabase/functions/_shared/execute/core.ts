@@ -16276,7 +16276,50 @@ async function executeDbAction(
           updated_at: new Date().toISOString(),
         }).eq('id', invoice_id).select('id, invoice_number, status, public_token').single();
         if (error) throw new Error(`Send invoice failed: ${error.message}`);
-        return { sent: true, invoice_id: data.id, invoice_number: data.invoice_number, status: data.status, public_token: data.public_token };
+
+        // The customer is e-mailed the invoice — by the SKILL, as the quote's and
+        // the agreement's send do. Until 2026-11-17 `send` set the status and
+        // mailed nobody: only the admin's button did, so an invoice an agent
+        // "sent" reached the customer first as a payment reminder.
+        const customerEmail = (args as { email?: unknown }).email === false ? null : await (async () => {
+          const { data: row, error: rErr } = await supabase.from('invoices').select('customer_email, leads(email)').eq('id', data.id).maybeSingle();
+          if (rErr) console.warn('[manage_invoice send] could not read the recipient:', rErr.message);
+          const lead = (row as { leads?: { email?: string | null } | Array<{ email?: string | null }> | null } | null)?.leads;
+          return (row as { customer_email?: string | null } | null)?.customer_email || (Array.isArray(lead) ? lead[0]?.email : lead?.email) || null;
+        })();
+        const origin = await resolveSiteUrl(supabase);
+        const invoiceUrl = origin && data.public_token ? `${origin.replace(/\/$/, '')}/invoice/${data.public_token}` : null;
+        let emailSent = false;
+        let emailError: string | undefined;
+        if ((args as { email?: unknown }).email === false) {
+          emailError = 'email: false was passed — no e-mail was sent.';
+        } else if (!customerEmail) {
+          emailError = 'The invoice has no customer_email (and its lead has none), so nobody could be e-mailed.';
+        } else if (!invoiceUrl) {
+          emailError = 'Public Site URL is not configured (Admin → Site Settings → General) — no link to the invoice could be built.';
+        } else {
+          try {
+            const mailRes = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/comms-send`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}` },
+              body: JSON.stringify({ kind: 'invoice_email', invoice_id: data.id, public_url: invoiceUrl }),
+            });
+            const mailBody = await mailRes.json().catch(() => ({}));
+            emailSent = mailRes.ok && (mailBody as { success?: boolean }).success === true;
+            if (!emailSent) emailError = String((mailBody as { error?: string }).error ?? `comms-send answered ${mailRes.status}`);
+          } catch (e) {
+            emailError = (e as Error).message;
+          }
+        }
+        return {
+          sent: true, invoice_id: data.id, invoice_number: data.invoice_number, status: data.status, public_token: data.public_token,
+          ...(invoiceUrl ? { url: invoiceUrl } : {}),
+          email_sent: emailSent,
+          ...(emailSent ? { emailed_to: customerEmail } : {}),
+          ...(emailError ? { email_error: emailError } : {}),
+          note: emailSent ? 'The customer has been e-mailed the invoice with its PDF and the link to it.'
+            : 'The invoice is marked sent, but NO e-mail went out — pass the link on yourself, or fix the cause in email_error and send again.',
+        };
       }
 
       if (action === 'mark_paid') {

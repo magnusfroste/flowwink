@@ -29,6 +29,13 @@ export interface InvoicePdfLabels {
   total: string;
   notes: string;
   generated: string;
+  orgNumber: string;
+  vatNumber: string;
+  howToPay: string;
+  bankgiro: string;
+  iban: string;
+  bic: string;
+  reference: string;
 }
 
 export function invoicePdfLabels(t: UiText, status: string): InvoicePdfLabels {
@@ -56,5 +63,12 @@ export function invoicePdfLabels(t: UiText, status: string): InvoicePdfLabels {
     total: t('invoice.total', 'Total').toUpperCase(),
     notes: t('invoice.notes', 'Notes'),
     generated: t('invoice.generated', 'Generated'),
+    orgNumber: t('invoice.orgNumber', 'Org. no.'),
+    vatNumber: t('invoice.vatNumber', 'VAT no.'),
+    howToPay: t('invoice.howToPay', 'How to pay'),
+    bankgiro: t('invoice.bankgiro', 'Bankgiro'),
+    iban: t('invoice.iban', 'IBAN'),
+    bic: t('invoice.bic', 'BIC'),
+    reference: t('invoice.reference', 'Reference'),
   };
 }

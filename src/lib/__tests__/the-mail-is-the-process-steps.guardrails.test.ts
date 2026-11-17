@@ -106,3 +106,53 @@ describe('the customer sees what the quote is, whose it is and on what terms', (
     expect(read('package.json')).toMatch(/"qa:customer-path": "bun run scripts\/customer-path\/index\.ts"/);
   });
 });
+
+describe('the invoice says who is asking and how to pay — and reaches the customer', () => {
+  // Found by opening the invoice mail's link in a browser as the customer (2026-11-17).
+  const core = read('supabase/functions/_shared/execute/core.ts');
+  const page = read('src/pages/PublicInvoicePage.tsx');
+  const pdf = read('supabase/functions/generate-invoice-pdf/index.ts');
+  const sql = read('supabase/migrations/20261117150000_fakturan-sager-vem-och-hur.sql');
+
+  it('manage_invoice send mails the customer and says whether it did', () => {
+    const send = core.slice(core.indexOf("throw new Error(`Send invoice failed:"));
+    const body = send.slice(0, send.indexOf("if (action === 'mark_paid')"));
+    expect(body).toMatch(/kind: 'invoice_email'/);
+    expect(body).toMatch(/email_sent: emailSent/);
+    expect(body).toMatch(/email_error: emailError/);
+    expect(read('src/lib/modules/invoicing-module.ts')).toMatch(/SEND: issues the invoice[^\n]*e-mails the customer/);
+  });
+
+  it('no skill description points at a send skill that does not exist', () => {
+    expect(read('src/lib/modules/invoicing-module.ts')).not.toMatch(/send_invoice_email/);
+  });
+
+  it('the seller and the bank details have one home, read by the page and the PDF alike', () => {
+    expect(sql).toMatch(/key = 'company_profile'/);
+    expect(sql).toMatch(/key = 'einvoice'/);
+    expect(page).toMatch(/get_invoice_payment_info/);
+    expect(pdf).toMatch(/rpc\("invoice_seller_facts"\)/);
+    // What an invoice prints is for whoever holds its link — never for any visitor.
+    expect(sql).toMatch(/REVOKE ALL ON FUNCTION public\.invoice_seller_facts\(\) FROM anon, authenticated/);
+    const lookup = sql.slice(sql.indexOf('FUNCTION public.get_invoice_payment_info'));
+    expect(lookup.slice(0, lookup.indexOf('REVOKE'))).toMatch(/token_is_plausible\(p_token\)/);
+  });
+
+  it('a card button is drawn only where the payment function says a card can be taken', () => {
+    expect(page).toMatch(/cardAvailable \? \(\s*<Button onClick=\{handlePay\}/);
+    const fn = read('supabase/functions/create-invoice-payment/index.ts');
+    expect(fn).toMatch(/if \(probe === true\)/);
+    expect(fn).toMatch(/stripe\?\.enabled !== false/);
+    expect(fn).not.toMatch(/throw new Error\('Stripe not configured'\)/);
+  });
+
+  it('the PDF draws every text through the font\'s own character set', () => {
+    expect(pdf).toMatch(/page\.drawText = \(text: string[^\n]*winAnsi\(text\)/);
+    expect(pdf).not.toMatch(/\|\| "Company"/);
+    expect(pdf).toMatch(/item\.qty \?\? item\.quantity/);
+  });
+
+  it('the invoice is a step on the customer path', () => {
+    expect(read('scripts/customer-path/index.ts')).toMatch(/\[quoteAccepted, contractSigned, invoicePaid\]/);
+  });
+});
