@@ -126,6 +126,18 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Fixed
 
+- **The Daily Briefing writes when the morning has news.** A small site was
+  mailed every morning: "Traffic down 60% vs last week — consider new content"
+  was an action item on 19 page views against 47, and cost ten health points;
+  and without it the mail went anyway, because one page view in 24 hours or a
+  blog post from earlier in the week counted as something to tell. Traffic now
+  has a floor — no trend is stated against a week under 100 page views, in the
+  mail, the chat message, the dashboard and the health score — and a figure is
+  a reason to write only when it is news: an action item, a finding, a lead, a
+  post published since the last briefing. Sites with real traffic are told
+  their day as before. The briefing's row records why it was sent
+  (`metrics.reasons`).
+
 - **The customer portal starts with what the customer has.** It opened on the
   order list, so a customer with a service agreement and no shop purchases saw
   "No orders yet — browse products" and a menu of Orders, Addresses and
