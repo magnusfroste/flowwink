@@ -10,9 +10,11 @@ import { Separator } from '@/components/ui/separator';
 import { useCart } from '@/contexts/CartContext';
 import { useVatDisplay } from '@/hooks/useVatDisplay';
 import { useCustomerFormat } from '@/hooks/useCustomerFormat';
+import { useUiText } from '@/lib/ui-text';
 
 export default function CartPage() {
   const { formatPrice } = useCustomerFormat();
+  const t = useUiText();
   const { items, removeItem, updateQuantity, totalPriceCents, currency, totalItems } = useCart();
   const vat = useVatDisplay();
   const navigate = useNavigate();
@@ -29,12 +31,12 @@ export default function CartPage() {
         <main className="pt-[var(--overlay-header-offset,0px)] min-h-screen bg-background flex items-center justify-center p-4">
           <div className="text-center space-y-4">
             <ShoppingBag className="h-16 w-16 mx-auto text-muted-foreground/30" />
-            <h1 className="text-2xl font-bold">Your cart is empty</h1>
-            <p className="text-muted-foreground">Browse products and add them to your cart.</p>
+            <h1 className="text-2xl font-bold">{t('checkout.cartEmpty', 'Your cart is empty')}</h1>
+            <p className="text-muted-foreground">{t('cart.emptyHint', 'Browse products and add them to your cart.')}</p>
             <Button asChild>
               <Link to="/shop">
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Continue shopping
+                {t('cart.continueShopping', 'Continue shopping')}
               </Link>
             </Button>
           </div>
@@ -51,7 +53,7 @@ export default function CartPage() {
 
       <main className="pt-[var(--overlay-header-offset,0px)] min-h-screen bg-background">
         <div className="container mx-auto px-6 py-8 max-w-5xl">
-          <h1 className="text-3xl font-serif font-bold tracking-tight mb-8">Your Cart</h1>
+          <h1 className="text-3xl font-serif font-bold tracking-tight mb-8">{t('cart.title', 'Your cart')}</h1>
 
           <div className="grid gap-8 lg:grid-cols-3">
             {/* Items */}
@@ -140,7 +142,7 @@ export default function CartPage() {
               <Button variant="ghost" asChild className="gap-2">
                 <Link to="/shop">
                   <ArrowLeft className="h-4 w-4" />
-                  Continue shopping
+                  {t('cart.continueShopping', 'Continue shopping')}
                 </Link>
               </Button>
             </div>
@@ -149,7 +151,7 @@ export default function CartPage() {
             <div>
               <Card className="sticky top-8">
                 <CardHeader>
-                  <CardTitle className="text-lg">Order Summary</CardTitle>
+                  <CardTitle className="text-lg">{t('cart.summary', 'Order summary')}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="flex justify-between text-sm">
@@ -160,7 +162,7 @@ export default function CartPage() {
                   </div>
                   <Separator />
                   <div className="flex justify-between font-bold text-lg">
-                    <span>Total</span>
+                    <span>{t('checkout.total', 'Total')}</span>
                     <span>{formatPrice(totalPriceCents, currency)}</span>
                   </div>
                   {vat.label && (
@@ -173,7 +175,7 @@ export default function CartPage() {
                     size="lg"
                     onClick={() => navigate('/checkout')}
                   >
-                    Checkout
+                    {t('cart.checkout', 'Checkout')}
                     <ArrowRight className="h-4 w-4 ml-2" />
                   </Button>
                 </CardFooter>

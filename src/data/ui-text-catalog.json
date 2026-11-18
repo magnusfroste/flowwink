@@ -751,6 +751,31 @@
       "fallback": "us"
     },
     {
+      "key": "cart.checkout",
+      "group": "cart",
+      "fallback": "Checkout"
+    },
+    {
+      "key": "cart.continueShopping",
+      "group": "cart",
+      "fallback": "Continue shopping"
+    },
+    {
+      "key": "cart.emptyHint",
+      "group": "cart",
+      "fallback": "Browse products and add them to your cart."
+    },
+    {
+      "key": "cart.summary",
+      "group": "cart",
+      "fallback": "Order summary"
+    },
+    {
+      "key": "cart.title",
+      "group": "cart",
+      "fallback": "Your cart"
+    },
+    {
       "key": "chat.assistantTitle",
       "group": "chat",
       "fallback": "AI Assistant"
@@ -919,6 +944,231 @@
       "key": "chat.welcome",
       "group": "chat",
       "fallback": "Hi! How can I help you today?"
+    },
+    {
+      "key": "checkout.address",
+      "group": "checkout",
+      "fallback": "Address"
+    },
+    {
+      "key": "checkout.address2",
+      "group": "checkout",
+      "fallback": "Address line 2"
+    },
+    {
+      "key": "checkout.address2Placeholder",
+      "group": "checkout",
+      "fallback": "Apartment, c/o (optional)"
+    },
+    {
+      "key": "checkout.addressPlaceholder",
+      "group": "checkout",
+      "fallback": "Street and number"
+    },
+    {
+      "key": "checkout.apply",
+      "group": "checkout",
+      "fallback": "Apply"
+    },
+    {
+      "key": "checkout.awaitingConfirmation",
+      "group": "checkout",
+      "fallback": "We are waiting for the payment to be confirmed. The page will update automatically."
+    },
+    {
+      "key": "checkout.back",
+      "group": "checkout",
+      "fallback": "Back"
+    },
+    {
+      "key": "checkout.backHome",
+      "group": "checkout",
+      "fallback": "Back to home"
+    },
+    {
+      "key": "checkout.cartEmpty",
+      "group": "checkout",
+      "fallback": "Your cart is empty"
+    },
+    {
+      "key": "checkout.cartEmptyHint",
+      "group": "checkout",
+      "fallback": "Add products to continue to checkout."
+    },
+    {
+      "key": "checkout.city",
+      "group": "checkout",
+      "fallback": "City"
+    },
+    {
+      "key": "checkout.country",
+      "group": "checkout",
+      "fallback": "Country"
+    },
+    {
+      "key": "checkout.deliveryAddress",
+      "group": "checkout",
+      "fallback": "Delivery address"
+    },
+    {
+      "key": "checkout.deliveryMethod",
+      "group": "checkout",
+      "fallback": "Delivery method"
+    },
+    {
+      "key": "checkout.discount",
+      "group": "checkout",
+      "fallback": "Discount"
+    },
+    {
+      "key": "checkout.discountApplied",
+      "group": "checkout",
+      "fallback": "Discount code {code} applied"
+    },
+    {
+      "key": "checkout.discountCode",
+      "group": "checkout",
+      "fallback": "Discount code"
+    },
+    {
+      "key": "checkout.discountFailed",
+      "group": "checkout",
+      "fallback": "Could not validate discount code"
+    },
+    {
+      "key": "checkout.discountInvalid",
+      "group": "checkout",
+      "fallback": "This code is not valid"
+    },
+    {
+      "key": "checkout.email",
+      "group": "checkout",
+      "fallback": "Email"
+    },
+    {
+      "key": "checkout.loading",
+      "group": "checkout",
+      "fallback": "Loading…"
+    },
+    {
+      "key": "checkout.name",
+      "group": "checkout",
+      "fallback": "Name"
+    },
+    {
+      "key": "checkout.namePlaceholder",
+      "group": "checkout",
+      "fallback": "Your name"
+    },
+    {
+      "key": "checkout.needAddress",
+      "group": "checkout",
+      "fallback": "Please enter your delivery address"
+    },
+    {
+      "key": "checkout.needNameEmail",
+      "group": "checkout",
+      "fallback": "Please enter name and email"
+    },
+    {
+      "key": "checkout.orderDate",
+      "group": "checkout",
+      "fallback": "Order date"
+    },
+    {
+      "key": "checkout.orderDetails",
+      "group": "checkout",
+      "fallback": "Order details"
+    },
+    {
+      "key": "checkout.orderPending",
+      "group": "checkout",
+      "fallback": "Order created — payment pending"
+    },
+    {
+      "key": "checkout.orderPlaced",
+      "group": "checkout",
+      "fallback": "Order placed successfully!"
+    },
+    {
+      "key": "checkout.pay",
+      "group": "checkout",
+      "fallback": "Pay"
+    },
+    {
+      "key": "checkout.paymentFailed",
+      "group": "checkout",
+      "fallback": "Could not initiate payment"
+    },
+    {
+      "key": "checkout.phone",
+      "group": "checkout",
+      "fallback": "Phone"
+    },
+    {
+      "key": "checkout.postalCode",
+      "group": "checkout",
+      "fallback": "Postal code"
+    },
+    {
+      "key": "checkout.preparing",
+      "group": "checkout",
+      "fallback": "Preparing payment…"
+    },
+    {
+      "key": "checkout.removeDiscount",
+      "group": "checkout",
+      "fallback": "Remove discount code"
+    },
+    {
+      "key": "checkout.shipping",
+      "group": "checkout",
+      "fallback": "Shipping"
+    },
+    {
+      "key": "checkout.status.failed",
+      "group": "checkout",
+      "fallback": "Payment failed"
+    },
+    {
+      "key": "checkout.status.paid",
+      "group": "checkout",
+      "fallback": "Payment successful!"
+    },
+    {
+      "key": "checkout.status.pending",
+      "group": "checkout",
+      "fallback": "Awaiting payment…"
+    },
+    {
+      "key": "checkout.status.refunded",
+      "group": "checkout",
+      "fallback": "Refunded"
+    },
+    {
+      "key": "checkout.thankYou",
+      "group": "checkout",
+      "fallback": "Thank you for your order!"
+    },
+    {
+      "key": "checkout.total",
+      "group": "checkout",
+      "fallback": "Total"
+    },
+    {
+      "key": "checkout.trackOrder",
+      "group": "checkout",
+      "fallback": "Track this order"
+    },
+    {
+      "key": "checkout.yourDetails",
+      "group": "checkout",
+      "fallback": "Your details"
+    },
+    {
+      "key": "checkout.yourOrder",
+      "group": "checkout",
+      "fallback": "Your order"
     },
     {
       "key": "comments.empty",
