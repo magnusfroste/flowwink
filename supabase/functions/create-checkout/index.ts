@@ -445,7 +445,11 @@ serve(async (req: Request) => {
           lang: orderLang,
           total_cents: totalCents,
           currency: currency,
-          status: orderStatus,
+          // Born pending, paid below once its lines are in — the way a Stripe
+          // order is (pending, then the webhook). An order BORN paid raised no
+          // order.paid: no receipt, no stock taken, and it was booked before
+          // it had a single line.
+          status: "pending",
           ...attribution,
           user_id: userId || null,
           discount_code: discount?.code ?? null,
@@ -482,7 +486,28 @@ serve(async (req: Request) => {
         quantity: item.quantity,
         ...(vat ? { tax_rate_pct: vat.ratePct } : {}),
       }));
-      await supabase.from("order_items").insert(orderItems);
+      const { error: itemsError } = await supabase.from("order_items").insert(orderItems);
+      if (itemsError) logStep("Sandbox order items error", itemsError);
+
+      if (orderStatus === "paid") {
+        const { error: paidError } = await supabase.from("orders").update({ status: "paid" }).eq("id", order.id);
+        if (paidError) {
+          logStep("Sandbox order could not be marked paid", paidError);
+          throw new Error("Could not complete sandbox order");
+        }
+        // What the Stripe webhook does when a payment lands: the customer's
+        // order confirmation. The receipt is the automation's, on order.paid.
+        try {
+          const mailed = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/comms-send?kind=order_confirmation`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}` },
+            body: JSON.stringify({ orderId: order.id }),
+          });
+          logStep("Order confirmation triggered (sandbox)", { status: mailed.status });
+        } catch (mailError) {
+          logStep("Order confirmation failed (sandbox)", { message: (mailError as Error).message });
+        }
+      }
 
       // Sandbox orders exist in the DB immediately — count the redemption now.
       if (discount) {
