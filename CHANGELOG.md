@@ -126,6 +126,13 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Fixed
 
+- **An invoice created by hand has a due date and the customer's name.** An
+  invoice made with New Invoice in the admin was born with no due date — so it
+  was never overdue and no reminder was ever sent — and without the customer's
+  name and e-mail on the invoice itself, so the customer's invoice page and PDF
+  did not name them. Every invoice now gets its due date from the payment terms
+  (30 days when none are stated) and its customer from the lead, whoever
+  creates it. A draft that already lacks a due date gets one when it is sent.
 - **Every "no" the gateway says is answered with a code and written down.** An
   agent that ran a skill by a name that does not exist got one sentence back
   and the call left no trace; so did a tool the connection does not carry, a

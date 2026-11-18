@@ -74,3 +74,25 @@ describe('a person can do the quote by hand', () => {
     expect(read('package.json')).toMatch(/"qa:staff-path": "bun run scripts\/staff-path\/index\.ts"/);
   });
 });
+
+describe('an invoice is born right whoever creates it', () => {
+  // Found by creating one by hand in the admin (2026-11-18): no due date, no customer on the row.
+  const sql = read('supabase/migrations/20261118090000_fakturan-fods-ratt-vem-som-an-skapar-den.sql');
+
+  it('the rule is a trigger on the row, not a habit of one writer', () => {
+    expect(sql).toMatch(/CREATE TRIGGER a_invoices_born_right\s+BEFORE INSERT OR UPDATE OF status ON public\.invoices/);
+    expect(sql).toMatch(/NEW\.due_date := coalesce\(NEW\.issue_date, public\.platform_today\(\)\) \+ v_days/);
+    expect(sql).toMatch(/NEW\.due_date IS NULL/);
+    expect(sql).toMatch(/coalesce\(NEW\.invoice_type, 'invoice'\) = 'invoice'/);
+  });
+
+  it('the proof creates no customer of its own on an instance with history', () => {
+    const proof = sql.slice(sql.indexOf('-- ── Proof'));
+    expect(proof).not.toMatch(/INSERT INTO public\.leads/);
+  });
+
+  it('the invoice by hand is a step on the staff path', () => {
+    expect(read('scripts/staff-path/index.ts')).toMatch(/\[quoteByHand, invoiceByHand\]/);
+  });
+});
+

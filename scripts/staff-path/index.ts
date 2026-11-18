@@ -71,6 +71,16 @@ async function until<T>(read: () => Promise<T | null | undefined>, ok: (v: T) =>
   return null;
 }
 
+/** The mail a click sent: the page shows "sent" a moment before the mail is in the rail. */
+async function mailTo(s: Scenario, recipient: string): Promise<Awaited<ReturnType<Scenario['mail']>>> {
+  for (let i = 0; i < 40; i++) {
+    const mail = await s.mail(recipient);
+    if (mail) return mail;
+    await new Promise((r) => setTimeout(r, 500));
+  }
+  return undefined;
+}
+
 // ── the steps ───────────────────────────────────────────────────────────────
 
 /** A person writes a quote for a lead, sends it, and the customer opens what was sent. */
@@ -144,7 +154,7 @@ async function quoteByHand(s: Scenario, browser: Browser, cfg: StackConfig, admi
     await snap(page, 'quote-sent');
     if (!step.check('Send to Customer sends it', !!sent, `quotes.status is ${(await s.one<{ status: string }>('select status from quotes where id = $1', [quote!.id]))?.status}`)) return step.result();
 
-    const mail = await s.mail(email);
+    const mail = await mailTo(s, email);
     if (!step.check('the customer is mailed the quote', !!mail, `nothing in the mail rail for ${email}`)) return step.result();
     const link = mail!.links.find((l) => /\/quote\/[^/]+$/.test(new URL(l).pathname));
     if (!step.check('the mail carries the link to the quote', !!link, `links in the mail: ${JSON.stringify(mail!.links)}`)) return step.result();
@@ -162,6 +172,92 @@ async function quoteByHand(s: Scenario, browser: Browser, cfg: StackConfig, admi
     } finally {
       await visitor.close();
     }
+    step.check('the admin raised no error', errors.length === 0, errors.join(' | '));
+  } finally {
+    await ctx.close();
+  }
+  return step.result();
+}
+
+/** A person writes an invoice for a lead, sends it and registers the bank payment — all in the admin. */
+async function invoiceByHand(s: Scenario, browser: Browser, cfg: StackConfig, admin: FixtureUser, base: string): Promise<StepResult> {
+  const step = new Step('invoice: written, sent and paid by hand in the admin');
+  const email = `hand-invoice-${s.tag}@example.test`;
+  const name = `Handväg Faktura ${s.tag}`;
+  const lead = await s.skill('add_lead', { email, name, source: 'form' });
+  if (!step.check('there is a lead to invoice', lead.ok, lead.error)) return step.result();
+
+  const ctx = await signedIn(browser, cfg, admin);
+  const page = await ctx.newPage();
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message.slice(0, 300)));
+  // "Send invoice … to …?" is a native confirm: the person presses OK.
+  page.on('dialog', (d) => { void d.accept(); });
+  const row = () => s.one<{ id: string; invoice_number: string; status: string; due_date: string | null; issue_date: string | null; customer_name: string | null; customer_email: string | null; total_cents: number; paid_amount_cents: number | null }>(
+    `select i.id, i.invoice_number, i.status::text as status, i.due_date::text as due_date, i.issue_date::text as issue_date, i.customer_name, i.customer_email, i.total_cents, i.paid_amount_cents
+       from invoices i join leads l on l.id = i.lead_id where l.email = $1`, [email]);
+  try {
+    await page.goto(`${base}/admin/invoices`, { waitUntil: 'domcontentloaded' });
+    const newInvoice = page.getByRole('button', { name: /new invoice/i }).first();
+    if (!step.check('the invoices page opens for the person', await newInvoice.waitFor({ state: 'visible', timeout: 60_000 }).then(() => true, () => false), `no "New Invoice" button; page errors: ${errors.join(' | ') || 'none'}`)) { await snap(page, 'invoices-not-rendered'); return step.result(); }
+    await newInvoice.click();
+    const dialog = page.getByRole('dialog');
+    await dialog.getByRole('combobox').first().click();
+    const option = page.getByRole('option', { name: new RegExp(name) }).first();
+    if (!step.check('the lead can be picked as the customer', await option.waitFor({ state: 'visible', timeout: 10_000 }).then(() => true, () => false), `"${name}" is not among the leads offered`)) { await snap(page, 'invoice-lead-missing'); return step.result(); }
+    await option.click();
+    await dialog.getByRole('button', { name: /create draft/i }).click();
+
+    const born = await until(row, (r) => !!r.id);
+    if (!step.check('the draft is created', !!born, 'no invoice row for the lead after "Create Draft"')) { await snap(page, 'invoice-not-created'); return step.result(); }
+    step.check('it is numbered in the yearly series', /^INV-\d{4}-\d{5}$/.test(born!.invoice_number), `the hand-made invoice is ${born!.invoice_number}`);
+    // FINDING 2026-11-18: no due date (so never overdue, and no reminder ever), and no customer on the invoice itself.
+    const expectDue = born!.issue_date ? new Date(new Date(`${born!.issue_date}T00:00:00Z`).getTime() + 30 * 86_400_000).toISOString().slice(0, 10) : '';
+    step.check('it is born with a due date, thirty days out', born!.due_date === expectDue, `issue ${born!.issue_date}, due ${born!.due_date}`);
+    step.check('…and carries the customer\'s own name and e-mail', born!.customer_name === name && born!.customer_email === email, `customer_name "${born!.customer_name}", customer_email "${born!.customer_email}"`);
+
+    await page.getByRole('cell', { name: born!.invoice_number }).first().click();
+    const description = page.getByPlaceholder('Description').first();
+    if (!step.check('the invoice opens for editing', await description.waitFor({ state: 'visible', timeout: 15_000 }).then(() => true, () => false), 'the invoice editor did not open')) { await snap(page, 'invoice-editor'); return step.result(); }
+    await description.fill('Consulting day');
+    await page.getByPlaceholder(/^Price/).first().fill('8000');
+    await page.getByRole('button', { name: /save changes/i }).click();
+    const saved = await until(row, (r) => r.total_cents === 1_000_000);
+    await snap(page, 'invoice-written');
+    if (!step.check('Save writes the line: 8 000 kr + 25 % VAT', !!saved, `invoices.total_cents is ${(await row())?.total_cents}`)) return step.result();
+
+    await page.getByRole('button', { name: /^\s*send\s*$/i }).click();
+    const sent = await until(row, (r) => r.status === 'sent');
+    await snap(page, 'invoice-sent');
+    if (!step.check('Send issues it', !!sent, `invoices.status is ${(await row())?.status}`)) return step.result();
+    const mail = await mailTo(s, email);
+    if (!step.check('the customer is mailed the invoice', !!mail, `nothing in the mail rail for ${email}`)) return step.result();
+    const link = mail!.links.find((l) => /\/invoice\/[^/]+$/.test(new URL(l).pathname));
+    step.check('the mail carries the link to the invoice', !!link, `links in the mail: ${JSON.stringify(mail!.links)}`);
+
+    if (link) {
+      const visitor = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+      try {
+        const customer = await visitor.newPage();
+        const u = new URL(link);
+        await customer.goto(`${base}${u.pathname}${u.search}`, { waitUntil: 'domcontentloaded' });
+        step.check('the customer reads their own name on the invoice', await customer.getByText(name, { exact: false }).first().waitFor({ state: 'visible', timeout: 45_000 }).then(() => true, () => false), `"${name}" is not on the invoice page`);
+        await customer.screenshot({ path: join(OUT_DIR, 'invoice-as-customer.png'), fullPage: true }).catch(() => {});
+      } finally {
+        await visitor.close();
+      }
+    }
+
+    // The money arrives at the bank; the person registers it.
+    const record = page.getByRole('button', { name: /record payment/i }).first();
+    if (!step.check('the person can register a payment', await record.waitFor({ state: 'visible', timeout: 15_000 }).then(() => true, () => false), 'no "Record Payment" on a sent invoice')) { await snap(page, 'invoice-no-record-payment'); return step.result(); }
+    await record.click();
+    const pay = page.getByRole('dialog').last();
+    await snap(page, 'invoice-record-payment');
+    await pay.getByRole('button', { name: /record|save|register|confirm/i }).last().click();
+    const paid = await until(row, (r) => r.status === 'paid');
+    await snap(page, 'invoice-paid');
+    step.check('registering the full amount settles the invoice', !!paid && Number(paid.paid_amount_cents) === 1_000_000, `status ${(await row())?.status}, paid ${(await row())?.paid_amount_cents}`);
     step.check('the admin raised no error', errors.length === 0, errors.join(' | '));
   } finally {
     await ctx.close();
@@ -191,7 +287,7 @@ try {
   const base = baseUrlArg ?? (vite = await startVite(cfg, await freePort(5196))).baseUrl;
   const executablePath = process.env.VIEW_SWEEP_BROWSER || undefined;
   browser = await chromium.launch({ ...(executablePath ? { executablePath } : { channel: 'chrome' }), headless: !headed });
-  for (const run of [quoteByHand]) {
+  for (const run of [quoteByHand, invoiceByHand]) {
     try {
       results.push(await run(s, browser, cfg, admin, base));
     } catch (e) {
