@@ -37,9 +37,10 @@ ENV VITE_SUPABASE_URL=$VITE_SUPABASE_URL \
 # prebuild (run-migrations.js) self-skips without the Supabase CLI; DB
 # migrations are applied separately (supabase db push), never from the image.
 # The update notice tells an image's admin to pull a newer tag, not to sync a fork.
-ENV FLOWWINK_DEPLOY_KIND=docker
 # The bundle needs more than Node's default ~2 GB heap (CI died there 2026-11-18).
-RUN NODE_OPTIONS=--max-old-space-size=4096 npm run build
+ENV NODE_OPTIONS=--max-old-space-size=4096
+ENV FLOWWINK_DEPLOY_KIND=docker
+RUN npm run build
 
 FROM nginx:1.27-alpine
 COPY nginx.conf /etc/nginx/conf.d/default.conf
