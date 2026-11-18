@@ -5,7 +5,8 @@ export interface BriefingMetrics {
   health_score: number;
   traffic_today: number;
   traffic_week: number;
-  traffic_trend: number;
+  /** null when last week is too small a base for a percentage (morning-news.ts). */
+  traffic_trend: number | null;
   leads_today: number;
   leads_week: number;
   revenue_week: number;

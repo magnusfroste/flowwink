@@ -6,6 +6,7 @@ import { homeFormat, startOfBusinessDay } from '../_shared/locale/home.ts';
 import { briefingReport, DAILY_BRIEFING_SLUG, WEEKLY_DIGEST_SLUG } from '../_shared/reports/scheduled.ts';
 import { loadHomeCached } from '../_shared/locale/load-home.ts';
 import { loadEmailShell, type EmailShell } from "../_shared/email-shell.ts";
+import { readTraffic, reasonsToWrite, trendLabel } from "../_shared/briefing/morning-news.ts";
 
 /**
  * FlowPilot Morning Briefing
@@ -109,7 +110,7 @@ export async function handler(req: Request): Promise<Response> {
         .gte("created_at", weekAgo.toISOString()),
 
       // Content
-      supabase.from("blog_posts").select("id, title", { count: "exact" })
+      supabase.from("blog_posts").select("id, title, published_at", { count: "exact" })
         .eq("status", "published")
         .gte("published_at", weekAgo.toISOString()),
       supabase.from("blog_posts").select("id", { count: "exact", head: true })
@@ -178,9 +179,10 @@ export async function handler(req: Request): Promise<Response> {
     const trafficToday = viewsToday.count ?? 0;
     const trafficWeek = viewsWeek.count ?? 0;
     const trafficPrevWeek = viewsPrevWeek.count ?? 0;
-    const trafficTrend = trafficPrevWeek > 0
-      ? Math.round(((trafficWeek - trafficPrevWeek) / trafficPrevWeek) * 100)
-      : trafficWeek > 0 ? 100 : 0;
+    // A percentage needs a base: under the floor there is no trend, and a
+    // site that small is not written to about its traffic (morning-news.ts).
+    const traffic = readTraffic({ today: trafficToday, week: trafficWeek, prevWeek: trafficPrevWeek });
+    const trafficTrend = traffic.trend;
 
     const newLeadsToday = leadsToday.count ?? 0;
     const newLeadsWeek = leadsWeek.count ?? 0;
@@ -192,6 +194,10 @@ export async function handler(req: Request): Promise<Response> {
       : revenueWeek > 0 ? 100 : 0;
 
     const publishedThisWeek = postsPublished.count ?? 0;
+    // The same post is not news seven mornings running: what counts as a
+    // reason to write is a post published since the last briefing.
+    const publishedSinceLastBriefing = ((postsPublished.data || []) as Array<{ published_at: string | null }>)
+      .filter((p) => p.published_at && new Date(p.published_at) >= yesterday).length;
     const draftsReady = postsDraft.count ?? 0;
     const totalSubscribers = subscribersTotal.count ?? 0;
     const newSubscribers = subscribersNew.count ?? 0;
@@ -489,7 +495,7 @@ export async function handler(req: Request): Promise<Response> {
       });
     }
 
-    if (on("analytics") && trafficTrend < -20) {
+    if (on("analytics") && traffic.down && trafficTrend !== null) {
       actionItems.push({
         priority: "medium",
         text: `Traffic down ${Math.abs(trafficTrend)}% vs last week — consider new content`,
@@ -529,7 +535,19 @@ export async function handler(req: Request): Promise<Response> {
     // every morning — the alarm clock was the only thing that ran.
     // The operator's own work is told beside the news, never instead of it:
     // a heartbeat that ran is not a reason to mail anyone.
-    const worthTelling = actionItems.length > 0 || summaryParts.length > 0;
+    // And a figure is told when the briefing goes, but is a reason to write
+    // only when it is news (2026-11-18): optic was mailed every morning for
+    // one page view in 24 hours and for a post published six days earlier.
+    const reasons = reasonsToWrite({
+      actionItems: actionItems.length,
+      trafficToday: on("analytics") ? trafficToday : 0,
+      trafficSpeaks: traffic.speaks,
+      leadsToday: on("leads") ? newLeadsToday : 0,
+      publishedSinceLastBriefing: on("blog") ? publishedSinceLastBriefing : 0,
+      booksFindings: booksFindings.length,
+      opsFindings: opsFindings.length,
+    });
+    const worthTelling = reasons.length > 0;
     if (fpEnabled && fpAutonomousActions > 0) {
       summaryParts.push(`FlowPilot completed ${fpAutonomousActions} action${fpAutonomousActions > 1 ? "s" : ""}`);
     }
@@ -549,11 +567,11 @@ export async function handler(req: Request): Promise<Response> {
     if (hasSignal) {
       healthScore = 50; // the middle, moved by what the week says
       if (trafficWeek > 50) healthScore += 10;
-      if (trafficTrend > 0) healthScore += 5;
+      if (trafficTrend !== null && trafficTrend > 0) healthScore += 5;
       if (newLeadsWeek > 0) healthScore += 10;
       if (publishedThisWeek > 0) healthScore += 10;
       if (totalSubscribers > 10) healthScore += 5;
-      if (trafficTrend < -20) healthScore -= 10;
+      if (traffic.down) healthScore -= 10;
       if (objectives.some((o: any) => o.completion > 50)) healthScore += 10;
       healthScore = Math.max(0, Math.min(100, healthScore));
     }
@@ -590,7 +608,8 @@ export async function handler(req: Request): Promise<Response> {
         title,
         summary,
         sections,
-        metrics,
+        // Why it was written (or that nothing was): the row is the log.
+        metrics: { ...metrics, reasons },
         action_items: actionItems,
       })
       .select()
@@ -708,7 +727,7 @@ export async function handler(req: Request): Promise<Response> {
           ``,
           healthScore === null ? `${healthEmoji} **No health score yet** — the week has no signal to score` : `${healthEmoji} **Health Score: ${healthScore}/100**`,
         ];
-        if (trafficToday > 0) lines.push(`• ${trafficToday} visitors today (${trafficTrend >= 0 ? "+" : ""}${trafficTrend}% vs last week)`);
+        if (trafficToday > 0) lines.push(`• ${trafficToday} visitors today${trafficTrend === null ? "" : ` (${trendLabel(trafficTrend)} vs last week)`}`);
         if (newLeadsToday > 0) lines.push(`• ${newLeadsToday} new lead${newLeadsToday > 1 ? "s" : ""} captured`);
         if (publishedThisWeek > 0) lines.push(`• ${publishedThisWeek} post${publishedThisWeek > 1 ? "s" : ""} published this week`);
         if (fpEnabled && fpAutonomousActions > 0) lines.push(`• FlowPilot completed ${fpAutonomousActions} action${fpAutonomousActions > 1 ? "s" : ""}`);
@@ -723,7 +742,7 @@ export async function handler(req: Request): Promise<Response> {
           metrics: [
             { label: "Visitors", value: trafficToday },
             { label: "Leads", value: newLeadsToday },
-            { label: "Traffic", value: `${trafficTrend >= 0 ? "+" : ""}${trafficTrend}%` },
+            { label: "Traffic", value: trendLabel(trafficTrend) },
           ],
           actions: actionItems.slice(0, 3).map((item: any) => ({
             label: item.text.length > 40 ? item.text.substring(0, 40) + "…" : item.text,
@@ -995,7 +1014,8 @@ export function buildBriefingEmail(data: {
     </table>
   `;
 
-  const trendArrow = (val: number) =>
+  const trendArrow = (val: number | null) =>
+    val === null ? `<span style="color:#9ca3af;">—</span>` :
     val > 0 ? `<span style="color:#22c55e;">↑${val}%</span>` :
     val < 0 ? `<span style="color:#ef4444;">↓${Math.abs(val)}%</span>` :
     `<span style="color:#9ca3af;">—</span>`;

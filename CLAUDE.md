@@ -477,6 +477,17 @@ beside its payload, so an operator branches instead of guessing:
   nightly fresh install proves it first (`npm run qa:quiet` before `qa:prep`,
   `scripts/quiet-by-default.ts`): a red run means something alarms a virgin
   instance again.
+- **The briefing writes when the morning has news (2026-11-18).** A figure
+  is told when the briefing goes; it is a REASON to write only when it is
+  news (`reasonsToWrite`, `_shared/briefing/morning-news.ts`): an action
+  item, a finding, a lead in the last 24 hours, a post published since the
+  last briefing — not "published this week", told seven mornings. Traffic
+  has a floor (`TRAFFIC_FLOOR`, 100 page views): there is no trend against a
+  week under it (`null`, drawn as a dash — never an action item, never
+  health points), and a site under it in both weeks is not written to about
+  its traffic. Optic was mailed a yellow 50/100 for five mornings over "down
+  60%" on 19 page views. The row's `metrics.reasons` says why it was sent.
+  A new briefing figure states which of the two it is.
 - **The briefing is the business, Observability is the machine room
   (2026-11-08).** The Daily Briefing reads no platform health: a failing
   pg_cron job or skill was an action item its admins could do nothing about,

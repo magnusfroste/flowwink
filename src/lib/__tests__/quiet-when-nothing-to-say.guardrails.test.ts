@@ -46,7 +46,8 @@ describe('the briefing', () => {
   });
 
   it('writes the row and sends nothing on a day with nothing to tell', () => {
-    expect(briefing).toMatch(/const worthTelling = actionItems\.length > 0 \|\| summaryParts\.length > 0;/);
+    // What counts as something to tell is morning-news.ts (reasonsToWrite).
+    expect(briefing).toMatch(/const worthTelling = reasons\.length > 0;/);
     const after = briefing.slice(briefing.indexOf('if (!worthTelling) {'));
     expect(after).toMatch(/reason: "nothing_to_tell"/);
     // The quiet return comes after the row insert and before the report, the chat and the mail.
