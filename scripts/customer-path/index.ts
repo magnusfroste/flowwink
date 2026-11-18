@@ -337,6 +337,99 @@ async function portalShowsWhatTheCustomerHas(s: Scenario, browser: Browser, base
   return step.result();
 }
 
+/** The business books a customer in; the customer opens the mail's link, moves the booking and then calls it off. */
+async function bookingChanged(s: Scenario, browser: Browser, base: string): Promise<StepResult> {
+  const step = new Step('booking: the customer moves and cancels from the mail');
+  const email = `kund-bokning-${s.tag}@example.test`;
+  const name = `Kundväg Bokning ${s.tag}`;
+
+  const svc = await s.skill('manage_booking_service', { action: 'create', name: `Kundväg rådgivning ${s.tag}`, description: 'customer path', duration_minutes: 60 });
+  if (!step.check('the business has a service to book', svc.ok, svc.error)) return step.result();
+  const serviceId = s.idOf(svc.data, 'booking_service');
+  const open = await s.one<{ n: string }>(`select count(*) as n from booking_availability where day_of_week = 2 and is_active and service_id is null`);
+  if (Number(open?.n) === 0) {
+    const hours = await s.skill('manage_booking_availability', { action: 'set_hours', day_of_week: 2, start_time: '09:00', end_time: '12:00' });
+    if (!step.check('Tuesdays are open', hours.ok, hours.error)) return step.result();
+  }
+  // A January Tuesday (+01:00 in Sweden) nobody has touched.
+  let h = 7;
+  for (const ch of s.tag) h = (h * 33 + ch.charCodeAt(0)) >>> 0;
+  const d = new Date(Date.UTC(2040 + (h % 300), 0, 8));
+  while (d.getUTCDay() !== 2) d.setUTCDate(d.getUTCDate() + 1);
+  let day = '';
+  for (let tries = 0; tries < 500 && !day; tries++) {
+    const candidate = d.toISOString().slice(0, 10);
+    const used = await s.one<{ n: string }>(
+      `select (select count(*) from bookings where start_time::date = $1::date) + (select count(*) from booking_blocked_dates where date = $1::date) as n`, [candidate]);
+    if (Number(used?.n) === 0 && d.getUTCMonth() === 0) day = candidate;
+    else d.setUTCDate(d.getUTCDate() + 7 * 52);
+    while (d.getUTCDay() !== 2) d.setUTCDate(d.getUTCDate() + 1);
+  }
+  if (!step.check('a free Tuesday is found', !!day, 'no free January Tuesday')) return step.result();
+
+  const booked = await s.skill('book_appointment_slot', { p_service_id: serviceId, p_customer_name: name, p_customer_email: email, p_start_time: `${day}T10:00:00+01:00` });
+  if (!step.check('the customer is booked in at 10:00', booked.ok, booked.error)) return step.result();
+  const bookingId = s.idOf(booked.data, 'booking');
+  const sent = await s.skill('send_booking_confirmation', { booking_id: bookingId });
+  step.check('the confirmation is sent', sent.ok, sent.error);
+  const mail = await s.mail(email);
+  if (!step.check('the customer is mailed the confirmation', !!mail, `nothing in the mail rail for ${email}`)) return step.result();
+  // FINDING 2026-11-19: the mail said "contact us" — there was no link, no page, and no way to move a booking at all.
+  const link = mail!.links.find((l) => /\/my-booking\/[^/]+$/.test(new URL(l).pathname));
+  if (!step.check('the mail carries a link to change or cancel', !!link, `links in the mail: ${JSON.stringify(mail!.links)}`)) return step.result();
+  step.link = link;
+
+  const row = async () => await s.one<{ status: string; starts: string; reason: string | null }>(
+    `select status, to_char(start_time at time zone 'Europe/Stockholm', 'HH24:MI') as starts, cancelled_reason as reason from bookings where id = $1`, [bookingId]);
+  const { page, errors, rendered } = await visit(browser, onThisStack(link!, base), /choose another time|välj en annan tid/i);
+  try {
+    if (!step.check('the booking page opens from the link', rendered, `the page never offered another time; page errors: ${errors.join(' | ') || 'none'}`)) { await snap(page, 'booking-not-rendered'); return step.result(); }
+    step.check('the page shows the time booked', /10[:.]00/.test(await page.getByTestId('booking-when').innerText().catch(() => '')), `"When" reads: ${await page.getByTestId('booking-when').innerText().catch(() => '(missing)')}`);
+    step.check('…and the service', await page.getByText(`Kundväg rådgivning ${s.tag}`, { exact: false }).first().isVisible().catch(() => false), 'the service name is not on the page');
+
+    // Move it: the same day, 11:00 — the booked 10:00 is not offered back as a "new" time.
+    await page.getByRole('button', { name: /choose another time|välj en annan tid/i }).click();
+    await page.locator('#booking-new-date').fill(day);
+    await page.getByTestId('booking-slot').first().waitFor({ timeout: 15_000 }).catch(() => {});
+    const offered = (await page.getByTestId('booking-slot').allInnerTexts()).map((x) => x.trim());
+    step.check('the free times of the day are offered', offered.includes('11:00') && offered.includes('09:00'), `offered: ${offered.join(', ') || 'nothing'}`);
+    await page.getByTestId('booking-slot').filter({ hasText: '11:00' }).first().click();
+    let moved = false;
+    for (let i = 0; i < 30 && !(moved = (await row())?.starts === '11:00'); i++) await page.waitForTimeout(500);
+    step.check('the booking is moved to 11:00', moved, `the booking starts ${(await row())?.starts}`);
+    step.check('the page says so', await page.getByTestId('booking-moved').isVisible().catch(() => false), 'no "moved" message on the page');
+    await snap(page, 'booking-moved');
+    const before = mail!.count;
+    const again = async () => ((await s.mail(email))?.count ?? 0) > before;
+    await s.pulse('event-dispatcher', again);
+    const second = await s.mail(email);
+    step.check('the customer is mailed a confirmation of the new time', (second?.count ?? 0) > before && /11[:.]00/.test(second?.html ?? ''),
+      `${second?.count ?? 0} mail(s); the newest reads: ${(second?.html ?? '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').slice(0, 200)}`);
+
+    // A time somebody else holds is refused, whoever asks.
+    const other = await s.skill('book_appointment_slot', { p_service_id: serviceId, p_customer_name: `Annan ${s.tag}`, p_customer_email: `annan-bokning-${s.tag}@example.test`, p_start_time: `${day}T09:00:00+01:00` });
+    const token = new URL(link!).pathname.split('/').pop()!;
+    const clash = await s.one<{ a: { success?: boolean; code?: string } }>(`select public.reschedule_booking_by_token($1, $2::timestamptz) as a`, [token, `${day}T09:00:00+01:00`]);
+    step.check('a time someone else has is refused', other.ok && clash?.a?.success === false && clash.a.code === 'SLOT_UNAVAILABLE', `${other.error ?? ''} ${JSON.stringify(clash?.a)}`);
+
+    // Call it off.
+    await page.getByRole('button', { name: /cancel the booking|avboka/i }).first().click();
+    await page.locator('#booking-cancel-reason').fill('Kan inte komma');
+    await page.getByRole('button', { name: /yes, cancel|ja, avboka/i }).click();
+    let off = false;
+    for (let i = 0; i < 30 && !(off = (await row())?.status === 'cancelled'); i++) await page.waitForTimeout(500);
+    step.check('the booking is cancelled, with the customer\'s words', off && /Kan inte komma/.test((await row())?.reason ?? ''), JSON.stringify(await row()));
+    step.check('the page says it is cancelled', await page.getByTestId('booking-cancelled').isVisible().catch(() => false), 'no "cancelled" message on the page');
+    await snap(page, 'booking-cancelled');
+    const free = await s.one<{ a: { slots?: Array<{ time: string }> } }>(`select public.booking_free_slots($1::uuid, $2::date) as a`, [serviceId, day]);
+    step.check('the time is free for the next customer', (free?.a?.slots ?? []).some((x) => x.time === '11:00'), JSON.stringify(free?.a?.slots ?? null));
+    step.check('the page raised no error', errors.length === 0, errors.join(' | '));
+  } finally {
+    await page.context().close();
+  }
+  return step.result();
+}
+
 // ── run ─────────────────────────────────────────────────────────────────────
 
 const cfg = readStackConfig();
@@ -358,7 +451,7 @@ try {
   // The same browser the view sweep and the public blocks use: the runner's Chrome, or the one named.
   const executablePath = process.env.VIEW_SWEEP_BROWSER || undefined;
   browser = await chromium.launch({ ...(executablePath ? { executablePath } : { channel: 'chrome' }), headless: !headed });
-  for (const run of [quoteAccepted, contractSigned, invoicePaid, portalShowsWhatTheCustomerHas]) {
+  for (const run of [quoteAccepted, contractSigned, invoicePaid, bookingChanged, portalShowsWhatTheCustomerHas]) {
     try {
       results.push(await run(s, browser, base));
     } catch (e) {

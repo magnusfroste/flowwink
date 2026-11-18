@@ -153,7 +153,7 @@ describe('the invoice says who is asking and how to pay — and reaches the cust
   });
 
   it('the invoice is a step on the customer path', () => {
-    expect(read('scripts/customer-path/index.ts')).toMatch(/\[quoteAccepted, contractSigned, invoicePaid, portalShowsWhatTheCustomerHas\]/);
+    expect(read('scripts/customer-path/index.ts')).toMatch(/\[quoteAccepted, contractSigned, invoicePaid, bookingChanged, portalShowsWhatTheCustomerHas\]/);
   });
 });
 
@@ -267,3 +267,32 @@ describe('the customer portal shows what the customer has', () => {
   });
 });
 
+describe('the customer can change their own booking', () => {
+  const mod = read('src/lib/modules/booking-module.ts');
+  const handler = read('supabase/functions/comms-send/booking_confirmation.ts');
+  const sql = read('supabase/migrations/20261119090000_kunden-andrar-sin-bokning.sql');
+
+  it('the confirmation links to the booking\'s own page, in every template', () => {
+    expect(handler).toMatch(/\/my-booking\/\$\{manageToken\}/);
+    expect(handler).toMatch(/manage_block:/);
+    // A template from before the link existed still carries it.
+    expect(handler).toMatch(/!templateHtml\.includes\(manageHref\)/);
+  });
+
+  it('a move is judged by the booking rules and confirmed anew', () => {
+    const fn = sql.slice(sql.indexOf('FUNCTION public.reschedule_booking_by_token'));
+    expect(fn).toMatch(/UPDATE public\.bookings/);
+    expect(fn).toMatch(/confirmation_sent_at = NULL/);
+    expect(fn).toMatch(/exclusion_violation/);
+    expect(fn).toMatch(/'booking\.rescheduled'/);
+    const seed = mod.slice(mod.indexOf("name: 'New confirmation when the customer moves a booking'"));
+    expect(seed.slice(0, 700)).toMatch(/trigger_config: \{ event: 'booking\.rescheduled' \}/);
+    expect(seed.slice(0, 700)).toMatch(/skill_name: 'send_booking_confirmation'/);
+  });
+
+  it('the key shows a view of the booking, never the row', () => {
+    const fn = sql.slice(sql.indexOf('FUNCTION public.get_booking_by_token'), sql.indexOf('FUNCTION public.cancel_booking_by_token'));
+    expect(fn).toMatch(/token_is_plausible\(p_token\)/);
+    expect(fn).not.toMatch(/customer_email|customer_phone|b\.notes/);
+  });
+});

@@ -5,6 +5,8 @@ import { renderTemplate } from '../_shared/template-render.ts';
 import { homeFormat } from '../_shared/locale/home.ts';
 import { loadHome } from '../_shared/locale/load-home.ts';
 import { loadOrgName } from '../_shared/org-name.ts';
+import { resolveUiText } from '../_shared/locale/ui-text.ts';
+import { loadUiText } from '../_shared/locale/load-ui-text.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -301,6 +303,24 @@ export const handler = async (req: Request): Promise<Response> => {
       ? `<p style="margin:12px 0;"><strong>Join the meeting:</strong> <a href="${meetingHref}">${meetingHref}</a></p>`
       : '';
 
+    // The customer's own page for this booking: move it or call it off without
+    // phoning (2026-11-19). The key is the booking's; a booking from before the
+    // key existed gets one here. Without a site URL there is nowhere to link to,
+    // and the mail says what it always said.
+    let manageToken = String((booking as { manage_token?: string | null }).manage_token ?? '');
+    if (!manageToken) {
+      manageToken = (crypto.randomUUID() + crypto.randomUUID()).replace(/-/g, '');
+      const { error: keyErr } = await supabase.from('bookings').update({ manage_token: manageToken }).eq('id', bookingId).is('manage_token', null);
+      if (keyErr) { console.warn('[send-booking-confirmation] could not give the booking its key:', keyErr.message); manageToken = ''; }
+    }
+    const manageHref = siteUrl && manageToken ? `${siteUrl}/my-booking/${manageToken}` : '';
+    const uiTexts = await loadUiText(supabase);
+    const manageBlockIn = (lang: string | null | undefined) => {
+      if (!manageHref) return '';
+      const t = resolveUiText(uiTexts.map, lang || uiTexts.siteLang, uiTexts.siteLang);
+      return `<p style="margin:12px 0;">${escapeHtml(t('booking.mail.manageLead', 'Need another time, or cannot come?'))} <a href="${manageHref}">${escapeHtml(t('booking.mail.manageLink', 'Change or cancel your booking'))}</a></p>`;
+    };
+
     // Build email HTML
     // ── Mallen är sajtinnehåll ────────────────────────────────────────────
     // Rendera ur email_templates ('booking_confirmation', seedad återhävdbart i
@@ -339,6 +359,8 @@ export const handler = async (req: Request): Promise<Response> => {
           service_name: booking.service?.name ?? '',
           meeting_block: meetingBlock,
           meeting_url: meetingHref,
+          manage_url: manageHref,
+          manage_block: manageBlockIn(tpl.locale ?? recipientLang),
           date: inTpl.date,
           start_time: inTpl.start,
           end_time: inTpl.end,
@@ -362,6 +384,13 @@ export const handler = async (req: Request): Promise<Response> => {
         if (meetingBlock && !tpl.html.includes('{{meeting_block}}') && templateHtml && !templateHtml.includes(meetingHref)) {
           templateHtml = templateHtml.replace(/<\/body>/i, `${meetingBlock}</body>`);
           if (!templateHtml.includes(meetingBlock)) templateHtml += meetingBlock;
+        }
+        // Every template in use today predates {{manage_block}}; the link reaches
+        // the customer all the same.
+        if (manageHref && templateHtml && !templateHtml.includes(manageHref)) {
+          const block = vars.manage_block;
+          const withBlock = templateHtml.replace(/<\/body>/i, `${block}</body>`);
+          templateHtml = withBlock.includes(block) ? withBlock : templateHtml + block;
         }
         templateSubject = tpl.subject ? renderTemplate(tpl.subject, vars) : null;
         if (recipientLang && tpl.locale && tpl.locale !== recipientLang.toLowerCase()) {
@@ -405,9 +434,9 @@ export const handler = async (req: Request): Promise<Response> => {
           </div>
           ` : ''}
           
-          <p style="color: #6b7280; font-size: 14px;">
+          ${manageBlockIn('en') || `<p style="color: #6b7280; font-size: 14px;">
             If you need to change or cancel your booking, please contact us as soon as possible.
-          </p>
+          </p>`}
           
           <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
           
