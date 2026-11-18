@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261118150000",
-      "migrations_count": 771,
+      "migration_head": "20261119090000",
+      "migrations_count": 772,
       "migrations": [
         {
           "version": "00000000000000",
@@ -3089,6 +3089,10 @@
         {
           "version": "20261118150000",
           "name": "portalen-visar-vad-kunden-har"
+        },
+        {
+          "version": "20261119090000",
+          "name": "kunden-andrar-sin-bokning"
         }
       ]
     },
@@ -3099,9 +3103,9 @@
     },
     "edge_functions": {
       "count": 76,
-      "shared_hash": "sha256:a02560414003a3808afba8e2774cea19f0b3213c043f4a32edddc27b4fb339fd",
+      "shared_hash": "sha256:e7437b07a3fa221450d0b11c0c6cecd39b80d80ce94a95aa07fa00a8f3fbc54f",
       "functions": {
-        "agent-execute": "sha256:bcc5130dd79322ceec1407923b9cb5738f683c4444a9736fcdc0f6edf4c9b41e",
+        "agent-execute": "sha256:87318fbd1aa0b6b99eec990915717fece92891f225fa27e0998888e485c560b9",
         "agent-operate": "sha256:4320e02dd3e6a0a1706b42dc1905b631c61e6a4cbe3556c701f474c278c89e1a",
         "ai-task": "sha256:ce3aacdef625bba758f4323da3e49104a1b94a3d3d77d800e89dacd0b803d65e",
         "automation-dispatcher": "sha256:d905660cd907c6f1ef5c7cac0a97ed44a4e4187ef4d5179089fa2714b2751443",
@@ -3109,7 +3113,7 @@
         "chat-completion": "sha256:0d5dcfb6134a52f19a6f3bb2cd55c95af4cfce054fea2fc9a63abf3acaeb36fa",
         "chat-stt": "sha256:b67dd50ab6cad26f061b911a366607620aca8647977b2be8d4331b2ec51c4aa6",
         "check-secrets": "sha256:f902784792b71f22da5df6bbcf0069e27dfad9315a86e06460dd753ee7ab4b54",
-        "comms-send": "sha256:92b659df8dc9ef3b53a530286bbb0afaeac93d2225942d3a9eedcec0bc4c32cd",
+        "comms-send": "sha256:01b71eabcb494f8376165a7921e898e49aaf336bce9af3db862b6e43f23f5c7f",
         "composio-proxy": "sha256:6635c3a91cff990bed5a1e68f160c028e346c5c29d69935f496ac5af45f64b8d",
         "composio-webhook": "sha256:27f17b7198bfbab422931ef1c872da083299e095792e43b98b4154ec79c858ca",
         "consultant-match": "sha256:73a34fd5b974c44a2bfe54c42fc5b145a61710d8a9b45866d5a18cd21c44d2e7",
@@ -3134,7 +3138,7 @@
         "extract-pdf-text": "sha256:fb2e1a10f79fb0b150cd547a08fc3b1e11b79c09771f2d13d748c08b4e93f34c",
         "federation-invite-peer": "sha256:475817522c4d1b7a2faed2a0a4fbe03ac5f340479eb246febe0456f3d0596b21",
         "flowpilot-heartbeat": "sha256:2f0e2e68242653223a1495b30ff901f5d078c2cfb829590eb6f5bd87777f6d87",
-        "flowpilot-lifecycle": "sha256:ec0e77839be7066f15ae47d96daa10abbb6bd4e4e53d866a7e3e41db461f0259",
+        "flowpilot-lifecycle": "sha256:dfaa3e933957a65712d535071db0a4a7389de20418fb725a186039a462b22ee8",
         "gatewayapi-ingest": "sha256:d6f74c384f0baac936737762d330c470636502afcc9af418b1c43db26134e4fe",
         "generate-invoice-pdf": "sha256:e339f734b02238e900c1a4160b9645e8e24867c2aaf03af7768b07dd62546312",
         "get-page": "sha256:3e42751911164c9d6c350b931a4e64a4824166a6bef8d02e526ad378c8f3921b",
