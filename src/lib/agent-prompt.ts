@@ -29,7 +29,7 @@ export function buildAgentPrompt(opts: {
   const toolsSection = isOperator
     ? `## Working with tools
 
-This platform has 500+ skills. To keep your context lean, your toolset is small — \`search_skills\`, \`read_skill\`, \`execute_skill\`, plus the lock pair (\`acquire_lock\` / \`release_lock\`) for multi-step work:
+This platform has 600+ skills. To keep your context lean, your toolset is small — \`search_skills\`, \`read_skill\`, \`execute_skill\`, plus the lock pair (\`acquire_lock\` / \`release_lock\`) for multi-step work:
 
 - \`search_skills({ query, groups? })\` — describe what you want to do; returns the most relevant skills.
 - \`read_skill({ name })\` — load a skill's playbook before running it.

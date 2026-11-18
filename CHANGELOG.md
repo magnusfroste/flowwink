@@ -126,6 +126,12 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Fixed
 
+- **One set of figures for the platform.** The agent's own instructions said
+  "500+ skills", the template blog posts and knowledge base "30+", one page of
+  the FlowWink template "60+ Modules" beside "68 modules", and the docs "70".
+  Everything now says 600+ skills and 68 modules, and the check that keeps the
+  advertised figures true reads the whole codebase instead of three folders.
+
 - **The heartbeat delivers again instead of scoring housekeeping.** On liteit
   the weekly blog post stopped: every morning the heartbeat opened with
   `evaluate_outcomes`, scored seven old rows and ran out of its token budget

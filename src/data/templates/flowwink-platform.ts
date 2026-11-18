@@ -258,12 +258,12 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
             layout: 'split',
           },
         },
-        // ─── 60+ MODULES — The Full BOS Stack ───
+        // ─── 68 MODULES — The Full BOS Stack ───
         {
           id: 'modules-overview',
           type: 'features',
           data: {
-            title: '60+ Modules. One Platform. Every Module Agent-Operable.',
+            title: '68 Modules. One Platform. Every Module Agent-Operable.',
             subtitle: 'A complete ERP for mid-sized businesses — covering the core processes of an established ERP suite, plus a native agent layer. Every module exposed via MCP so any agent (built-in or external) can operate it.',
             features: [
               // ─ Quote-to-Cash ─

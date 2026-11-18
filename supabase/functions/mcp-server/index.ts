@@ -1547,7 +1547,7 @@ async function createMcpServer(filterGroups?: string[], openaiSafe = false, disp
 
   if (dispatchMode) {
     // ── Dispatcher mode ──────────────────────────────────────────────────────
-    // Broad access to all 200+ skills while carrying only 2 schemas in context.
+    // Broad access to all 600+ skills while carrying only 2 schemas in context.
     // The agent searches the catalog by intent (reusing FlowPilot's relevance
     // engine) then executes the chosen skill — instead of seeing every tool.
     registerDispatcherTools(server, filterGroups);

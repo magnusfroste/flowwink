@@ -1123,7 +1123,7 @@ export async function reason(
     const scoringIntent = [config.scoringIntent, lastUserMsg].filter(Boolean).join('\n');
     const usageBoost = !surface && (scoringIntent || dispatchMode) ? await loadRecentUsageCounts(supabase).catch(() => ({})) : {};
 
-    // Two ways the 200+ business skills reach the model:
+    // Two ways the 600+ business skills reach the model:
     //  • dispatchMode — behind search_skills / execute_skill (2 tools). We load
     //    the raw catalog ONCE for search ranking; nothing is baked into the tool
     //    array, so the provider tool-cap can never be hit and no contract is ever
