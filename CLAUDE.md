@@ -1079,6 +1079,26 @@ managed-ledger lessons still apply to every fork's Supabase integration:
   the columns a row is called by. Measured on optic: 58–71 KB per page of 50
   tasks, an agent paging the table 31 times. A new generic behaviour goes in
   the engine, not in one skill's handler.
+- **The gateway has one way to say no (2026-11-18).** A call `mcp-server`
+  refuses BEFORE the executor — a name that is no skill, a tool the connection
+  does not carry (mcp-lite's "Method not found", answered through
+  `server.onError`), a call outside the key's scope or the owner's reach, a
+  write on a read-only key — goes through `refuse()`: one row in
+  `agent_activity`, then the envelope (`code`, `retryable`, `hint`,
+  `did_you_mean`). The texts and the row live in
+  `_shared/mcp/gateway-misses.ts`; a guard fails a refusal written by hand in
+  the gateway. An unknown name is filed under the step (`execute_skill` /
+  `read_skill`) with the name in `input.name` and `output.reason`
+  (`no_such_skill` | `module_off` | `not_on_this_connection` |
+  `skill_called_as_tool`); a refusal of a real skill is filed under that skill
+  with the NAMES of its arguments, never the values. Every code is in
+  `NOT_A_SKILL_FAULT` — a row without a code is read by its message, which is
+  how unknown `read_skill` names became "Skill failing: read_skill" upstream.
+  What agents look for and do not find: `select input->>'name', count(*) from
+  agent_activity where output->>'code' = 'NOT_FOUND' and skill_name in
+  ('execute_skill','read_skill') group by 1`. Every row the gateway writes
+  itself (`writeGatewayRow`) carries `api_key_id`, `module` and `kind`, as
+  `logActivity` does.
 - **Self-correcting RPC errors.** `agent-execute` enriches a PostgREST PGRST202
   ("function not found in schema cache" — the signature of wrong param NAMES)
   with the params the agent sent and the skill's declared parameters, so an

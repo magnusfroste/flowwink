@@ -28,6 +28,12 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Security
 
+- **A scoped key is held to its scope in dispatch mode.** Over the native MCP
+  transport, `execute_skill` checked what the key's owner may run but not the
+  key's own scope: a key limited to `mcp:crm` or `skill:<name>` could run any
+  exposed skill when it connected with `?mode=dispatch`. The REST door and the
+  per-skill tools already checked it; the dispatch tool now does too.
+
 - **A scheduled function refuses a call without credentials.** The week of
   grace after the cron secret is over: a call that carries neither the service
   key, a staff session nor the database's cron secret is answered 401. Until
@@ -127,6 +133,19 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
   did not name them. Every invoice now gets its due date from the payment terms
   (30 days when none are stated) and its customer from the lead, whoever
   creates it. A draft that already lacks a due date gets one when it is sent.
+- **Every "no" the gateway says is answered with a code and written down.** An
+  agent that ran a skill by a name that does not exist got one sentence back
+  and the call left no trace; so did a tool the connection does not carry, a
+  call outside the key's scope or the owner's reach, and a write on a read-only
+  key. Each is now one row in the agent log with a stable code, and the answer
+  carries `code`, `retryable` and `hint`. A name that is nearly right is
+  answered with the right one (`did_you_mean`); a skill whose module is
+  switched off says so; a skill called as a tool on a dispatch connection is
+  pointed at `execute_skill`. An unknown name no longer reads as a failing
+  skill: the three a day it took put "Skill failing: read_skill" on the fleet's
+  board. A connected agent's searches now show under its Activity (the row
+  lacked the key), and the gateway's lookups are thinned with the other logs.
+  The REST answer to an unknown tool no longer lists every tool name.
 
 - **A generic list is sized for the agent that reads it.** On a customer
   instance an agent paged every project task 31 times to find one: a page of 50
