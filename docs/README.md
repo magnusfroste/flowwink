@@ -68,7 +68,7 @@ All three paths share the concepts below.
 
 ## What's in here, in numbers
 
-- **70 modules** in `src/lib/modules/` — every one has a page, listed in the [module catalog](./modules/index.md)
+- **68 modules** in `src/lib/modules/` — every one has a page, listed in the [module catalog](./modules/index.md)
 - **17 business processes** in [`processes/`](./processes/README.md) — the end-to-end flows the platform supports
 - **77 edge functions**, listed with tier and audience in [`reference/edge-functions.md`](./reference/edge-functions.md) (generated)
 - **638 module skills** over MCP, plus the platform skills — the [module catalog](./modules/index.md) counts them per module

@@ -70,7 +70,6 @@
     "flowpilot",
     "federation",
     "composio",
-    "browserControl",
     "siteMigration",
     "developer",
     "analytics",
@@ -344,7 +343,7 @@
                   "content": [
                     {
                       "type": "text",
-                      "text": "FlowPilot has 30+ skills out of the box — from writing blog posts to qualifying leads to sending newsletters. Each skill is a registered tool with defined inputs, outputs, and approval requirements. And FlowPilot can create new skills when it encounters novel situations."
+                      "text": "FlowPilot has 600+ skills out of the box — from writing blog posts to qualifying leads to sending newsletters. Each skill is a registered tool with defined inputs, outputs, and approval requirements. And FlowPilot can create new skills when it encounters novel situations."
                     }
                   ]
                 },
@@ -1188,7 +1187,7 @@
     {
       "title": "Skill Engine: How FlowPilot Learns New Skills",
       "slug": "skill-engine-deep-dive-flowpilot-capabilities",
-      "excerpt": "FlowPilot ships with 30+ skills and can create new ones autonomously. Here is how the skill engine works — registration, routing, approval, and self-evolution.",
+      "excerpt": "FlowPilot ships with 600+ skills and can create new ones autonomously. Here is how the skill engine works — registration, routing, approval, and self-evolution.",
       "featured_image": "/templates/blog/server-infrastructure.jpg",
       "featured_image_alt": "Connected network representing skill engine",
       "content": [
@@ -3804,7 +3803,7 @@
           "title": "Skills Overview",
           "slug": "skills-overview",
           "question": "What are FlowPilot skills?",
-          "answer_text": "Skills are FlowPilot's registered capabilities — modular tools defined in OpenAI function-calling format. Each skill has a name, description, input parameters, execution handler, scope (internal/external), and an approval requirement flag. FlowPilot ships with 30+ skills and can create new ones autonomously.",
+          "answer_text": "Skills are FlowPilot's registered capabilities — modular tools defined in OpenAI function-calling format. Each skill has a name, description, input parameters, execution handler, scope (internal/external), and an approval requirement flag. FlowPilot ships with 600+ skills and can create new ones autonomously.",
           "is_featured": true,
           "include_in_chat": true
         },
@@ -4907,7 +4906,7 @@
           "id": "modules-overview",
           "type": "features",
           "data": {
-            "title": "70+ Modules. One Platform. Every Module Agent-Operable.",
+            "title": "68 Modules. One Platform. Every Module Agent-Operable.",
             "subtitle": "A complete ERP for mid-sized businesses — covering the core processes of an established ERP suite, plus a native agent layer. Every module exposed via MCP so any agent (built-in or external) can operate it.",
             "features": [
               {

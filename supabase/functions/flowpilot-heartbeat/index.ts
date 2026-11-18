@@ -438,7 +438,7 @@ serve(async (req) => {
       .from('site_settings').select('value').eq('key', 'heartbeat_overrides').maybeSingle();
     const ov = (hbOv?.value || null) as
       { tokenBudget?: number; maxIterations?: number; skillCategories?: string[]; lightContext?: boolean; dispatchMode?: boolean; tier?: 'fast' | 'reasoning'; idleShortCircuit?: boolean } | null;
-    // Dispatch surface ON by default — the 200+ business skills reach the
+    // Dispatch surface ON by default — the 600+ business skills reach the
     // operator via search_skills/execute_skill (2 tools) instead of a pre-narrowed
     // set baked into the tool array. Set heartbeat_overrides.dispatchMode=false to
     // A/B the legacy pre-narrow path.

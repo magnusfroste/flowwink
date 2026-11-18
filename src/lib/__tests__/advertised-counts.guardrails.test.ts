@@ -55,15 +55,21 @@ const EXEMPT = [
   'src/lib/__tests__/advertised-counts.guardrails.test.ts',
 ];
 
-const SEARCH_DIRS = ['docs', 'src/data/templates', 'supabase/seed'];
+// Every place a claim about the whole platform can be written — discovered,
+// not listed. Until 2026-11-18 only docs and the templates were read: the
+// agent's own system prompt said "500+ skills", the template blog posts and KB
+// "30+", four code comments "200+", and a session comparing the surfaces saw
+// four different figures for one platform.
+const SEARCH_DIRS = ['docs', 'src', 'supabase/functions', 'supabase/seed', 'scripts', 'templates'];
 const ROOT_FILES = ['README.md', 'CLAUDE.md'];
 
 function walk(dir: string, out: string[] = []): string[] {
   for (const entry of readdirSync(dir)) {
     const p = join(dir, entry);
-    if (entry === 'node_modules' || entry.startsWith('.')) continue;
+    if (entry === 'node_modules' || entry === '__tests__' || entry.startsWith('.')) continue;
     if (statSync(p).isDirectory()) walk(p, out);
-    else if (/\.(md|ts|tsx)$/.test(entry)) out.push(p);
+    // Generated bundles (`_*.json` copies in the edge functions) are built from the sources read here.
+    else if (/\.(md|ts|tsx|json)$/.test(entry) && !entry.startsWith('_') && !/\.test\.tsx?$/.test(entry)) out.push(p);
   }
   return out;
 }
@@ -136,6 +142,35 @@ describe('advertised counts', () => {
     expect(wrong, `stale on a front-door surface (actual: ${skills}):\n${wrong.join('\n')}`).toEqual(
       [],
     );
+  });
+});
+
+describe('one module count, everywhere a visitor reads it', () => {
+  // 2026-11-18: one template page said "60+ Modules" in its headline and "68
+  // modules" in its description, docs/README said 70 and the generated template
+  // JSON still said "70+". A module count written as a plain number is a claim
+  // about the whole platform on these surfaces, and it is the number of module
+  // files — neither rounded up nor left from the day a module was removed.
+  const moduleFiles = readdirSync(join(root, 'src/lib/modules')).filter((f) => /-module\.ts$/.test(f)).length;
+
+  it('every plain "N modules" on a front-door surface is the real count', () => {
+    const SURFACES = [
+      'README.md',
+      'docs/README.md',
+      'docs/modules/index.md',
+      'src/data/templates/demo-company.ts',
+      'src/data/templates/flowwink-platform.ts',
+      'templates/demo-company.json',
+      'templates/flowwink-platform.json',
+    ];
+    const wrong: string[] = [];
+    for (const rel of SURFACES) {
+      const text = readFileSync(join(root, rel), 'utf8');
+      for (const m of text.matchAll(/\b(\d{2,3})\+?[ -]modules\b/gi)) {
+        if (Number(m[1]) !== moduleFiles) wrong.push(`${rel}: "${m[0]}"`);
+      }
+    }
+    expect(wrong, `we ship ${moduleFiles} modules — say that, in one way:\n${wrong.join('\n')}`).toEqual([]);
   });
 });
 

@@ -70,7 +70,7 @@ export interface ReasonConfig {
    */
   scoringIntent?: string;
   /**
-   * Dispatch mode: expose the 200+ business skills behind a 2-tool surface
+   * Dispatch mode: expose the 600+ business skills behind a 2-tool surface
    * (search_skills + execute_skill) instead of pre-baking a pre-narrowed set
    * into the tool array. Meta/built-in tools stay direct. This is the same
    * pattern the external MCP gateway uses (?mode=dispatch) — sharing the
