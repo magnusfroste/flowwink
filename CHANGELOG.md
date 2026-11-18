@@ -10,6 +10,16 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Added
 
+- **A purchase with Stripe off is a whole purchase.** Found by buying in the
+  shop in a browser as a visitor. The page after the purchase said "Awaiting
+  payment…" for a paid order, for every buyer without an account (also after a
+  Stripe payment): it read the orders table, which a visitor may not. It reads
+  the buyer's own order by its key now. And a test-mode order (Stripe switched
+  off) was born paid, which raised no "order paid": no receipt, no order
+  confirmation, no stock taken. It is created pending and then paid, like a
+  Stripe order, and the buyer gets both mails. The nightly customer path buys
+  in the shop.
+
 - **The customer changes their own booking.** The confirmation mail said
   "contact us" and that was all: no link, no page, and no way to move a booking
   at all. The mail now carries a link to the booking's own page

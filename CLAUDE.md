@@ -747,6 +747,18 @@ beside its payload, so an operator branches instead of guessing:
   confirmation to the customer, a note to the admins). The page offers the
   public block's own times (`booking_free_slots`). A step of the customer path
   does it in a browser.
+- **A purchase with Stripe off is a whole purchase (2026-11-19).** The
+  customer path buys in the shop as a visitor. Two finds: the page after the
+  purchase read `orders` directly, which a visitor may not, so every guest —
+  after Stripe too — stayed on "Awaiting payment…"; it asks
+  `get_order_confirmation(p_order_id | p_session_id)` now (the order's own key,
+  a view, polled while pending — realtime does not reach a visitor either). And
+  `create-checkout`'s test mode inserted the order as `paid`: `order.paid` is
+  raised on the UPDATE, so there was no receipt, no stock exit, and the order
+  was booked before it had a line. A test-mode order is born `pending`, gets
+  its lines, is then updated to `paid`, and the buyer is sent the order
+  confirmation as the Stripe webhook does. A new writer of a paid order
+  updates to `paid`; it never inserts one.
 - **And the staff's side is proven in a browser too (`npm run qa:staff-path`,
   nightly, 2026-11-17):** a step signs in as an admin and does the process
   with clicks — New Quote for a lead, title, line, terms, Save, Send to

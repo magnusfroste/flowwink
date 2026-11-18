@@ -153,7 +153,7 @@ describe('the invoice says who is asking and how to pay — and reaches the cust
   });
 
   it('the invoice is a step on the customer path', () => {
-    expect(read('scripts/customer-path/index.ts')).toMatch(/\[quoteAccepted, contractSigned, invoicePaid, bookingChanged, portalShowsWhatTheCustomerHas\]/);
+    expect(read('scripts/customer-path/index.ts')).toMatch(/\[quoteAccepted, contractSigned, invoicePaid, bookingChanged, shopPurchase, portalShowsWhatTheCustomerHas\]/);
   });
 });
 
@@ -294,5 +294,29 @@ describe('the customer can change their own booking', () => {
     const fn = sql.slice(sql.indexOf('FUNCTION public.get_booking_by_token'), sql.indexOf('FUNCTION public.cancel_booking_by_token'));
     expect(fn).toMatch(/token_is_plausible\(p_token\)/);
     expect(fn).not.toMatch(/customer_email|customer_phone|b\.notes/);
+  });
+});
+
+describe('a purchase with Stripe off is a whole purchase', () => {
+  // Found by buying in the shop in a browser, as a visitor (2026-11-19).
+  const checkout = read('supabase/functions/create-checkout/index.ts');
+  const page = read('src/pages/CheckoutSuccessPage.tsx');
+  const sandbox = checkout.slice(checkout.indexOf('if (sandboxMode) {'), checkout.indexOf('Stripe secret key not configured'));
+
+  it('a test-mode order is born pending and then paid, so order.paid is raised', () => {
+    const insert = sandbox.slice(sandbox.indexOf('.from("orders")'), sandbox.indexOf('.select()'));
+    expect(insert).toMatch(/status: "pending"/);
+    expect(insert).not.toMatch(/status: orderStatus/);
+    expect(sandbox.indexOf('.from("order_items").insert')).toBeLessThan(sandbox.indexOf('.update({ status: "paid" })'));
+  });
+
+  it('the buyer is sent the order confirmation, as after a Stripe payment', () => {
+    expect(sandbox).toMatch(/comms-send\?kind=order_confirmation/);
+  });
+
+  it('the confirmation page reads the order by its own key, never the table', () => {
+    expect(page).toMatch(/rpc\('get_order_confirmation'/);
+    expect(page).not.toMatch(/\.from\('orders'\)/);
+    expect(page).not.toMatch(/\.from\('order_items'\)/);
   });
 });

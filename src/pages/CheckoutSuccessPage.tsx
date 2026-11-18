@@ -4,6 +4,7 @@ import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/hooks/useAuth';
 import { useCustomerFormat } from '@/hooks/useCustomerFormat';
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/lib/logger';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -75,35 +76,33 @@ export default function CheckoutSuccessPage() {
       return;
     }
 
+    // The buyer reads their order by its own key — the order id (test mode) or
+    // the Stripe session they return with. A visitor may read no row of
+    // `orders`, so a direct read left every guest on "Awaiting payment…".
     const fetchOrder = async () => {
-      let query = supabase
-        .from('orders')
-        .select('id, status, total_cents, currency, customer_email, customer_name, created_at');
-
-      if (sandboxOrderId) {
-        query = query.eq('id', sandboxOrderId);
-      } else {
-        query = query.eq('stripe_checkout_id', sessionId!);
-      }
-
-      const { data: orderData } = await query.maybeSingle();
-
-      if (orderData) {
-        setOrder(orderData as Order);
-
-        const { data: items } = await supabase
-          .from('order_items')
-          .select('id, product_name, quantity, price_cents')
-          .eq('order_id', orderData.id);
-
-        if (items) {
-          setOrderItems(items);
-        }
+      const { data, error } = await supabase.rpc('get_order_confirmation' as never, {
+        p_order_id: sandboxOrderId ?? null,
+        p_session_id: sandboxOrderId ? null : sessionId,
+      } as never);
+      if (error) logger.error('Order confirmation read failed:', error);
+      const answer = data as (Order & { items?: OrderItem[] }) | null;
+      if (answer) {
+        setOrder(answer);
+        setOrderItems(answer.items ?? []);
       }
       setIsLoading(false);
+      return answer?.status ?? null;
     };
 
-    fetchOrder();
+    // A payment is confirmed a moment after the buyer is back; realtime does
+    // not reach a visitor either, so ask again until it is settled.
+    let tries = 0;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const ask = async () => {
+      const status = await fetchOrder();
+      if ((status === null || status === 'pending') && ++tries < 40) timer = setTimeout(ask, 3000);
+    };
+    ask();
 
     // Watch the order this page is showing. Sandbox orders arrive via order_id
     // (no Stripe session), so filtering on stripe_checkout_id would never match
@@ -131,6 +130,7 @@ export default function CheckoutSuccessPage() {
       .subscribe();
 
     return () => {
+      if (timer) clearTimeout(timer);
       supabase.removeChannel(channel);
     };
   }, [sessionId, sandboxOrderId]);

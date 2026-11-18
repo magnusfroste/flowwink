@@ -430,6 +430,75 @@ async function bookingChanged(s: Scenario, browser: Browser, base: string): Prom
   return step.result();
 }
 
+/** A visitor buys in the shop with Stripe switched off — the test mode — and is sent the receipt. */
+async function shopPurchase(s: Scenario, browser: Browser, base: string): Promise<StepResult> {
+  const step = new Step('shop: a visitor buys and is sent the receipt');
+  const email = `kund-butik-${s.tag}@example.test`;
+  const name = `Kundväg Butik ${s.tag}`;
+  const productName = `Kundväg lampa ${s.tag}`;
+  const made = await s.skill('manage_product', { action: 'create', name: productName, description: 'A lamp for the customer path.', price_cents: 49_900 });
+  if (!step.check('the business puts a product in the shop', made.ok, made.error)) return step.result();
+  const productId = s.idOf(made.data, 'product');
+
+  const { page, errors, rendered } = await visit(browser, `${base}/shop/${productId}`, /add to cart|lägg i varukorg/i);
+  try {
+    if (!step.check('the product page opens', rendered, `no buy button; page errors: ${errors.join(' | ') || 'none'}`)) { await snap(page, 'shop-not-rendered'); return step.result(); }
+    step.check('the page shows the product', await page.getByRole('heading', { name: productName }).first().isVisible().catch(() => false), 'the product name is not a heading on the page');
+    await page.getByRole('button', { name: /add to cart|lägg i varukorg/i }).first().click();
+    await page.getByRole('button', { name: /added to cart|tillagd/i }).first().waitFor({ timeout: 10_000 }).catch(() => {});
+    await page.goto(`${base}/checkout`, { waitUntil: 'domcontentloaded' });
+    const nameField = page.locator('#name');
+    if (!step.check('the checkout opens with the cart', await nameField.waitFor({ timeout: 20_000 }).then(() => true).catch(() => false), `no checkout form at ${page.url()}`)) { await snap(page, 'checkout-not-rendered'); return step.result(); }
+    step.check('the checkout lists what is being bought', await page.getByText(productName, { exact: false }).first().isVisible().catch(() => false), 'the product is not in the order summary');
+    await nameField.fill(name);
+    await page.locator('#email').fill(email);
+    for (const [id, value] of [['#line1', 'Provgatan 1'], ['#postalCode', '111 22'], ['#city', 'Stockholm'], ['#country', 'SE'], ['#phone', '+46 70 555 01 02']] as const) {
+      const field = page.locator(id);
+      if (await field.count()) await field.fill(value);
+    }
+    await snap(page, 'checkout-filled');
+    await page.locator('form button[type="submit"]').first().click();
+    const landed = await page.waitForURL(/\/checkout\/success/, { timeout: 30_000 }).then(() => true).catch(() => false);
+    if (!step.check('the order is placed — no card asked for, Stripe being off', landed, `still at ${page.url()}; page errors: ${errors.join(' | ') || 'none'}`)) { await snap(page, 'checkout-stuck'); return step.result(); }
+
+    const order = async () => await s.one<{ id: string; status: string; total_cents: string }>(
+      `select id, status, total_cents from orders where lower(customer_email) = lower($1) order by created_at desc limit 1`, [email]);
+    let paid = false;
+    for (let i = 0; i < 30 && !(paid = (await order())?.status === 'paid'); i++) await page.waitForTimeout(500);
+    const row = await order();
+    step.check('the order is there, paid, at the price shown', paid && Number(row?.total_cents) >= 49_900, JSON.stringify(row ?? null));
+    step.check('the customer is told so on the page', await page.getByText(email, { exact: false }).first().waitFor({ timeout: 15_000 }).then(() => true).catch(() => false), 'the confirmation page does not show the order');
+    await snap(page, 'checkout-success');
+
+    // The receipt is the order's paid invoice, sent by the automation on order.paid.
+    const receipted = async () => !!(await s.mail(email))?.links.some((l) => /\/invoice\//.test(l));
+    await s.pulse('event-dispatcher', receipted);
+    const mail = await s.mail(email);
+    const link = mail?.links.find((l) => /\/invoice\/[^/]+$/.test(new URL(l).pathname));
+    if (!step.check('the customer is mailed the receipt', !!link, `${mail?.count ?? 0} mail(s) to ${email}; links in the newest: ${JSON.stringify(mail?.links ?? [])}`)) return step.result();
+    step.link = link;
+    step.check('…and the order confirmation', !!(await s.mail(email, 'Order confirmation')) || ((await s.mail(email))?.count ?? 0) >= 2, 'only the receipt reached the customer');
+    const invoice = await s.one<{ status: string; total_cents: string }>(`select status, total_cents from invoices where order_id = $1 and status <> 'cancelled' limit 1`, [row!.id]);
+    step.check('the receipt is the order\'s paid invoice, same amount', invoice?.status === 'paid' && Number(invoice.total_cents) === Number(row!.total_cents), JSON.stringify(invoice ?? null));
+
+    const receipt = await visit(browser, onThisStack(link!, base), /download pdf|ladda ner pdf/i);
+    try {
+      step.check('the receipt opens from the mail', receipt.rendered, `the page never drew; errors: ${receipt.errors.join(' | ') || 'none'}`);
+      step.check('…and says it is paid', await receipt.page.getByText(/paid in full|betald/i).first().isVisible().catch(() => false), 'the receipt does not say the invoice is paid');
+      step.check('…lists what was bought', await receipt.page.getByText(productName, { exact: false }).first().isVisible().catch(() => false), 'the product is not on the receipt');
+      step.check('…and asks for no money', (await receipt.page.getByRole('button', { name: /pay|betala/i }).count()) === 0, 'a pay button is on a paid receipt');
+      await snap(receipt.page, 'shop-receipt');
+      step.check('the receipt raised no error', receipt.errors.length === 0, receipt.errors.join(' | '));
+    } finally {
+      await receipt.page.context().close();
+    }
+    step.check('the shop raised no error', errors.length === 0, errors.join(' | '));
+  } finally {
+    await page.context().close();
+  }
+  return step.result();
+}
+
 // ── run ─────────────────────────────────────────────────────────────────────
 
 const cfg = readStackConfig();
@@ -451,7 +520,7 @@ try {
   // The same browser the view sweep and the public blocks use: the runner's Chrome, or the one named.
   const executablePath = process.env.VIEW_SWEEP_BROWSER || undefined;
   browser = await chromium.launch({ ...(executablePath ? { executablePath } : { channel: 'chrome' }), headless: !headed });
-  for (const run of [quoteAccepted, contractSigned, invoicePaid, bookingChanged, portalShowsWhatTheCustomerHas]) {
+  for (const run of [quoteAccepted, contractSigned, invoicePaid, bookingChanged, shopPurchase, portalShowsWhatTheCustomerHas]) {
     try {
       results.push(await run(s, browser, base));
     } catch (e) {
