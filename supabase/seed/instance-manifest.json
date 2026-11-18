@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261119120000",
-      "migrations_count": 773,
+      "migration_head": "20261119160000",
+      "migrations_count": 775,
       "migrations": [
         {
           "version": "00000000000000",
@@ -3097,6 +3097,14 @@
         {
           "version": "20261119120000",
           "name": "portalen-litar-pa-bekraftad-adress"
+        },
+        {
+          "version": "20261119150000",
+          "name": "kopet-bekraftas-for-den-som-kopte"
+        },
+        {
+          "version": "20261119160000",
+          "name": "foretaget-far-veta-nar-kunden-avbokar"
         }
       ]
     },
@@ -3109,7 +3117,7 @@
       "count": 76,
       "shared_hash": "sha256:e7437b07a3fa221450d0b11c0c6cecd39b80d80ce94a95aa07fa00a8f3fbc54f",
       "functions": {
-        "agent-execute": "sha256:87318fbd1aa0b6b99eec990915717fece92891f225fa27e0998888e485c560b9",
+        "agent-execute": "sha256:a8eb4b28d817af298210e36dd615df6c51073a9c4360dc3fc33a2a841ab0d4a5",
         "agent-operate": "sha256:4320e02dd3e6a0a1706b42dc1905b631c61e6a4cbe3556c701f474c278c89e1a",
         "ai-task": "sha256:ce3aacdef625bba758f4323da3e49104a1b94a3d3d77d800e89dacd0b803d65e",
         "automation-dispatcher": "sha256:d905660cd907c6f1ef5c7cac0a97ed44a4e4187ef4d5179089fa2714b2751443",
@@ -3124,7 +3132,7 @@
         "content-api": "sha256:fdefa5bea17c8e34446fac869a8ed0f59ec6187e44e7885f5b952f8594f321f1",
         "contract-billing-cron": "sha256:616b750ce0abd97453d47c2610f615e0f1f07a9128b8c8725af6e9fd7f3529bc",
         "contract-sign": "sha256:f4af280386c03f0d21840d528e450208b682c81324e22780a662512eaea7d41f",
-        "create-checkout": "sha256:b17c5c0461c1adb8c17b3410929dc7db0ebaf84ec8c443ebf20a589bc97afec9",
+        "create-checkout": "sha256:61c3c334f03d0482d221a3abdf838e07dbc14ec0d03b11d61a1d9bf93160303b",
         "create-invoice-payment": "sha256:a46c82e437303cc1311748da524fa750c4b0068d2ff7e7dc17e365443a51e166",
         "create-user": "sha256:9f6d84e3e07c734a17b261551e1ca825cf84f4238c74d510c9e23de8b3805a61",
         "customer-signup": "sha256:a28e4a612842ca548e8dc645efdea5d9b16e209ceac2fa97177246d392a07724",
