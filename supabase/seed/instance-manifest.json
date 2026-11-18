@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261117180000",
-      "migrations_count": 768,
+      "migration_head": "20261118090000",
+      "migrations_count": 769,
       "migrations": [
         {
           "version": "00000000000000",
@@ -3077,6 +3077,10 @@
         {
           "version": "20261117180000",
           "name": "en-nummerserie-per-dokument"
+        },
+        {
+          "version": "20261118090000",
+          "name": "fakturan-fods-ratt-vem-som-an-skapar-den"
         }
       ]
     },
