@@ -605,6 +605,7 @@ export const SKILL_OWNER_MODULE: Readonly<Record<string, string>> = Object.freez
   "send_purchase_order": "purchasing",
   "send_quote_expiry_reminders": "quotes",
   "send_survey": "surveys",
+  "send_ticket_update": "tickets",
   "send_webinar_reminders": "webinars",
   "send_winback_campaign": "subscriptions",
   "seo_audit_page": "analytics",
