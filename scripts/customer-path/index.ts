@@ -419,6 +419,9 @@ async function bookingChanged(s: Scenario, browser: Browser, base: string): Prom
     let off = false;
     for (let i = 0; i < 30 && !(off = (await row())?.status === 'cancelled'); i++) await page.waitForTimeout(500);
     step.check('the booking is cancelled, with the customer\'s words', off && /Kan inte komma/.test((await row())?.reason ?? ''), JSON.stringify(await row()));
+    const told = await s.one<{ n: string }>(`select count(*) as n from agent_events where event_name = 'booking.cancelled_by_customer' and payload->>'id' = $1`, [bookingId]);
+    const noticed = await s.one<{ enabled: boolean }>(`select enabled from agent_automations where name = 'Notify admins when a customer cancels a booking'`);
+    step.check('the business is told the customer cancelled', Number(told?.n) === 1 && noticed?.enabled === true, `events: ${told?.n}; automation: ${JSON.stringify(noticed ?? null)}`);
     step.check('the page says it is cancelled', await page.getByTestId('booking-cancelled').isVisible().catch(() => false), 'no "cancelled" message on the page');
     await snap(page, 'booking-cancelled');
     const free = await s.one<{ a: { slots?: Array<{ time: string }> } }>(`select public.booking_free_slots($1::uuid, $2::date) as a`, [serviceId, day]);

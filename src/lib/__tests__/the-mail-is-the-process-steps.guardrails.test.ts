@@ -320,3 +320,19 @@ describe('a purchase with Stripe off is a whole purchase', () => {
     expect(page).not.toMatch(/\.from\('order_items'\)/);
   });
 });
+
+describe('the business hears when the customer calls off a booking', () => {
+  const mod = read('src/lib/modules/booking-module.ts');
+  const sql = read('supabase/migrations/20261119160000_foretaget-far-veta-nar-kunden-avbokar.sql');
+
+  it('the customer\'s own cancellation raises its own event, after the booking is off', () => {
+    expect(sql.indexOf("SET status = 'cancelled'")).toBeGreaterThan(-1);
+    expect(sql.indexOf("'booking.cancelled_by_customer'")).toBeGreaterThan(sql.indexOf("SET status = 'cancelled'"));
+  });
+
+  it('an automation mails the admins on it', () => {
+    const seed = mod.slice(mod.indexOf("name: 'Notify admins when a customer cancels a booking'"));
+    expect(seed.slice(0, 700)).toMatch(/trigger_config: \{ event: 'booking\.cancelled_by_customer' \}/);
+    expect(seed.slice(0, 700)).toMatch(/skill_name: 'email_admins'/);
+  });
+});

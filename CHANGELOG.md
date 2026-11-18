@@ -10,6 +10,10 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Added
 
+- **The business hears when a customer cancels a booking.** A customer who
+  moved their booking from the link told the admins; one who cancelled told
+  nobody. The admins are now mailed who, when and what the customer wrote.
+
 - **A purchase with Stripe off is a whole purchase.** Found by buying in the
   shop in a browser as a visitor. The page after the purchase said "Awaiting
   payment…" for a paid order, for every buyer without an account (also after a
