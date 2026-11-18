@@ -62,6 +62,8 @@ export interface Invoice {
   /** 'Er referens' (EN 16931 BT-10); the e-invoice export needs it. */
   buyer_reference?: string | null;
   notes: string | null;
+  /** Where the invoice came from — the business's note, never printed for the customer. */
+  origin_note?: string | null;
   created_by: string | null;
   created_at: string;
   updated_at: string;

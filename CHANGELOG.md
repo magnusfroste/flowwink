@@ -155,6 +155,14 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Fixed
 
+- **An invoice no longer tells the customer where it was generated from.** The
+  customer's invoice page and PDF read "Notes — Generated from contract
+  <internal id>" on invoices made from an agreement, a subscription period, a
+  till receipt or timesheets. That line now goes to an internal field shown
+  only in the admin; what a customer can use (a PO number, the period billed)
+  stays. Drafts are cleaned; an invoice already sent is left as it was sent.
+  The timesheet invoice also takes its number from the one invoice series.
+
 - **The Daily Briefing writes when the morning has news.** A small site was
   mailed every morning: "Traffic down 60% vs last week — consider new content"
   was an action item on 19 page views against 47, and cost ten health points;
