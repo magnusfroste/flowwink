@@ -699,8 +699,10 @@ beside its payload, so an operator branches instead of guessing:
   customer. The invoice step: New Invoice for a lead, a line, Save, Send,
   Record Payment — and the customer reads their own name on the page. A click
   shows "sent" a moment before the mail is in the rail: wait for the mail
-  (`mailTo`), never read it once. A process a person does in the admin gets a
-  step there.
+  (`mailTo`), never read it once. The contact step: New Contact, landing on
+  the contact (the pipeline is ordered by score, so a new one was the last
+  card of its column — `CreateLeadDialog` now opens it), Create deal. A
+  process a person does in the admin gets a step there.
 - **One number series per document (2026-11-17).** `next_document_number
   (kind, prefix)` is the only source of a quote or invoice number — the admin,
   every skill (`nextDocumentNumber` in core.ts), `quote-sign` and the invoicing

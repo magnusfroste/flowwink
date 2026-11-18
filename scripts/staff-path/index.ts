@@ -265,6 +265,52 @@ async function invoiceByHand(s: Scenario, browser: Browser, cfg: StackConfig, ad
   return step.result();
 }
 
+/** A person enters a contact, lands on it, and opens a deal from there. */
+async function contactToDeal(s: Scenario, browser: Browser, cfg: StackConfig, admin: FixtureUser, base: string): Promise<StepResult> {
+  const step = new Step('contact: entered by hand and turned into a deal');
+  const email = `hand-contact-${s.tag}@example.test`;
+  const name = `Handväg Kontakt ${s.tag}`;
+  const ctx = await signedIn(browser, cfg, admin);
+  const page = await ctx.newPage();
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message.slice(0, 300)));
+  const lead = () => s.one<{ id: string; status: string; source: string | null }>('select id, status::text as status, source from leads where email = $1', [email]);
+  try {
+    await page.goto(`${base}/admin/contacts`, { waitUntil: 'domcontentloaded' });
+    const newContact = page.getByRole('button', { name: /new contact/i }).first();
+    if (!step.check('the contacts page opens for the person', await newContact.waitFor({ state: 'visible', timeout: 60_000 }).then(() => true, () => false), `no "New Contact" button; page errors: ${errors.join(' | ') || 'none'}`)) { await snap(page, 'contacts-not-rendered'); return step.result(); }
+    await newContact.click();
+    await page.locator('#email').fill(email);
+    await page.locator('#name').fill(name);
+    await page.getByRole('button', { name: /create contact/i }).click();
+    const made = await until(lead, (l) => !!l.id);
+    if (!step.check('the contact is created', !!made && made.status === 'lead', `leads row: ${JSON.stringify(await lead())}`)) { await snap(page, 'contact-not-created'); return step.result(); }
+    // FINDING 2026-11-18: the pipeline is ordered by score, so the new contact (score 0)
+    // was the last card of 114 — created, and nowhere to be seen.
+    const landed = await page.waitForURL(new RegExp(`/admin/contacts/${made!.id}$`), { timeout: 15_000 }).then(() => true, () => false);
+    step.check('the person lands on the contact they made', landed && await page.getByText(name, { exact: false }).first().waitFor({ state: 'visible', timeout: 20_000 }).then(() => true, () => false), `the page is ${page.url()}`);
+    await snap(page, 'contact-made');
+
+    await page.getByRole('button', { name: /^create deal$/i }).first().click();
+    const value = page.locator('#value');
+    if (!step.check('a deal can be opened from the contact', await value.waitFor({ state: 'visible', timeout: 10_000 }).then(() => true, () => false), 'the deal dialog did not open')) { await snap(page, 'deal-dialog'); return step.result(); }
+    await value.fill('25000');
+    await page.getByRole('dialog').getByRole('button', { name: /create deal/i }).click();
+    const deal = await until(
+      () => s.one<{ value_cents: number; stage: string }>('select d.value_cents, d.stage::text as stage from deals d where d.lead_id = $1', [made!.id]),
+      (d) => d.value_cents > 0,
+    );
+    await snap(page, 'deal-made');
+    step.check('the deal carries what the person typed: 25 000 kr', deal?.value_cents === 2_500_000, `deals row: ${JSON.stringify(deal)}`);
+    const moved = await until(lead, (l) => l.status === 'opportunity');
+    step.check('the contact becomes an opportunity', !!moved, `leads.status is ${(await lead())?.status}`);
+    step.check('the admin raised no error', errors.length === 0, errors.join(' | '));
+  } finally {
+    await ctx.close();
+  }
+  return step.result();
+}
+
 // ── run ─────────────────────────────────────────────────────────────────────
 
 const cfg = readStackConfig();
@@ -287,7 +333,7 @@ try {
   const base = baseUrlArg ?? (vite = await startVite(cfg, await freePort(5196))).baseUrl;
   const executablePath = process.env.VIEW_SWEEP_BROWSER || undefined;
   browser = await chromium.launch({ ...(executablePath ? { executablePath } : { channel: 'chrome' }), headless: !headed });
-  for (const run of [quoteByHand, invoiceByHand]) {
+  for (const run of [quoteByHand, invoiceByHand, contactToDeal]) {
     try {
       results.push(await run(s, browser, cfg, admin, base));
     } catch (e) {

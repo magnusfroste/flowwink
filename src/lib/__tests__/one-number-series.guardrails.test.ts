@@ -92,7 +92,14 @@ describe('an invoice is born right whoever creates it', () => {
   });
 
   it('the invoice by hand is a step on the staff path', () => {
-    expect(read('scripts/staff-path/index.ts')).toMatch(/\[quoteByHand, invoiceByHand\]/);
+    expect(read('scripts/staff-path/index.ts')).toMatch(/\[quoteByHand, invoiceByHand, contactToDeal\]/);
+  });
+});
+
+describe('a contact made by hand is where the person ends up', () => {
+  it('the dialog opens the new contact instead of leaving it at the bottom of a score-ordered column', () => {
+    const dialog = read('src/components/admin/CreateLeadDialog.tsx');
+    expect(dialog).toMatch(/if \(!defaultCompanyId\) navigate\(`\/admin\/contacts\/\$\{newLead\.id\}`\)/);
   });
 });
 

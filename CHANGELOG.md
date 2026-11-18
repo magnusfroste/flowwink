@@ -126,6 +126,11 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Fixed
 
+- **A contact you create is the page you land on.** The pipeline is ordered by
+  score, so a contact created by hand (score 0) became the last card of its
+  column and could not be found on a long list. Creating a contact now opens
+  it, and "already exists" offers a link to the existing one.
+
 - **An invoice created by hand has a due date and the customer's name.** An
   invoice made with New Invoice in the admin was born with no due date — so it
   was never overdue and no reminder was ever sent — and without the customer's
