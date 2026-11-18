@@ -185,7 +185,7 @@ const OUTCOME_TOOLS = [
       parameters: {
         type: 'object',
         properties: {
-          limit: { type: 'number', description: 'Max unevaluated actions to return (default 15)' },
+          limit: { type: 'number', description: 'Max unevaluated actions to return (default 5)' },
           skill_filter: { type: 'string', description: 'Only evaluate actions from this skill' },
           include_too_early: { type: 'boolean', description: 'Re-evaluate actions previously marked as too_early' },
         },

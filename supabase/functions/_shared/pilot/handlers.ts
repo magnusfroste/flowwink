@@ -14,6 +14,7 @@ import { calculateNextRun, isSupportedCron, readCronExpression, readCronTimeZone
 import { loadHomeCached } from '../locale/load-home.ts';
 import { cadenceRefusal } from './cadence.ts';
 import { hideSkills, selfHealCandidates } from '../skills/skill-visibility.ts';
+import { isReadCall } from '../skills/read-surface.ts';
 
 /**
  * How the loop called a built-in that runs skills on its behalf. With
@@ -1582,7 +1583,7 @@ export async function handleEvaluateOutcomes(supabase: any, args: {
   skill_filter?: string;
   include_too_early?: boolean;
 }) {
-  const limit = args.limit || 15;
+  const limit = args.limit || 5;
   const since = new Date();
   since.setDate(since.getDate() - 14);
 
@@ -1598,8 +1599,16 @@ export async function handleEvaluateOutcomes(supabase: any, args: {
     .gte('created_at', since.toISOString())
     .eq('agent', 'flowpilot')
     .eq('status', 'success')
+    // A DECISION of the loop carries its run's trace (reason.ts stamps every
+    // tool call). The rows that do not are housekeeping written under the
+    // flowpilot name: instance-health's check, the heartbeat's integrity gate,
+    // automation runs. liteit (2026-11-08…18) carried 105 unscored
+    // instance_health_check rows; the heartbeat opened with evaluate_outcomes,
+    // scored seven of them, and stopped at its token budget before the
+    // week's blog post, day after day.
+    .not('input->>trace_id', 'is', null)
     .order('created_at', { ascending: false })
-    .limit(limit * 2);
+    .limit(limit * 4);
 
   if (args.skill_filter) query = query.eq('skill_name', args.skill_filter);
 
@@ -1608,7 +1617,7 @@ export async function handleEvaluateOutcomes(supabase: any, args: {
 
   let filteredActivities = activities.filter((a: any) =>
     a.outcome_status === null || (args.include_too_early && a.outcome_status === 'too_early')
-  ).slice(0, limit);
+  );
 
   if (!filteredActivities.length) return { status: 'all_evaluated', count: 0, message: 'All recent activities have been evaluated.' };
 
@@ -1629,6 +1638,28 @@ export async function handleEvaluateOutcomes(supabase: any, args: {
 
   // Remove auto-scored from manual eval list
   filteredActivities = filteredActivities.filter((a: any) => !autoScoredIds.includes(a.id));
+
+  // ─── Reads are scored without the model ─────────────────────────────────
+  // A read changes nothing whose outcome could be judged; the run that used
+  // it is judged on its heartbeat row. Each one handed to the model cost a
+  // record_outcome call (a full context resend), so they leave the queue as
+  // 'neutral' here and the model sees only what it changed.
+  type Unscored = { id: string; skill_name: string; input?: Record<string, unknown> | null };
+  const readIds = (filteredActivities as Unscored[])
+    .filter((a) => a.skill_name !== 'heartbeat' && isReadCall(a.skill_name, a.input || {}))
+    .map((a) => a.id);
+  if (readIds.length) {
+    await supabase.from('agent_activity').update({
+      outcome_status: 'neutral',
+      outcome_data: { auto_gate: true, reason: 'A read changes nothing to judge' },
+      outcome_evaluated_at: new Date().toISOString(),
+    }).in('id', readIds);
+    filteredActivities = (filteredActivities as Unscored[]).filter((a) => !readIds.includes(a.id));
+  }
+  filteredActivities = filteredActivities.slice(0, limit);
+  if (!filteredActivities.length && !autoScoredIds.length) {
+    return { status: 'all_evaluated', count: 0, reads_scored: readIds.length, message: 'Nothing to judge: the unscored actions were reads, scored neutral without you.' };
+  }
 
   // ─── Consecutive Failure Escalation: auto-pause systemically broken skills ──
   const CONSECUTIVE_FAIL_THRESHOLD = 3;
