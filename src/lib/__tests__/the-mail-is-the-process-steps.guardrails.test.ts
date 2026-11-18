@@ -153,7 +153,7 @@ describe('the invoice says who is asking and how to pay — and reaches the cust
   });
 
   it('the invoice is a step on the customer path', () => {
-    expect(read('scripts/customer-path/index.ts')).toMatch(/\[quoteAccepted, contractSigned, invoicePaid\]/);
+    expect(read('scripts/customer-path/index.ts')).toMatch(/\[quoteAccepted, contractSigned, invoicePaid, portalShowsWhatTheCustomerHas\]/);
   });
 });
 
@@ -226,3 +226,44 @@ describe('the customer hears about their case', () => {
     expect(read('scripts/staff-path/index.ts')).toMatch(/\[quoteByHand, invoiceByHand, contactToDeal, ticketByHand\]/);
   });
 });
+
+describe('the customer portal shows what the customer has', () => {
+  // Found by signing in to /account as a customer who holds a service agreement (2026-11-18).
+  const sql = read('supabase/migrations/20261118150000_portalen-visar-vad-kunden-har.sql');
+  const layout = read('src/pages/account/AccountLayout.tsx');
+  const app = read('src/App.tsx');
+
+  it('the portal opens on an overview, not on a shop\'s order list', () => {
+    expect(app).toMatch(/\{ index: true, element: <AccountOverviewPage \/> \}/);
+    for (const path of ['orders', 'invoices', 'agreements']) expect(app, path).toMatch(new RegExp(`\\{ path: "${path}", element: <`));
+    // What a customer holds comes before what a shop sells.
+    const nav = layout.slice(layout.indexOf('...overviewNav'), layout.indexOf('...profileNav'));
+    expect(nav.indexOf('servicesNav')).toBeLessThan(nav.indexOf('commerceNav'));
+    expect(nav.indexOf('invoicesNav')).toBeLessThan(nav.indexOf('commerceNav'));
+  });
+
+  it('one rule says which rows are the customer\'s: the confirmed e-mail and their companies', () => {
+    const email = sql.slice(sql.indexOf('FUNCTION public.portal_email'), sql.indexOf('FUNCTION public.portal_company_ids'));
+    expect(email).toMatch(/email_confirmed_at IS NOT NULL/);
+    const account = sql.slice(sql.indexOf('FUNCTION public.my_account'), sql.indexOf('── Orders'));
+    expect(account).toMatch(/v_email text := public\.portal_email\(\)/);
+    expect(account).toMatch(/v_companies uuid\[\] := public\.portal_company_ids\(\)/);
+    // Nothing reads the address out of the token itself, which an unconfirmed account also carries.
+    expect(account).not.toMatch(/auth\.jwt\(\)/);
+  });
+
+  it('the customer is shown only what was issued to them, and only as a signed-in person', () => {
+    const account = sql.slice(sql.indexOf('FUNCTION public.my_account'), sql.indexOf('── Orders'));
+    expect(account).toMatch(/i\.status::text NOT IN \('draft', 'cancelled'\)/);
+    expect(account).toMatch(/c\.status::text <> 'draft'/);
+    expect(account).toMatch(/IF v_uid IS NULL THEN\s+RAISE EXCEPTION/);
+    for (const fn of ['my_account()', 'portal_email()', 'portal_company_ids()']) {
+      expect(sql, fn).toContain(`REVOKE ALL ON FUNCTION public.${fn} FROM anon`);
+    }
+    // Internal fields stay inside: no notes, no owner, no customer e-mail of someone else's row.
+    for (const internal of ["'notes'", "'created_by'", "'customer_email'", "'signer_ip'", "'line_items'"]) {
+      expect(account, internal).not.toContain(internal);
+    }
+  });
+});
+

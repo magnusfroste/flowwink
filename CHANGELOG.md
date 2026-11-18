@@ -126,6 +126,18 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Fixed
 
+- **The customer portal starts with what the customer has.** It opened on the
+  order list, so a customer with a service agreement and no shop purchases saw
+  "No orders yet — browse products" and a menu of Orders, Addresses and
+  Wishlist. The portal now opens on an overview — what is waiting for them (an
+  invoice to pay, a quote to answer, an agreement to sign) and what they have
+  — and the menu puts services, invoices and agreements before the shop.
+- **Customers can see their invoices and agreements in the portal.** Neither
+  had a page: invoices could not be read by a customer at all, and "Contracts"
+  showed an employee's own employment contract. Both open the same page the
+  e-mail linked to. An order placed as a guest now shows up once the same
+  person registers and confirms their e-mail address.
+
 - **One set of figures for the platform.** The agent's own instructions said
   "500+ skills", the template blog posts and knowledge base "30+", one page of
   the FlowWink template "60+ Modules" beside "68 modules", and the docs "70".

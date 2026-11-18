@@ -6,7 +6,7 @@ import { PublicFooter } from '@/components/public/PublicFooter';
 import { useCustomerAuth } from '@/hooks/useCustomerAuth';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { Package, MapPin, Heart, User, LogOut, Loader2, CalendarOff, Receipt, Users, Target, Clock, GraduationCap, FileText, Sparkles, LifeBuoy, FileSignature, Bot, ArrowLeft } from 'lucide-react';
+import { Package, LayoutDashboard, ShoppingBag, MapPin, Heart, User, LogOut, Loader2, CalendarOff, Receipt, Users, Target, Clock, GraduationCap, FileText, Sparkles, LifeBuoy, FileSignature, Bot, ArrowLeft } from 'lucide-react';
 import { useEmployeeSelf } from '@/hooks/useEmployeeSelf';
 import { useIsManager } from '@/hooks/useTeam';
 import { useIsModuleEnabled, useModules } from '@/hooks/useModules';
@@ -15,14 +15,30 @@ import { useAuth } from '@/hooks/useAuth';
 
 // Commerce-scoped portal sections — hidden when the ecommerce module is off
 // (an HR-only site still gets the portal, for employee self-service).
+// The portal opens on what the customer has — whatever kind of customer they
+// are. It opened on Orders: a customer holding a service was met by "No orders
+// yet — browse products" (2026-11-18).
+const overviewNav = [
+  { to: '/account', label: 'Overview', icon: LayoutDashboard, exact: true },
+];
+
 const commerceNav = [
-  { to: '/account', label: 'Orders', icon: Package, exact: true },
+  { to: '/account/orders', label: 'Orders', icon: ShoppingBag },
   { to: '/account/addresses', label: 'Addresses', icon: MapPin },
   { to: '/account/wishlist', label: 'Wishlist', icon: Heart },
 ];
 
 const servicesNav = [
   { to: '/account/services', label: 'My services', icon: Package },
+];
+
+// What the business has invoiced the customer, and the agreements between
+// them — neither had a page: "Contracts" below is the EMPLOYEE's own.
+const invoicesNav = [
+  { to: '/account/invoices', label: 'My invoices', icon: Receipt },
+];
+const agreementsNav = [
+  { to: '/account/agreements', label: 'My agreements', icon: FileSignature },
 ];
 
 // Quotes the customer has been sent — shown when the quotes module is on.
@@ -41,7 +57,7 @@ const employeeNav = [
   { to: '/account/expenses', label: 'Expenses', icon: Receipt },
   { to: '/account/performance', label: 'Performance', icon: Target },
   { to: '/account/skills', label: 'Skills', icon: GraduationCap },
-  { to: '/account/contracts', label: 'Contracts', icon: FileText },
+  { to: '/account/contracts', label: 'Employment contract', icon: FileText },
   { to: '/account/payslips', label: 'Payslips', icon: Receipt },
 ];
 
@@ -64,6 +80,8 @@ export default function AccountLayout() {
   const ecommerceEnabled = useIsModuleEnabled('ecommerce');
   const subscriptionsEnabled = useIsModuleEnabled('subscriptions');
   const quotesEnabled = useIsModuleEnabled('quotes');
+  const invoicingEnabled = useIsModuleEnabled('invoicing');
+  const contractsEnabled = useIsModuleEnabled('contracts');
   const { isLoading: modulesLoading } = useModules();
   const location = useLocation();
   const navigate = useNavigate();
@@ -76,9 +94,13 @@ export default function AccountLayout() {
     ...agentsNav,
     { to: '/admin', label: 'Back to work', icon: ArrowLeft },
   ] : [
-    ...(ecommerceEnabled ? commerceNav : []),
+    ...overviewNav,
+    // What a customer holds comes before what a shop sells.
     ...(subscriptionsEnabled ? servicesNav : []),
+    ...(invoicingEnabled ? invoicesNav : []),
+    ...(contractsEnabled ? agreementsNav : []),
     ...(quotesEnabled ? quotesNav : []),
+    ...(ecommerceEnabled ? commerceNav : []),
     ...assistantNav,
     ...(isEmployee ? employeeNav : []),
     ...(isManager ? managerNav : []),
@@ -113,14 +135,6 @@ export default function AccountLayout() {
   // employment" opens here.
   if (rolesReady && roles.length > 0 && !roles.includes('customer') && !isStaffSelfService(location.pathname)) {
     return <Navigate to="/admin" replace />;
-  }
-
-  // The portal index is the Orders page; with ecommerce off it isn't in the
-  // nav, so land the visitor on the first section that is. A service business
-  // (subscriptions on, ecommerce off) lands on My services — the thing the
-  // customer actually came to see.
-  if (!ecommerceEnabled && location.pathname === '/account') {
-    return <Navigate to={subscriptionsEnabled ? '/account/services' : '/account/assistant'} replace />;
   }
 
   const handleSignOut = async () => {

@@ -45,12 +45,15 @@ describe('account portal access', () => {
     expect(layout).toMatch(/\.\.\.\(isEmployee \? employeeNav : \[\]\)/);
   });
 
-  it('with ecommerce off, the portal index does not land on the Orders page', () => {
-    const layout = read('src/pages/account/AccountLayout.tsx');
-    expect(layout).toMatch(/!ecommerceEnabled && location\.pathname === '\/account'/);
-    // A service business (subscriptions on) lands on My services; otherwise
-    // the assistant. Never the empty Orders page.
-    expect(layout).toMatch(/subscriptionsEnabled \? '\/account\/services' : '\/account\/assistant'/);
+  it('the portal index is never the Orders page — it is the overview of what the customer has', () => {
+    // Until 2026-11-18 the index WAS Orders, with a redirect to My services when
+    // ecommerce was off. On an instance with both modules on, a customer holding
+    // a service still landed on "No orders yet — browse products". The index is
+    // an overview now, whatever modules are on, and Orders has its own address.
+    const app = read('src/App.tsx');
+    expect(app).toMatch(/\{ index: true, element: <AccountOverviewPage \/> \}/);
+    expect(app).toMatch(/\{ path: "orders", element: <CustomerOrdersPage \/> \}/);
+    expect(read('src/pages/account/AccountLayout.tsx')).not.toMatch(/location\.pathname === '\/account'\) \{\s+return <Navigate/);
   });
 
   it('the account header icon sends staff to /admin, customers to /account', () => {
