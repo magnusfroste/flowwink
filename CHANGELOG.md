@@ -10,6 +10,11 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Added
 
+- **The cart, the checkout and the page after a purchase speak the site's
+  language.** Their texts were English built into the code; they are visitor
+  texts now (50 keys under `checkout.*` and `cart.*`), translated per instance
+  like the rest of the storefront.
+
 - **A purchase with Stripe off is a whole purchase.** Found by buying in the
   shop in a browser as a visitor. The page after the purchase said "Awaiting
   payment…" for a paid order, for every buyer without an account (also after a
