@@ -126,6 +126,15 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Fixed
 
+- **The heartbeat delivers again instead of scoring housekeeping.** On liteit
+  the weekly blog post stopped: every morning the heartbeat opened with
+  `evaluate_outcomes`, scored seven old rows and ran out of its token budget
+  (125–131k) before it wrote anything. The rows were instance-health and
+  integrity checks written under the `flowpilot` name — 105 of them unscored —
+  not decisions of the loop. `evaluate_outcomes` now hands the model only
+  actions that carry a run's trace, scores reads `neutral` itself (a read
+  changes nothing to judge), and returns five at a time instead of fifteen.
+
 - **A customer is told about their support case.** A case opened for a customer
   sent them nothing, and the staff's reply was only visible in the customer
   portal — where someone who wrote in through a form, or was entered by hand,
