@@ -704,6 +704,23 @@ beside its payload, so an operator branches instead of guessing:
   a public reply — it now makes the person choose "Reply to customer" or
   "Internal note" and says who reads it; a new writer of a staff comment
   states `is_internal` (a guard discovers the ones that do not).
+- **The customer portal shows what the customer has (2026-11-18).** `/account`
+  opened on Orders: a customer holding a service (a fibre agreement) was met by
+  "No orders yet — browse products", and had no page for their invoices or
+  their agreement ("Contracts" there is the EMPLOYEE's). It opens on an
+  overview now — what waits for them (invoice to pay, quote to answer,
+  agreement to sign) and what they have — and has `/account/invoices`,
+  `/account/agreements`, `/account/orders`. ONE rule says which rows are a
+  customer's: `portal_email()` (the account's CONFIRMED address — never the
+  token's bare claim) and `portal_company_ids()` (active `company_contacts`),
+  read by `my_account()`. A shop purchase is an `orders` row, a service is a
+  `subscriptions` row born from an agreement; the customer is the same person
+  either way, and the portal is shaped by what they hold, not by which module
+  is on. Only what was issued (never a draft), only the fields the mail
+  already carried, opening the same public page the mail linked to. A new
+  portal page reads `my_account()` or asks `portal_email()` — not
+  `auth.jwt() ->> 'email'`, which older policies (subscriptions, contracts,
+  `my_quotes`) still do.
 - **And the staff's side is proven in a browser too (`npm run qa:staff-path`,
   nightly, 2026-11-17):** a step signs in as an admin and does the process
   with clicks — New Quote for a lead, title, line, terms, Save, Send to

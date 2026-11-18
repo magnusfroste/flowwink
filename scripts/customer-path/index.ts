@@ -29,7 +29,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { chromium, type Browser, type Page } from 'playwright-core';
-import { assertLocal } from '../view-sweep/fixtures';
+import { assertLocal, createFixtureUser, deleteFixtureUser, storageKeyFor, type FixtureUser } from '../view-sweep/fixtures';
 import { readStackConfig, freePort, startVite } from '../view-sweep/stack';
 import { Scenario, connect } from '../process-battery/lib';
 
@@ -255,6 +255,88 @@ async function invoicePaid(s: Scenario, browser: Browser, base: string): Promise
   return step.result();
 }
 
+/** A customer signs in to the portal and finds what they have: the invoice to pay, the quote to answer, the agreement to sign. */
+async function portalShowsWhatTheCustomerHas(s: Scenario, browser: Browser, base: string): Promise<StepResult> {
+  const step = new Step('portal: the customer finds what they have and what waits for them');
+  const cfg = readStackConfig();
+  let customer: FixtureUser | null = null;
+  let stranger: FixtureUser | null = null;
+  try {
+    customer = await createFixtureUser(cfg, db, s.tag, 'portal-kund', ['customer']);
+    stranger = await createFixtureUser(cfg, db, s.tag, 'portal-annan', ['customer']);
+    const email = customer.email;
+    const name = `Kundväg Portal ${s.tag}`;
+
+    // The business does three things for this customer, none of them in a shop.
+    const invoice = await s.skill('manage_invoice', { action: 'create', customer_name: name, customer_email: email, tax_rate: 0.25, line_items: [{ description: 'Fibre, November', qty: 1, unit_price_cents: 80_000 }] });
+    const invoiceId = String(invoice.data.invoice_id ?? invoice.data.id ?? '');
+    const invoiceNumber = String(invoice.data.invoice_number ?? '');
+    const sentInvoice = await s.skill('manage_invoice', { action: 'send', invoice_id: invoiceId });
+    const draft = await s.skill('manage_invoice', { action: 'create', customer_name: name, customer_email: email, tax_rate: 0.25, line_items: [{ description: 'Not issued yet', qty: 1, unit_price_cents: 10_000 }] });
+    const draftNumber = String(draft.data.invoice_number ?? '');
+    const quote = await s.skill('manage_quote', { action: 'create', customer_name: name, customer_email: email, title: `Portal offer ${s.tag}`, valid_until: new Date(Date.now() + 30 * 86_400_000).toISOString().slice(0, 10), items: [{ description: 'Upgrade', quantity: 1, unit_price_cents: 50_000, tax_rate_pct: 25 }] });
+    const sentQuote = await s.skill('manage_quote', { action: 'send', id: s.idOf(quote.data, 'quote') });
+    const contract = await s.skill('manage_contract', { action: 'create', title: `Portal agreement ${s.tag}`, counterparty_name: name, counterparty_email: email, contract_type: 'service', start_date: new Date().toISOString().slice(0, 10), body_markdown: `# Service agreement\n\nThis agreement is made between the supplier and ${name} (the customer).\n\n1. The supplier delivers the fibre service at the customer's address from the start date.\n2. The agreement runs for twelve months and is renewed one year at a time.\n3. Either party may end it with three months' written notice before a renewal.\n4. Invoices are due thirty days after the invoice date.` });
+    const sentContract = await s.skill('send_contract_for_signature', { contract_id: s.idOf(contract.data, 'contract') });
+    if (!step.check('the business invoices, quotes and sends an agreement to one customer', sentInvoice.ok && sentQuote.ok && sentContract.ok && draft.ok,
+      sentInvoice.error || sentQuote.error || sentContract.error || draft.error)) return step.result();
+
+    const signIn = async (user: FixtureUser) => {
+      const ctx = await browser.newContext({ viewport: { width: 1280, height: 1000 } });
+      await ctx.addInitScript(
+        ([key, value]) => { try { if (!window.localStorage.getItem(key)) window.localStorage.setItem(key, value); } catch { /* opaque origin */ } },
+        [storageKeyFor(cfg.supabaseUrl), JSON.stringify(user.session)] as const,
+      );
+      return ctx;
+    };
+
+    const ctx = await signIn(customer);
+    const page = await ctx.newPage();
+    const errors: string[] = [];
+    page.on('pageerror', (e) => errors.push(e.message.slice(0, 300)));
+    try {
+      await page.goto(`${base}/account`, { waitUntil: 'domcontentloaded' });
+      const waiting = page.getByTestId('account-waiting');
+      // FINDING 2026-11-18: the portal opened on "No orders yet — browse products".
+      if (!step.check('the portal opens on what waits for the customer', await waiting.waitFor({ state: 'visible', timeout: 60_000 }).then(() => true, () => false), `no "Waiting for you" on /account; page errors: ${errors.join(' | ') || 'none'}`)) { await snap(page, 'portal-not-rendered'); return step.result(); }
+      const text = await waiting.innerText();
+      step.check('…the invoice to pay', text.includes(invoiceNumber), `${invoiceNumber} is not among: ${text.replace(/\s+/g, ' ').slice(0, 300)}`);
+      step.check('…the quote to answer', text.includes(`Portal offer ${s.tag}`), 'the quote is not waiting');
+      step.check('…the agreement to sign', text.includes(`Portal agreement ${s.tag}`), 'the agreement is not waiting');
+      await snap(page, 'portal-overview');
+
+      // FINDING 2026-11-18: no invoices page at all, and "Contracts" was the employee's own.
+      await page.getByRole('link', { name: /my invoices/i }).first().click();
+      const rows = page.getByTestId('my-invoice');
+      step.check('the customer finds their invoices', await rows.first().waitFor({ state: 'visible', timeout: 20_000 }).then(() => true, () => false) && (await rows.allInnerTexts()).some((t) => t.includes(invoiceNumber)), `${invoiceNumber} is not on /account/invoices`);
+      step.check('…and never one that was not issued', !(await rows.allInnerTexts()).some((t) => t.includes(draftNumber)), `the draft ${draftNumber} is shown to the customer`);
+      await page.getByRole('link', { name: /view and pay/i }).first().click();
+      step.check('…and opens one where it is paid', await page.getByTestId('invoice-how-to-pay').or(page.getByRole('button', { name: /pay by card|download pdf/i }).first()).first().waitFor({ state: 'visible', timeout: 45_000 }).then(() => true, () => false), `the invoice page did not open: ${page.url()}`);
+
+      await page.goto(`${base}/account/agreements`, { waitUntil: 'domcontentloaded' });
+      step.check('the customer finds their agreement', await page.getByTestId('my-agreement').filter({ hasText: `Portal agreement ${s.tag}` }).first().waitFor({ state: 'visible', timeout: 20_000 }).then(() => true, () => false), 'the agreement is not on /account/agreements');
+      step.check('the portal raised no error', errors.length === 0, errors.join(' | '));
+    } finally {
+      await ctx.close();
+    }
+
+    // Another customer of the same business sees none of it.
+    const other = await signIn(stranger);
+    try {
+      const p2 = await other.newPage();
+      await p2.goto(`${base}/account/invoices`, { waitUntil: 'domcontentloaded' });
+      const empty = await p2.getByText(/you have no invoices yet/i).first().waitFor({ state: 'visible', timeout: 45_000 }).then(() => true, () => false);
+      step.check('another customer sees none of it', empty && !(await p2.content()).includes(invoiceNumber), 'another signed-in customer can see the invoice');
+    } finally {
+      await other.close();
+    }
+  } finally {
+    if (customer) await deleteFixtureUser(cfg, customer).catch(() => {});
+    if (stranger) await deleteFixtureUser(cfg, stranger).catch(() => {});
+  }
+  return step.result();
+}
+
 // ── run ─────────────────────────────────────────────────────────────────────
 
 const cfg = readStackConfig();
@@ -276,7 +358,7 @@ try {
   // The same browser the view sweep and the public blocks use: the runner's Chrome, or the one named.
   const executablePath = process.env.VIEW_SWEEP_BROWSER || undefined;
   browser = await chromium.launch({ ...(executablePath ? { executablePath } : { channel: 'chrome' }), headless: !headed });
-  for (const run of [quoteAccepted, contractSigned, invoicePaid]) {
+  for (const run of [quoteAccepted, contractSigned, invoicePaid, portalShowsWhatTheCustomerHas]) {
     try {
       results.push(await run(s, browser, base));
     } catch (e) {
