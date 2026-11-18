@@ -696,7 +696,11 @@ beside its payload, so an operator branches instead of guessing:
   quote editor (`QuoteDetailSheet`) had no title, introduction or terms (only
   an agent could write what the customer's page shows) and drew the line
   description as a 25 px box. "Internal notes" there are never shown to the
-  customer. A process a person does in the admin gets a step there.
+  customer. The invoice step: New Invoice for a lead, a line, Save, Send,
+  Record Payment — and the customer reads their own name on the page. A click
+  shows "sent" a moment before the mail is in the rail: wait for the mail
+  (`mailTo`), never read it once. A process a person does in the admin gets a
+  step there.
 - **One number series per document (2026-11-17).** `next_document_number
   (kind, prefix)` is the only source of a quote or invoice number — the admin,
   every skill (`nextDocumentNumber` in core.ts), `quote-sign` and the invoicing
@@ -711,7 +715,15 @@ beside its payload, so an operator branches instead of guessing:
   their own series and stay.
 - **Born right (2026-10-27).** `manage_invoice create` without `due_date`
   gets one from the payment terms (`net30` → 30 days after the issue date,
-  30 when the terms say nothing). Every commercial `currency` column is
+  30 when the terms say nothing). **The rule is the row's since 2026-11-18**
+  (trigger `a_invoices_born_right`): the admin's New Invoice went round the
+  skill, so a hand-made invoice had no due date (never overdue, never
+  reminded) and no customer name or e-mail of its own (the invoice page and
+  the PDF print `invoices.customer_name`). On insert an invoice for a lead
+  takes the lead's name and e-mail where it has none; on insert, and again
+  when it is issued (draft → sent), a missing due date is counted from the
+  issue date. A written due date or customer is never touched; a credit note
+  gets none. Every commercial `currency` column is
   upper-cased by trigger and defaults to `business_currency()`
   (`subscriptions` used to default to `'usd'`). The visitor chat's
   `toolCallingEnabled` and `humanHandoffEnabled` are ON when absent (Law 4);

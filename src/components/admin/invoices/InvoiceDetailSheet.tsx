@@ -368,12 +368,14 @@ export function InvoiceDetailSheet({ invoiceId, open, onOpenChange }: Props) {
 
           {/* Notes */}
           <div className="space-y-2">
-            <Label>Notes</Label>
+            <Label htmlFor="inv-notes">Notes</Label>
             <Textarea
+              id="inv-notes"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
             />
+            <p className="text-xs text-muted-foreground">Printed on the invoice the customer receives.</p>
           </div>
 
           <div className="space-y-2">

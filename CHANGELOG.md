@@ -120,6 +120,14 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Fixed
 
+- **An invoice created by hand has a due date and the customer's name.** An
+  invoice made with New Invoice in the admin was born with no due date — so it
+  was never overdue and no reminder was ever sent — and without the customer's
+  name and e-mail on the invoice itself, so the customer's invoice page and PDF
+  did not name them. Every invoice now gets its due date from the payment terms
+  (30 days when none are stated) and its customer from the lead, whoever
+  creates it. A draft that already lacks a due date gets one when it is sent.
+
 - **A generic list is sized for the agent that reads it.** On a customer
   instance an agent paged every project task 31 times to find one: a page of 50
   was 58–71 KB of briefs and checklists, and a page of documents carried every
