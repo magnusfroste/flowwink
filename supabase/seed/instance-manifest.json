@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261119090000",
-      "migrations_count": 772,
+      "migration_head": "20261119120000",
+      "migrations_count": 773,
       "migrations": [
         {
           "version": "00000000000000",
@@ -3093,6 +3093,10 @@
         {
           "version": "20261119090000",
           "name": "kunden-andrar-sin-bokning"
+        },
+        {
+          "version": "20261119120000",
+          "name": "portalen-litar-pa-bekraftad-adress"
         }
       ]
     },
