@@ -1502,8 +1502,8 @@ Deno.serve(async (req) => {
       // execute_skill({ name: 'manage_page', arguments: {…} }). Naming
       // only the error leaves it to guess the same shape again or drop
       // the write — the same dead-end class as the parameter bounce.
-      // mcp-server already answers this with `available_tools`; same
-      // answer here.
+      // The gateway answers the same mistake the same way
+      // (_shared/mcp/gateway-misses.ts, `skill_called_as_tool`).
       const attempted = String(toolName || '');
       return {
         failed: true,

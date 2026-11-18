@@ -25,6 +25,10 @@ import { scoreSkillsByIntent, loadRecentUsageCounts, rankableDef, DISCOVERY_STEP
 import { ownerModuleOf } from "../_shared/skills/owner-module.ts";
 import { buildSkillCatalog } from "../_shared/skills/dispatch.ts";
 import { executeSkillRequest, SERVICE_CALLER } from "../_shared/execute/core.ts";
+import {
+  GATEWAY_MISS_HTTP, GATEWAY_RUN_STEP, gatewayMissAnswer, gatewayMissRow, nearestSkillNames,
+  type GatewayMiss, type GatewayMissAnswer, type MissCalledAs,
+} from "../_shared/mcp/gateway-misses.ts";
 
 // Per-request context propagated through MCP handlers (cached transport bypasses Hono ctx)
 const requestContext = new AsyncLocalStorage<{ callerUserId: string | null; callerApiKeyId: string | null; peerGroups?: string[]; ownerUserId?: string | null; agentName?: string | null; readOnly?: boolean; scopes?: string[] }>();
@@ -646,6 +650,7 @@ async function executeSkill(
   // was the tools/list verb heuristic, which knew list_/get_ but not
   // browse_/query_/count_, so a read-only key was refused `browse_blog`.
   let forcedDryRun = false;
+  const startedAt = Date.now();
   if (requestContext.getStore()?.readOnly) {
     const verdict = classifyCall(skillName, args);
     if (verdict !== "read") {
@@ -659,12 +664,11 @@ async function executeSkill(
         args = { ...args, dry_run: true };
         forcedDryRun = true;
       } else {
-        return JSON.stringify({
-          error: `This API key is read-only: '${skillName}' writes and declares no dry_run.`,
-          code: "READ_ONLY_KEY",
-          retryable: false,
-          hint: "Read-only keys run read skills as they are and writes only as dry runs (skills with a dry_run parameter). For a write, connect with a key that is not read-only — an admin creates one under Developer → MCP Keys.",
-        });
+        // What a key under evaluation TRIED to write is the evaluation.
+        return JSON.stringify(refuse(
+          { kind: "read_only_key", skill: skillName },
+          { callerUserId, callerApiKeyId, agentName: callerAgentName },
+          startedAt, args));
       }
     }
   }
@@ -906,7 +910,7 @@ async function fetchResource(resourceKey: string): Promise<unknown> {
         // Recent activity (last 10) — what was DONE; discovery steps are looking
         sb.from("agent_activity")
           .select("skill_name, status, created_at")
-          .not("skill_name", "in", `(${DISCOVERY_STEPS.join(",")})`)
+          .not("skill_name", "in", `(${[...DISCOVERY_STEPS, GATEWAY_RUN_STEP].join(",")})`)
           .order("created_at", { ascending: false })
           .limit(10),
         // Modules
@@ -1191,42 +1195,142 @@ async function annotateHasInstructions(skills: Array<{ name: string; has_instruc
   }
 }
 
+/** Who is on the other end of a gateway call, as the journal names them. */
+type DiscoveryCaller = { callerUserId?: string | null; callerApiKeyId?: string | null; agentName?: string | null };
+
+/**
+ * One row the gateway writes about its own work — a discovery step, or a call
+ * it refused before the executor. Stamped as the executor stamps its rows: the
+ * key column (what agent_day and the Agents page's Activity read — until
+ * 2026-11-18 only `input._caller_api_key_id` was set, so a connected agent's
+ * searches were missing from its own day), the owning module when the row is
+ * about a real skill, and `kind`, so the nightly thinning knows a lookup from a
+ * change. Never awaited on the answer path.
+ */
+function writeGatewayRow(
+  row: {
+    skill_name: string;
+    input: Record<string, unknown>;
+    output: Record<string, unknown>;
+    status: "success" | "failed";
+    error_message?: string | null;
+    kind: "read" | "write";
+    /** The real skill the row is about, when there is one: its module is who may read the row. */
+    ownedSkill?: string | null;
+  },
+  startedAt: number,
+  caller: DiscoveryCaller | undefined,
+): void {
+  const owner = row.ownedSkill ? ownerModuleOf(row.ownedSkill) : null;
+  const base = {
+    agent: "mcp",
+    skill_name: row.skill_name,
+    input: {
+      ...row.input,
+      _caller_user_id: caller?.callerUserId ?? null,
+      _caller_api_key_id: caller?.callerApiKeyId ?? null,
+      _caller_agent_name: caller?.agentName ?? null,
+      _effective_agent: "mcp",
+    },
+    output: row.output,
+    status: row.status,
+    error_message: row.error_message ?? null,
+    duration_ms: Date.now() - startedAt,
+    ...(caller?.callerApiKeyId ? { api_key_id: caller.callerApiKeyId } : {}),
+    ...(owner && owner !== "platform" ? { module: owner } : {}),
+  };
+  const sb = serviceClient();
+  const write = sb.from("agent_activity").insert({ ...base, kind: row.kind })
+    .then(async ({ error: e }: { error: { message: string; code?: string } | null }) => {
+      // `kind` arrives with 20261115090000; where the edge deploy got there
+      // first, keep the row without it rather than lose the journal.
+      if (e && /\bkind\b/i.test(e.message) && /PGRST204|42703|column/i.test(`${e.code} ${e.message}`)) {
+        ({ error: e } = await sb.from("agent_activity").insert(base));
+      }
+      if (e) console.error("[mcp-gateway-log] failed:", e.message);
+    });
+  // Supabase's edge runtime keeps the insert alive after the answer is sent.
+  const edge = (globalThis as { EdgeRuntime?: { waitUntil?: (p: PromiseLike<unknown>) => void } }).EdgeRuntime;
+  edge?.waitUntil?.(write);
+}
+
 /**
  * A dispatch agent's discovery steps — search_skills and read_skill — written to
  * agent_activity next to the skills it runs. Without them the log showed a
  * connected Claude make a call, then minutes of silence, then the next call
  * (optic, 2026-10-26): no telling whether the time went to thinking or to five
- * searches for the right tool. Never awaited on the answer path.
+ * searches for the right tool.
  */
-type DiscoveryCaller = { callerUserId?: string | null; callerApiKeyId?: string | null; agentName?: string | null };
 function logDiscovery(
   step: (typeof DISCOVERY_STEPS)[number],
   input: Record<string, unknown>,
   output: Record<string, unknown>,
   startedAt: number,
   caller: DiscoveryCaller | undefined,
-  error?: string,
 ): void {
-  const write = serviceClient().from("agent_activity").insert({
-    agent: "mcp",
-    skill_name: step,
-    input: {
-      ...input,
-      _caller_user_id: caller?.callerUserId ?? null,
-      _caller_api_key_id: caller?.callerApiKeyId ?? null,
-      _caller_agent_name: caller?.agentName ?? null,
-      _effective_agent: "mcp",
-    },
-    output,
-    status: error ? "failed" : "success",
-    error_message: error ?? null,
-    duration_ms: Date.now() - startedAt,
-  }).then(({ error: e }: { error: { message: string } | null }) => {
-    if (e) console.error("[mcp-discovery-log] failed:", e.message);
-  });
-  // Supabase's edge runtime keeps the insert alive after the answer is sent.
-  const edge = (globalThis as { EdgeRuntime?: { waitUntil?: (p: PromiseLike<unknown>) => void } }).EdgeRuntime;
-  edge?.waitUntil?.(write);
+  writeGatewayRow({ skill_name: step, input, output, status: "success", kind: "read" }, startedAt, caller);
+}
+
+/**
+ * The gateway's own "no": journaled, then answered — in one call, so no path
+ * can answer without leaving the row (_shared/mcp/gateway-misses.ts). A name
+ * that is no skill, a call outside the key's scope or the owner's reach, a
+ * write on a read-only key: until 2026-11-18 only an unknown read_skill left a
+ * trace, and that one without a code.
+ */
+function refuse(
+  miss: GatewayMiss,
+  caller: DiscoveryCaller | undefined,
+  startedAt: number,
+  args?: unknown,
+): GatewayMissAnswer {
+  const row = gatewayMissRow(miss, args);
+  writeGatewayRow({
+    skill_name: row.skill_name,
+    input: row.input,
+    output: row.output,
+    status: row.status,
+    error_message: row.error_message,
+    // What was refused, by the platform's read rule; asking for a name that is
+    // not there changed nothing.
+    kind: row.ownedSkill && classifyCall(row.ownedSkill, (args && typeof args === "object" ? args : {}) as Record<string, unknown>) !== "read" ? "write" : "read",
+    ownedSkill: row.ownedSkill,
+  }, startedAt, caller);
+  return gatewayMissAnswer(miss);
+}
+
+/** A miss as a native tool result. */
+function refusedContent(answer: GatewayMissAnswer) {
+  return { content: [{ type: "text" as const, text: JSON.stringify(answer) }] };
+}
+
+/**
+ * Why a name is not on this connection, and what is near it: a skill this
+ * deploy knows whose module is off, a skill the connection does not carry, or
+ * no skill at all — with the names that share its subject words.
+ */
+async function unknownSkill(
+  name: string,
+  calledAs: MissCalledAs,
+  exposed: readonly SkillRow[],
+  dispatch: boolean,
+): Promise<GatewayMiss> {
+  const names = exposed.map((s) => s.tool_definition?.function?.name).filter((n): n is string => !!n);
+  const ownerModule = ownerModuleOf(name);
+  let moduleOff = false;
+  if (ownerModule && ownerModule !== "platform") {
+    moduleOff = !skillModuleOn(name, await loadActiveModules().catch(() => new Set<string>(["__all__"])));
+  }
+  return {
+    kind: "unknown_skill",
+    name,
+    calledAs,
+    dispatch,
+    ownerModule,
+    moduleOff,
+    isSkillHere: names.includes(name),
+    didYouMean: nearestSkillNames(name, names),
+  };
 }
 
 function registerDispatcherTools(server: McpServer, filterGroups?: string[]): void {
@@ -1312,20 +1416,26 @@ function registerDispatcherTools(server: McpServer, filterGroups?: string[]): vo
         };
       }
       // Same exposure gate as execute_skill: module toggles + group filter.
-      const exposed = await filterByOwner(await loadExposedSkills(filterGroups), requestContext.getStore()?.ownerUserId);
+      const ctx = requestContext.getStore();
+      const all = await loadExposedSkills(filterGroups);
+      const exposed = await filterByOwner(all, ctx?.ownerUserId);
       const match = exposed.find((s) => s.tool_definition?.function?.name === name);
       if (!match) {
-        logDiscovery("read_skill", { name }, {}, startedAt, requestContext.getStore(), `Unknown skill: ${name}`);
-        return {
-          content: [{ type: "text" as const, text: JSON.stringify({ error: `Unknown skill: ${name}. Use search_skills to discover valid names.` }) }],
-        };
+        // Exists but out of the owner's reach: say which module is missing.
+        const hidden = all.find((s) => s.tool_definition?.function?.name === name);
+        const why = hidden ? await ownerMayRun(hidden.name, ctx?.ownerUserId) : null;
+        return refusedContent(refuse(
+          hidden && why && !why.ok
+            ? { kind: "forbidden", skill: hidden.name, reason: why.reason ?? "out of reach", calledAs: "read_skill" }
+            : await unknownSkill(name, "read_skill", exposed, true),
+          ctx, startedAt));
       }
       const { data } = await serviceClient()
         .from("agent_skills")
         .select("name, description, instructions, tool_definition")
         .eq("name", match.name)
         .maybeSingle();
-      logDiscovery("read_skill", { name }, { has_instructions: !!data?.instructions }, startedAt, requestContext.getStore());
+      logDiscovery("read_skill", { name }, { has_instructions: !!data?.instructions }, startedAt, ctx);
       return {
         content: [{
           type: "text" as const,
@@ -1354,6 +1464,7 @@ function registerDispatcherTools(server: McpServer, filterGroups?: string[]): vo
       required: ["name"],
     },
     handler: async (args: Record<string, unknown>) => {
+      const startedAt = Date.now();
       const name = typeof args.name === "string" ? args.name : "";
       const skillArgs =
         args.arguments && typeof args.arguments === "object"
@@ -1374,17 +1485,28 @@ function registerDispatcherTools(server: McpServer, filterGroups?: string[]): vo
         // agent asks an admin instead of hunting for a different name.
         const hidden = all.find((s) => s.tool_definition?.function?.name === name);
         const why = hidden ? await ownerMayRun(hidden.name, ctx?.ownerUserId) : null;
-        return {
-          content: [{ type: "text" as const, text: JSON.stringify({ error: why && !why.ok ? `Forbidden: ${why.reason}` : `Unknown skill: ${name}. Use search_skills to discover valid names.` }) }],
-        };
+        return refusedContent(refuse(
+          hidden && why && !why.ok
+            ? { kind: "forbidden", skill: hidden.name, reason: why.reason ?? "out of reach" }
+            : await unknownSkill(name, "execute_skill", exposed, true),
+          ctx, startedAt, skillArgs));
+      }
+      // The key's scope and the peer's ceiling, as the per-skill tools and REST
+      // check them — the dispatch tool ran only the owner's reach until 2026-11-18.
+      if (!scopeAllowsSkill(ctx?.scopes, match.name, match.category)
+          || !skillWithinGroups(match.name, match.handler, match.category, ctx?.peerGroups)) {
+        return refusedContent(refuse({ kind: "out_of_scope", skill: match.name }, ctx, startedAt, skillArgs));
       }
       const reach = await ownerMayRun(match.name, ctx?.ownerUserId);
-      if (!reach.ok) return { content: [{ type: "text" as const, text: JSON.stringify({ error: `Forbidden: ${reach.reason}` }) }] };
+      if (!reach.ok) return refusedContent(refuse({ kind: "forbidden", skill: match.name, reason: reach.reason ?? "out of reach" }, ctx, startedAt, skillArgs));
       const result = await executeSkill(match.name, skillArgs, ctx?.callerUserId ?? null, ctx?.callerApiKeyId ?? null, ctx?.agentName ?? null);
       return { content: [{ type: "text" as const, text: result }] };
     },
   });
 }
+
+/** JSON-RPC "Method not found" — what mcp-lite answers a tools/call of an unregistered tool with. */
+const JSONRPC_METHOD_NOT_FOUND = -32601;
 
 async function createMcpServer(filterGroups?: string[], openaiSafe = false, dispatchMode = false): Promise<McpServer> {
   const server = new McpServer({
@@ -1400,6 +1522,24 @@ async function createMcpServer(filterGroups?: string[], openaiSafe = false, disp
   // every key saw the same list, whatever its ceiling, owner or the modules
   // switched off meanwhile.
   const ctx0 = requestContext.getStore();
+
+  // A tool the client calls that this connection does not carry. mcp-lite
+  // answers "Method not found" and nothing else: the agent cannot tell a typo
+  // from a skill it must run through execute_skill, and the call left no row.
+  // The answer stays a JSON-RPC error with the library's code — its message and
+  // data now say what to call instead.
+  server.onError(async (error: unknown, ctx: { request?: { method?: string; params?: unknown } }) => {
+    const called = (ctx?.request?.params as { name?: unknown; arguments?: unknown } | undefined);
+    if (ctx?.request?.method !== "tools/call" || (error as { code?: unknown })?.code !== JSONRPC_METHOD_NOT_FOUND
+        || typeof called?.name !== "string" || !called.name) return undefined;
+    const startedAt = Date.now();
+    const caller = requestContext.getStore();
+    const reachable = await filterByOwner(await loadExposedSkills(filterGroups), caller?.ownerUserId)
+      .catch(() => [] as SkillRow[]);
+    const answer = refuse(await unknownSkill(called.name, "tool", reachable, dispatchMode), caller, startedAt, called.arguments);
+    return { code: JSONRPC_METHOD_NOT_FOUND, message: answer.error, data: answer };
+  });
+
   // …and the key's scope: a scoped key (mcp:crm, skill:<name>) is shown what
   // it may call, not 660 tools of which it may call 40.
   const skills = (await filterByOwner(await loadExposedSkills(filterGroups), ctx0?.ownerUserId))
@@ -1434,16 +1574,17 @@ async function createMcpServer(filterGroups?: string[], openaiSafe = false, disp
         inputSchema,
         annotations: buildToolAnnotations(skill),
         handler: async (args: Record<string, unknown>) => {
+          const startedAt = Date.now();
           const ctx = requestContext.getStore();
           // The same three checks REST runs before a call: the key's scope,
           // the peer's group ceiling, the owner's reach. Until 2026-11-06 the
           // native handler ran only the third.
           if (!scopeAllowsSkill(ctx?.scopes, skill.name, skill.category)
               || !skillWithinGroups(skill.name, skill.handler, skill.category, ctx?.peerGroups)) {
-            return { content: [{ type: "text" as const, text: JSON.stringify({ error: `API key scope does not permit skill '${skill.name}'.` }) }] };
+            return refusedContent(refuse({ kind: "out_of_scope", skill: skill.name }, ctx, startedAt, args));
           }
           const reach = await ownerMayRun(skill.name, ctx?.ownerUserId);
-          if (!reach.ok) return { content: [{ type: "text" as const, text: JSON.stringify({ error: `Forbidden: ${reach.reason}` }) }] };
+          if (!reach.ok) return refusedContent(refuse({ kind: "forbidden", skill: skill.name, reason: reach.reason ?? "out of reach" }, ctx, startedAt, args));
           const result = await executeSkill(skill.name, args, ctx?.callerUserId ?? null, ctx?.callerApiKeyId ?? null, ctx?.agentName ?? null);
           return {
             content: [{ type: "text" as const, text: result }],
@@ -1904,6 +2045,9 @@ app.post("/rest/execute", async (c) => {
   const filterGroups = groupsParam ? groupsParam.split(",").map((g) => g.trim()).filter(Boolean) : undefined;
 
   const restCaller: DiscoveryCaller = { callerUserId, callerApiKeyId, agentName: agentNameOf(c) };
+  /** A miss over REST: journaled, then answered with the envelope and its HTTP status. */
+  const restRefusal = (miss: GatewayMiss, startedAt: number, sent?: unknown) =>
+    c.json({ ok: false, ...refuse(miss, restCaller, startedAt, sent) }, GATEWAY_MISS_HTTP[miss.kind] as 403 | 404, corsHeaders);
   if (dispatchMode && tool === "search_skills") {
     const startedAt = Date.now();
     const query = typeof args?.query === "string" ? args.query : "";
@@ -1947,9 +2091,9 @@ app.post("/rest/execute", async (c) => {
     if (!match) {
       const hidden = allExposed.find((s) => s.tool_definition?.function?.name === name);
       const why = hidden ? await ownerMayRun(hidden.name, ownerOf(c)) : null;
-      if (why && !why.ok) return c.json({ ok: false, error: `Forbidden: ${why.reason}` }, 403, corsHeaders);
-      logDiscovery("read_skill", { name }, {}, startedAt, restCaller, `Unknown skill: ${name}`);
-      return c.json({ ok: false, error: `Unknown skill: ${name}. Use search_skills to discover valid names.` }, 404, corsHeaders);
+      return restRefusal(hidden && why && !why.ok
+        ? { kind: "forbidden", skill: hidden.name, reason: why.reason ?? "out of reach", calledAs: "read_skill" }
+        : await unknownSkill(name, "read_skill", exposed, true), startedAt);
     }
     const { data } = await serviceClient()
       .from("agent_skills")
@@ -1968,6 +2112,7 @@ app.post("/rest/execute", async (c) => {
   }
 
   if (dispatchMode && tool === "execute_skill") {
+    const startedAt = Date.now();
     const name = typeof args?.name === "string" ? args.name : "";
     const skillArgs = args?.arguments && typeof args.arguments === "object"
       ? (args.arguments as Record<string, unknown>)
@@ -1981,15 +2126,16 @@ app.post("/rest/execute", async (c) => {
     if (!match) {
       const hidden = allExposed.find((s) => s.tool_definition?.function?.name === name);
       const why = hidden ? await ownerMayRun(hidden.name, ownerOf(c)) : null;
-      if (why && !why.ok) return c.json({ ok: false, error: `Forbidden: ${why.reason}` }, 403, corsHeaders);
-      return c.json({ ok: false, error: `Unknown skill: ${name}. Use search_skills to discover valid names.` }, 404, corsHeaders);
+      return restRefusal(hidden && why && !why.ok
+        ? { kind: "forbidden", skill: hidden.name, reason: why.reason ?? "out of reach" }
+        : await unknownSkill(name, "execute_skill", exposed, true), startedAt, skillArgs);
     }
     if (!scopeAllowsSkill(c.get("apiKeyScopes" as any) as string[] | undefined, match.name, (match as any).category)
         || !skillWithinGroups(match.name, (match as any).handler, (match as any).category, peerGroups)) {
-      return c.json({ ok: false, error: `API key scope does not permit skill '${name}'.` }, 403, corsHeaders);
+      return restRefusal({ kind: "out_of_scope", skill: match.name }, startedAt, skillArgs);
     }
     const restReach = await ownerMayRun(match.name, ownerOf(c));
-    if (!restReach.ok) return c.json({ error: `Forbidden: ${restReach.reason}` }, 403);
+    if (!restReach.ok) return restRefusal({ kind: "forbidden", skill: match.name, reason: restReach.reason ?? "out of reach" }, startedAt, skillArgs);
     const result = await executeSkill(match.name, skillArgs, callerUserId, callerApiKeyId, agentNameOf(c));
     try {
       return c.json({ ok: true, tool: name, result: JSON.parse(result) }, 200, corsHeaders);
@@ -1998,22 +2144,26 @@ app.post("/rest/execute", async (c) => {
     }
   }
 
-  const skills = await filterByOwner(await loadExposedSkills(effectiveGroups(undefined, peerGroups)), ownerOf(c));
+  const startedAt = Date.now();
+  const allSkills = await loadExposedSkills(effectiveGroups(undefined, peerGroups));
+  const skills = await filterByOwner(allSkills, ownerOf(c));
   const match = skills.find((s) => s.tool_definition?.function?.name === tool);
   if (!match) {
-    const available = skills.map((s) => s.tool_definition?.function?.name).filter(Boolean);
-    return c.json(
-      { ok: false, error: `Unknown tool: ${tool}`, available_tools: available },
-      404, corsHeaders,
-    );
+    const hidden = allSkills.find((s) => s.tool_definition?.function?.name === tool);
+    const why = hidden ? await ownerMayRun(hidden.name, ownerOf(c)) : null;
+    if (hidden && why && !why.ok) return restRefusal({ kind: "forbidden", skill: hidden.name, reason: why.reason ?? "out of reach" }, startedAt, args);
+    // The whole register (600 names, ~12 KB) used to ride on every miss as
+    // `available_tools`. The names near the one sent are what the caller can
+    // use; search_skills is the list.
+    return restRefusal(await unknownSkill(String(tool), "tool", skills, false), startedAt, args);
   }
 
   if (!scopeAllowsSkill(c.get("apiKeyScopes" as any) as string[] | undefined, match.name, (match as any).category)
       || !skillWithinGroups(match.name, (match as any).handler, (match as any).category, peerGroups)) {
-    return c.json({ ok: false, error: `API key scope does not permit skill '${tool}'.` }, 403, corsHeaders);
+    return restRefusal({ kind: "out_of_scope", skill: match.name }, startedAt, args);
   }
   const restReach = await ownerMayRun(match.name, ownerOf(c));
-  if (!restReach.ok) return c.json({ error: `Forbidden: ${restReach.reason}` }, 403);
+  if (!restReach.ok) return restRefusal({ kind: "forbidden", skill: match.name, reason: restReach.reason ?? "out of reach" }, startedAt, args);
   const result = await executeSkill(match.name, args || {}, callerUserId, callerApiKeyId, agentNameOf(c));
   try {
     return c.json({ ok: true, tool, result: JSON.parse(result) }, 200, corsHeaders);
