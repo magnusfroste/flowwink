@@ -156,3 +156,73 @@ describe('the invoice says who is asking and how to pay — and reaches the cust
     expect(read('scripts/customer-path/index.ts')).toMatch(/\[quoteAccepted, contractSigned, invoicePaid\]/);
   });
 });
+
+describe('the customer hears about their case', () => {
+  // Found by doing support-to-resolution by hand in the admin (2026-11-18).
+  const mod = read('src/lib/modules/tickets-module.ts');
+  const handler = read('supabase/functions/comms-send/ticket_update.ts');
+  const sql = read('supabase/migrations/20261118120000_kunden-far-veta-om-sitt-arende.sql');
+  const drawer = read('src/components/admin/tickets/TicketDetailDrawer.tsx');
+
+  it('two automations answer a new case and a staff reply with the mail skill', () => {
+    for (const [event, arg] of [['ticket.created', "ticket_id: '{{event.payload.id}}'"], ['ticket.replied', "comment_id: '{{event.payload.id}}'"]] as const) {
+      const at = mod.indexOf(`trigger_config: { event: '${event}' }`);
+      expect(at, event).toBeGreaterThan(-1);
+      const seed = mod.slice(at, at + 300);
+      expect(seed, event).toMatch(/skill_name: 'send_ticket_update'/);
+      expect(seed, event).toContain(arg);
+    }
+    expect(read('supabase/functions/comms-send/index.ts')).toMatch(/send_ticket_update: 'ticket_update'/);
+  });
+
+  it('only a public reply by staff, written now and not already mailed, raises the event', () => {
+    const fn = sql.slice(sql.indexOf('FUNCTION public.emit_ticket_replied'));
+    expect(fn).toMatch(/NEW\.is_internal IS NOT TRUE/);
+    expect(fn).toMatch(/NEW\.author_type = 'agent'/);
+    expect(fn).toMatch(/NEW\.emailed_at IS NULL/);
+    expect(fn).toMatch(/NEW\.created_at > now\(\) - interval '10 minutes'/);
+  });
+
+  it('each mail is claimed before the send and given back when nothing went out', () => {
+    expect(handler).toMatch(/\.is\('ack_sent_at', null\)/);
+    expect(handler).toMatch(/\.is\('emailed_at', null\)/);
+    expect(handler).toMatch(/if \(release\) await release\(\)/);
+    // An internal note, a customer's own comment, a case that came in by mail: nobody is mailed.
+    for (const reason of ['internal_note', 'not_a_staff_reply', 'came_in_by_email', 'case_already_settled', 'not_a_new_case']) {
+      expect(handler, reason).toContain(`skipped('${reason}')`);
+    }
+  });
+
+  it('a reply already sent through the mailbox is not sent again', () => {
+    const core = read('supabase/functions/_shared/execute/core.ts');
+    const gmail = core.slice(core.indexOf('async function executeReplyToTicketViaEmail'));
+    const insert = gmail.slice(gmail.indexOf("from('ticket_comments').insert("), gmail.indexOf("from('ticket_comments').insert(") + 400);
+    expect(insert).toMatch(/emailed_at: new Date\(\)\.toISOString\(\)/);
+  });
+
+  it('the admin makes the person choose who reads it — a note is never a reply by default of a single box', () => {
+    expect(drawer).toMatch(/is_internal: commentKind === "note"/);
+    expect(drawer).not.toMatch(/placeholder="Add a comment\.\.\."/);
+    expect(drawer).toMatch(/E-mailed to \$\{ticket\.contact_email\}/);
+    expect(drawer).toMatch(/Nothing is e-mailed/);
+  });
+
+  it('every writer of a staff comment says whether it is internal — discovered, not listed', () => {
+    // A new writer of ticket_comments with author_type 'agent' that omits is_internal writes a public
+    // reply, and a public reply is mailed.
+    const sources = ['src/hooks/useTickets.ts', 'supabase/functions/_shared/execute/core.ts'].map(read).join('\n');
+    const inserts = [...sources.matchAll(/from\('ticket_comments'\)\s*\.insert\(\[?\{([\s\S]{0,400}?)\}\]?\)/g)].map((m) => m[1]);
+    expect(inserts.length).toBeGreaterThanOrEqual(2);
+    for (const body of inserts.filter((b) => /author_type: 'agent'/.test(b))) {
+      expect(body, body.slice(0, 120)).toMatch(/is_internal:/);
+    }
+  });
+
+  it('the battery and the staff path read what the customer got', () => {
+    const scenario = read('scripts/process-battery/scenarios/support-to-resolution.ts');
+    expect(scenario).toMatch(/the customer is mailed that the case was received/);
+    expect(scenario).toMatch(/the internal note is mailed to nobody/);
+    expect(scenario).toMatch(/a case that came in by mail gets no automatic receipt/);
+    expect(read('scripts/staff-path/index.ts')).toMatch(/\[quoteByHand, invoiceByHand, contactToDeal, ticketByHand\]/);
+  });
+});

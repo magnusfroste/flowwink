@@ -92,7 +92,7 @@ describe('an invoice is born right whoever creates it', () => {
   });
 
   it('the invoice by hand is a step on the staff path', () => {
-    expect(read('scripts/staff-path/index.ts')).toMatch(/\[quoteByHand, invoiceByHand, contactToDeal\]/);
+    expect(read('scripts/staff-path/index.ts')).toMatch(/\[quoteByHand, invoiceByHand, contactToDeal, ticketByHand\]/);
   });
 });
 

@@ -35,6 +35,7 @@ const corsHeaders = {
 import { handler as bookingConfirmation } from './booking_confirmation.ts';
 import { handler as orderConfirmation } from './order_confirmation.ts';
 import { handler as invoiceEmail } from './invoice_email.ts';
+import { handler as ticketUpdate } from './ticket_update.ts';
 import { handler as quoteEmail } from './quote_email.ts';
 import { handler as contractEmail } from './contract_email.ts';
 import { handler as contactEmail } from './contact_email.ts';
@@ -52,6 +53,7 @@ const HANDLERS: Record<string, (req: Request) => Promise<Response>> = {
   booking_confirmation: bookingConfirmation,
   order_confirmation: orderConfirmation,
   invoice_email: invoiceEmail,
+  ticket_update: ticketUpdate,
   quote_email: quoteEmail,
   contract_email: contractEmail,
   contact_email: contactEmail,
@@ -76,6 +78,8 @@ const HANDLERS: Record<string, (req: Request) => Promise<Response>> = {
 // email without the admin role. The matrix is the only dial.
 const GATED_MODULE: Record<string, string> = {
   invoice_email: 'invoicing',
+  // The customer's mail about a case is staff's to send (or an automation's, via the service key).
+  ticket_update: 'tickets',
   return_confirmation: 'returns',
   csat_dispatch: 'surveys',
   // The poll tables and list_meeting_polls share this wall: the booking module.
@@ -91,6 +95,7 @@ const SKILL_TO_KIND: Record<string, string> = {
   send_webinar_reminders: 'webinar_reminders',
   send_booking_reminders: 'booking_reminders',
   send_booking_confirmation: 'booking_confirmation',
+  send_ticket_update: 'ticket_update',
   send_survey: 'survey_send',
   invite_candidate_to_interview: 'interview_invitation',
   send_interview_confirmation: 'interview_confirmation',

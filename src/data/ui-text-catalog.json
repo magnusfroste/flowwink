@@ -2486,6 +2486,41 @@
       "fallback": "Updated"
     },
     {
+      "key": "ticket.mail.greeting",
+      "group": "ticket",
+      "fallback": "Hello,"
+    },
+    {
+      "key": "ticket.mail.greetingNamed",
+      "group": "ticket",
+      "fallback": "Hello {name},"
+    },
+    {
+      "key": "ticket.mail.receivedLead",
+      "group": "ticket",
+      "fallback": "Thank you for contacting {business}. We have received your request \"{subject}\" and will get back to you."
+    },
+    {
+      "key": "ticket.mail.receivedSubject",
+      "group": "ticket",
+      "fallback": "We have received your request [{number}]"
+    },
+    {
+      "key": "ticket.mail.reference",
+      "group": "ticket",
+      "fallback": "Your case number is {number}. Mention it if you contact us about this."
+    },
+    {
+      "key": "ticket.mail.replyLead",
+      "group": "ticket",
+      "fallback": "We have answered your case \"{subject}\":"
+    },
+    {
+      "key": "ticket.mail.replySubject",
+      "group": "ticket",
+      "fallback": "Re: {subject} [{number}]"
+    },
+    {
       "key": "youtube.defaultTitle",
       "group": "youtube",
       "fallback": "Video"

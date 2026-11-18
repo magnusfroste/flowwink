@@ -130,6 +130,38 @@ async function run(s: Scenario): Promise<void> {
       (await s.one<{ r: string | null }>('select resolved_at::text as r from tickets where id = $1', [lateId]))?.r ?? null, null);
     await s.must('… and closed for good', 'manage_ticket', { action: 'update', id: lateId, status: 'closed' });
 
+    // ── The customer hears about their case ─────────────────────────────────
+    // FINDING 2026-11-18 (doing it by hand in the admin): a case told its customer nothing, and a
+    // staff reply was "in the portal" — which a customer who was entered by hand has no account in.
+    const told = `hors-${s.tag}@example.test`;
+    const heard = await s.must('a case is opened for a customer today', 'manage_ticket', {
+      action: 'create', subject: `Order has not arrived ${s.tag}`, description: 'Ordered last week, nothing yet.', priority: 'medium',
+      contact_name: 'Hanna Hörs', contact_email: told, source: 'agent', tags: ['battery', s.tag],
+    });
+    const heardId = s.idOf(heard, 'ticket');
+    const heardNumber = String((await s.one<{ n: string }>('select ticket_number as n from tickets where id = $1', [heardId]))?.n ?? '');
+    await s.pulse('event-dispatcher', async () => !!(await s.mail(told)));
+    const receipt = await s.mail(told);
+    s.check('the customer is mailed that the case was received', !!receipt, `nothing in the mail rail for ${told}`);
+    s.check('…with the case number', !!heardNumber && (receipt?.subject ?? '').includes(heardNumber) && (receipt?.html ?? '').includes(heardNumber), `number ${heardNumber}; subject "${receipt?.subject}"`);
+    const receiptAgain = await s.must('asking for the receipt again sends nothing', 'send_ticket_update', { ticket_id: heardId });
+    s.check('one receipt per case', receiptAgain.skipped === 'already_acknowledged' && (await s.mail(told))?.count === receipt?.count, JSON.stringify(receiptAgain).slice(0, 160));
+
+    await s.must('an internal note is written', 'add_ticket_comment', { p_ticket_id: heardId, p_content: 'Internal: the carrier lost the parcel.', p_is_internal: true });
+    const answer = await s.must('staff answer the customer', 'add_ticket_comment', { p_ticket_id: heardId, p_content: 'We are sending a new parcel today.\nIt arrives on Thursday.' });
+    const replied = async () => !!(await s.mail(told, 'Re:'));
+    await s.pulse('event-dispatcher', replied);
+    const replyMail = await s.mail(told, 'Re:');
+    s.check('the reply is mailed to the customer', !!replyMail && /We are sending a new parcel today\./.test(replyMail.html), `no reply mail for ${told}; the rail holds ${(await s.mail(told))?.count ?? 0} mail(s)`);
+    const allMail = await s.sql<{ body_html: string | null }>(`select body_html from outbound_communications where channel = 'email' and lower(recipient) like '%' || lower($1) || '%'`, [told]);
+    s.check('the internal note is mailed to nobody', !allMail.some((m) => /carrier lost the parcel/.test(String(m.body_html ?? ''))), 'the internal note is in a mail to the customer');
+    s.equal('the customer has two mails: the receipt and the reply', allMail.length, 2);
+    const replyAgain = await s.must('asking for the reply again sends nothing', 'send_ticket_update', { comment_id: String(answer.comment_id) });
+    s.check('one mail per reply', replyAgain.skipped === 'already_mailed', JSON.stringify(replyAgain).slice(0, 160));
+    // The cases above were registered at 10:00 on another day and answered with back-dated
+    // replies — imports — and mailed nobody.
+    s.equal('a back-dated case and its back-dated reply told nobody', (await s.mail(`kund-${s.tag}@example.test`))?.count ?? 0, 0);
+
     // ── E-mail → case ───────────────────────────────────────────────────────
     const mail = { message_id: `bat-msg-${s.tag}`, thread_id: `bat-thread-${s.tag}`, from: `Eva Kund <eva-${s.tag}@example.test>`, subject: `Invoice question ${s.tag}`, body_text: 'Why was I charged twice?' };
     const first = await s.must('an inbound e-mail becomes a case', 'email_to_ticket', mail);
@@ -155,6 +187,9 @@ async function run(s: Scenario): Promise<void> {
     s.equal('one case for the customer, open again, not stamped resolved', `${mailState?.tickets}/${mailState?.status}/${mailState?.resolved_at}`, '1/open/null');
     // FINDING 2026-09-19: email_to_ticket dedupes on tickets.source_id only — a redelivered REPLY has no such row and is appended again.
     s.equal('the redelivered reply is one comment, not two', mailState?.comments, 1);
+    // An automatic receipt to a mailbox is how two autoresponders meet.
+    await s.pulse('event-dispatcher');
+    s.equal('a case that came in by mail gets no automatic receipt', (await s.mail(`eva-${s.tag}@example.test`))?.count ?? 0, 0);
 
     // ── Hand-off and feedback ───────────────────────────────────────────────
     s.skip('a chat conversation is handed to a person (support_assign_conversation)', 'a conversation only exists after a chat with FlowPilot — needs an AI provider');

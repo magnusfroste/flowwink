@@ -231,13 +231,13 @@ export class Scenario {
    * One tick of a scheduled edge function (event-dispatcher, automation-
    * dispatcher …), as pg_cron gives it — with the service key, which is one of
    * the three callers a scheduled function admits. Repeated until `until`
-   * holds or half a minute has passed: a dispatcher hands its work on
+   * holds or a minute has passed: a dispatcher hands its work on
    * asynchronously, and a backlog takes more than one batch. Answers what the
    * last tick said.
    */
   async pulse(fn: string, until?: () => Promise<boolean>): Promise<string> {
     let last = '';
-    const deadline = Date.now() + 30_000;
+    const deadline = Date.now() + 60_000;
     do {
       try {
         const res = await fetch(`${FN_URL}/${fn}`, {

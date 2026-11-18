@@ -689,6 +689,21 @@ beside its payload, so an operator branches instead of guessing:
   defaults to "Stripe is off") and an invoice is then paid by bank. The PDF
   draws every text through `winAnsi` (`_shared/invoices/winansi.ts`): one
   arrow in a line used to fail the whole PDF and the mail went without it.
+- **The customer hears about their case (2026-11-18).** A support case told
+  its customer nothing: no receipt, and a staff reply was "in the portal",
+  where a customer entered by hand has no account. Two automations run
+  `send_ticket_update` (`comms-send` kind `ticket_update`): on `ticket.created`
+  the receipt with the case number, on `ticket.replied` the reply. Once each —
+  `tickets.ack_sent_at` and `ticket_comments.emailed_at` are claimed before
+  the send and given back when nothing went out. Nobody is mailed for: an
+  internal note, a customer's own comment, a back-dated (imported) reply, a
+  case that came in by e-mail (no automatic receipt — autoresponders), a
+  settled case, a case older than a day, or `tickets.customerEmailEnabled:
+  false`. `reply_to_ticket_via_email` stamps `emailed_at` itself. The words
+  are visitor texts (`ticket.mail.*`). The admin's box wrote every comment as
+  a public reply — it now makes the person choose "Reply to customer" or
+  "Internal note" and says who reads it; a new writer of a staff comment
+  states `is_internal` (a guard discovers the ones that do not).
 - **And the staff's side is proven in a browser too (`npm run qa:staff-path`,
   nightly, 2026-11-17):** a step signs in as an admin and does the process
   with clicks — New Quote for a lead, title, line, terms, Save, Send to
@@ -701,8 +716,9 @@ beside its payload, so an operator branches instead of guessing:
   shows "sent" a moment before the mail is in the rail: wait for the mail
   (`mailTo`), never read it once. The contact step: New Contact, landing on
   the contact (the pipeline is ordered by score, so a new one was the last
-  card of its column — `CreateLeadDialog` now opens it), Create deal. A
-  process a person does in the admin gets a step there.
+  card of its column — `CreateLeadDialog` now opens it), Create deal. The case
+  step: New Ticket, an internal note, a reply — and the customer's two mails.
+  A process a person does in the admin gets a step there.
 - **One number series per document (2026-11-17).** `next_document_number
   (kind, prefix)` is the only source of a quote or invoice number — the admin,
   every skill (`nextDocumentNumber` in core.ts), `quote-sign` and the invoicing
