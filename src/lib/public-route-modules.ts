@@ -43,6 +43,7 @@ export const PUBLIC_ROUTE_MODULES: ReadonlyArray<{ prefix: string; moduleId: Pub
   { prefix: '/s', moduleId: 'surveys' },
   { prefix: '/poll', moduleId: 'meetingPolls' },
   { prefix: '/contract', moduleId: 'contracts' },
+  { prefix: '/my-booking', moduleId: 'bookings' },
 ];
 
 const LANG_PREFIX = /^\/[a-z]{2}(?:-[a-z]{2})?(?=\/|$)/i;

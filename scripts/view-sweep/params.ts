@@ -47,6 +47,7 @@ const RESOLVERS: Record<string, string> = {
   '/poll/:token': `select share_token::text as token from meeting_polls order by created_at desc limit 1`,
   '/interview/:token': `select token::text as token from interview_invitations order by created_at desc limit 1`,
   '/contract/:token': `select accept_token::text as token from contracts where accept_token is not null order by created_at desc limit 1`,
+  '/my-booking/:token': `select manage_token as token from bookings where manage_token is not null order by created_at desc limit 1`,
   '/contract/:token/certificate': `select accept_token::text as token from contracts
      where accept_token is not null and status = 'active' order by created_at desc limit 1`,
   '/preview/:id': `select id::text as id from pages where deleted_at is null order by created_at limit 1`,

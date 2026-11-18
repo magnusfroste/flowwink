@@ -8,6 +8,17 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ## [Unreleased]
 
+### Added
+
+- **The customer changes their own booking.** The confirmation mail said
+  "contact us" and that was all: no link, no page, and no way to move a booking
+  at all. The mail now carries a link to the booking's own page
+  (`/my-booking/<key>`), where the customer picks another free time or cancels —
+  no account. A move meets every rule a new booking does (opening hours, blocked
+  days, capacity, the person's calendar), sends a new confirmation and tells the
+  admins; a cancellation frees the time and offers the waiting list, as before.
+  The nightly customer path does it in a browser.
+
 ### Removed
 
 - **The Global Elements module is gone.** It had no skills and no tables and was

@@ -721,6 +721,19 @@ beside its payload, so an operator branches instead of guessing:
   portal page reads `my_account()` or asks `portal_email()` — not
   `auth.jwt() ->> 'email'`, which older policies (subscriptions, contracts,
   `my_quotes`) still do.
+- **The customer changes their own booking (2026-11-19).** The confirmation
+  mail said "contact us"; there was no link, no page and no way to move a
+  booking. A booking carries `manage_token`; the mail links to
+  `/my-booking/<key>` (appended where a template has no `{{manage_block}}`),
+  and whoever holds the key reads the booking (`get_booking_by_token` — a view,
+  never the row), moves it (`reschedule_booking_by_token`) or calls it off
+  (`cancel_booking_by_token`). The move is an UPDATE, so `booking_rules` judges
+  the new time as it judges a new booking; a refusal answers
+  `SLOT_UNAVAILABLE`. A move gives the confirmation and reminder stamps back
+  and raises `booking.rescheduled`, which two automations answer (a new
+  confirmation to the customer, a note to the admins). The page offers the
+  public block's own times (`booking_free_slots`). A step of the customer path
+  does it in a browser.
 - **And the staff's side is proven in a browser too (`npm run qa:staff-path`,
   nightly, 2026-11-17):** a step signs in as an admin and does the process
   with clicks — New Quote for a lead, title, line, terms, Save, Send to

@@ -81,6 +81,15 @@ Someone assigns the appointment to an employee, the meeting happens, and the
 booking ends as **completed** — or **no_show** if the customer never turned
 up, or **cancelled**, which frees the slot immediately.
 
+**The customer's own link.** The confirmation carries a link to
+`/my-booking/<key>` — the booking's own page, no account. There the customer
+picks another free time (the same times the booking block offers; the move
+meets every booking rule and is refused with `SLOT_UNAVAILABLE` otherwise) or
+cancels. A move raises `booking.rescheduled`: the customer gets a confirmation
+of the new time and the admins a note. A cancellation frees the time and offers
+the waiting list. A booking that has passed, or is already off, can only be
+read.
+
 ### State machine
 
 **`bookings.status`** (CHECK constraint: `pending / confirmed / cancelled /

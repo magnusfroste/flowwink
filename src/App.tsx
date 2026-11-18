@@ -185,6 +185,7 @@ const ContractsPage = lazy(() => import("./pages/admin/ContractsPage"));
 const ContractEditorPage = lazy(() => import("./pages/admin/ContractEditorPage"));
 const ContractTemplatesPage = lazy(() => import("./pages/admin/ContractTemplatesPage"));
 const PublicContractPage = lazy(() => import("./pages/PublicContractPage"));
+const PublicBookingPage = lazy(() => import("./pages/PublicBookingPage"));
 const HRPage = lazy(() => import("./pages/admin/HRPage"));
 const RecruitmentPage = lazy(() => import("./pages/admin/RecruitmentPage"));
 const CandidatePage = lazy(() => import("./pages/admin/CandidatePage"));
@@ -499,6 +500,7 @@ const router = createBrowserRouter([
       { path: "/admin/contracts/templates", element: <ContractTemplatesPage /> },
       { path: "/admin/contracts/:id", element: <ContractEditorPage /> },
       { path: "/contract/:token", element: <PublicContractPage /> },
+      { path: "/my-booking/:token", element: <PublicBookingPage /> },
       { path: "/contract/:token/certificate", element: <SignatureCertificatePage /> },
       { path: "/admin/hr", element: <HRPage /> },
       { path: "/admin/recruitment", element: <RecruitmentPage /> },

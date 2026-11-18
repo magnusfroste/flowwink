@@ -326,6 +326,96 @@
       "fallback": "Please answer"
     },
     {
+      "key": "booking.mail.manageLead",
+      "group": "booking",
+      "fallback": "Need another time, or cannot come?"
+    },
+    {
+      "key": "booking.mail.manageLink",
+      "group": "booking",
+      "fallback": "Change or cancel your booking"
+    },
+    {
+      "key": "booking.manage.bookedFor",
+      "group": "booking",
+      "fallback": "Booked for"
+    },
+    {
+      "key": "booking.manage.cancel",
+      "group": "booking",
+      "fallback": "Cancel the booking"
+    },
+    {
+      "key": "booking.manage.cancelled",
+      "group": "booking",
+      "fallback": "This booking is cancelled."
+    },
+    {
+      "key": "booking.manage.confirmCancel",
+      "group": "booking",
+      "fallback": "Yes, cancel the booking"
+    },
+    {
+      "key": "booking.manage.failed",
+      "group": "booking",
+      "fallback": "That did not work. Please try again, or contact us."
+    },
+    {
+      "key": "booking.manage.keep",
+      "group": "booking",
+      "fallback": "Keep the booking"
+    },
+    {
+      "key": "booking.manage.linkInvalid",
+      "group": "booking",
+      "fallback": "This booking link is not valid."
+    },
+    {
+      "key": "booking.manage.move",
+      "group": "booking",
+      "fallback": "Choose another time"
+    },
+    {
+      "key": "booking.manage.moved",
+      "group": "booking",
+      "fallback": "Your booking has been moved. We have sent you a new confirmation."
+    },
+    {
+      "key": "booking.manage.newDate",
+      "group": "booking",
+      "fallback": "New date"
+    },
+    {
+      "key": "booking.manage.notFound",
+      "group": "booking",
+      "fallback": "Booking not found"
+    },
+    {
+      "key": "booking.manage.reason",
+      "group": "booking",
+      "fallback": "Anything you want us to know? (optional)"
+    },
+    {
+      "key": "booking.manage.service",
+      "group": "booking",
+      "fallback": "Service"
+    },
+    {
+      "key": "booking.manage.title",
+      "group": "booking",
+      "fallback": "Your booking"
+    },
+    {
+      "key": "booking.manage.tooLate",
+      "group": "booking",
+      "fallback": "This booking can no longer be changed."
+    },
+    {
+      "key": "booking.manage.when",
+      "group": "booking",
+      "fallback": "When"
+    },
+    {
       "key": "booking.name",
       "group": "booking",
       "fallback": "Name"
