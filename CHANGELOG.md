@@ -39,6 +39,14 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Security
 
+- **The portal trusts the confirmed address, everywhere.** Five older readers
+  decided "whose row is this" by the login token's e-mail claim (the address an
+  account was opened with, proven or not) or by the profile's e-mail (the
+  account holder's own to edit): a customer's services, agreements and quotes,
+  the case form in the portal, and webinar registrations. All five now ask the
+  account's confirmed address, as invoices and orders already did. Nothing
+  changes for an account whose address is confirmed.
+
 - **A scoped key is held to its scope in dispatch mode.** Over the native MCP
   transport, `execute_skill` checked what the key's owner may run but not the
   key's own scope: a key limited to `mcp:crm` or `skill:<name>` could run any

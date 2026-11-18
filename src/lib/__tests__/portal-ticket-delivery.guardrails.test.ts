@@ -85,6 +85,9 @@ describe('a ticket number IS earned — the customer refers to it', () => {
 describe('the portal never trusts client-passed identity', () => {
   const portal = fnBody('create_ticket_from_portal');
 
+  // The body this reads is the function as first shipped. Since 2026-11-19 the
+  // identity is the CONFIRMED address (portal_email()) — pinned in
+  // portal-trusts-confirmed-email.guardrails.test.ts.
   it('takes the caller email from the JWT, and has no email parameter to spoof', () => {
     expect(portal).toMatch(/auth\.jwt\(\)\s*->>\s*'email'/);
     // The signature must not expose an email/customer param — identity is

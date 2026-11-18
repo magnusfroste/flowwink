@@ -729,9 +729,11 @@ beside its payload, so an operator branches instead of guessing:
   either way, and the portal is shaped by what they hold, not by which module
   is on. Only what was issued (never a draft), only the fields the mail
   already carried, opening the same public page the mail linked to. A new
-  portal page reads `my_account()` or asks `portal_email()` — not
-  `auth.jwt() ->> 'email'`, which older policies (subscriptions, contracts,
-  `my_quotes`) still do.
+  portal page reads `my_account()` or asks `portal_email()` — never
+  `auth.jwt() ->> 'email'` (unproven) or `profiles.email` (the holder's own to
+  edit). The last five readers of those (subscriptions, contracts, `my_quotes`,
+  `create_ticket_from_portal`, webinar registrations) moved 2026-11-19; a guard
+  scans every later migration for both shapes.
 - **The customer changes their own booking (2026-11-19).** The confirmation
   mail said "contact us"; there was no link, no page and no way to move a
   booking. A booking carries `manage_token`; the mail links to
