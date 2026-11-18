@@ -19,6 +19,9 @@
  *   5. Live tools/call    — smoke test that JSON-RPC execution works end-to-end
  *                           against a read-only tool (list_leads). Catches
  *                           regressions in the SSE/Streamable HTTP layer.
+ *   6. Gateway misses     — a name that is not there answers a code, a hint
+ *                           and the names near it, and leaves a journal row
+ *                           (read when BATTERY_DB_URL names a local stack).
  *
  * Env:
  *   MCP_URL          (default: https://<project>.supabase.co/functions/v1/mcp-server)
@@ -100,7 +103,8 @@ function fail(code: number, msg: string): never {
   process.exit(code);
 }
 
-async function rpc(method: string, params: Record<string, unknown> = {}) {
+/** One JSON-RPC call, answered as it came — the error included (rpc() is the one that fails on it). */
+async function rpcRaw(url: string, method: string, params: Record<string, unknown> = {}) {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     // MCP Streamable HTTP spec — server returns 406 without this
@@ -112,9 +116,9 @@ async function rpc(method: string, params: Record<string, unknown> = {}) {
 
   let res: Response;
   try {
-    res = await fetch(MCP_URL, { method: 'POST', headers, body: JSON.stringify(body) });
+    res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body) });
   } catch (e) {
-    fail(3, `Network error contacting ${MCP_URL}: ${(e as Error).message}`);
+    fail(3, `Network error contacting ${url}: ${(e as Error).message}`);
   }
 
   const text = await res.text();
@@ -143,7 +147,11 @@ async function rpc(method: string, params: Record<string, unknown> = {}) {
     payload = JSON.parse(text);
   }
 
-  const obj = payload as { error?: { message: string }; result?: unknown };
+  return payload as { error?: { code?: number; message: string; data?: unknown }; result?: unknown };
+}
+
+async function rpc(method: string, params: Record<string, unknown> = {}) {
+  const obj = await rpcRaw(MCP_URL, method, params);
   if (obj.error) fail(3, `MCP ${method} → JSON-RPC error: ${obj.error.message}`);
   return obj.result;
 }
@@ -151,7 +159,7 @@ async function rpc(method: string, params: Record<string, unknown> = {}) {
 // ── Steps ───────────────────────────────────────────────────────────────────
 
 function step1_preMcpGuard() {
-  bar('1/5  Pre-MCP guard (static module registry check)');
+  bar('1/6  Pre-MCP guard (static module registry check)');
   const result = spawnSync('npx', ['-y', 'tsx', path.join(ROOT, 'scripts/verify-hr-modules.ts')], {
     stdio: 'inherit',
   });
@@ -159,7 +167,7 @@ function step1_preMcpGuard() {
 }
 
 async function step2_initialize() {
-  bar('2/5  Live MCP initialize handshake');
+  bar('2/6  Live MCP initialize handshake');
   const result = (await rpc('initialize', {
     protocolVersion: '2024-11-05',
     capabilities: {},
@@ -171,7 +179,7 @@ async function step2_initialize() {
 }
 
 async function step3_listTools(): Promise<Set<string>> {
-  bar('3/5  Live MCP tools/list');
+  bar('3/6  Live MCP tools/list');
   const result = (await rpc('tools/list')) as { tools?: Array<{ name: string }> };
   const names = new Set((result.tools ?? []).map((t) => t.name));
   console.log(`  ✓ ${names.size} tools exposed`);
@@ -179,7 +187,7 @@ async function step3_listTools(): Promise<Set<string>> {
 }
 
 function step4_assertExpectations(live: Set<string>) {
-  bar('4/5  Expectation match');
+  bar('4/6  Expectation match');
 
   const missing: Array<{ module: string; tool: string }> = [];
   let total = 0;
@@ -216,7 +224,7 @@ function step4_assertExpectations(live: Set<string>) {
 }
 
 async function step5_callSmokeTest(live: Set<string>): Promise<string> {
-  bar('5/5  Live MCP tools/call smoke test');
+  bar('5/6  Live MCP tools/call smoke test');
 
   // Pick a safe read-only tool. The candidates are READ skills from the
   // expected set step 4 just verified, so "none available" can no longer be
@@ -250,6 +258,96 @@ async function step5_callSmokeTest(live: Set<string>): Promise<string> {
   return target;
 }
 
+// ── What the gateway refuses ────────────────────────────────────────────────
+// A name that is not there is answered with a code, a hint and the names near
+// it — and leaves a row (_shared/mcp/gateway-misses.ts). Until 2026-11-18 an
+// unknown execute_skill answered a bare sentence and left no trace, and a tool
+// the connection does not carry answered "Method not found".
+//
+// Strict where the gateway is this checkout's (a local stack); a remote
+// instance may still run the deploy before this one, and says so instead.
+async function step6_gatewayMisses() {
+  bar('6/6  A call the gateway refuses: a code, a hint, a row');
+  const local = /\/\/(127\.0\.0\.1|localhost|\[::1\])[:/]/.test(MCP_URL);
+  const stamp = Date.now().toString(36);
+  const invented = `manage_no_such_thing_${stamp}`;
+  const dispatchUrl = `${MCP_URL}${MCP_URL.includes('?') ? '&' : '?'}mode=dispatch`;
+  const problems: string[] = [];
+  const toolText = (r: { result?: unknown }): Record<string, unknown> => {
+    const text = (r.result as { content?: Array<{ text?: string }> } | undefined)?.content?.[0]?.text;
+    try { return text ? JSON.parse(text) : {}; } catch { return {}; }
+  };
+
+  // (a) A tool this connection does not carry.
+  const a = await rpcRaw(MCP_URL, 'tools/call', { name: invented, arguments: {} });
+  const aData = (a.error?.data ?? {}) as Record<string, unknown>;
+  if (!a.error) problems.push(`tools/call '${invented}' did not answer an error`);
+  else if (aData.code !== 'NOT_FOUND') {
+    if (!local) {
+      console.log(`  ⚠ this gateway answers an unknown tool with "${a.error.message}" and no code — it runs a deploy from before 2026-11-18. Not judged here.`);
+      return;
+    }
+    problems.push(`an unknown tool answered "${a.error.message}" without code NOT_FOUND`);
+  } else console.log(`  ✓ unknown tool → ${a.error.message.slice(0, 90)}`);
+
+  // (b) A skill run by a name that is nearly right: the right name comes back.
+  const near = toolText(await rpcRaw(dispatchUrl, 'tools/call', { name: 'execute_skill', arguments: { name: 'manage_documents', arguments: {} } }));
+  if (near.code !== 'NOT_FOUND' || !Array.isArray(near.did_you_mean) || !(near.did_you_mean as string[]).includes('manage_document')) {
+    problems.push(`execute_skill 'manage_documents' should answer NOT_FOUND with did_you_mean manage_document, got ${JSON.stringify(near).slice(0, 300)}`);
+  } else console.log(`  ✓ execute_skill 'manage_documents' → did you mean ${(near.did_you_mean as string[]).join(', ')}`);
+
+  // (c) A name that is near nothing: sent to search_skills, not to a guess.
+  const none = toolText(await rpcRaw(dispatchUrl, 'tools/call', { name: 'execute_skill', arguments: { name: invented, arguments: {} } }));
+  if (none.code !== 'NOT_FOUND' || none.retryable !== true || 'did_you_mean' in none || !/search_skills/.test(String(none.hint))) {
+    problems.push(`execute_skill '${invented}' should answer NOT_FOUND, retryable, pointing at search_skills, got ${JSON.stringify(none).slice(0, 300)}`);
+  } else console.log(`  ✓ execute_skill '${invented}' → NOT_FOUND, pointed at search_skills`);
+
+  // (d) On a dispatch connection a skill called as a tool is shown the door it missed.
+  const d = await rpcRaw(dispatchUrl, 'tools/call', { name: 'manage_document', arguments: { action: 'list' } });
+  if (!d.error || !/execute_skill/.test(d.error.message)) {
+    problems.push(`a skill called as a tool on a dispatch connection should be pointed at execute_skill, got ${JSON.stringify(d).slice(0, 300)}`);
+  } else console.log('  ✓ a skill called as a tool in dispatch mode → pointed at execute_skill');
+
+  // (e) The rows. Read only where the stack's database is at hand (the fresh
+  //     install passes BATTERY_DB_URL); the journal write is not awaited by
+  //     the answer, so it is waited for here.
+  const dbUrl = process.env.BATTERY_DB_URL;
+  if (local && dbUrl) {
+    const { Client } = await import('pg');
+    const db = new Client({ connectionString: dbUrl });
+    await db.connect();
+    try {
+      let rows: Array<{ name: string; code: string | null; reason: string | null; keyed: boolean; kind: string | null }> = [];
+      for (let i = 0; i < 20; i++) {
+        rows = (await db.query(
+          `select input->>'name' as name, output->>'code' as code, output->>'reason' as reason,
+                  api_key_id is not null as keyed, kind
+             from agent_activity
+            where agent::text = 'mcp' and skill_name = 'execute_skill' and status::text = 'failed'
+              and input->>'name' in ($1, 'manage_documents', 'manage_document')
+              and created_at > now() - interval '5 minutes'`, [invented])).rows;
+        if (rows.filter((r) => r.name === invented).length >= 2 && rows.some((r) => r.name === 'manage_documents') && rows.some((r) => r.name === 'manage_document')) break;
+        await new Promise((r) => setTimeout(r, 500));
+      }
+      const mine = rows.filter((r) => r.name === invented);
+      if (mine.length < 2) problems.push(`the two calls for '${invented}' should each leave a row, found ${mine.length}`);
+      if (!rows.some((r) => r.name === 'manage_documents')) problems.push("execute_skill 'manage_documents' left no row");
+      if (!rows.some((r) => r.name === 'manage_document' && r.reason === 'skill_called_as_tool')) problems.push('the skill called as a tool in dispatch mode left no row');
+      // The key column is what the Agents page reads; a run without a key has none to stamp.
+      const expectKey = !!process.env.MCP_API_KEY;
+      const bad = rows.filter((r) => r.code !== 'NOT_FOUND' || (expectKey && !r.keyed) || r.kind !== 'read');
+      if (bad.length) problems.push(`every miss row carries code NOT_FOUND, the key and kind read — ${bad.length} do not: ${JSON.stringify(bad[0])}`);
+      if (!problems.length) console.log(`  ✓ ${rows.length} rows in agent_activity, each with the code and the key`);
+    } finally {
+      await db.end();
+    }
+  } else {
+    console.log('  (no database at hand — the journal rows are not read here)');
+  }
+
+  if (problems.length) fail(1, `The gateway's refusals regressed:\n  - ${problems.join('\n  - ')}`);
+}
+
 // ── The site door ───────────────────────────────────────────────────────────
 // Every site in MCP_PROBE_SITES (comma- or space-separated site origins, a
 // repo variable — never a default here) is asked at its own /mcp, without a
@@ -259,7 +357,7 @@ async function step5_callSmokeTest(live: Set<string>): Promise<string> {
 // was green all week.
 async function step0_siteDoors() {
   const sites = (process.env.MCP_PROBE_SITES ?? '').split(/[\s,]+/).map((s) => s.trim().replace(/\/+$/, '')).filter(Boolean);
-  bar('0/5  The site door — /mcp on every site in MCP_PROBE_SITES');
+  bar('0/6  The site door — /mcp on every site in MCP_PROBE_SITES');
   if (sites.length === 0) {
     console.log('  (MCP_PROBE_SITES unset — no site doors probed. Set it to the fleet\'s site origins to watch them.)');
     return;
@@ -289,6 +387,7 @@ async function main() {
   const live = await step3_listTools();
   step4_assertExpectations(live);
   const smoked = await step5_callSmokeTest(live);
+  await step6_gatewayMisses();
 
   console.log(`\n✅ MCP regression PASSED — all expected tools exposed + tools/call '${smoked}' works.\n`);
 }

@@ -145,8 +145,10 @@ describe('discovery is visible: the gateway logs search_skills and read_skill', 
   it('both transports, both steps — four call sites', () => {
     expect(gw).toMatch(/function logDiscovery\(/);
     expect(gw.match(/logDiscovery\("search_skills"/g)).toHaveLength(2);
-    // read_skill: found and not found, on native MCP and on REST
-    expect(gw.match(/logDiscovery\("read_skill"/g)).toHaveLength(4);
+    // read_skill found, on native MCP and on REST; a name that is not there is
+    // a miss, journaled with every other refusal (gateway-journals-every-miss).
+    expect(gw.match(/logDiscovery\("read_skill"/g)).toHaveLength(2);
+    expect(gw.match(/await unknownSkill\(name, "read_skill", exposed, true\)/g)).toHaveLength(2);
     expect(gw).toMatch(/_caller_api_key_id: caller\?\.callerApiKeyId/);
     // never on the answer path
     expect(gw).toMatch(/edge\?\.waitUntil\?\.\(write\)/);

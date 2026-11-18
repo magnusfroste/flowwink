@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { accountingModule } from '@/lib/modules/accounting-module';
 import { ADMIN_ONLY_RPCS } from '@/lib/admin-only-rpcs';
+import { GATEWAY_MISS_CODES, gatewayMissAnswer } from '../../../supabase/functions/_shared/mcp/gateway-misses';
 
 /**
  * Two Accounted borrowings (2026-10-27):
@@ -86,12 +87,17 @@ describe('the read-only API key', () => {
     expect(fn).toContain('args = { ...args, dry_run: true };');
     // The tools/list hint agrees with the rule.
     expect(mcp).toMatch(/const readOnly =\s+\(isReadSkill\(name\) \|\|/);
-    expect(fn).toContain('code: "READ_ONLY_KEY"');
-    expect(fn).toContain('retryable: false');
+    // The refusal is the gateway's one shape: journaled, then answered
+    // (_shared/mcp/gateway-misses.ts carries the code, the hint and the row).
+    expect(fn).toContain('{ kind: "read_only_key", skill: skillName }');
+    expect(GATEWAY_MISS_CODES.read_only_key).toBe('READ_ONLY_KEY');
+    const refusal = gatewayMissAnswer({ kind: 'read_only_key', skill: 'manage_invoice' });
+    expect(refusal).toMatchObject({ code: 'READ_ONLY_KEY', retryable: false });
+    expect(refusal.hint).toMatch(/dry run/);
     // A forced dry run says so in the answer.
     expect(fn).toContain('read_only_key: true, forced_dry_run: true');
     // The refusal happens before the executor runs (in-process since 2026-11-07).
-    expect(fn.indexOf('code: "READ_ONLY_KEY"')).toBeLessThan(fn.indexOf('const out = await executeSkillRequest({'));
+    expect(fn.indexOf('{ kind: "read_only_key", skill: skillName }')).toBeLessThan(fn.indexOf('const out = await executeSkillRequest({'));
   });
 
   it('the request context is opened in the auth middleware, so REST and native share the verdict', () => {
