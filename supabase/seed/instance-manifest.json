@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261118120000",
-      "migrations_count": 770,
+      "migration_head": "20261118150000",
+      "migrations_count": 771,
       "migrations": [
         {
           "version": "00000000000000",
@@ -3085,6 +3085,10 @@
         {
           "version": "20261118120000",
           "name": "kunden-far-veta-om-sitt-arende"
+        },
+        {
+          "version": "20261118150000",
+          "name": "portalen-visar-vad-kunden-har"
         }
       ]
     },
@@ -3097,7 +3101,7 @@
       "count": 76,
       "shared_hash": "sha256:a02560414003a3808afba8e2774cea19f0b3213c043f4a32edddc27b4fb339fd",
       "functions": {
-        "agent-execute": "sha256:088448da5af63d43d8047c38473b09a93b252fb5e8f45287cde2972b3190ed6c",
+        "agent-execute": "sha256:bcc5130dd79322ceec1407923b9cb5738f683c4444a9736fcdc0f6edf4c9b41e",
         "agent-operate": "sha256:4320e02dd3e6a0a1706b42dc1905b631c61e6a4cbe3556c701f474c278c89e1a",
         "ai-task": "sha256:ce3aacdef625bba758f4323da3e49104a1b94a3d3d77d800e89dacd0b803d65e",
         "automation-dispatcher": "sha256:d905660cd907c6f1ef5c7cac0a97ed44a4e4187ef4d5179089fa2714b2751443",

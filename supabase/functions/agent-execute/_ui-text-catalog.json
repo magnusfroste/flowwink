@@ -11,6 +11,181 @@
       "fallback": "My agents"
     },
     {
+      "key": "account.agreements.empty",
+      "group": "account",
+      "fallback": "You have no agreements yet."
+    },
+    {
+      "key": "account.agreements.intro",
+      "group": "account",
+      "fallback": "The agreements between you and us — open one to read it, or to sign it if it is waiting for you."
+    },
+    {
+      "key": "account.agreements.open",
+      "group": "account",
+      "fallback": "Open"
+    },
+    {
+      "key": "account.agreements.sign",
+      "group": "account",
+      "fallback": "Read and sign"
+    },
+    {
+      "key": "account.agreements.signed",
+      "group": "account",
+      "fallback": "Signed"
+    },
+    {
+      "key": "account.agreements.status.active",
+      "group": "account",
+      "fallback": "In force"
+    },
+    {
+      "key": "account.agreements.status.ended",
+      "group": "account",
+      "fallback": "Ended"
+    },
+    {
+      "key": "account.agreements.status.toSign",
+      "group": "account",
+      "fallback": "Waiting for your signature"
+    },
+    {
+      "key": "account.agreements.title",
+      "group": "account",
+      "fallback": "My agreements"
+    },
+    {
+      "key": "account.agreements.until",
+      "group": "account",
+      "fallback": "Until"
+    },
+    {
+      "key": "account.invoices.due",
+      "group": "account",
+      "fallback": "Due"
+    },
+    {
+      "key": "account.invoices.empty",
+      "group": "account",
+      "fallback": "You have no invoices yet."
+    },
+    {
+      "key": "account.invoices.intro",
+      "group": "account",
+      "fallback": "What we have invoiced you — open one to see how to pay it or to download it."
+    },
+    {
+      "key": "account.invoices.open",
+      "group": "account",
+      "fallback": "Open"
+    },
+    {
+      "key": "account.invoices.pay",
+      "group": "account",
+      "fallback": "View and pay"
+    },
+    {
+      "key": "account.invoices.status.open",
+      "group": "account",
+      "fallback": "To pay"
+    },
+    {
+      "key": "account.invoices.status.overdue",
+      "group": "account",
+      "fallback": "Overdue"
+    },
+    {
+      "key": "account.invoices.status.paid",
+      "group": "account",
+      "fallback": "Paid"
+    },
+    {
+      "key": "account.invoices.status.partlyPaid",
+      "group": "account",
+      "fallback": "Partly paid"
+    },
+    {
+      "key": "account.invoices.title",
+      "group": "account",
+      "fallback": "My invoices"
+    },
+    {
+      "key": "account.overview.agreements",
+      "group": "account",
+      "fallback": "Your agreements"
+    },
+    {
+      "key": "account.overview.all",
+      "group": "account",
+      "fallback": "See all"
+    },
+    {
+      "key": "account.overview.answerQuote",
+      "group": "account",
+      "fallback": "Quote to answer: {title}"
+    },
+    {
+      "key": "account.overview.cases",
+      "group": "account",
+      "fallback": "Your open support requests"
+    },
+    {
+      "key": "account.overview.confirmEmail",
+      "group": "account",
+      "fallback": "Confirm your e-mail address to see your invoices, agreements and quotes here — use the link in the e-mail we sent when you registered."
+    },
+    {
+      "key": "account.overview.empty",
+      "group": "account",
+      "fallback": "There is nothing here yet. When we send you a quote, an agreement or an invoice — or you place an order — it shows up here."
+    },
+    {
+      "key": "account.overview.intro",
+      "group": "account",
+      "fallback": "What is waiting for you, and what you have with us."
+    },
+    {
+      "key": "account.overview.invoices",
+      "group": "account",
+      "fallback": "Your invoices"
+    },
+    {
+      "key": "account.overview.orders",
+      "group": "account",
+      "fallback": "Your orders"
+    },
+    {
+      "key": "account.overview.payInvoice",
+      "group": "account",
+      "fallback": "Invoice {number} to pay"
+    },
+    {
+      "key": "account.overview.service",
+      "group": "account",
+      "fallback": "Service"
+    },
+    {
+      "key": "account.overview.services",
+      "group": "account",
+      "fallback": "Your services"
+    },
+    {
+      "key": "account.overview.signAgreement",
+      "group": "account",
+      "fallback": "Agreement to sign: {title}"
+    },
+    {
+      "key": "account.overview.title",
+      "group": "account",
+      "fallback": "Overview"
+    },
+    {
+      "key": "account.overview.waiting",
+      "group": "account",
+      "fallback": "Waiting for you"
+    },
+    {
       "key": "account.quotes.answer",
       "group": "account",
       "fallback": "Read and answer"
