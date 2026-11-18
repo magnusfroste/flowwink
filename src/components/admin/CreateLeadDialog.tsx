@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { Building } from 'lucide-react';
 import { addLeadActivity } from '@/lib/lead-utils';
 
@@ -28,6 +29,7 @@ export function CreateLeadDialog({
   const [phone, setPhone] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const resetForm = () => {
     setEmail('');
@@ -54,7 +56,10 @@ export function CreateLeadDialog({
         .maybeSingle();
 
       if (existing) {
-        toast.error('A contact with this email already exists');
+        // The contact the person was about to make is one click away.
+        toast.error('A contact with this email already exists', {
+          action: { label: 'Open', onClick: () => navigate(`/admin/contacts/${existing.id}`) },
+        });
         setIsSubmitting(false);
         return;
       }
@@ -96,6 +101,11 @@ export function CreateLeadDialog({
       
       resetForm();
       onOpenChange(false);
+      // The person lands on the contact they made. The pipeline is ordered by
+      // score, so a new contact (score 0) was the last card of its column: on
+      // a list of 114 it was created and then nowhere to be seen (2026-11-18).
+      // From a company page they stay with the company.
+      if (!defaultCompanyId) navigate(`/admin/contacts/${newLead.id}`);
     } catch (error) {
       logger.error('Failed to create lead:', error);
       toast.error('Could not create contact');
