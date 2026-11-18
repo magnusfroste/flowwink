@@ -1,6 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
-import type { SkillSeed } from '@/lib/module-bootstrap';
+import type { SkillSeed, AutomationSeed } from '@/lib/module-bootstrap';
 import { defineModule } from '@/lib/module-def';
 import { z } from 'zod';
 
@@ -28,8 +28,31 @@ type TicketModuleOutput = z.infer<typeof ticketModuleOutputSchema>;
 // ── Bundled skill definitions ──
 const TICKETS_SKILLS: SkillSeed[] = [
   {
+    name: 'send_ticket_update',
+    description: 'E-mail the customer about ONE support case: the receipt ("we have received your request", with the case number) when only ticket_id is given, or a staff reply when comment_id is given. Each is sent once: a second call answers skipped. Use when: a case was opened for a customer and they should know it arrived; a public reply was written and the customer has not been told; a person asks to send it again (resend: true). NOT for: writing the reply itself (add_ticket_comment); answering inside the customer\'s own mail thread on a case that came in by e-mail (reply_to_ticket_via_email); internal notes (never mailed).',
+    category: 'crm',
+    handler: 'edge:comms-send',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'send_ticket_update',
+        description: 'E-mail the customer the receipt of a case, or one staff reply on it — once.',
+        parameters: {
+          type: 'object',
+          properties: {
+            ticket_id: { type: 'string', description: 'UUID of the case — alone, it sends the receipt.' },
+            comment_id: { type: 'string', description: 'UUID of a public staff reply (comment_id from add_ticket_comment) — sends that reply.' },
+            resend: { type: 'boolean', description: 'true = send it again although it was already sent. Default false.' },
+          },
+        },
+      },
+    },
+    instructions: 'Give ticket_id for the receipt or comment_id for a reply (one of them). The answer says what happened: sent "received" | "reply" with emailed_to, or skipped with the reason — no_contact_email, came_in_by_email (a case that arrived by mail gets no automatic receipt), case_already_settled, not_a_new_case (older than a day), already_acknowledged, already_mailed, internal_note, not_a_staff_reply, customer_email_disabled (Tickets setting customerEmailEnabled: false). Two automations run this by themselves on ticket.created and ticket.replied, so calling it by hand is for a resend. Without an e-mail provider the send is logged as simulated and reaches nobody. The stamps are tickets.ack_sent_at and ticket_comments.emailed_at.',
+  },
+  {
     name: 'add_ticket_comment',
-    description: 'Reply to a support case or add an internal note on it. A public reply (p_is_internal false) is what the customer reads in their portal and stops the first-response SLA clock; an internal note is staff-only and does not. Use when: answering a ticket; documenting an investigation step on a case; handing context to a colleague. NOT for: e-mailing the reply through a connected mailbox (reply_to_ticket_via_email); changing status, priority or assignee (manage_ticket).',
+    description: 'Reply to a support case or add an internal note on it. A public reply (p_is_internal false) is e-mailed to the customer, shows in their portal and stops the first-response SLA clock; an internal note is staff-only, mailed to nobody, and does not. Use when: answering a ticket; documenting an investigation step on a case; handing context to a colleague. NOT for: e-mailing the reply through a connected mailbox (reply_to_ticket_via_email); changing status, priority or assignee (manage_ticket).',
     category: 'crm',
     handler: 'rpc:add_ticket_comment',
     scope: 'internal',
@@ -51,7 +74,7 @@ const TICKETS_SKILLS: SkillSeed[] = [
         },
       },
     },
-    instructions: 'A public reply is written as-is to ticket_comments and shows in the customer portal; nothing is e-mailed. To also send it by mail, use reply_to_ticket_via_email (needs a connected mailbox). Move the case on afterwards with manage_ticket {action:"update", status:"waiting"|"resolved"}. Requires the tickets module (or service role).',
+    instructions: 'A public reply is written as-is to ticket_comments, shows in the customer portal, and is e-mailed to the case\'s contact_email by the automation "Reply to the customer on a case" (send_ticket_update) — once per reply; a back-dated reply (p_created_at) is an import and mails nobody. An internal note is never mailed. To answer inside the customer\'s own mail thread on a case that came in by e-mail, use reply_to_ticket_via_email (needs a connected mailbox) INSTEAD — it mails and logs the reply itself. Move the case on afterwards with manage_ticket {action:"update", status:"waiting"|"resolved"}. Requires the tickets module (or service role).',
   },
   {
     name: 'manage_ticket',
@@ -201,6 +224,30 @@ const TICKETS_SKILLS: SkillSeed[] = [
   },
 ];
 
+// The customer hears about their case whoever opened or answered it — a person
+// in the admin, an agent on the gateway, the portal (2026-11-18). Before, a case
+// told its customer nothing and a reply was only "in the portal".
+const TICKETS_AUTOMATIONS: AutomationSeed[] = [
+  {
+    name: 'Receipt to the customer on a new case',
+    description:
+      'When a support case is created with a contact e-mail (any writer — the admin, an agent, the portal, a form), e-mail the customer that it was received, with the case number. Once per case; a case that came in by e-mail gets no automatic receipt.',
+    trigger_type: 'event',
+    trigger_config: { event: 'ticket.created' },
+    skill_name: 'send_ticket_update',
+    skill_arguments: { ticket_id: '{{event.payload.id}}' },
+  },
+  {
+    name: 'Reply to the customer on a case',
+    description:
+      'When staff write a public reply on a support case, e-mail it to the customer. Once per reply; internal notes and back-dated (imported) replies are never mailed, and a reply already sent through the mailbox is not sent again.',
+    trigger_type: 'event',
+    trigger_config: { event: 'ticket.replied' },
+    skill_name: 'send_ticket_update',
+    skill_arguments: { comment_id: '{{event.payload.id}}' },
+  },
+];
+
 export const ticketsModule = defineModule<TicketModuleInput, TicketModuleOutput>({
   id: 'tickets',
   name: 'Tickets',
@@ -213,11 +260,12 @@ export const ticketsModule = defineModule<TicketModuleInput, TicketModuleOutput>
   inputSchema: ticketModuleInputSchema,
   outputSchema: ticketModuleOutputSchema,
 
-  skills: ['manage_ticket', 'add_ticket_comment', 'ticket_triage', 'search_tickets', 'manage_canned_response', 'run_ticket_escalations'],
+  skills: ['manage_ticket', 'add_ticket_comment', 'send_ticket_update', 'ticket_triage', 'search_tickets', 'manage_canned_response', 'run_ticket_escalations'],
   data: {
     tables: ['ticket_comments', 'support_escalations', 'canned_responses', 'tickets', 'support_agents', 'ticket_escalation_rules'],
   },
   skillSeeds: TICKETS_SKILLS,
+  automations: TICKETS_AUTOMATIONS,
 
   async publish(input: TicketModuleInput): Promise<TicketModuleOutput> {
     try {

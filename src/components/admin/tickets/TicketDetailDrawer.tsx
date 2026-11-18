@@ -76,6 +76,11 @@ export function TicketDetailDrawer({ ticket, open, onOpenChange }: TicketDetailD
   const incrementUsage = useIncrementCannedUsage();
   const { formatDateTime } = usePlatformFormat();
   const [newComment, setNewComment] = useState("");
+  // A reply is mailed to the customer; a note is the team's. The box wrote
+  // every comment as a public reply and said "Add a comment…" — harmless while
+  // nothing was mailed, a leak the day replies are (2026-11-18). The person
+  // chooses, and the box says who will read it.
+  const [commentKind, setCommentKind] = useState<"reply" | "note">("reply");
   const [tagInput, setTagInput] = useState("");
 
   const tags = useMemo(() => ticket?.tags ?? [], [ticket]);
@@ -112,7 +117,7 @@ export function TicketDetailDrawer({ ticket, open, onOpenChange }: TicketDetailD
   const handleAddComment = () => {
     if (!newComment.trim()) return;
     addComment.mutate(
-      { ticket_id: ticket.id, content: newComment.trim() },
+      { ticket_id: ticket.id, content: newComment.trim(), is_internal: commentKind === "note" },
       { onSuccess: () => setNewComment("") }
     );
   };
@@ -377,8 +382,18 @@ export function TicketDetailDrawer({ ticket, open, onOpenChange }: TicketDetailD
 
         {/* Comment Input */}
         <div className="border-t p-4 space-y-2">
+          <div className="flex items-center gap-1" role="tablist" aria-label="Who reads this">
+            <Button type="button" size="sm" role="tab" aria-selected={commentKind === "reply"}
+              variant={commentKind === "reply" ? "secondary" : "ghost"} onClick={() => setCommentKind("reply")}>
+              Reply to customer
+            </Button>
+            <Button type="button" size="sm" role="tab" aria-selected={commentKind === "note"}
+              variant={commentKind === "note" ? "secondary" : "ghost"} onClick={() => setCommentKind("note")}>
+              Internal note
+            </Button>
+          </div>
           <Textarea
-            placeholder="Add a comment..."
+            placeholder={commentKind === "reply" ? "Write your reply to the customer…" : "Write a note for your team…"}
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
             rows={2}
@@ -428,9 +443,16 @@ export function TicketDetailDrawer({ ticket, open, onOpenChange }: TicketDetailD
               disabled={!newComment.trim() || addComment.isPending}
             >
               <Send className="h-3.5 w-3.5 mr-1" />
-              Send
+              {commentKind === "reply" ? "Send reply" : "Save note"}
             </Button>
           </div>
+          <p className="text-xs text-muted-foreground" data-testid="ticket-comment-audience">
+            {commentKind === "note"
+              ? "Only your team sees this. Nothing is e-mailed."
+              : ticket.contact_email
+                ? `E-mailed to ${ticket.contact_email} and shown in their portal.`
+                : "This case has no contact e-mail — the reply is only shown in the customer portal."}
+          </p>
         </div>
 
       </SheetContent>

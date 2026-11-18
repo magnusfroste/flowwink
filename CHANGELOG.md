@@ -126,6 +126,18 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Fixed
 
+- **A customer is told about their support case.** A case opened for a customer
+  sent them nothing, and the staff's reply was only visible in the customer
+  portal — where someone who wrote in through a form, or was entered by hand,
+  has no account. The customer is now e-mailed a receipt with the case number
+  when a case is opened, and each reply staff write. Internal notes are never
+  mailed; a case that came in by e-mail gets no automatic receipt. Switch it
+  off with the Tickets setting `customerEmailEnabled: false`.
+- **The case reply box says who will read it.** The box in the admin was
+  labelled "Add a comment…" and saved everything as a reply the customer could
+  see. It now has two modes, "Reply to customer" and "Internal note", and a
+  line that says where the text goes.
+
 - **A contact you create is the page you land on.** The pipeline is ordered by
   score, so a contact created by hand (score 0) became the last card of its
   column and could not be found on a long list. Creating a contact now opens

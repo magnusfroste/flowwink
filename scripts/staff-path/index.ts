@@ -311,6 +311,69 @@ async function contactToDeal(s: Scenario, browser: Browser, cfg: StackConfig, ad
   return step.result();
 }
 
+/** A person opens a case for a customer, notes something for the team, and answers the customer. */
+async function ticketByHand(s: Scenario, browser: Browser, cfg: StackConfig, admin: FixtureUser, base: string): Promise<StepResult> {
+  const step = new Step('case: opened, noted and answered by hand in the admin');
+  const email = `hand-case-${s.tag}@example.test`;
+  const subject = `Handväg ärende ${s.tag}`;
+  const ctx = await signedIn(browser, cfg, admin);
+  const page = await ctx.newPage();
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message.slice(0, 300)));
+  const ticket = () => s.one<{ id: string; ticket_number: string }>('select id, ticket_number from tickets where contact_email = $1', [email]);
+  const mails = async () => (await s.sql<{ subject: string | null; body_html: string | null }>(
+    `select subject, body_html from outbound_communications where channel = 'email' and lower(recipient) like '%' || lower($1) || '%' order by created_at`, [email]));
+  try {
+    await page.goto(`${base}/admin/tickets`, { waitUntil: 'domcontentloaded' });
+    const newTicket = page.getByRole('button', { name: /new ticket/i }).first();
+    if (!step.check('the tickets page opens for the person', await newTicket.waitFor({ state: 'visible', timeout: 60_000 }).then(() => true, () => false), `no "New Ticket" button; page errors: ${errors.join(' | ') || 'none'}`)) { await snap(page, 'tickets-not-rendered'); return step.result(); }
+    await newTicket.click();
+    await page.locator('#subject').fill(subject);
+    await page.locator('#description').fill('The invoice PDF will not open on my phone.');
+    await page.locator('#contactName').fill('Hanna Handväg');
+    await page.locator('#contactEmail').fill(email);
+    await page.getByRole('button', { name: /create ticket/i }).click();
+    const made = await until(ticket, (t) => !!t.id);
+    if (!step.check('the case is created with a number', !!made && /^TIC-\d+$/.test(made.ticket_number), `tickets row: ${JSON.stringify(await ticket())}`)) { await snap(page, 'ticket-not-created'); return step.result(); }
+
+    // FINDING 2026-11-18: the customer was told nothing — not that the case arrived, not the answer.
+    await s.pulse('event-dispatcher', async () => (await mails()).length >= 1);
+    const first = await mails();
+    step.check('the customer is mailed that the case was received, with its number', first.length === 1 && String(first[0].subject).includes(made!.ticket_number), `mails to the customer: ${JSON.stringify(first.map((m) => m.subject))}`);
+
+    await page.getByText(subject, { exact: false }).first().click();
+    const box = page.getByPlaceholder(/write your reply to the customer/i);
+    if (!step.check('the case opens with a reply box', await box.waitFor({ state: 'visible', timeout: 15_000 }).then(() => true, () => false), 'no reply box in the case')) { await snap(page, 'ticket-drawer'); return step.result(); }
+    const audience = page.getByTestId('ticket-comment-audience');
+    // FINDING 2026-11-18: one box, "Add a comment…", wrote everything as a public reply.
+    step.check('the box says the reply goes to the customer', (await audience.innerText().catch(() => '')).includes(email), `the hint reads "${await audience.innerText().catch(() => '')}"`);
+
+    await page.getByRole('tab', { name: /internal note/i }).click();
+    step.check('…and that a note stays with the team', /nothing is e-mailed/i.test(await audience.innerText().catch(() => '')), `the hint reads "${await audience.innerText().catch(() => '')}"`);
+    await page.getByPlaceholder(/write a note for your team/i).fill('Internal: looks like the old PDF bug.');
+    await page.getByRole('button', { name: /save note/i }).click();
+    const noted = await until(
+      () => s.one<{ n: number }>('select count(*)::int as n from ticket_comments where ticket_id = $1 and is_internal', [made!.id]), (r) => r.n === 1);
+    step.check('the note is saved as internal', !!noted, 'no internal comment on the case');
+
+    await page.getByRole('tab', { name: /reply to customer/i }).click();
+    await page.getByPlaceholder(/write your reply to the customer/i).fill('We have fixed the PDF — please open the link again.');
+    await page.getByRole('button', { name: /send reply/i }).click();
+    const answered = await until(
+      () => s.one<{ n: number }>('select count(*)::int as n from ticket_comments where ticket_id = $1 and not is_internal', [made!.id]), (r) => r.n === 1);
+    await snap(page, 'ticket-answered');
+    if (!step.check('the reply is saved as public', !!answered, 'no public comment on the case')) return step.result();
+    await s.pulse('event-dispatcher', async () => (await mails()).length >= 2);
+    const all = await mails();
+    step.check('the customer is mailed the reply', all.length === 2 && /We have fixed the PDF/.test(String(all[1]?.body_html ?? '')), `mails to the customer: ${JSON.stringify(all.map((m) => m.subject))}`);
+    step.check('the internal note reaches nobody', !all.some((m) => /old PDF bug/.test(String(m.body_html ?? ''))), 'the internal note is in a mail to the customer');
+    step.check('the admin raised no error', errors.length === 0, errors.join(' | '));
+  } finally {
+    await ctx.close();
+  }
+  return step.result();
+}
+
 // ── run ─────────────────────────────────────────────────────────────────────
 
 const cfg = readStackConfig();
@@ -333,7 +396,7 @@ try {
   const base = baseUrlArg ?? (vite = await startVite(cfg, await freePort(5196))).baseUrl;
   const executablePath = process.env.VIEW_SWEEP_BROWSER || undefined;
   browser = await chromium.launch({ ...(executablePath ? { executablePath } : { channel: 'chrome' }), headless: !headed });
-  for (const run of [quoteByHand, invoiceByHand, contactToDeal]) {
+  for (const run of [quoteByHand, invoiceByHand, contactToDeal, ticketByHand]) {
     try {
       results.push(await run(s, browser, cfg, admin, base));
     } catch (e) {

@@ -603,6 +603,7 @@
     "send_purchase_order",
     "send_quote_expiry_reminders",
     "send_survey",
+    "send_ticket_update",
     "send_webinar_reminders",
     "send_winback_campaign",
     "seo_audit_page",

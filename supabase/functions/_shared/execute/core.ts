@@ -20811,6 +20811,8 @@ async function executeReplyToTicketViaEmail(
     content: body,
     is_internal: false,
     author_type: 'agent',
+    // Already sent, through the mailbox: the reply mail (send_ticket_update) must not go out too.
+    emailed_at: new Date().toISOString(),
   });
 
   await supabase
