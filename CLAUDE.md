@@ -1033,7 +1033,14 @@ edge deploy → the first admin visit syncs. **Automations ride the same rail
 sync inserts the missing ones for enabled modules — by name only, never
 updating (a retuned cron survives), each name once (`site_settings.seeded_automations`
 remembers, so a deleted automation stays deleted). Before, only a browser
-bootstrap seeded them, and "Feedback ping" reached no live instance. Verified 2026-10-16 on sandbox and
+bootstrap seeded them, and "Feedback ping" reached no live instance. **So does
+the modules row (2026-11-19):** the bundle's catalogue carries each module's
+`defaultEnabled` (read from `defaultModulesSettings`), and the sync first runs
+`ensure_modules_settings` with it — absent keys only — so a module added after
+an instance's birth reaches one no admin opens (MJP had no `feedback` key). A
+catalogue module the row lacks is known and off to `manage_modules`, never
+"unknown"; a read action of an approve-level skill (`manage_modules list`)
+passes the trust gate. Verified 2026-10-16 on sandbox and
 www: `manage_booking_service` (#637, 2026-10-06) was refreshed on 10-07 and
 10-09 with nobody running a sync; the deployed sha, main's artifact and the
 `skills_artifact_sha` stamp are identical. Two things that mislead: the stamp

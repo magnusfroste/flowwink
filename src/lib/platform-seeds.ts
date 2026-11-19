@@ -801,12 +801,12 @@ Three facts are stored: country, currency, time zone. Everything else is derived
   },
   {
     name: 'manage_modules',
-    description: 'Switch modules on or off the way Admin → Modules does: the module row, its skills and its automations. disable stops the module\'s skills (shared utilities stay) and every automation that runs one of them, and records the decision so a later write does not wake the module again; enable brings it back with the automations the disable stopped and re-enables its skills. keep records the owner\'s decision to keep a module module_usage_report proposed, so it is not proposed again (unkeep withdraws it); nothing else changes. Data is never touched. Approval required (trust approve) — the owner decides what the business runs. Refuses a core module, a module others still need (name them in the same call) and an enable whose parent is off. Use when: the owner agreed to switch off modules module_usage_report proposed; the owner asks to turn a module on or off; the owner answers a proposal with "keep it". NOT for: reading what is used (module_usage_report); other settings (manage_site_settings); deleting data (reset_module_data clears demo rows).',
+    description: 'Switch modules on or off the way Admin → Modules does: the module row, its skills and its automations. disable stops the module\'s skills (shared utilities stay) and every automation that runs one of them, and records the decision so a later write does not wake the module again; enable brings it back with the automations the disable stopped and re-enables its skills. keep records the owner\'s decision to keep a module module_usage_report proposed, so it is not proposed again (unkeep withdraws it); nothing else changes. list answers every module and whether it is on — a read, no approval. Data is never touched. Approval required for enable/disable/keep/unkeep (trust approve) — the owner decides what the business runs. Refuses a core module, a module others still need (name them in the same call) and an enable whose parent is off. Use when: checking which modules are on (list); the owner agreed to switch off modules module_usage_report proposed; the owner asks to turn a module on or off; the owner answers a proposal with "keep it". NOT for: reading what is used (module_usage_report); other settings (manage_site_settings); deleting data (reset_module_data clears demo rows).',
     category: 'system',
     handler: 'internal:manage_modules',
     scope: 'internal',
     trust_level: 'approve',
-    instructions: 'Ask before you call: list the modules, why (the evidence from module_usage_report), and that nothing is deleted. Then call once with action and modules as the owner agreed, and reason in the owner\'s words. Staged: the first call answers status pending_approval with an approval_request_id; a person approves under /admin/approvals; re-call ONCE with the same arguments plus the ids the answer gives. A refusal (INVALID_INPUT) names what to add: a dependent to switch off with its parent (payroll with hr, timesheets with projects, fixedAssets/reconciliation with accounting, returns with ecommerce, subscriptions with invoicing, deals with leads, liveSupport with chat), or a parent to enable first. The answer lists per module the skills disabled and the automations stopped/resumed, and reads the row back. When the owner says to keep a proposed module, call action keep with those modules and reason in the owner\'s words (a module that is off is refused — keep is for one that is on); a later disable replaces the keep. Never switch off feedback: it is how this instance reports what works badly.',
+    instructions: 'action list is a read and runs at once: every module, enabled, and in_row (a module the row has no key for yet is off until the next skill sync adds it with its default). For a change, ask before you call: list the modules, why (the evidence from module_usage_report), and that nothing is deleted. Then call once with action and modules as the owner agreed, and reason in the owner\'s words. Staged: the first call answers status pending_approval with an approval_request_id; a person approves under /admin/approvals; re-call ONCE with the same arguments plus the ids the answer gives. A refusal (INVALID_INPUT) names what to add: a dependent to switch off with its parent (payroll with hr, timesheets with projects, fixedAssets/reconciliation with accounting, returns with ecommerce, subscriptions with invoicing, deals with leads, liveSupport with chat), or a parent to enable first. The answer lists per module the skills disabled and the automations stopped/resumed, and reads the row back. When the owner says to keep a proposed module, call action keep with those modules and reason in the owner\'s words (a module that is off is refused — keep is for one that is on); a later disable replaces the keep. Never switch off feedback: it is how this instance reports what works badly.',
     tool_definition: {
       type: 'function',
       risk: 'medium',
@@ -814,15 +814,15 @@ Three facts are stored: country, currency, time zone. Everything else is derived
       reversal: 'manage_modules with the other action and the same modules — enable restores the automations the disable stopped.',
       function: {
         name: 'manage_modules',
-        description: 'Enable or disable modules with their skills and automations, or record the owner\'s decision to keep one (approval required). Never deletes data.',
+        description: 'List modules (a read), enable or disable them with their skills and automations, or record the owner\'s decision to keep one (approval required for every change). Never deletes data.',
         parameters: {
           type: 'object',
           properties: {
-            action: { type: 'string', enum: ['enable', 'disable', 'keep', 'unkeep'], description: 'keep: the owner keeps a proposed module — module_usage_report stops proposing it. unkeep withdraws that.' },
-            modules: { type: 'array', items: { type: 'string' }, description: 'Module ids as module_usage_report names them, e.g. ["hr","payroll","recruitment"].' },
+            action: { type: 'string', enum: ['list', 'enable', 'disable', 'keep', 'unkeep'], description: 'list: every module and whether it is on (a read). keep: the owner keeps a proposed module — module_usage_report stops proposing it. unkeep withdraws that.' },
+            modules: { type: 'array', items: { type: 'string' }, description: 'Module ids as list names them, e.g. ["hr","payroll","recruitment"]. Required for every action but list.' },
             reason: { type: 'string', description: 'Why, in the owner\'s words — kept with the decision.' },
           },
-          required: ['action', 'modules'],
+          required: ['action'],
         },
       },
     },
