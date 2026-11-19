@@ -56,7 +56,7 @@ describe('the number is assigned in one place', () => {
   });
 
   it('is AGR, not CTR', () => {
-    // `CTR-YYYYMMDD-…` is already the invoice series for contract billing.
+    // `CTR-YYYY-NNNNN` is already the invoice series for contract billing.
     // Numbering the agreement CTR- too means an operator reading CTR-2026-00001
     // cannot tell whether it is the agreement or one of its invoices.
     expect(sql).not.toMatch(/next_document_number\('contract', 'CTR'\)/);

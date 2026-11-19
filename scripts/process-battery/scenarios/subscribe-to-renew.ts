@@ -34,7 +34,8 @@ async function run(s: Scenario): Promise<void> {
   const first = await s.must('the first cycle is billed', 'generate_subscription_invoice', { subscription_id: subId });
   const firstId = s.idOf(first, 'invoice');
   const inv = await invoiceRow(s, firstId);
-  s.check('the cycle invoice is numbered SUB-…', /^SUB-\d{8}-\d{5}$/.test(String(inv?.invoice_number)), `got "${inv?.invoice_number}"`);
+  // FINDING 2026-11-19: SUB-YYYYMMDD-<five random digits> — no running series, and two a day could collide.
+  s.check('the cycle invoice is numbered in the running SUB series', /^SUB-\d{4}-\d{5}$/.test(String(inv?.invoice_number)), `got "${inv?.invoice_number}"`);
   s.equal('a cycle invoice is a draft for review', inv?.status, 'draft');
   s.equal('the cycle invoice is 2 × 500 kr net', inv?.subtotal_cents, 100_000);
   s.equal('plus 25 % VAT', inv?.tax_cents, 25_000);
@@ -109,7 +110,7 @@ async function run(s: Scenario): Promise<void> {
     Math.abs(Number(upgrade.prorated_cents) - expected) <= 4_000,
     `expected ~${expected} öre of 200 000; prorated_cents ${upgrade.prorated_cents}, remaining_fraction ${upgrade.remaining_fraction}; ${Math.round(remaining * 100)} % of the billed period is left`);
   const adjustment = await invoiceRow(s, String(upgrade.adjustment_invoice_id ?? ''));
-  s.check('the adjustment invoice is numbered SUB-ADJ-…', /^SUB-ADJ-/.test(String(adjustment?.invoice_number)), `got "${adjustment?.invoice_number}"`);
+  s.check('the adjustment invoice is numbered in the running SUB-ADJ series', /^SUB-ADJ-\d{4}-\d{5}$/.test(String(adjustment?.invoice_number)), `got "${adjustment?.invoice_number}"`);
   s.equal('the adjustment invoice is a draft', adjustment?.status, 'draft');
   s.equal('the adjustment bills the prorated amount', adjustment?.subtotal_cents, upgrade.prorated_cents);
   s.equal('the adjustment carries 25 % VAT', adjustment?.tax_cents, Math.round(Number(upgrade.prorated_cents) * 0.25));

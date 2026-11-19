@@ -103,3 +103,29 @@ describe('a contact made by hand is where the person ends up', () => {
   });
 });
 
+describe('every billing series runs in order', () => {
+  // 2026-11-19: CTR-/SUB-/SUB-ADJ-/SO- invoices ended in five RANDOM digits.
+  const dir = join(process.cwd(), 'supabase/migrations');
+  const FIX = '20261119220000_varje-fakturaserie-lopper.sql';
+  const files = readdirSync(dir).filter((f) => f.endsWith('.sql')).sort();
+  const sqlOnly = (text: string) => text.split('\n').filter((l) => !l.trim().startsWith('--')).join('\n');
+
+  it('the four writers ask the running series', () => {
+    const fix = sqlOnly(readFileSync(join(dir, FIX), 'utf-8'));
+    for (const prefix of ['CTR', 'SUB', 'SUB-ADJ', 'SO']) {
+      expect(fix, prefix).toContain(`public.next_invoice_series_number('${prefix}')`);
+    }
+    expect(fix).not.toMatch(/random\(\)/);
+  });
+
+  it('no migration since numbers an invoice by chance', () => {
+    const offenders: string[] = [];
+    for (const f of files) {
+      if (f < FIX) continue;
+      const sql = sqlOnly(readFileSync(join(dir, f), 'utf-8'));
+      // The shape, not the function: a number built from random() next to an invoice number.
+      if (/invoice_num\w*\s*:=[^;]*random\(\)/i.test(sql)) offenders.push(f);
+    }
+    expect(offenders, 'ask public.next_invoice_series_number(prefix) — a series counts').toEqual([]);
+  });
+});
