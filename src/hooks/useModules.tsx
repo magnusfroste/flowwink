@@ -81,7 +81,6 @@ export interface ModuleConfig {
   /** Module works without FlowPilot but gains proactive capabilities when enabled */
   enhancedByFlowPilot?: boolean;
   // E-commerce sandbox settings (sandboxMode is derived: auto-on when Stripe is inactive)
-  sandboxAutoPayDays?: number; // 0 = instant, >0 = mark as paid after N days (for testing flows)
   // E-commerce VAT display (display + provenance only — no tax engine).
   // vatRatePct unset/0 = feature off (no price labels, no order metadata stamp).
   vatRatePct?: number; // e.g. 25 for Swedish standard VAT
@@ -311,7 +310,6 @@ export const defaultModulesSettings: ModulesSettings = {
     autonomy: 'config-required',
     adminUI: true,
     optionalIntegrations: ['stripe', 'resend', 'stripe_webhook'],
-    sandboxAutoPayDays: 0, // Instant payment simulation by default
   },
   developer: {
     enabled: false,

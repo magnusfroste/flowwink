@@ -323,14 +323,13 @@ serve(async (req: Request) => {
     const stripeEnabled = (integrationSettings?.value as any)?.stripe?.enabled ?? false;
     const ecomConfig = (moduleSettings?.value as any)?.ecommerce ?? {};
     const sandboxMode = ecomConfig.sandboxMode ?? (!stripeEnabled); // Auto-sandbox if Stripe is off
-    const sandboxAutoPayDays = ecomConfig.sandboxAutoPayDays ?? 0;
     const vat = checkoutVat(ecomConfig);
     // A net-priced shop (B2B) charges the VAT on top; the order rows carry
     // the customer price with VAT, as book_order_paid reads them.
     const addVat = vatOnTop(vat);
     const customerPrice = (netCents: number) => addVat ? grossCents(netCents, vat.ratePct) : netCents;
 
-    logStep("Mode check", { stripeEnabled, sandboxMode, sandboxAutoPayDays });
+    logStep("Mode check", { stripeEnabled, sandboxMode });
 
     const body: CheckoutRequest = await req.json();
     const {
@@ -435,7 +434,9 @@ serve(async (req: Request) => {
       const totalCents = customerPrice(subtotalCents - (discount?.discountCents ?? 0) + (shipping?.priceCents ?? 0));
       const vatMeta = vatMetadata(vat, totalCents);
 
-      const orderStatus = sandboxAutoPayDays === 0 ? "paid" : "pending";
+      // A test-mode order is paid at once. The "pay in N days" dial (2026-11-19)
+      // only ever left the order pending: nothing read sandbox_pay_at.
+      const orderStatus = "paid" as const;
 
       const { data: order, error: orderError } = await supabase
         .from("orders")
@@ -458,10 +459,6 @@ serve(async (req: Request) => {
           ...buildShippingColumns(shippingAddress, shipping && { ...shipping, priceCents: customerPrice(shipping.priceCents) }, customerName),
           metadata: {
             sandbox: true,
-            sandbox_auto_pay_days: sandboxAutoPayDays,
-            sandbox_pay_at: sandboxAutoPayDays > 0
-              ? new Date(Date.now() + sandboxAutoPayDays * 86400000).toISOString()
-              : null,
             booking_id: bookingId || null,
             ...(discount ? { discount: { code: discount.code, type: discount.type, value: discount.value, discount_cents: discount.discountCents } } : {}),
             ...(shipping ? { shipping: { rate_id: shipping.rateId, weight_grams: shipping.weightGrams } } : {}),

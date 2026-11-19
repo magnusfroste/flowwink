@@ -42,7 +42,6 @@ import { ComposioPanel } from "./ComposioPanel";
 import { ReBootstrapButton } from "./ReBootstrapButton";
 import { BootstrapHealthCard } from "./BootstrapHealthCard";
 import { Label } from "@/components/ui/label";
-import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -517,42 +516,9 @@ export function ModuleDetailSheet({
                         Sandbox
                       </Badge>
                     </div>
-                    <Separator />
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor="sandbox-days" className="text-sm">
-                          Auto-pay delay
-                        </Label>
-                        <span className="text-sm font-mono text-muted-foreground">
-                          {(moduleConfig.sandboxAutoPayDays ?? 0) === 0
-                            ? 'Instant'
-                            : `${moduleConfig.sandboxAutoPayDays} days`}
-                        </span>
-                      </div>
-                      <Slider
-                        id="sandbox-days"
-                        min={0}
-                        max={30}
-                        step={1}
-                        value={[moduleConfig.sandboxAutoPayDays ?? 0]}
-                        onValueChange={([val]) => {
-                          if (!modules) return;
-                          const updated = {
-                            ...modules,
-                            ecommerce: {
-                              ...modules.ecommerce,
-                              sandboxAutoPayDays: val,
-                            },
-                          };
-                          updateModules.mutate(updated);
-                        }}
-                      />
-                      <p className="text-[11px] text-muted-foreground">
-                        {(moduleConfig.sandboxAutoPayDays ?? 0) === 0
-                          ? 'Orders are marked as paid immediately — ideal for quick testing.'
-                          : `Orders stay "pending" for ${moduleConfig.sandboxAutoPayDays} days before auto-payment — simulates real payment delays for FlowPilot and OpenClaw testing.`}
-                      </p>
-                    </div>
+                    <p className="text-[11px] text-muted-foreground">
+                      In sandbox mode an order is marked as paid at once, and the buyer gets the order confirmation and the receipt.
+                    </p>
                   </div>
                 </div>
                 <div>
