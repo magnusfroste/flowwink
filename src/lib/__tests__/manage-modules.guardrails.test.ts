@@ -42,6 +42,24 @@ describe('manage_modules plan', () => {
     expect(planModuleChange(catalog, on, 'disable', ['hr', 'payroll'])).toEqual({ modules: ['hr', 'payroll'], refusals: [] });
   });
 
+  // MJP 2026-11-19: feedback was in the code but had no key in the row (no
+  // admin had opened the instance since it shipped), and was refused as
+  // "not a module on this instance". The catalogue says what a module is.
+  it('a catalogue module the row has no key for is known and off — only an id the catalogue lacks is unknown', () => {
+    const cat = [...catalog, entry('feedback')];
+    const row = { pages: { enabled: true } };
+    expect(planModuleChange(cat, row, 'enable', ['feedback'])).toEqual({ modules: ['feedback'], refusals: [] });
+    // Off already: a disable changes nothing and refuses nothing.
+    expect(planModuleChange(cat, row, 'disable', ['feedback'], { attended: true })).toEqual({ modules: [], refusals: [] });
+    // Its parent absent too: named as a parent to enable, not as unknown.
+    expect(planModuleChange(cat, row, 'enable', ['payroll']).refusals).toEqual([{ module: 'payroll', reason: 'needs', others: ['hr'] }]);
+    expect(planModuleChange(cat, row, 'enable', ['nope']).refusals).toEqual([{ module: 'nope', reason: 'unknown' }]);
+    expect(describeRefusals([{ module: 'nope', reason: 'unknown' }])).toMatch(/nope is not a FlowWink module \(manage_modules list/);
+    // keep: with the catalogue, an absent module is off; without it, as before.
+    expect(planModuleKeep(row, ['feedback', 'nope'], cat).refusals).toEqual([{ module: 'feedback', reason: 'off' }, { module: 'nope', reason: 'unknown' }]);
+    expect(planModuleKeep(row, ['feedback']).refusals).toEqual([{ module: 'feedback', reason: 'unknown' }]);
+  });
+
   it('an enable names the parent that is off, and a no-op is not a change', () => {
     expect(planModuleChange(catalog, on, 'enable', ['timesheets']).refusals).toEqual([{ module: 'timesheets', reason: 'needs', others: ['projects'] }]);
     expect(planModuleChange(catalog, on, 'enable', ['projects', 'timesheets']).modules).toEqual(['projects', 'timesheets']);
@@ -132,6 +150,25 @@ describe('module_usage_report: a decision and a module\'s age', () => {
 });
 
 describe('manage_modules wiring', () => {
+  // labs1100 2026-11-19: `manage_modules {action:'list'}` from the gateway
+  // raised an approval request. Approval gates what a call changes; a read
+  // (classifyCall, the platform's one read rule) changes nothing.
+  it('a read of an approve-level skill never waits for a person', () => {
+    const exec = read('supabase/functions/_shared/execute/core.ts');
+    expect(exec).toMatch(/const readsOnly = !planOnly && classifyCall\(skill\.name, args as Record<string, unknown>\) === 'read';\s+if \(readsOnly && trustLevel === 'approve'\) trustLevel = 'notify';/);
+    // …and it is decided before the gate that raises the request.
+    expect(exec.indexOf('const readsOnly =')).toBeLessThan(exec.indexOf("if (trustLevel === 'approve' && !bypassApproval)"));
+    const manage = exec.slice(exec.indexOf('async function executeManageModules'), exec.indexOf('async function topUpModulesRow'));
+    expect(manage).toMatch(/if \(action === 'list'\) return listModules\(supabase\);/);
+    expect(manage).toMatch(/planModuleKeep\(current, requested, MODULE_CATALOG\)/);
+  });
+
+  it('the usage report judges every catalogue module, not only the ones the row has a key for', () => {
+    const exec = read('supabase/functions/_shared/execute/core.ts');
+    const report = exec.slice(exec.indexOf('async function executeModuleUsageReport'), exec.indexOf('async function listModules'));
+    expect(report).not.toMatch(/c\.moduleId in current/);
+  });
+
   it('the catalog travels in the edge bundle with parents, tables and core', () => {
     const gen = read('scripts/skills-to-json.ts');
     expect(gen).toMatch(/modules: out, catalog:/);
@@ -200,7 +237,10 @@ describe('manage_modules wiring', () => {
     expect(byName.get('module_usage_report')?.trust_level).toBe('auto');
     expect(byName.get('manage_modules')?.trust_level).toBe('approve');
     const actions = (byName.get('manage_modules')?.tool_definition as { function: { parameters: { properties: { action: { enum: string[] } } } } }).function.parameters.properties.action.enum;
-    expect(actions).toEqual(['enable', 'disable', 'keep', 'unkeep']);
+    expect(actions).toEqual(['list', 'enable', 'disable', 'keep', 'unkeep']);
+    // list is a read: no `modules` needed, and the trust gate lets it through.
+    const params = (byName.get('manage_modules')?.tool_definition as { function: { parameters: { required: string[] } } }).function.parameters;
+    expect(params.required).toEqual(['action']);
     expect(byName.get('manage_site_settings')?.description).toMatch(/NOT for: switching modules on or off \(manage_modules/);
     expect(byName.get('manage_site_settings')?.description).not.toMatch(/Use when:[^.]*enabling or disabling modules/);
   });

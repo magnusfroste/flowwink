@@ -14,7 +14,7 @@ import { normalizeSkillArgs } from '../skill-aliases.ts';
 import { buildUnknownParameterBounce } from '../skills/parameter-contract.ts';
 import { isTransportKey } from '../skills/parameter-contract.ts';
 import { callWakesModule, moduleWakeAuditRow, moduleWakeNote } from '../modules/module-wake.ts';
-import { describeRefusals, moduleSkillNames, planModuleKeep, skillsToDisable, suggestOff, type ModuleCatalogEntry, type ModuleEvidence, type ModuleKeep, type ModulesSetting } from '../modules/module-plan.ts';
+import { describeRefusals, moduleRowDefaults, moduleSkillNames, planModuleKeep, skillsToDisable, suggestOff, type ModuleCatalogEntry, type ModuleEvidence, type ModuleKeep, type ModulesSetting } from '../modules/module-plan.ts';
 import { switchModules, withParents } from '../modules/module-switch.ts';
 import { moduleDisabledRefusal, ownerModuleOf, skillModuleOn } from '../skills/module-gate.ts';
 import { loadActiveModuleIds } from '../mcp/groups.ts';
@@ -1201,6 +1201,13 @@ export async function executeSkillRequest(input: ExecuteRequest, auth: ExecuteAu
     // to approve it. A live run of the same skill still stops below.
     const planOnly = isDryRunRead(skill.name, args as Record<string, unknown>);
     if (planOnly && trustLevel === 'approve') trustLevel = 'notify';
+    // A READ of an approve-level skill (manage_* with a read action, by the
+    // platform's one read rule) never waits for a person: approval is the
+    // gate on what a call changes, and a read changes nothing. On labs1100
+    // (2026-11-19) `manage_modules {action:'list'}` from the gateway raised an
+    // approval request. Authorization (the matrix, the key's scope) still runs.
+    const readsOnly = !planOnly && classifyCall(skill.name, args as Record<string, unknown>) === 'read';
+    if (readsOnly && trustLevel === 'approve') trustLevel = 'notify';
 
     // Nobody at the keyboard + a write its own definition calls high-risk or
     // irreversible → it waits for a person (high-stakes.ts: the prompt-injection
@@ -3850,7 +3857,8 @@ async function executeModuleUsageReport(supabase: SupabaseClient, args: Record<s
     return error ? null : (n ?? 0);
   };
 
-  const entries = MODULE_CATALOG.filter((c) => c.moduleId in current && (!only || only.has(c.moduleId)));
+  // Every catalogue module: one the row has no key for yet is known and off.
+  const entries = MODULE_CATALOG.filter((c) => !only || only.has(c.moduleId));
   const on = (id: string) => current[id]?.enabled === true;
   const report = await runLimited(entries, 8, async (c) => {
     const tableCounts: Record<string, number> = {};
@@ -3916,15 +3924,47 @@ async function executeModuleUsageReport(supabase: SupabaseClient, args: Record<s
   };
 }
 
+/**
+ * manage_modules list — a read (no approval): every catalogue module and
+ * whether it is on. A module the row has no key for is off (`in_row: false`);
+ * the next skill sync adds its key with the code default. Evidence of use is
+ * module_usage_report's.
+ */
+async function listModules(supabase: SupabaseClient): Promise<unknown> {
+  const { data: rows, error } = await supabase.from('site_settings').select('key, value').in('key', ['modules', 'module_teardowns']);
+  if (error) return { error: `Could not read site_settings: ${error.message}`, code: 'TRANSIENT', retryable: true };
+  const current = settingOf<ModulesSetting>(rows as SettingRow[] | null, 'modules', {});
+  const teardowns = settingOf<Record<string, { at?: string; reason?: string }>>(rows as SettingRow[] | null, 'module_teardowns', {});
+  const modules = MODULE_CATALOG.map((c) => ({
+    module: c.moduleId,
+    name: c.name,
+    enabled: current[c.moduleId]?.enabled === true,
+    in_row: c.moduleId in current,
+    default_enabled: c.defaultEnabled ?? null,
+    core: c.core,
+    requires: c.requires,
+    switched_off: teardowns[c.moduleId] ? { at: teardowns[c.moduleId].at ?? null, reason: teardowns[c.moduleId].reason ?? null } : null,
+  })).sort((a, b) => Number(b.enabled) - Number(a.enabled) || a.module.localeCompare(b.module));
+  const absent = modules.filter((m) => !m.in_row).map((m) => m.module);
+  return {
+    modules_enabled: modules.filter((m) => m.enabled).length,
+    modules_total: modules.length,
+    ...(absent.length ? { not_in_row: absent } : {}),
+    modules,
+    note: 'enable/disable/keep take these ids. A module not in the row is off; sync_skills_from_code adds its key with the code default. module_usage_report is the evidence of use.',
+  };
+}
+
 async function executeManageModules(
   supabase: SupabaseClient,
   args: Record<string, unknown>,
   ctx: { caller_user_id?: string | null; caller_agent_name?: string | null; agent_type?: string; attended?: boolean },
 ): Promise<unknown> {
   const action = String(args.action ?? '').trim();
-  if (action !== 'enable' && action !== 'disable' && action !== 'keep' && action !== 'unkeep') {
-    return { error: 'action is required: enable | disable | keep | unkeep (module_usage_report is the read).', code: 'MISSING_REQUIRED_PARAMETER', retryable: true };
+  if (action !== 'list' && action !== 'enable' && action !== 'disable' && action !== 'keep' && action !== 'unkeep') {
+    return { error: 'action is required: list | enable | disable | keep | unkeep (module_usage_report is the evidence).', code: 'MISSING_REQUIRED_PARAMETER', retryable: true };
   }
+  if (action === 'list') return listModules(supabase);
   const requested = Array.isArray(args.modules) ? (args.modules as unknown[]).map(String) : typeof args.modules === 'string' ? [String(args.modules)] : [];
   if (!requested.length) return { error: 'modules is required: the module ids (module_usage_report lists them).', code: 'MISSING_REQUIRED_PARAMETER', retryable: true };
   const reason = String(args.reason ?? '').trim().slice(0, 500) || null;
@@ -3941,7 +3981,7 @@ async function executeManageModules(
   // keep / unkeep: the owner's answer to a suggest_off — recorded, nothing
   // else changes. module_usage_report stops proposing a kept module.
   if (action === 'keep' || action === 'unkeep') {
-    const plan = action === 'keep' ? planModuleKeep(current, requested) : { modules: [...new Set(requested.map((m) => m.trim()).filter(Boolean))], refusals: [] };
+    const plan = action === 'keep' ? planModuleKeep(current, requested, MODULE_CATALOG) : { modules: [...new Set(requested.map((m) => m.trim()).filter(Boolean))], refusals: [] };
     if (plan.refusals.length) return { error: describeRefusals(plan.refusals), code: 'INVALID_INPUT', retryable: true, refusals: plan.refusals };
     const at = new Date().toISOString();
     for (const id of plan.modules) {
@@ -4006,6 +4046,24 @@ async function executeManageModules(
       ? 'Data is untouched — every row stays, and enable brings the module back with the automations this call stopped. FlowPilot and the MCP gateway stop offering the module\'s skills on their next turn.'
       : 'The module\'s skills are back on the next turn; its automations resume on their own schedule.',
   };
+}
+
+/**
+ * Top up site_settings.modules from the code defaults the edge bundle carries
+ * (catalog[].defaultEnabled, from defaultModulesSettings). The rule is
+ * ensure_modules_settings' own — the RPC the admin shell calls with the same
+ * defaults: add a key the row lacks, never touch one it has. A bundle without
+ * the defaults writes nothing: adding a module as `false` would read, from
+ * then on, as an operator's choice.
+ */
+async function topUpModulesRow(supabase: SupabaseClient): Promise<{ status: string; added?: string[]; error?: string }> {
+  if (!MODULE_CATALOG.length || MODULE_CATALOG.some((c) => typeof c.defaultEnabled !== 'boolean')) {
+    return { status: 'skipped', error: 'this deploy\'s bundle carries no module defaults' };
+  }
+  const { data, error } = await supabase.rpc('ensure_modules_settings', { p_defaults: moduleRowDefaults(MODULE_CATALOG) });
+  if (error) return { status: 'error', error: error.message };
+  const r = (data ?? {}) as { status?: string; added?: string[] };
+  return { status: r.status ?? 'unknown', ...(Array.isArray(r.added) && r.added.length ? { added: r.added } : {}) };
 }
 
 /** All rader ur agent_skills — paginerad, så PostgREST:s radtak aldrig kan tysta bort svansen. */
@@ -4089,6 +4147,14 @@ async function executeSyncSkillsFromCode(supabase: SupabaseClient, args: Record<
   const raw = JSON.stringify(bundledModuleSkills);
   const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(raw));
   const sha = Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, '0')).join('');
+
+  // ── 0. The modules row carries every module the code knows ────────────────
+  //     Before the row is read: a module added to the code after this instance
+  //     was born gets its key with the code default (absent keys only — an
+  //     operator's choice is never overwritten), so its skills and automations
+  //     follow in this same run. Until 2026-11-19 only the admin shell did this
+  //     (ensureModulesRow), and an instance no admin opens never got Feedback.
+  const modulesRow = await topUpModulesRow(supabase);
 
   const { data: settings } = await supabase
     .from('site_settings')
@@ -4193,6 +4259,7 @@ async function executeSyncSkillsFromCode(supabase: SupabaseClient, args: Record<
       status: 'unchanged',
       sha,
       automations,
+      modules_row: modulesRow,
       ...(strayNames.length ? { teardown_heal: teardownHeal } : {}),
       coverage: coverage(missingBefore, hiddenBefore, rowsBefore, quarantinedBefore),
       note:
@@ -4311,6 +4378,7 @@ async function executeSyncSkillsFromCode(supabase: SupabaseClient, args: Record<
     sha,
     stamped: complete,
     automations,
+    modules_row: modulesRow,
     ...(strayNames.length ? { teardown_heal: teardownHeal } : {}),
     // Bevisbärande: vad som saknades, vad som skrevs, vad som står kvar.
     before: coverage(missingBefore, hiddenBefore, rowsBefore, quarantinedBefore),
