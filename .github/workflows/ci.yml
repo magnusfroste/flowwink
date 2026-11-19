@@ -166,8 +166,13 @@ jobs:
       - name: Generated artifacts — rebuild for the build
         run: npx -y bun run scripts/generated-artifacts.ts --build
 
+      # The bundle outgrew Node's default heap as the type check did: on
+      # 2026-11-18 a PR that touched two lines of UI died here with "JavaScript
+      # heap out of memory" at ~2 GB, while its siblings squeezed under. A
+      # green build must not depend on which side of the limit a run lands.
       - name: Build project
         run: npm run build
         env:
+          NODE_OPTIONS: --max-old-space-size=4096
           VITE_SUPABASE_URL: https://example.supabase.co
           VITE_SUPABASE_PUBLISHABLE_KEY: placeholder-for-ci
