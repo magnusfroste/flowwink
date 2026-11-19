@@ -376,6 +376,11 @@ export function InvoiceDetailSheet({ invoiceId, open, onOpenChange }: Props) {
               rows={3}
             />
             <p className="text-xs text-muted-foreground">Printed on the invoice the customer receives.</p>
+            {invoice.origin_note && (
+              <p className="text-xs text-muted-foreground whitespace-pre-line" data-testid="invoice-origin-note">
+                <span className="font-medium">Where it came from (not shown to the customer):</span> {invoice.origin_note}
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">

@@ -784,6 +784,17 @@ beside its payload, so an operator branches instead of guessing:
   card of its column — `CreateLeadDialog` now opens it), Create deal. The case
   step: New Ticket, an internal note, a reply — and the customer's two mails.
   A process a person does in the admin gets a step there.
+- **Where an invoice came from is the business's note (2026-11-19).** Four
+  SQL writers (`generate_contract_invoice`, `generate_subscription_invoice`,
+  `pos_sale_to_invoice`, `bulk_invoice_from_timesheets`) and the admin's
+  timesheet dialog wrote "Generated from contract <uuid>" into
+  `invoices.notes` — the field the customer's page and PDF print. The rule is
+  the row's: trigger `aa_invoices_origin_is_internal` moves a "Generated from
+  …" / "Auto-generated …" line to `invoices.origin_note` (admin only) and
+  leaves the rest (a PO number, the period). A new writer needs to know
+  nothing; never print `origin_note` for a customer. Issued invoices were left
+  as sent. Open: the CTR-/SUB-/SO-/SUB-ADJ- numbers end in a RANDOM five
+  digits — not a running series.
 - **One number series per document (2026-11-17).** `next_document_number
   (kind, prefix)` is the only source of a quote or invoice number — the admin,
   every skill (`nextDocumentNumber` in core.ts), `quote-sign` and the invoicing

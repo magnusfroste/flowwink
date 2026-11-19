@@ -219,6 +219,10 @@ async function run(s: Scenario): Promise<void> {
   s.equal('10 000 kr + 25 % VAT = 12 500 kr, on the CTR series, to the customer',
     `${inv?.subtotal_cents}/${inv?.tax_cents}/${inv?.total_cents}/${inv?.contract_id === contractId}/${inv?.customer_email}/${/^CTR-/.test(inv?.invoice_number ?? '')}`,
     `1000000/250000/1250000/true/${customerEmail}/true`);
+  // FINDING 2026-11-19: the customer's invoice page read "Notes — Generated from contract <uuid>".
+  const told = await s.one<{ notes: string | null; origin_note: string | null }>('select notes, origin_note from invoices where id = $1', [String(invoice.invoice_id)]);
+  s.check('where the invoice came from is the business\'s note, not the customer\'s',
+    !/generated/i.test(told?.notes ?? '') && /contract/i.test(told?.origin_note ?? ''), JSON.stringify(told ?? null));
   s.equal('the next period starts a month later',
     (await s.one<{ d: string }>('select billing_next_date::text as d from contracts where id = $1', [contractId]))?.d, period.next);
   await s.mustRefuse('the same period is not billed twice', 'generate_contract_invoice', { contract_id: contractId }, /not due until/i);
