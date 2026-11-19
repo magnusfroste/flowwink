@@ -5,7 +5,11 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { useCreateQuote } from '@/hooks/useQuotes';
 import { useLeadsForPicker } from '@/hooks/useInvoices';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import { logger } from '@/lib/logger';
+import { CustomerPicker } from '@/components/admin/crm/CustomerPicker';
+import { EMPTY_CUSTOMER, customerChosen, ensureCustomerLead, type CustomerChoice } from '@/lib/customer-choice';
 
 interface Props {
   open: boolean;
@@ -26,17 +30,37 @@ export function CreateQuoteDialog({
 }: Props) {
   const createQuote = useCreateQuote();
   const { data: leads = [] } = useLeadsForPicker();
-  const [leadId, setLeadId] = useState(initialLeadId || '');
+  const queryClient = useQueryClient();
+  const [customer, setCustomer] = useState<CustomerChoice>(
+    initialLeadId ? { mode: 'existing', leadId: initialLeadId } : EMPTY_CUSTOMER,
+  );
+  const [resolving, setResolving] = useState(false);
   const [validUntil, setValidUntil] = useState('');
 
   useEffect(() => {
-    if (open && initialLeadId) setLeadId(initialLeadId);
+    if (open && initialLeadId) setCustomer({ mode: 'existing', leadId: initialLeadId });
   }, [open, initialLeadId]);
 
-  const selectedLead = leads.find((l) => l.id === leadId);
+  const selectedLead = customer.mode === 'existing' ? leads.find((l) => l.id === customer.leadId) : undefined;
 
-  const handleCreate = () => {
-    if (!leadId) return;
+  const handleCreate = async () => {
+    if (!customerChosen(customer)) return;
+    let leadId: string;
+    setResolving(true);
+    try {
+      const made = await ensureCustomerLead(customer);
+      leadId = made.leadId;
+      if (made.created) {
+        queryClient.invalidateQueries({ queryKey: ['leads'] });
+        queryClient.invalidateQueries({ queryKey: ['leads-picker'] });
+      }
+    } catch (error) {
+      logger.error('Could not save the new customer:', error);
+      toast.error('Could not save the new customer');
+      setResolving(false);
+      return;
+    }
+    setResolving(false);
     createQuote.mutate(
       {
         lead_id: leadId,
@@ -46,7 +70,7 @@ export function CreateQuoteDialog({
       {
         onSuccess: () => {
           onOpenChange(false);
-          if (!lockLead) setLeadId('');
+          if (!lockLead) setCustomer(EMPTY_CUSTOMER);
           setValidUntil('');
         },
       }
@@ -60,28 +84,9 @@ export function CreateQuoteDialog({
           <DialogTitle>New Quote</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
-          {!lockLead && (
-            <div className="space-y-2">
-              <Label>Customer (Lead)</Label>
-              <Select value={leadId} onValueChange={setLeadId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a lead…" />
-                </SelectTrigger>
-                <SelectContent>
-                  {leads.map((lead) => (
-                    <SelectItem key={lead.id} value={lead.id}>
-                      <span>{lead.name || lead.email}</span>
-                      {lead.companies?.name && (
-                        <span className="text-muted-foreground ml-2">— {lead.companies.name}</span>
-                      )}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+          {!lockLead && <CustomerPicker leads={leads} value={customer} onChange={setCustomer} />}
 
-          {selectedLead && (
+          {lockLead && selectedLead && (
             <div className="rounded-md border p-3 text-sm space-y-0.5">
               <p className="font-medium">{selectedLead.name || 'No name'}</p>
               <p className="text-muted-foreground">{selectedLead.email}</p>
@@ -105,7 +110,7 @@ export function CreateQuoteDialog({
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={handleCreate} disabled={!leadId || createQuote.isPending}>
+          <Button onClick={handleCreate} disabled={!customerChosen(customer) || resolving || createQuote.isPending}>
             Create Draft
           </Button>
         </DialogFooter>

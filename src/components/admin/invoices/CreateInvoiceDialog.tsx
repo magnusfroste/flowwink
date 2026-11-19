@@ -5,6 +5,11 @@ import { Label } from '@/components/ui/label';
 import { useCreateInvoice, useLeadsForPicker, type InvoiceLineItem } from '@/hooks/useInvoices';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { currencyOptions } from '@/lib/currency-options';
+import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import { logger } from '@/lib/logger';
+import { CustomerPicker } from '@/components/admin/crm/CustomerPicker';
+import { EMPTY_CUSTOMER, customerChosen, ensureCustomerLead, type CustomerChoice } from '@/lib/customer-choice';
 import { homeCurrency } from '@/lib/platform-fallbacks';
 
 interface Props {
@@ -15,17 +20,33 @@ interface Props {
 export function CreateInvoiceDialog({ open, onOpenChange }: Props) {
   const createInvoice = useCreateInvoice();
   const { data: leads = [] } = useLeadsForPicker();
-  const [leadId, setLeadId] = useState('');
+  const queryClient = useQueryClient();
+  const [customer, setCustomer] = useState<CustomerChoice>(EMPTY_CUSTOMER);
+  const [resolving, setResolving] = useState(false);
   // The business's currency unless the customer is billed in another.
   const [currency, setCurrency] = useState(homeCurrency);
   const [lineItems] = useState<InvoiceLineItem[]>([
     { description: '', qty: 1, unit_price_cents: 0 },
   ]);
 
-  const selectedLead = leads.find((l) => l.id === leadId);
-
-  const handleCreate = () => {
-    if (!leadId) return;
+  const handleCreate = async () => {
+    if (!customerChosen(customer)) return;
+    let leadId: string;
+    setResolving(true);
+    try {
+      const made = await ensureCustomerLead(customer);
+      leadId = made.leadId;
+      if (made.created) {
+        queryClient.invalidateQueries({ queryKey: ['leads'] });
+        queryClient.invalidateQueries({ queryKey: ['leads-picker'] });
+      }
+    } catch (error) {
+      logger.error('Could not save the new customer:', error);
+      toast.error('Could not save the new customer');
+      setResolving(false);
+      return;
+    }
+    setResolving(false);
     createInvoice.mutate(
       {
         lead_id: leadId,
@@ -35,7 +56,7 @@ export function CreateInvoiceDialog({ open, onOpenChange }: Props) {
       {
         onSuccess: () => {
           onOpenChange(false);
-          setLeadId('');
+          setCustomer(EMPTY_CUSTOMER);
         },
       }
     );
@@ -48,34 +69,7 @@ export function CreateInvoiceDialog({ open, onOpenChange }: Props) {
           <DialogTitle>New Invoice</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
-          <div className="space-y-2">
-            <Label>Customer (Lead)</Label>
-            <Select value={leadId} onValueChange={setLeadId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select a lead…" />
-              </SelectTrigger>
-              <SelectContent>
-                {leads.map((lead) => (
-                  <SelectItem key={lead.id} value={lead.id}>
-                    <span>{lead.name || lead.email}</span>
-                    {lead.companies?.name && (
-                      <span className="text-muted-foreground ml-2">— {lead.companies.name}</span>
-                    )}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {selectedLead && (
-            <div className="rounded-md border p-3 text-sm space-y-0.5">
-              <p className="font-medium">{selectedLead.name || 'No name'}</p>
-              <p className="text-muted-foreground">{selectedLead.email}</p>
-              {selectedLead.companies?.name && (
-                <p className="text-muted-foreground">{selectedLead.companies.name}</p>
-              )}
-            </div>
-          )}
+          <CustomerPicker leads={leads} value={customer} onChange={setCustomer} />
 
           <div className="space-y-2">
             <Label>Currency</Label>
@@ -98,7 +92,7 @@ export function CreateInvoiceDialog({ open, onOpenChange }: Props) {
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={handleCreate} disabled={!leadId || createInvoice.isPending}>
+          <Button onClick={handleCreate} disabled={!customerChosen(customer) || resolving || createInvoice.isPending}>
             Create Draft
           </Button>
         </DialogFooter>

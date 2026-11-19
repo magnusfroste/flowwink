@@ -179,6 +179,55 @@ async function quoteByHand(s: Scenario, browser: Browser, cfg: StackConfig, admi
   return step.result();
 }
 
+
+/** A person invoices someone who is not a contact yet — without leaving the dialog. */
+async function invoiceForNewCustomer(s: Scenario, browser: Browser, cfg: StackConfig, admin: FixtureUser, base: string): Promise<StepResult> {
+  const step = new Step('invoice: for a customer who is not a contact yet');
+  const email = `hand-new-customer-${s.tag}@example.test`;
+  const name = `Handväg Nykund ${s.tag}`;
+  const ctx = await signedIn(browser, cfg, admin);
+  const page = await ctx.newPage();
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message.slice(0, 300)));
+  const row = () => s.one<{ id: string; customer_name: string | null; customer_email: string | null; leads: string }>(
+    `select i.id, i.customer_name, i.customer_email, (select count(*) from leads where email = $1)::text as leads
+       from invoices i join leads l on l.id = i.lead_id where l.email = $1 order by i.created_at desc limit 1`, [email]);
+  try {
+    await page.goto(`${base}/admin/invoices`, { waitUntil: 'domcontentloaded' });
+    const newInvoice = page.getByRole('button', { name: /new invoice/i }).first();
+    if (!step.check('the invoices page opens for the person', await newInvoice.waitFor({ state: 'visible', timeout: 60_000 }).then(() => true, () => false), `no "New Invoice" button; page errors: ${errors.join(' | ') || 'none'}`)) return step.result();
+    await newInvoice.click();
+    const dialog = page.getByRole('dialog');
+    // FINDING 2026-11-19: the dialog offered existing contacts and nothing else.
+    const toggle = dialog.getByTestId('customer-new-toggle');
+    if (!step.check('the dialog offers a new customer', await toggle.waitFor({ state: 'visible', timeout: 10_000 }).then(() => true, () => false), 'no "New customer" in the New Invoice dialog')) { await snap(page, 'new-customer-missing'); return step.result(); }
+    const create = dialog.getByRole('button', { name: /create draft/i });
+    await toggle.click();
+    step.check('a draft cannot be made for nobody', await create.isDisabled(), '"Create Draft" is enabled with no customer');
+    await dialog.locator('#customer-name').fill(name);
+    await dialog.locator('#customer-email').fill(email);
+    await create.click();
+    const born = await until(row, (r) => !!r.id);
+    if (!step.check('the draft is created, and the customer with it', !!born, 'no invoice for the new customer after "Create Draft"')) { await snap(page, 'new-customer-not-created'); return step.result(); }
+    step.check('the invoice carries the customer\'s name and e-mail', born!.customer_name === name && born!.customer_email === email, `customer_name "${born!.customer_name}", customer_email "${born!.customer_email}"`);
+
+    // The same address again is the same contact, never a second one.
+    await newInvoice.click();
+    await dialog.getByTestId('customer-new-toggle').click();
+    await dialog.locator('#customer-name').fill(name);
+    await dialog.locator('#customer-email').fill(email.toUpperCase());
+    await dialog.getByRole('button', { name: /create draft/i }).click();
+    const twice = await until(
+      () => s.one<{ invoices: string; leads: string }>(`select (select count(*) from invoices i join leads l on l.id = i.lead_id where l.email = $1)::text as invoices, (select count(*) from leads where email = $1)::text as leads`, [email]),
+      (r) => r.invoices === '2');
+    step.check('a second invoice to the same address uses the same contact', twice?.invoices === '2' && twice.leads === '1', JSON.stringify(twice ?? null));
+    step.check('the page raised no error', errors.length === 0, errors.join(' | '));
+  } finally {
+    await ctx.close();
+  }
+  return step.result();
+}
+
 /** A person writes an invoice for a lead, sends it and registers the bank payment — all in the admin. */
 async function invoiceByHand(s: Scenario, browser: Browser, cfg: StackConfig, admin: FixtureUser, base: string): Promise<StepResult> {
   const step = new Step('invoice: written, sent and paid by hand in the admin');
@@ -396,7 +445,7 @@ try {
   const base = baseUrlArg ?? (vite = await startVite(cfg, await freePort(5196))).baseUrl;
   const executablePath = process.env.VIEW_SWEEP_BROWSER || undefined;
   browser = await chromium.launch({ ...(executablePath ? { executablePath } : { channel: 'chrome' }), headless: !headed });
-  for (const run of [quoteByHand, invoiceByHand, contactToDeal, ticketByHand]) {
+  for (const run of [quoteByHand, invoiceByHand, invoiceForNewCustomer, contactToDeal, ticketByHand]) {
     try {
       results.push(await run(s, browser, cfg, admin, base));
     } catch (e) {
