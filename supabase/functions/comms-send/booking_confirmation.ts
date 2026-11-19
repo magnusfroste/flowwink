@@ -299,9 +299,22 @@ export const handler = async (req: Request): Promise<Response> => {
     const siteUrl = String((generalRow?.value as { siteUrl?: string } | null)?.siteUrl ?? '').replace(/\/+$/, '');
     const rawMeeting = String((booking as { meeting_url?: string | null }).meeting_url ?? '').trim();
     const meetingHref = rawMeeting ? (rawMeeting.startsWith('/') ? `${siteUrl}${rawMeeting}` : rawMeeting) : '';
-    const meetingBlock = meetingHref
-      ? `<p style="margin:12px 0;"><strong>Join the meeting:</strong> <a href="${meetingHref}">${meetingHref}</a></p>`
-      : '';
+    // The words the code adds to a template (the meeting link, the manage
+    // link, the legacy note box) are visitor texts in the mail's language — a
+    // Swedish template used to get "Join the meeting:" in the middle of it.
+    const uiTexts = await loadUiText(supabase);
+    const wordsIn = (lang: string | null | undefined) => resolveUiText(uiTexts.map, lang || uiTexts.siteLang, uiTexts.siteLang);
+    // `t('key', 'fallback')` spelled out: the visitor-text catalogue reads keys from the source.
+    const meetingBlockIn = (lang: string | null | undefined) => {
+      if (!meetingHref) return '';
+      const t = wordsIn(lang);
+      return `<p style="margin:12px 0;"><strong>${escapeHtml(t('booking.mail.joinMeeting', 'Join the meeting:'))}</strong> <a href="${meetingHref}">${meetingHref}</a></p>`;
+    };
+    const noteLabelIn = (lang: string | null | undefined) => {
+      const t = wordsIn(lang);
+      return t('booking.mail.yourNote', 'Your note:');
+    };
+    const meetingBlock = meetingBlockIn('en');
 
     // The customer's own page for this booking: move it or call it off without
     // phoning (2026-11-19). The key is the booking's; a booking from before the
@@ -314,10 +327,9 @@ export const handler = async (req: Request): Promise<Response> => {
       if (keyErr) { console.warn('[send-booking-confirmation] could not give the booking its key:', keyErr.message); manageToken = ''; }
     }
     const manageHref = siteUrl && manageToken ? `${siteUrl}/my-booking/${manageToken}` : '';
-    const uiTexts = await loadUiText(supabase);
     const manageBlockIn = (lang: string | null | undefined) => {
       if (!manageHref) return '';
-      const t = resolveUiText(uiTexts.map, lang || uiTexts.siteLang, uiTexts.siteLang);
+      const t = wordsIn(lang);
       return `<p style="margin:12px 0;">${escapeHtml(t('booking.mail.manageLead', 'Need another time, or cannot come?'))} <a href="${manageHref}">${escapeHtml(t('booking.mail.manageLink', 'Change or cancel your booking'))}</a></p>`;
     };
 
@@ -357,7 +369,7 @@ export const handler = async (req: Request): Promise<Response> => {
         const vars: Record<string, string> = {
           customer_name: booking.customer_name ?? '',
           service_name: booking.service?.name ?? '',
-          meeting_block: meetingBlock,
+          meeting_block: meetingBlockIn(tpl.locale ?? recipientLang),
           meeting_url: meetingHref,
           manage_url: manageHref,
           manage_block: manageBlockIn(tpl.locale ?? recipientLang),
@@ -374,16 +386,17 @@ export const handler = async (req: Request): Promise<Response> => {
           // gamla omskrivning fortsätter rendera — nya mallar använder
           // {{#notes}}…{{/notes}}.
           notes_block: booking.notes
-            ? `<div style="background:#f3f4f6;border-radius:8px;padding:12px 16px;margin:16px 0;"><p style="margin:0;"><strong>Your note:</strong> ${booking.notes}</p></div>`
+            ? `<div style="background:#f3f4f6;border-radius:8px;padding:12px 16px;margin:16px 0;"><p style="margin:0;"><strong>${escapeHtml(noteLabelIn(tpl.locale ?? recipientLang))}</strong> ${escapeHtml(booking.notes)}</p></div>`
             : '',
           site_name: siteName,
         };
         templateHtml = renderTemplate(tpl.html, vars);
         // An operator-edited template from before 2026-10-05 has no {{meeting_block}};
         // the link must still reach the customer.
-        if (meetingBlock && !tpl.html.includes('{{meeting_block}}') && templateHtml && !templateHtml.includes(meetingHref)) {
-          templateHtml = templateHtml.replace(/<\/body>/i, `${meetingBlock}</body>`);
-          if (!templateHtml.includes(meetingBlock)) templateHtml += meetingBlock;
+        if (meetingHref && !tpl.html.includes('{{meeting_block}}') && templateHtml && !templateHtml.includes(meetingHref)) {
+          const block = vars.meeting_block;
+          templateHtml = templateHtml.replace(/<\/body>/i, `${block}</body>`);
+          if (!templateHtml.includes(block)) templateHtml += block;
         }
         // Every template in use today predates {{manage_block}}; the link reaches
         // the customer all the same.

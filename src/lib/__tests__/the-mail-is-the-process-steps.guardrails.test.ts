@@ -336,3 +336,15 @@ describe('the business hears when the customer calls off a booking', () => {
     expect(seed.slice(0, 700)).toMatch(/skill_name: 'email_admins'/);
   });
 });
+
+describe('what the code adds to a mail speaks the mail\'s language', () => {
+  // 2026-11-19: a Swedish booking confirmation carried "Join the meeting:".
+  const handler = read('supabase/functions/comms-send/booking_confirmation.ts');
+
+  it('the meeting link and the legacy note box are visitor texts, in the template\'s language', () => {
+    expect(handler).toMatch(/'booking\.mail\.joinMeeting', 'Join the meeting:'/);
+    expect(handler).toMatch(/meeting_block: meetingBlockIn\(tpl\.locale \?\? recipientLang\)/);
+    expect(handler).toMatch(/'booking\.mail\.yourNote', 'Your note:'/);
+    expect(handler).not.toMatch(/<strong>Join the meeting:<\/strong>/);
+  });
+});

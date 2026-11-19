@@ -61,7 +61,7 @@ describe('the table decides the meeting place and the questions', () => {
 describe('the link reaches the customer, the answers reach the admin and the agent', () => {
   it('confirmation and reminder mails carry an absolute meeting link', () => {
     const conf = read('supabase/functions/comms-send/booking_confirmation.ts');
-    expect(conf).toMatch(/meeting_block: meetingBlock,/);
+    expect(conf).toMatch(/meeting_block: meetingBlockIn\(tpl\.locale \?\? recipientLang\),/);
     expect(conf).toMatch(/rawMeeting\.startsWith\('\/'\) \? `\$\{siteUrl\}\$\{rawMeeting\}` : rawMeeting/);
     expect(conf).toMatch(/!tpl\.html\.includes\('\{\{meeting_block\}\}'\)/); // older templates still get the link
     const rem = read('supabase/functions/comms-send/booking_reminders.ts');
