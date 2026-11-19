@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261119180000",
-      "migrations_count": 776,
+      "migration_head": "20261119200000",
+      "migrations_count": 777,
       "migrations": [
         {
           "version": "00000000000000",
@@ -3109,6 +3109,10 @@
         {
           "version": "20261119180000",
           "name": "var-fakturan-kom-ifran-ar-foretagets-anteckning"
+        },
+        {
+          "version": "20261119200000",
+          "name": "karnmejlen-finns-pa-svenska"
         }
       ]
     },
