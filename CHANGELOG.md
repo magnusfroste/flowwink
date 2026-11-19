@@ -169,6 +169,11 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Fixed
 
+- **The lines the code adds to a booking confirmation follow the mail's
+  language.** A Swedish confirmation for a video meeting carried "Join the
+  meeting:" in English, and the note the customer wrote was put into the mail
+  unescaped in an older template shape. Both are visitor texts now.
+
 - **A reset no longer takes the mail templates with it.** The nightly rebuild
   of the sandbox emptied the mail templates and nothing put them back, so every
   mail it sent was the built-in English fallback; "reset site data" on a real
