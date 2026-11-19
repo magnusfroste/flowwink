@@ -111,6 +111,111 @@
       "fallback": "My invoices"
     },
     {
+      "key": "account.nav.addresses",
+      "group": "account",
+      "fallback": "Addresses"
+    },
+    {
+      "key": "account.nav.agents",
+      "group": "account",
+      "fallback": "My agents"
+    },
+    {
+      "key": "account.nav.agreements",
+      "group": "account",
+      "fallback": "My agreements"
+    },
+    {
+      "key": "account.nav.assistant",
+      "group": "account",
+      "fallback": "Assistant"
+    },
+    {
+      "key": "account.nav.attendance",
+      "group": "account",
+      "fallback": "Time clock"
+    },
+    {
+      "key": "account.nav.backToWork",
+      "group": "account",
+      "fallback": "Back to work"
+    },
+    {
+      "key": "account.nav.employmentContract",
+      "group": "account",
+      "fallback": "Employment contract"
+    },
+    {
+      "key": "account.nav.expenses",
+      "group": "account",
+      "fallback": "Expenses"
+    },
+    {
+      "key": "account.nav.invoices",
+      "group": "account",
+      "fallback": "My invoices"
+    },
+    {
+      "key": "account.nav.leave",
+      "group": "account",
+      "fallback": "Leave"
+    },
+    {
+      "key": "account.nav.orders",
+      "group": "account",
+      "fallback": "Orders"
+    },
+    {
+      "key": "account.nav.overview",
+      "group": "account",
+      "fallback": "Overview"
+    },
+    {
+      "key": "account.nav.payslips",
+      "group": "account",
+      "fallback": "Payslips"
+    },
+    {
+      "key": "account.nav.performance",
+      "group": "account",
+      "fallback": "Performance"
+    },
+    {
+      "key": "account.nav.profile",
+      "group": "account",
+      "fallback": "Profile"
+    },
+    {
+      "key": "account.nav.quotes",
+      "group": "account",
+      "fallback": "My quotes"
+    },
+    {
+      "key": "account.nav.services",
+      "group": "account",
+      "fallback": "My services"
+    },
+    {
+      "key": "account.nav.skills",
+      "group": "account",
+      "fallback": "Skills"
+    },
+    {
+      "key": "account.nav.support",
+      "group": "account",
+      "fallback": "Support requests"
+    },
+    {
+      "key": "account.nav.team",
+      "group": "account",
+      "fallback": "My Team"
+    },
+    {
+      "key": "account.nav.wishlist",
+      "group": "account",
+      "fallback": "Wishlist"
+    },
+    {
       "key": "account.overview.agreements",
       "group": "account",
       "fallback": "Your agreements"
@@ -249,6 +354,21 @@
       "key": "account.quotes.validUntil",
       "group": "account",
       "fallback": "Valid until"
+    },
+    {
+      "key": "account.signOut",
+      "group": "account",
+      "fallback": "Sign out"
+    },
+    {
+      "key": "account.title",
+      "group": "account",
+      "fallback": "My Account"
+    },
+    {
+      "key": "account.welcomeBack",
+      "group": "account",
+      "fallback": "Welcome back, {name}"
     },
     {
       "key": "auth.session_ended",
@@ -1266,6 +1386,16 @@
       "fallback": "This contract link is invalid or has expired."
     },
     {
+      "key": "contract.mail.signedBody",
+      "group": "contract",
+      "fallback": "Hi {name}, thank you for signing. A copy of the agreement is available through your own link."
+    },
+    {
+      "key": "contract.mail.signedSubject",
+      "group": "contract",
+      "fallback": "Agreement signed — {title}"
+    },
+    {
       "key": "contract.noContent",
       "group": "contract",
       "fallback": "No contract content provided."
@@ -1946,6 +2076,11 @@
       "fallback": "Change language"
     },
     {
+      "key": "mail.sentBy",
+      "group": "mail",
+      "fallback": "Sent by {business}"
+    },
+    {
       "key": "maintenance.adminSignIn",
       "group": "maintenance",
       "fallback": "Sign in (administrators)"
@@ -2616,6 +2751,41 @@
       "fallback": "Previous page"
     },
     {
+      "key": "portal.invite.accountReady",
+      "group": "portal",
+      "fallback": "Your account with {business} is ready"
+    },
+    {
+      "key": "portal.invite.accountSubject",
+      "group": "portal",
+      "fallback": "Access your account with {business}"
+    },
+    {
+      "key": "portal.invite.body",
+      "group": "portal",
+      "fallback": "Set a password to sign in and manage it in your account portal."
+    },
+    {
+      "key": "portal.invite.button",
+      "group": "portal",
+      "fallback": "Set your password"
+    },
+    {
+      "key": "portal.invite.ignore",
+      "group": "portal",
+      "fallback": "If you did not expect this, you can ignore this email."
+    },
+    {
+      "key": "portal.invite.serviceReady",
+      "group": "portal",
+      "fallback": "Your service with {business} is ready"
+    },
+    {
+      "key": "portal.invite.serviceSubject",
+      "group": "portal",
+      "fallback": "Access your service with {business}"
+    },
+    {
       "key": "quote.decline",
       "group": "quote",
       "fallback": "Decline"
@@ -2639,6 +2809,41 @@
       "key": "quote.linkInvalid",
       "group": "quote",
       "fallback": "This quote link is invalid or has expired."
+    },
+    {
+      "key": "quote.mail.acceptedBody",
+      "group": "quote",
+      "fallback": "Hi {name}, we have received your acceptance and our team has been notified."
+    },
+    {
+      "key": "quote.mail.acceptedHeading",
+      "group": "quote",
+      "fallback": "Thank you for accepting quote {number}"
+    },
+    {
+      "key": "quote.mail.acceptedSubject",
+      "group": "quote",
+      "fallback": "Thank you — quote {number} accepted"
+    },
+    {
+      "key": "quote.mail.invoiceFollows",
+      "group": "quote",
+      "fallback": "An invoice ({number}) will be issued shortly. You will receive it separately."
+    },
+    {
+      "key": "quote.mail.invoiceLabel",
+      "group": "quote",
+      "fallback": "Invoice"
+    },
+    {
+      "key": "quote.mail.quoteLabel",
+      "group": "quote",
+      "fallback": "Quote"
+    },
+    {
+      "key": "quote.mail.totalLabel",
+      "group": "quote",
+      "fallback": "Total"
     },
     {
       "key": "quote.noItems",
