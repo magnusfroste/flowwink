@@ -175,6 +175,12 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
   instance had the same hole. A rebuilt sandbox gets the platform's templates
   back, a site reset keeps the business's own, and an instance that already
   lost them has them restored.
+- **Every invoice series runs in order.** Invoices made from an agreement, a
+  subscription period, a subscription change and a service order were numbered
+  with five random digits (`CTR-20261119-48213`): no running series, and two
+  the same day could draw the same number and fail the billing run. Each has
+  its own series now, `CTR-2026-00001`, `SUB-…`, `SUB-ADJ-…`, `SO-…`, one
+  counter per year. Invoices already numbered keep their number.
 
 - **An invoice no longer tells the customer where it was generated from.** The
   customer's invoice page and PDF read "Notes — Generated from contract

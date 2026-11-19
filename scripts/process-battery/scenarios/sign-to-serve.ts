@@ -217,7 +217,7 @@ async function run(s: Scenario): Promise<void> {
   const inv = await s.one<Record<string, string>>(
     'select invoice_number, subtotal_cents, tax_cents, total_cents, contract_id, customer_email, status from invoices where id = $1', [String(invoice.invoice_id)]);
   s.equal('10 000 kr + 25 % VAT = 12 500 kr, on the CTR series, to the customer',
-    `${inv?.subtotal_cents}/${inv?.tax_cents}/${inv?.total_cents}/${inv?.contract_id === contractId}/${inv?.customer_email}/${/^CTR-/.test(inv?.invoice_number ?? '')}`,
+    `${inv?.subtotal_cents}/${inv?.tax_cents}/${inv?.total_cents}/${inv?.contract_id === contractId}/${inv?.customer_email}/${/^CTR-\d{4}-\d{5}$/.test(inv?.invoice_number ?? '')}`,
     `1000000/250000/1250000/true/${customerEmail}/true`);
   // FINDING 2026-11-19: the customer's invoice page read "Notes — Generated from contract <uuid>".
   const told = await s.one<{ notes: string | null; origin_note: string | null }>('select notes, origin_note from invoices where id = $1', [String(invoice.invoice_id)]);

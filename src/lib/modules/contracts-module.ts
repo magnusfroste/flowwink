@@ -231,7 +231,7 @@ const CONTRACT_SKILLS: SkillSeed[] = [
   },
   {
     name: 'generate_contract_invoice',
-    description: 'Generate a customer invoice for a contract (the CTR-YYYYMMDD-… series). Use when: a service/retainer agreement is due for billing (its recurring fee), after the contract is active. NOT for: subscriptions (generate_subscription_invoice), quotes (manage_quote convert_to_invoice), or ad-hoc invoices (manage_invoice).',
+    description: 'Generate a customer invoice for a contract (the running CTR-YYYY-NNNNN series). Use when: a service/retainer agreement is due for billing (its recurring fee), after the contract is active. NOT for: subscriptions (generate_subscription_invoice), quotes (manage_quote convert_to_invoice), or ad-hoc invoices (manage_invoice).',
     category: 'commerce',
     handler: 'rpc:generate_contract_invoice',
     scope: 'internal',
