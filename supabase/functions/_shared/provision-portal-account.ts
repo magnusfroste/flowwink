@@ -13,6 +13,8 @@
 // Never throws. The caller's real work (signing, ordering) already succeeded;
 // a portal invite that failed is a follow-up, not a rollback.
 import { loadEmailShell } from "./email-shell.ts";
+import { resolveUiText } from "./locale/ui-text.ts";
+import { loadUiText } from "./locale/load-ui-text.ts";
 
 export interface ProvisionResult {
   status: "invited" | "existing" | "portal_disabled" | "invited_no_mail" | "error";
@@ -82,21 +84,30 @@ export async function provisionPortalAccount(
   const actionLink = (linkData.properties as { action_link?: string } | undefined)?.action_link;
   const shell = await loadEmailShell(admin);
   const org = shell.organizationName || "us";
-  const noun = opts.subjectNoun || "account";
+  // Whole sentences per kind, in the site's language: "Your ${noun} with" cannot be translated.
+  const uiTexts = await loadUiText(admin);
+  const t = resolveUiText(uiTexts.map, uiTexts.siteLang, uiTexts.siteLang);
+  const aService = opts.subjectNoun === "service";
+  const heading = (aService
+    ? t('portal.invite.serviceReady', 'Your service with {business} is ready')
+    : t('portal.invite.accountReady', 'Your account with {business} is ready')).replace('{business}', org);
+  const subject = (aService
+    ? t('portal.invite.serviceSubject', 'Access your service with {business}')
+    : t('portal.invite.accountSubject', 'Access your account with {business}')).replace('{business}', org);
   // Fragment — email-send wraps it in the operator's branded shell.
   const html = `
-    <h2 style="margin:0 0 12px;font-size:20px;">Your ${escapeHtml(noun)} with ${escapeHtml(org)} is ready</h2>
-    <p>Set a password to sign in and manage it in your account portal.</p>
+    <h2 style="margin:0 0 12px;font-size:20px;">${escapeHtml(heading)}</h2>
+    <p>${escapeHtml(t('portal.invite.body', 'Set a password to sign in and manage it in your account portal.'))}</p>
     <p style="margin:24px 0;">
-      <a href="${actionLink}" style="display:inline-block;padding:12px 24px;background-color:${shell.primaryHex};color:#ffffff;text-decoration:none;border-radius:6px;font-weight:600;">Set your password</a>
+      <a href="${actionLink}" style="display:inline-block;padding:12px 24px;background-color:${shell.primaryHex};color:#ffffff;text-decoration:none;border-radius:6px;font-weight:600;">${escapeHtml(t('portal.invite.button', 'Set your password'))}</a>
     </p>
-    <p style="color:#666666;font-size:13px;">If you did not expect this, you can ignore this email.</p>
+    <p style="color:#666666;font-size:13px;">${escapeHtml(t('portal.invite.ignore', 'If you did not expect this, you can ignore this email.'))}</p>
   `;
 
   const { data: sendData, error: sendErr } = await admin.functions.invoke("email-send", {
     body: {
       to: email,
-      subject: `Access your ${noun} with ${org}`,
+      subject,
       html,
       source: "portal-invite",
       tags: { source: "portal-invite" },

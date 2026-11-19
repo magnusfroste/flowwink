@@ -20,9 +20,14 @@ describe('ui_text med språkdimension', () => {
     expect(t('unknown.key', 'Back to homepage')).toBe('Back to homepage');
   });
 
-  it('en tom pack ger anropsplatsens engelska', () => {
-    const t = resolveUiText({}, 'sv-SE', 'sv-SE');
+  it('en tom pack ger anropsplatsens engelska — på ett språk plattformen inte levererar', () => {
+    const t = resolveUiText({}, 'de-DE', 'de-DE');
     expect(t('chat.send', 'Send message')).toBe('Send message');
+  });
+
+  it('en tom pack på en svensk sajt ger plattformens egen svenska', () => {
+    const t = resolveUiText({}, 'sv-SE', 'sv-SE');
+    expect(t('chat.send', 'Send message')).toBe('Skicka meddelande');
   });
 
   it('en engelsk sida på en svensk sajt faller ALDRIG till det svenska baslagret', () => {

@@ -55,6 +55,9 @@ class Step {
 }
 
 /** The mail's link, pointed at this run's browser: the mail names the site's public URL, the test serves the app elsewhere. */
+/** A name is data, not a pattern. */
+const esc = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 function onThisStack(link: string, base: string): string {
   const u = new URL(link);
   return `${base}${u.pathname}${u.search}`;
@@ -132,7 +135,7 @@ async function quoteAccepted(s: Scenario, browser: Browser, base: string): Promi
     await snap(page, 'quote-accepted');
     step.check('the customer\'s acceptance lands on the quote', ok, `quotes.status is ${(await s.one<{ status: string }>('select status from quotes where id = $1', [quoteId]))?.status}`);
     step.check('the page raised no error', errors.length === 0, errors.join(' | '));
-    const thanks = await s.mail(email, 'accepted');
+    const thanks = (await s.mail(email, 'accepted')) ?? (await s.mail(email, 'godkänd'));
     step.check('the customer is mailed a receipt of the acceptance', !!thanks, 'no "accepted" mail in the rail');
   } finally {
     await page.context().close();
@@ -166,7 +169,7 @@ async function contractSigned(s: Scenario, browser: Browser, base: string): Prom
     if (!step.check('the signing page opens from the link', rendered, `the sign button never showed; page errors: ${errors.join(' | ') || 'none'}`)) { await snap(page, 'contract-not-rendered'); return step.result(); }
     // FINDING 2026-11-17: the page read "Between you and <counterparty>" — to the counterparty, their own name.
     const sellerName = (await s.one<{ n: string | null }>('select public.business_name() as n'))?.n ?? '';
-    step.check('the page names both parties, the seller first', !!sellerName && await page.getByText(`${sellerName} and ${name}`, { exact: false }).first().isVisible().catch(() => false),
+    step.check('the page names both parties, the seller first', !!sellerName && await page.getByText(new RegExp(`${esc(sellerName)} (and|och) ${esc(name)}`)).first().isVisible().catch(() => false),
       `"${sellerName} and ${name}" is not on the page`);
     step.check('the page shows the agreement text', await page.getByText('The agreement runs for twelve months', { exact: false }).first().isVisible().catch(() => false), 'the agreement body is not on the page');
     await page.getByRole('button', { name: /^\s*(sign|accept|signera|godkänn)/i }).first().click();
@@ -177,7 +180,7 @@ async function contractSigned(s: Scenario, browser: Browser, base: string): Prom
     await snap(page, 'contract-signed');
     step.check('the signature lands on the agreement', ok, `contracts.status is ${(await s.one<{ status: string }>('select status from contracts where id = $1', [contractId]))?.status}`);
     step.check('the page raised no error', errors.length === 0, errors.join(' | '));
-    const receipt = await s.mail(email, 'signed');
+    const receipt = (await s.mail(email, 'signed')) ?? (await s.mail(email, 'signerat'));
     step.check('the counterparty is mailed the signed agreement', !!receipt, 'no "signed" mail in the rail');
   } finally {
     await page.context().close();
@@ -244,7 +247,7 @@ async function invoicePaid(s: Scenario, browser: Browser, base: string): Promise
     const paid = await s.skill('record_invoice_payment', { p_invoice_id: invoiceId, p_amount_cents: 250_000, p_method: 'bank_transfer', p_reference: number });
     if (step.check('the business registers the bank payment', paid.ok, paid.error)) {
       await page.reload({ waitUntil: 'domcontentloaded' });
-      step.check('the same link is now the receipt', await shows('Paid in full'), 'the page does not say the invoice is paid');
+      step.check('the same link is now the receipt', await page.getByText(/paid in full|fullt betald/i).first().waitFor({ state: 'visible', timeout: 10_000 }).then(() => true, () => false), 'the page does not say the invoice is paid');
       step.check('…and no longer asks for money', !(await page.getByTestId('invoice-how-to-pay').isVisible().catch(() => false)), 'the payment details are still shown on a paid invoice');
       await snap(page, 'invoice-paid');
     }
@@ -306,12 +309,12 @@ async function portalShowsWhatTheCustomerHas(s: Scenario, browser: Browser, base
       await snap(page, 'portal-overview');
 
       // FINDING 2026-11-18: no invoices page at all, and "Contracts" was the employee's own.
-      await page.getByRole('link', { name: /my invoices/i }).first().click();
+      await page.getByRole('link', { name: /my invoices|mina fakturor/i }).first().click();
       const rows = page.getByTestId('my-invoice');
       step.check('the customer finds their invoices', await rows.first().waitFor({ state: 'visible', timeout: 20_000 }).then(() => true, () => false) && (await rows.allInnerTexts()).some((t) => t.includes(invoiceNumber)), `${invoiceNumber} is not on /account/invoices`);
       step.check('…and never one that was not issued', !(await rows.allInnerTexts()).some((t) => t.includes(draftNumber)), `the draft ${draftNumber} is shown to the customer`);
-      await page.getByRole('link', { name: /view and pay/i }).first().click();
-      step.check('…and opens one where it is paid', await page.getByTestId('invoice-how-to-pay').or(page.getByRole('button', { name: /pay by card|download pdf/i }).first()).first().waitFor({ state: 'visible', timeout: 45_000 }).then(() => true, () => false), `the invoice page did not open: ${page.url()}`);
+      await page.getByRole('link', { name: /view and pay|visa och betala/i }).first().click();
+      step.check('…and opens one where it is paid', await page.getByTestId('invoice-how-to-pay').or(page.getByRole('button', { name: /pay by card|download pdf|betala med kort|ladda ner pdf/i }).first()).first().waitFor({ state: 'visible', timeout: 45_000 }).then(() => true, () => false), `the invoice page did not open: ${page.url()}`);
 
       await page.goto(`${base}/account/agreements`, { waitUntil: 'domcontentloaded' });
       step.check('the customer finds their agreement', await page.getByTestId('my-agreement').filter({ hasText: `Portal agreement ${s.tag}` }).first().waitFor({ state: 'visible', timeout: 20_000 }).then(() => true, () => false), 'the agreement is not on /account/agreements');
@@ -325,7 +328,7 @@ async function portalShowsWhatTheCustomerHas(s: Scenario, browser: Browser, base
     try {
       const p2 = await other.newPage();
       await p2.goto(`${base}/account/invoices`, { waitUntil: 'domcontentloaded' });
-      const empty = await p2.getByText(/you have no invoices yet/i).first().waitFor({ state: 'visible', timeout: 45_000 }).then(() => true, () => false);
+      const empty = await p2.getByText(/you have no invoices yet|du har inga fakturor än/i).first().waitFor({ state: 'visible', timeout: 45_000 }).then(() => true, () => false);
       step.check('another customer sees none of it', empty && !(await p2.content()).includes(invoiceNumber), 'another signed-in customer can see the invoice');
     } finally {
       await other.close();
@@ -487,7 +490,7 @@ async function shopPurchase(s: Scenario, browser: Browser, base: string): Promis
     const receipt = await visit(browser, onThisStack(link!, base), /download pdf|ladda ner pdf/i);
     try {
       step.check('the receipt opens from the mail', receipt.rendered, `the page never drew; errors: ${receipt.errors.join(' | ') || 'none'}`);
-      step.check('…and says it is paid', await receipt.page.getByText(/paid in full|betald/i).first().isVisible().catch(() => false), 'the receipt does not say the invoice is paid');
+      step.check('…and says it is paid', await receipt.page.getByText(/paid in full|fullt betald/i).first().isVisible().catch(() => false), 'the receipt does not say the invoice is paid');
       step.check('…lists what was bought', await receipt.page.getByText(productName, { exact: false }).first().isVisible().catch(() => false), 'the product is not on the receipt');
       step.check('…and asks for no money', (await receipt.page.getByRole('button', { name: /pay|betala/i }).count()) === 0, 'a pay button is on a paid receipt');
       await snap(receipt.page, 'shop-receipt');

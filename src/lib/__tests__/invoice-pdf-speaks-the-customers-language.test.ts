@@ -28,7 +28,9 @@ describe('the invoice PDF speaks the customer\'s language', () => {
   it('an open invoice is an invoice and shows its due date', () => {
     const L = invoicePdfLabels(resolveUiText(SWEDISH, 'sv', 'sv'), 'sent');
     expect(L.heading).toBe('FAKTURA');
-    expect(L.statusValue).toBe('OPEN');
+    // The instance translated the heading only; the platform's own Swedish
+    // carries the rest (2026-11-19) — it was English before.
+    expect(L.statusValue).toBe('OBETALD');
     expect(L.showDue).toBe(true);
   });
 
@@ -38,11 +40,17 @@ describe('the invoice PDF speaks the customer\'s language', () => {
     expect(L.total).toBe('TOTAL');
   });
 
-  it('nothing translated is the English the PDF always had', () => {
-    const L = invoicePdfLabels(resolveUiText({}, 'sv', 'sv'), 'sent');
+  it('nothing translated, in a language the platform does not ship, is the English the PDF always had', () => {
+    const L = invoicePdfLabels(resolveUiText({}, 'de', 'de'), 'sent');
     expect([L.heading, L.billTo, L.number, L.description, L.qty, L.unitPrice, L.amount, L.subtotal, L.tax, L.total])
       .toEqual(['INVOICE', 'BILL TO', 'Invoice #', 'Description', 'Qty', 'Unit price', 'Amount', 'Subtotal', 'Tax', 'TOTAL']);
     expect(L.vatInHome('SEK', '11.0234')).toBe('VAT in SEK (rate 11.0234)');
+  });
+
+  it('nothing translated on a Swedish site is the platform\'s Swedish', () => {
+    const L = invoicePdfLabels(resolveUiText({}, 'sv', 'sv'), 'sent');
+    expect([L.heading, L.billTo, L.subtotal, L.tax, L.total]).toEqual(['FAKTURA', 'FAKTURERAS TILL', 'Delsumma', 'Moms', 'TOTALT']);
+    expect(L.vatInHome('SEK', '11.0234')).toBe('Moms i SEK (kurs 11.0234)');
   });
 
   it('the PDF draws no hardcoded label', () => {

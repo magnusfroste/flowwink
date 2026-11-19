@@ -12,6 +12,10 @@ import { useIsManager } from '@/hooks/useTeam';
 import { useIsModuleEnabled, useModules } from '@/hooks/useModules';
 import { BuildBadge } from '@/components/BuildBadge';
 import { useAuth } from '@/hooks/useAuth';
+import { useUiText } from '@/lib/ui-text';
+
+/** The menu is read in the visitor's language: each label asks for its own text. */
+type Words = (key: string, fallback: string) => string;
 
 // Commerce-scoped portal sections — hidden when the ecommerce module is off
 // (an HR-only site still gets the portal, for employee self-service).
@@ -19,56 +23,57 @@ import { useAuth } from '@/hooks/useAuth';
 // are. It opened on Orders: a customer holding a service was met by "No orders
 // yet — browse products" (2026-11-18).
 const overviewNav = [
-  { to: '/account', label: 'Overview', icon: LayoutDashboard, exact: true },
+  { to: '/account', label: (t: Words) => t('account.nav.overview', 'Overview'), icon: LayoutDashboard, exact: true },
 ];
 
 const commerceNav = [
-  { to: '/account/orders', label: 'Orders', icon: ShoppingBag },
-  { to: '/account/addresses', label: 'Addresses', icon: MapPin },
-  { to: '/account/wishlist', label: 'Wishlist', icon: Heart },
+  { to: '/account/orders', label: (t: Words) => t('account.nav.orders', 'Orders'), icon: ShoppingBag },
+  { to: '/account/addresses', label: (t: Words) => t('account.nav.addresses', 'Addresses'), icon: MapPin },
+  { to: '/account/wishlist', label: (t: Words) => t('account.nav.wishlist', 'Wishlist'), icon: Heart },
 ];
 
 const servicesNav = [
-  { to: '/account/services', label: 'My services', icon: Package },
+  { to: '/account/services', label: (t: Words) => t('account.nav.services', 'My services'), icon: Package },
 ];
 
 // What the business has invoiced the customer, and the agreements between
 // them — neither had a page: "Contracts" below is the EMPLOYEE's own.
 const invoicesNav = [
-  { to: '/account/invoices', label: 'My invoices', icon: Receipt },
+  { to: '/account/invoices', label: (t: Words) => t('account.nav.invoices', 'My invoices'), icon: Receipt },
 ];
 const agreementsNav = [
-  { to: '/account/agreements', label: 'My agreements', icon: FileSignature },
+  { to: '/account/agreements', label: (t: Words) => t('account.nav.agreements', 'My agreements'), icon: FileSignature },
 ];
 
 // Quotes the customer has been sent — shown when the quotes module is on.
 const quotesNav = [
-  { to: '/account/quotes', label: 'My quotes', icon: FileSignature },
+  { to: '/account/quotes', label: (t: Words) => t('account.nav.quotes', 'My quotes'), icon: FileSignature },
 ];
 
 const assistantNav = [
-  { to: '/account/assistant', label: 'Assistant', icon: Sparkles },
-  { to: '/account/support', label: 'Support requests', icon: LifeBuoy },
+  { to: '/account/assistant', label: (t: Words) => t('account.nav.assistant', 'Assistant'), icon: Sparkles },
+  { to: '/account/support', label: (t: Words) => t('account.nav.support', 'Support requests'), icon: LifeBuoy },
 ];
 
 const employeeNav = [
-  { to: '/account/attendance', label: 'Time clock', icon: Clock },
-  { to: '/account/leave', label: 'Leave', icon: CalendarOff },
-  { to: '/account/expenses', label: 'Expenses', icon: Receipt },
-  { to: '/account/performance', label: 'Performance', icon: Target },
-  { to: '/account/skills', label: 'Skills', icon: GraduationCap },
-  { to: '/account/contracts', label: 'Employment contract', icon: FileText },
-  { to: '/account/payslips', label: 'Payslips', icon: Receipt },
+  { to: '/account/attendance', label: (t: Words) => t('account.nav.attendance', 'Time clock'), icon: Clock },
+  { to: '/account/leave', label: (t: Words) => t('account.nav.leave', 'Leave'), icon: CalendarOff },
+  { to: '/account/expenses', label: (t: Words) => t('account.nav.expenses', 'Expenses'), icon: Receipt },
+  { to: '/account/performance', label: (t: Words) => t('account.nav.performance', 'Performance'), icon: Target },
+  { to: '/account/skills', label: (t: Words) => t('account.nav.skills', 'Skills'), icon: GraduationCap },
+  { to: '/account/contracts', label: (t: Words) => t('account.nav.employmentContract', 'Employment contract'), icon: FileText },
+  { to: '/account/payslips', label: (t: Words) => t('account.nav.payslips', 'Payslips'), icon: Receipt },
 ];
 
-const managerNav = [{ to: '/account/team', label: 'My Team', icon: Users }];
+const managerNav = [{ to: '/account/team', label: (t: Words) => t('account.nav.team', 'My Team'), icon: Users }];
 
-const profileNav = [{ to: '/account/profile', label: 'Profile', icon: User }];
+const profileNav = [{ to: '/account/profile', label: (t: Words) => t('account.nav.profile', 'Profile'), icon: User }];
 // Staff (anyone with a role) may connect their own agent; it acts as them.
-const agentsNav = [{ to: '/account/agents', label: 'My agents', icon: Bot }];
+const agentsNav = [{ to: '/account/agents', label: (t: Words) => t('account.nav.agents', 'My agents'), icon: Bot }];
 
 export default function AccountLayout() {
   const { isLoggedIn, loading, signOut, profile } = useCustomerAuth();
+  const t = useUiText();
   // The destination follows the PERSON, not the door (Svante-incident
   // 2026-08-17): the portal login hardcoded /account while /auth hardcodes
   // /admin, so a salesperson who happened to log in through the public site
@@ -92,7 +97,7 @@ export default function AccountLayout() {
     ...(isEmployee ? employeeNav : []),
     ...(isManager ? managerNav : []),
     ...agentsNav,
-    { to: '/admin', label: 'Back to work', icon: ArrowLeft },
+    { to: '/admin', label: (t: Words) => t('account.nav.backToWork', 'Back to work'), icon: ArrowLeft },
   ] : [
     ...overviewNav,
     // What a customer holds comes before what a shop sells.
@@ -144,7 +149,7 @@ export default function AccountLayout() {
 
   return (
     <>
-      <Helmet><title>{'My Account'}</title></Helmet>
+      <Helmet><title>{t('account.title', 'My Account')}</title></Helmet>
       <PublicNavigation />
 
       <main className="min-h-screen bg-background">
@@ -152,14 +157,14 @@ export default function AccountLayout() {
           {/* Header */}
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h1 className="text-3xl font-serif font-bold tracking-tight">My Account</h1>
+              <h1 className="text-3xl font-serif font-bold tracking-tight">{t('account.title', 'My Account')}</h1>
               {profile?.full_name && (
-                <p className="text-muted-foreground mt-1">Welcome back, {profile.full_name}</p>
+                <p className="text-muted-foreground mt-1">{t('account.welcomeBack', 'Welcome back, {name}').replace('{name}', profile.full_name)}</p>
               )}
             </div>
             <Button variant="ghost" size="sm" onClick={handleSignOut} className="text-muted-foreground">
               <LogOut className="h-4 w-4 mr-2" />
-              Sign out
+              {t('account.signOut', 'Sign out')}
             </Button>
           </div>
 
@@ -182,7 +187,7 @@ export default function AccountLayout() {
                     )}
                   >
                     <item.icon className="h-4 w-4 shrink-0" />
-                    {item.label}
+                    {item.label(t)}
                   </Link>
                 );
               })}
