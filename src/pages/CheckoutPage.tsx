@@ -17,7 +17,7 @@ import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { Loader2, ShoppingBag, ArrowLeft, Tag, X, Truck } from 'lucide-react';
 import { buildAttributionFields } from '@/lib/utm';
-import { useUiTextLanguage } from '@/lib/ui-text';
+import { useUiText, useUiTextLanguage } from '@/lib/ui-text';
 
 interface AppliedDiscount {
   code: string;
@@ -37,6 +37,7 @@ interface ShippingOption {
 export default function CheckoutPage() {
   // The language the visitor is reading — the order confirmation speaks it.
   const { lang: uiLang, siteLang } = useUiTextLanguage();
+  const t = useUiText();
   const { items, totalPriceCents, currency, clearCart } = useCart();
   const { catalogOnly } = useStorefront();
   const { user, profile } = useAuth();
@@ -178,7 +179,7 @@ export default function CheckoutPage() {
       };
 
       if (!result?.valid) {
-        toast.error(result?.reason || 'This code is not valid');
+        toast.error(result?.reason || t('checkout.discountInvalid', 'This code is not valid'));
         return;
       }
 
@@ -187,10 +188,10 @@ export default function CheckoutPage() {
         discountCents: result.discount_cents ?? 0,
       });
       setDiscountInput('');
-      toast.success(`Discount code ${result.code || code} applied`);
+      toast.success(t('checkout.discountApplied', 'Discount code {code} applied').replace('{code}', String(result.code || code)));
     } catch (error: unknown) {
       logger.error('Discount validation error:', error);
-      toast.error('Could not validate discount code');
+      toast.error(t('checkout.discountFailed', 'Could not validate discount code'));
     } finally {
       setIsValidatingCode(false);
     }
@@ -200,17 +201,17 @@ export default function CheckoutPage() {
     e.preventDefault();
 
     if (items.length === 0) {
-      toast.error('Your cart is empty');
+      toast.error(t('checkout.cartEmpty', 'Your cart is empty'));
       return;
     }
 
     if (!formData.name.trim() || !formData.email.trim()) {
-      toast.error('Please enter name and email');
+      toast.error(t('checkout.needNameEmail', 'Please enter name and email'));
       return;
     }
 
     if (hasShippable && (!address.line1.trim() || !address.postalCode.trim() || !address.city.trim())) {
-      toast.error('Please enter your delivery address');
+      toast.error(t('checkout.needAddress', 'Please enter your delivery address'));
       return;
     }
 
@@ -265,8 +266,8 @@ export default function CheckoutPage() {
         clearCart();
         toast.success(
           data.status === 'paid'
-            ? 'Order placed successfully!'
-            : `Order created — payment pending`
+            ? t('checkout.orderPlaced', 'Order placed successfully!')
+            : t('checkout.orderPending', 'Order created — payment pending')
         );
         navigate(`/checkout/success?order_id=${data.orderId}&sandbox=true`);
         return;
@@ -281,7 +282,7 @@ export default function CheckoutPage() {
     } catch (error: unknown) {
       logger.error('Checkout error:', error);
       const message = error instanceof Error ? error.message : null;
-      toast.error(message || 'Could not initiate payment');
+      toast.error(message || t('checkout.paymentFailed', 'Could not initiate payment'));
     } finally {
       setIsLoading(false);
     }
@@ -297,15 +298,15 @@ export default function CheckoutPage() {
         <Card className="w-full max-w-md text-center">
           <CardHeader>
             <ShoppingBag className="h-12 w-12 mx-auto text-muted-foreground" />
-            <CardTitle>Your cart is empty</CardTitle>
+            <CardTitle>{t('checkout.cartEmpty', 'Your cart is empty')}</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-muted-foreground">Add products to continue to checkout.</p>
+            <p className="text-muted-foreground">{t('checkout.cartEmptyHint', 'Add products to continue to checkout.')}</p>
           </CardContent>
           <CardFooter>
             <Button onClick={() => navigate('/')} className="w-full">
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Continue shopping
+              {t('cart.continueShopping', 'Continue shopping')}
             </Button>
           </CardFooter>
         </Card>
@@ -322,31 +323,31 @@ export default function CheckoutPage() {
           className="mb-6"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Back
+          {t('checkout.back', 'Back')}
         </Button>
 
         <div className="grid gap-8 md:grid-cols-2">
           {/* Customer Form */}
           <Card>
             <CardHeader>
-              <CardTitle>Your Details</CardTitle>
+              <CardTitle>{t('checkout.yourDetails', 'Your details')}</CardTitle>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleCheckout} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Name *</Label>
+                  <Label htmlFor="name">{t('checkout.name', 'Name')} *</Label>
                   <Input
                     id="name"
                     name="name"
                     value={formData.name}
                     onChange={handleInputChange}
-                    placeholder="Your name"
+                    placeholder={t('checkout.namePlaceholder', 'Your name')}
                     required
                     disabled={isLoading}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email *</Label>
+                  <Label htmlFor="email">{t('checkout.email', 'Email')} *</Label>
                   <Input
                     id="email"
                     name="email"
@@ -363,33 +364,33 @@ export default function CheckoutPage() {
                 {hasShippable && (
                   <div className="space-y-4 pt-2">
                     <Separator />
-                    <h3 className="text-sm font-semibold">Delivery address</h3>
+                    <h3 className="text-sm font-semibold">{t('checkout.deliveryAddress', 'Delivery address')}</h3>
                     <div className="space-y-2">
-                      <Label htmlFor="line1">Address *</Label>
+                      <Label htmlFor="line1">{t('checkout.address', 'Address')} *</Label>
                       <Input
                         id="line1"
                         name="line1"
                         value={address.line1}
                         onChange={handleAddressChange}
-                        placeholder="Street and number"
+                        placeholder={t('checkout.addressPlaceholder', 'Street and number')}
                         required
                         disabled={isLoading}
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="line2">Address line 2</Label>
+                      <Label htmlFor="line2">{t('checkout.address2', 'Address line 2')}</Label>
                       <Input
                         id="line2"
                         name="line2"
                         value={address.line2}
                         onChange={handleAddressChange}
-                        placeholder="Apartment, c/o (optional)"
+                        placeholder={t('checkout.address2Placeholder', 'Apartment, c/o (optional)')}
                         disabled={isLoading}
                       />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="postalCode">Postal code *</Label>
+                        <Label htmlFor="postalCode">{t('checkout.postalCode', 'Postal code')} *</Label>
                         <Input
                           id="postalCode"
                           name="postalCode"
@@ -401,7 +402,7 @@ export default function CheckoutPage() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="city">City *</Label>
+                        <Label htmlFor="city">{t('checkout.city', 'City')} *</Label>
                         <Input
                           id="city"
                           name="city"
@@ -415,7 +416,7 @@ export default function CheckoutPage() {
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="country">Country *</Label>
+                        <Label htmlFor="country">{t('checkout.country', 'Country')} *</Label>
                         <Input
                           id="country"
                           name="country"
@@ -428,7 +429,7 @@ export default function CheckoutPage() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="phone">Phone</Label>
+                        <Label htmlFor="phone">{t('checkout.phone', 'Phone')}</Label>
                         <Input
                           id="phone"
                           name="phone"
@@ -449,7 +450,7 @@ export default function CheckoutPage() {
                     <Separator />
                     <h3 className="text-sm font-semibold flex items-center gap-1.5">
                       <Truck className="h-4 w-4" />
-                      Delivery method
+                      {t('checkout.deliveryMethod', 'Delivery method')}
                     </h3>
                     <RadioGroup
                       value={selectedRateId ?? undefined}
@@ -485,10 +486,10 @@ export default function CheckoutPage() {
                   {isLoading ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Preparing payment...
+                      {t('checkout.preparing', 'Preparing payment…')}
                     </>
                   ) : (
-                    <>Pay {formatPrice(payableCents)}</>
+                    <>{t('checkout.pay', 'Pay')} {formatPrice(payableCents)}</>
                   )}
                 </Button>
               </form>
@@ -498,7 +499,7 @@ export default function CheckoutPage() {
           {/* Order Summary */}
           <Card>
             <CardHeader>
-              <CardTitle>Your order</CardTitle>
+              <CardTitle>{t('checkout.yourOrder', 'Your order')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {items.map((item) => (
@@ -527,14 +528,14 @@ export default function CheckoutPage() {
                 <div className="flex justify-between items-center text-sm">
                   <span className="flex items-center gap-1.5 text-muted-foreground">
                     <Tag className="h-3.5 w-3.5" />
-                    Discount ({appliedDiscount.code})
+                    {t('checkout.discount', 'Discount')} ({appliedDiscount.code})
                     <Button
                       variant="ghost"
                       size="icon"
                       className="h-5 w-5 text-muted-foreground hover:text-destructive"
                       onClick={() => setAppliedDiscount(null)}
                       disabled={isLoading}
-                      aria-label="Remove discount code"
+                      aria-label={t('checkout.removeDiscount', 'Remove discount code')}
                     >
                       <X className="h-3 w-3" />
                     </Button>
@@ -546,7 +547,7 @@ export default function CheckoutPage() {
               ) : (
                 <div className="flex gap-2">
                   <Input
-                    placeholder="Discount code"
+                    placeholder={t('checkout.discountCode', 'Discount code')}
                     value={discountInput}
                     onChange={(e) => setDiscountInput(e.target.value)}
                     onKeyDown={(e) => {
@@ -569,7 +570,7 @@ export default function CheckoutPage() {
                     {isValidatingCode ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
-                      'Apply'
+                      t('checkout.apply', 'Apply')
                     )}
                   </Button>
                 </div>
@@ -580,7 +581,7 @@ export default function CheckoutPage() {
                 <div className="flex justify-between items-center text-sm">
                   <span className="flex items-center gap-1.5 text-muted-foreground">
                     <Truck className="h-3.5 w-3.5" />
-                    Shipping ({selectedOption.carrier_name})
+                    {t('checkout.shipping', 'Shipping')} ({selectedOption.carrier_name})
                   </span>
                   <span className="font-medium">{formatPrice(selectedOption.price_cents)}</span>
                 </div>
@@ -588,7 +589,7 @@ export default function CheckoutPage() {
 
               <Separator />
               <div className="flex justify-between items-center text-lg font-bold">
-                <span>Total</span>
+                <span>{t('checkout.total', 'Total')}</span>
                 <span>{formatPrice(payableCents)}</span>
               </div>
               {vat.label && (

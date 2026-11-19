@@ -746,7 +746,9 @@ beside its payload, so an operator branches instead of guessing:
   and raises `booking.rescheduled`, which two automations answer (a new
   confirmation to the customer, a note to the admins). The page offers the
   public block's own times (`booking_free_slots`). A step of the customer path
-  does it in a browser.
+  does it in a browser. The customer's own cancellation raises
+  `booking.cancelled_by_customer` (beside `booking.cancelled`, which only says
+  the slot is free) and an automation mails the admins.
 - **A purchase with Stripe off is a whole purchase (2026-11-19).** The
   customer path buys in the shop as a visitor. Two finds: the page after the
   purchase read `orders` directly, which a visitor may not, so every guest —
