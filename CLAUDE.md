@@ -793,8 +793,15 @@ beside its payload, so an operator branches instead of guessing:
   …" / "Auto-generated …" line to `invoices.origin_note` (admin only) and
   leaves the rest (a PO number, the period). A new writer needs to know
   nothing; never print `origin_note` for a customer. Issued invoices were left
-  as sent. Open: the CTR-/SUB-/SO-/SUB-ADJ- numbers end in a RANDOM five
-  digits — not a running series.
+  as sent.
+- **Every billing series runs in order (2026-11-19).** CTR-/SUB-/SUB-ADJ-/SO-
+  invoices ended in five RANDOM digits. `next_invoice_series_number(prefix)`
+  answers `PREFIX-YYYY-NNNNN` from `document_counters` (key
+  `invoice:<prefix>:<year>`, floored on the table like the INV series), for
+  the platform's own billing functions only — no EXECUTE for a session, since
+  a customer reaches it through `change_subscription`. INV- stays
+  `next_document_number`, POS- its sequence. A new kind of generated invoice
+  takes a prefix here; a guard fails `random()` beside an invoice number.
 - **One number series per document (2026-11-17).** `next_document_number
   (kind, prefix)` is the only source of a quote or invoice number — the admin,
   every skill (`nextDocumentNumber` in core.ts), `quote-sign` and the invoicing
@@ -805,8 +812,8 @@ beside its payload, so an operator branches instead of guessing:
   counter and the skills read "highest so far plus one": a quote made by hand
   was a second QUO-0001, and an invoice was INV-0007 from the admin and
   INV-2026-00007 from a skill. A guard discovers any `` `INV-${ `` /
-  `` `QUO-${ `` built in code. SUB-, CTR-, POS- and credit-note numbers are
-  their own series and stay.
+  `` `QUO-${ `` built in code. SUB-, CTR-, SO-, POS- and credit-note numbers are
+  their own series (running since 2026-11-19, see below).
 - **Born right (2026-10-27).** `manage_invoice create` without `due_date`
   gets one from the payment terms (`net30` → 30 days after the issue date,
   30 when the terms say nothing). **The rule is the row's since 2026-11-18**
