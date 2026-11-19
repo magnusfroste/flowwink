@@ -117,6 +117,18 @@ category stayed open while any module in it was on, so an off module's
 skills could linger. The way on is Modules, or `manage_modules` with the
 owner's approval.
 
+## A new module reaches a site nobody opens
+
+*Who: every instance, with or without an admin who logs in.*
+
+A module added to FlowWink after your site was installed used to appear only
+when an admin opened the admin: until then the site did not know it, and an
+agent asking to switch it on was told it was "not a module on this
+instance". The skill sync that follows every deploy now adds it, with its
+default (on or off), and never changes a module you already chose for. An
+agent can ask `manage_modules` with action `list` — a read, no approval — to
+see every module and whether it is on.
+
 ---
 
 ## Workspaces — Accounting, HR, Sales and Support get their own menu

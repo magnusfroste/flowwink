@@ -21,6 +21,12 @@ export interface ModuleCatalogEntry {
   requires: string[];
   tables: string[];
   core: boolean;
+  /**
+   * On in `defaultModulesSettings` (src/hooks/useModules.tsx) — what a module
+   * absent from the row is born as. Optional: an edge bundle older than
+   * 2026-11-19 does not carry it.
+   */
+  defaultEnabled?: boolean;
 }
 
 export type ModulesSetting = Record<string, { enabled?: boolean } & Record<string, unknown>>;
@@ -43,6 +49,25 @@ export const TEARDOWN_KEEP_SKILLS: readonly string[] = [
  * "unused". A person may still switch it off.
  */
 export const NEVER_SUGGEST_OFF: readonly string[] = ['feedback'];
+
+/**
+ * The row a code deploy wants: every catalogue module with its default, in the
+ * minimal shape ensure_modules_settings stores ({id: {enabled}}). The RPC adds
+ * only the keys the row lacks — an operator's choice is never overwritten.
+ *
+ * Why the server needs it (MJP demo, 2026-11-19): only the admin shell passed
+ * the defaults (ensureModulesRow on page load), so an instance no admin opens
+ * never got a key for a module added after its birth. Feedback (on by default
+ * since 2026-10-27) was absent there: no Feedback ping, no fleet entry.
+ */
+export function moduleRowDefaults(catalog: ModuleCatalogEntry[]): Record<string, { enabled: boolean }> {
+  return Object.fromEntries(catalog.map((c) => [c.moduleId, { enabled: c.defaultEnabled === true }]));
+}
+
+/** Catalogue modules the row does not carry yet — what a top-up would add. */
+export function modulesAbsentFromRow(catalog: ModuleCatalogEntry[], current: ModulesSetting): string[] {
+  return catalog.map((c) => c.moduleId).filter((id) => !(id in current));
+}
 
 export interface ModuleChangePlan {
   /** The modules that will change, in the order given. */
@@ -73,7 +98,11 @@ export function planModuleChange(
 
   for (const id of wanted) {
     const entry = byId.get(id);
-    if (!entry || !(id in current)) { refusals.push({ module: id, reason: 'unknown' }); continue; }
+    // The CATALOGUE says what a module is, not the row: a module the row has
+    // no key for (added to the code after the instance was born, and no admin
+    // has opened it since) is a known module that is off. On MJP 2026-11-19
+    // `feedback` was refused as "not a module on this instance".
+    if (!entry) { refusals.push({ module: id, reason: 'unknown' }); continue; }
     if (action === 'disable') {
       if (entry.core) { refusals.push({ module: id, reason: 'core' }); continue; }
       if (NEVER_SUGGEST_OFF.includes(id) && !opts.attended) { refusals.push({ module: id, reason: 'reports_defects' }); continue; }
@@ -93,7 +122,7 @@ export function planModuleChange(
 /** The refusals as one sentence an agent can act on. */
 export function describeRefusals(refusals: ModuleChangePlan['refusals']): string {
   return refusals.map((r) => {
-    if (r.reason === 'unknown') return `${r.module} is not a module on this instance (module_usage_report lists them).`;
+    if (r.reason === 'unknown') return `${r.module} is not a FlowWink module (manage_modules list, or module_usage_report, names them).`;
     if (r.reason === 'core') return `${r.module} is a core module and cannot be switched off.`;
     if (r.reason === 'off') return `${r.module} is off — keep is for a module that is on (enable it first, or leave it off).`;
     if (r.reason === 'reports_defects') return `${r.module} is how this instance reports platform defects — keep it on; only a person can switch it off, from /admin/modules.`;
@@ -205,13 +234,15 @@ export function suggestOff(
 
 /**
  * A keep is a decision about a module that is on: refuse an unknown or
- * switched-off module (keeping it off is what a disable records).
+ * switched-off module (keeping it off is what a disable records). With the
+ * catalogue, a module the row lacks is known and off, as in planModuleChange.
  */
-export function planModuleKeep(current: ModulesSetting, requested: string[]): ModuleChangePlan {
+export function planModuleKeep(current: ModulesSetting, requested: string[], catalog?: ModuleCatalogEntry[]): ModuleChangePlan {
   const wanted = [...new Set(requested.map((m) => String(m).trim()).filter(Boolean))];
+  const known = catalog ? new Set(catalog.map((c) => c.moduleId)) : null;
   const refusals: ModuleChangePlan['refusals'] = [];
   for (const id of wanted) {
-    if (!(id in current)) refusals.push({ module: id, reason: 'unknown' });
+    if (!(id in current) && !known?.has(id)) refusals.push({ module: id, reason: 'unknown' });
     else if (current[id]?.enabled !== true) refusals.push({ module: id, reason: 'off' });
   }
   return { modules: refusals.length ? [] : wanted, refusals };

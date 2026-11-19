@@ -50,23 +50,20 @@ const autos: Array<{ moduleId: string; automations: unknown[] }> = [];
 let total = 0;
 let autoTotal = 0;
 // What the server needs to judge a module without the browser: its parents,
-// its tables (the evidence that it is used) and whether it may be switched off
-// at all. module_usage_report / manage_modules read it from the edge bundle.
-const catalog: Array<{ moduleId: string; name: string; tier: string | null; requires: string[]; tables: string[]; core: boolean }> = [];
-// Core = a module the admin cannot switch off: `core: true` in the defaults of
-// src/hooks/useModules.tsx (the rule ModulesPage enforces). Read from the file
-// itself — it imports the browser Supabase client, so it cannot be loaded here.
-const coreIds = new Set<string>();
-{
-  const src = readFileSync(join(ROOT, 'src', 'hooks', 'useModules.tsx'), 'utf8');
-  let current: string | null = null;
-  for (const line of src.split('\n')) {
-    const head = line.match(/^ {2}([A-Za-z0-9]+): \{\s*$/);
-    if (head) current = head[1];
-    else if (/^\S/.test(line)) current = null;
-    else if (current && /^\s{4}core: true,/.test(line)) coreIds.add(current);
-  }
-}
+// its tables (the evidence that it is used), whether it may be switched off
+// at all, and whether it is on by default. module_usage_report / manage_modules
+// read it from the edge bundle; sync_skills_from_code tops up the modules row
+// from `defaultEnabled` (ensure_modules_settings: absent keys only), so a
+// module added after an instance was born reaches an instance no admin opens.
+const catalog: Array<{ moduleId: string; name: string; tier: string | null; requires: string[]; tables: string[]; core: boolean; defaultEnabled: boolean }> = [];
+// Core and the default come from `defaultModulesSettings` in
+// src/hooks/useModules.tsx (the rule ModulesPage enforces, and the defaults the
+// admin shell seeds). Read from the file itself — it imports the browser
+// Supabase client, so it cannot be loaded here. A guardrail compares this
+// reading with the real object (module-defaults-reach-headless-instances).
+const { readModuleDefaultsFromSource } = await import(join(ROOT, 'scripts', 'lib', 'module-defaults-from-source.ts')) as typeof import('./lib/module-defaults-from-source.ts');
+const sourceDefaults = readModuleDefaultsFromSource(readFileSync(join(ROOT, 'src', 'hooks', 'useModules.tsx'), 'utf8'));
+const coreIds = new Set(Object.entries(sourceDefaults).filter(([, d]) => d.core).map(([id]) => id));
 const { LEGACY_MODULE_DEPENDENCIES } = await import(join(ROOT, 'src', 'lib', 'module-dependencies.ts')) as { LEGACY_MODULE_DEPENDENCIES: Record<string, string> };
 for (const exported of Object.values(modules)) {
   const m = exported as ModuleLike;
@@ -80,6 +77,7 @@ for (const exported of Object.values(modules)) {
       requires: [...new Set([...(m.requires ?? []), ...(legacyParent ? [legacyParent] : [])])],
       tables: m.data?.tables ?? m.tables ?? [],
       core: coreIds.has(m.id),
+      defaultEnabled: sourceDefaults[m.id]?.enabled === true,
     });
   }
   if (Array.isArray(m.skillSeeds) && m.skillSeeds.length > 0) {
@@ -89,6 +87,16 @@ for (const exported of Object.values(modules)) {
   if (Array.isArray(m.automations) && m.automations.length > 0) {
     autos.push({ moduleId: m.id, automations: m.automations });
     autoTotal += m.automations.length;
+  }
+}
+
+// A module the server cannot read a default for would be born OFF on every
+// headless instance — the gap this field closes. Say so instead of shipping it.
+{
+  const unread = catalog.filter((c) => sourceDefaults[c.moduleId]?.enabled == null).map((c) => c.moduleId);
+  if (unread.length) {
+    console.error(`skills-to-json: no literal \`enabled: true|false\` in defaultModulesSettings (src/hooks/useModules.tsx) for: ${unread.join(', ')}`);
+    process.exit(1);
   }
 }
 
