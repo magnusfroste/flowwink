@@ -3148,7 +3148,7 @@
         "content-api": "sha256:fdefa5bea17c8e34446fac869a8ed0f59ec6187e44e7885f5b952f8594f321f1",
         "contract-billing-cron": "sha256:616b750ce0abd97453d47c2610f615e0f1f07a9128b8c8725af6e9fd7f3529bc",
         "contract-sign": "sha256:f4af280386c03f0d21840d528e450208b682c81324e22780a662512eaea7d41f",
-        "create-checkout": "sha256:61c3c334f03d0482d221a3abdf838e07dbc14ec0d03b11d61a1d9bf93160303b",
+        "create-checkout": "sha256:faa3a75d33356071454efff92b6ff03b54d6c2c20f1b8b917ad98cdcd80c4412",
         "create-invoice-payment": "sha256:a46c82e437303cc1311748da524fa750c4b0068d2ff7e7dc17e365443a51e166",
         "create-user": "sha256:9f6d84e3e07c734a17b261551e1ca825cf84f4238c74d510c9e23de8b3805a61",
         "customer-signup": "sha256:a28e4a612842ca548e8dc645efdea5d9b16e209ceac2fa97177246d392a07724",
