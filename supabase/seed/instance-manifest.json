@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261119200000",
-      "migrations_count": 777,
+      "migration_head": "20261120090000",
+      "migrations_count": 779,
       "migrations": [
         {
           "version": "00000000000000",
@@ -3113,11 +3113,19 @@
         {
           "version": "20261119200000",
           "name": "karnmejlen-finns-pa-svenska"
+        },
+        {
+          "version": "20261119220000",
+          "name": "varje-fakturaserie-lopper"
+        },
+        {
+          "version": "20261120090000",
+          "name": "en-aterstallning-tar-inte-mejlmallarna"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:fab1639deb6e7fe04522c296b65584ff24e58f99b46b376ab7c609232d54b799",
+      "seed_hash": "sha256:b4f57a41011eb339fe1a314268792fa6cbc10ad93104827552b61df9e9fda9b3",
       "skill_count": 674,
       "module_count": 69
     },
@@ -3125,7 +3133,7 @@
       "count": 76,
       "shared_hash": "sha256:e7437b07a3fa221450d0b11c0c6cecd39b80d80ce94a95aa07fa00a8f3fbc54f",
       "functions": {
-        "agent-execute": "sha256:a8eb4b28d817af298210e36dd615df6c51073a9c4360dc3fc33a2a841ab0d4a5",
+        "agent-execute": "sha256:ce133e9858448083f56ef2286e6f860d50ee21c3490e9240002cd58c696db06d",
         "agent-operate": "sha256:4320e02dd3e6a0a1706b42dc1905b631c61e6a4cbe3556c701f474c278c89e1a",
         "ai-task": "sha256:ce3aacdef625bba758f4323da3e49104a1b94a3d3d77d800e89dacd0b803d65e",
         "automation-dispatcher": "sha256:d905660cd907c6f1ef5c7cac0a97ed44a4e4187ef4d5179089fa2714b2751443",
