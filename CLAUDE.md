@@ -700,6 +700,17 @@ beside its payload, so an operator branches instead of guessing:
   defaults to "Stripe is off") and an invoice is then paid by bank. The PDF
   draws every text through `winAnsi` (`_shared/invoices/winansi.ts`): one
   arrow in a line used to fail the whole PDF and the mail went without it.
+- **A visitor text ships its Swedish line (2026-11-19).** `t('key',
+  'English')` was English on a Swedish site until someone ran
+  `translate_ui_text`, and every key added after that stayed English (LiteIT,
+  site language sv: 193 of 611 keys). `resolveUiText` now ends on the
+  platform's own pack: instance overlay → instance flat layer →
+  `PLATFORM_UI_TEXT[lang]` (`_shared/locale/ui-text-pack-sv.ts`) → the
+  call-site English. A new `t()` key gets its line in the pack in the same PR,
+  same placeholders (`platform-speaks-swedish` compares the pack with the
+  catalogue, both ways). The customer path's text matches take both
+  languages: run it once with `site_languages.default = 'sv'` when a customer
+  page changes.
 - **A mail template is seeded in every language the platform speaks
   (2026-11-19).** `resolve_email_template` walks recipient language → site
   language → ANY active version, so a mail seeded in English only is English

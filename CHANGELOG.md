@@ -10,6 +10,15 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Added
 
+- **A Swedish site is Swedish from the first day.** What a visitor reads on
+  the platform's own pages (the shop, the checkout, the customer portal, the
+  booking, quote, agreement and invoice pages, the invoice PDF, the ticket and
+  booking mails) was English until someone had the instance translated — and
+  whatever was added later stayed English. The platform now ships its own
+  Swedish for all 611 visitor texts, used wherever the reader's language is
+  Swedish and the instance has no wording of its own. An instance's own
+  wording still wins.
+
 - **A quote or an invoice for a customer who is not a contact yet.** New Quote
   and New Invoice offered a list of existing contacts and nothing else: to
   invoice someone new, a person had to leave, create the contact and start
