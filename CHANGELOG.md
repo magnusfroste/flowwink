@@ -10,6 +10,12 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Added
 
+- **The core customer mails exist in Swedish.** On an instance whose site
+  language is Swedish, the invoice, the quote, the agreement, their reminders,
+  the booking confirmation and the order confirmation existed in English only,
+  so a Swedish customer was mailed "Please find your invoice attached". Swedish
+  versions are seeded where an instance has none of its own.
+
 - **The cart, the checkout and the page after a purchase speak the site's
   language.** Their texts were English built into the code; they are visitor
   texts now (50 keys under `checkout.*` and `cart.*`), translated per instance

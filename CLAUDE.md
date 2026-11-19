@@ -700,6 +700,14 @@ beside its payload, so an operator branches instead of guessing:
   defaults to "Stripe is off") and an invoice is then paid by bank. The PDF
   draws every text through `winAnsi` (`_shared/invoices/winansi.ts`): one
   arrow in a line used to fail the whole PDF and the mail went without it.
+- **A mail template is seeded in every language the platform speaks
+  (2026-11-19).** `resolve_email_template` walks recipient language → site
+  language → ANY active version, so a mail seeded in English only is English
+  for a Swedish customer. Eight core mails predated the en+sv rule (invoice,
+  quote, agreement, their reminders, booking and order confirmation) and got
+  their `sv` rows in `20261119200000` — inserted only where (name, 'sv') is
+  missing. A new template ships `en` AND `sv` in the same migration, with the
+  same placeholders (a guard compares them).
 - **The customer hears about their case (2026-11-18).** A support case told
   its customer nothing: no receipt, and a staff reply was "in the portal",
   where a customer entered by hand has no account. Two automations run
