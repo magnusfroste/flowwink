@@ -52,6 +52,11 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Removed
 
+- **The "auto-pay delay" in the shop's sandbox mode is gone.** The slider
+  promised that a test order would be paid after N days; nothing ever paid it,
+  so a value above zero left the order pending for ever. A test-mode order is
+  paid at once. No instance had it set.
+
 - **The Global Elements module is gone.** It had no skills and no tables and was
   hidden ("merged into Pages"); its one effect was to be switched on by accident
   whenever an agent edited the header. Headers and footers are unchanged — they

@@ -64,7 +64,7 @@
       "odoo": true,
       "status": "partial",
       "weight": 1,
-      "verify": "Sandbox mode in create-checkout/index.ts L113-194 places orders without online payment (status pending/paid via sandboxAutoPayDays)",
+      "verify": "Sandbox mode in create-checkout/index.ts L113-194 places orders without online payment (born pending, paid at once)",
       "notes": "Partial: sandbox is a test mode, not a customer-facing 'pay by bank transfer' method with instructions + pending-payment workflow (Odoo wire transfer, reference card §3)."
     },
     {
