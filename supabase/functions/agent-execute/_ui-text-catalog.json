@@ -326,6 +326,11 @@
       "fallback": "Please answer"
     },
     {
+      "key": "booking.mail.joinMeeting",
+      "group": "booking",
+      "fallback": "Join the meeting:"
+    },
+    {
       "key": "booking.mail.manageLead",
       "group": "booking",
       "fallback": "Need another time, or cannot come?"
@@ -334,6 +339,11 @@
       "key": "booking.mail.manageLink",
       "group": "booking",
       "fallback": "Change or cancel your booking"
+    },
+    {
+      "key": "booking.mail.yourNote",
+      "group": "booking",
+      "fallback": "Your note:"
     },
     {
       "key": "booking.manage.bookedFor",
@@ -1924,6 +1934,11 @@
       "key": "kb.searchPlaceholder",
       "group": "kb",
       "fallback": "Search for questions or answers..."
+    },
+    {
+      "key": "key",
+      "group": "key",
+      "fallback": "fallback"
     },
     {
       "key": "language.switch",
