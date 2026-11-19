@@ -169,6 +169,12 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Fixed
 
+- **A reset no longer takes the mail templates with it.** The nightly rebuild
+  of the sandbox emptied the mail templates and nothing put them back, so every
+  mail it sent was the built-in English fallback; "reset site data" on a real
+  instance had the same hole. A rebuilt sandbox gets the platform's templates
+  back, a site reset keeps the business's own, and an instance that already
+  lost them has them restored.
 - **Every invoice series runs in order.** Invoices made from an agreement, a
   subscription period, a subscription change and a service order were numbered
   with five random digits (`CTR-20261119-48213`): no running series, and two
