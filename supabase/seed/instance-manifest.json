@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261119220000",
-      "migrations_count": 778,
+      "migration_head": "20261120090000",
+      "migrations_count": 779,
       "migrations": [
         {
           "version": "00000000000000",
@@ -3117,6 +3117,10 @@
         {
           "version": "20261119220000",
           "name": "varje-fakturaserie-lopper"
+        },
+        {
+          "version": "20261120090000",
+          "name": "en-aterstallning-tar-inte-mejlmallarna"
         }
       ]
     },
