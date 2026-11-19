@@ -6,6 +6,8 @@ import { getServiceClient } from '../_shared/supabase-clients.ts';
 import { sha256Hex } from '../_shared/agent-audit.ts';
 import { provisionPortalAccount } from '../_shared/provision-portal-account.ts';
 import { loadOrgName } from '../_shared/org-name.ts';
+import { resolveUiText } from '../_shared/locale/ui-text.ts';
+import { loadUiText } from '../_shared/locale/load-ui-text.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -222,16 +224,20 @@ Deno.serve(async (req: Request) => {
       const siteName = await loadOrgName(supabase, 'our team');
 
       if (body.action === 'accept') {
+        // The counterparty's receipt is in the site's language (it was English for everyone).
+        const uiTexts = await loadUiText(supabase);
+        const t = resolveUiText(uiTexts.map, uiTexts.siteLang, uiTexts.siteLang);
+        const signedLine = t('contract.mail.signedSubject', 'Agreement signed — {title}').replace('{title}', contract.title);
         const html = `<!doctype html><html><body style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#f6f7f9;margin:0;padding:24px;color:#111">
   <div style="max-width:560px;margin:0 auto;background:#fff;border-radius:12px;padding:32px;border:1px solid #e6e8ec">
-    <h1 style="margin:0 0 8px;font-size:20px">Contract signed — ${escapeHtml(contract.title)}</h1>
-    <p style="margin:0 0 16px;color:#4b5563">Hi ${escapeHtml(body.signer_name)}, thank you for signing. A copy of the agreement is available via your unique link.</p>
+    <h1 style="margin:0 0 8px;font-size:20px">${escapeHtml(signedLine)}</h1>
+    <p style="margin:0 0 16px;color:#4b5563">${escapeHtml(t('contract.mail.signedBody', 'Hi {name}, thank you for signing. A copy of the agreement is available through your own link.').replace('{name}', body.signer_name))}</p>
     <hr style="border:none;border-top:1px solid #e6e8ec;margin:24px 0"/>
-    <p style="margin:0;font-size:12px;color:#9ca3af">Sent by ${escapeHtml(siteName)}</p>
+    <p style="margin:0;font-size:12px;color:#9ca3af">${escapeHtml(t('mail.sentBy', 'Sent by {business}').replace('{business}', siteName))}</p>
   </div>
 </body></html>`;
         await supabase.functions.invoke('email-send', {
-          body: { to: body.signer_email, subject: `Contract signed — ${contract.title}`, html },
+          body: { to: body.signer_email, subject: signedLine, html },
         });
       }
 

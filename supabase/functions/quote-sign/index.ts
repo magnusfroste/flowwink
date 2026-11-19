@@ -18,6 +18,8 @@ import {
   resolveSignedQuoteLines,
 } from '../_shared/quote-lines.ts';
 import { loadOrgName } from '../_shared/org-name.ts';
+import { resolveUiText } from '../_shared/locale/ui-text.ts';
+import { loadUiText } from '../_shared/locale/load-ui-text.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -304,30 +306,33 @@ Deno.serve(async (req: Request) => {
     try {
       const siteName = await loadOrgName(supabase, 'our team');
 
-      // The receipt is English; the amount is written the business's way.
-      const total = homeFormat(await loadHome(supabase), 'en').money(quote.total_cents ?? 0, quote.currency);
+      // The customer's receipt is in the site's language (it was English for
+      // everyone); the amount is written the business's way.
+      const uiTexts = await loadUiText(supabase);
+      const t = resolveUiText(uiTexts.map, uiTexts.siteLang, uiTexts.siteLang);
+      const total = homeFormat(await loadHome(supabase), uiTexts.siteLang).money(quote.total_cents ?? 0, quote.currency);
 
       if (body.action === 'accept') {
         // Customer receipt
         const customerHtml = `<!doctype html><html><body style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#f6f7f9;margin:0;padding:24px;color:#111">
   <div style="max-width:560px;margin:0 auto;background:#fff;border-radius:12px;padding:32px;border:1px solid #e6e8ec">
-    <h1 style="margin:0 0 8px;font-size:20px">Thank you for accepting quote ${escapeHtml(quote.quote_number)}</h1>
-    <p style="margin:0 0 16px;color:#4b5563">Hi ${escapeHtml(body.signer_name)}, we've received your acceptance and our team has been notified.</p>
+    <h1 style="margin:0 0 8px;font-size:20px">${escapeHtml(t('quote.mail.acceptedHeading', 'Thank you for accepting quote {number}').replace('{number}', quote.quote_number))}</h1>
+    <p style="margin:0 0 16px;color:#4b5563">${escapeHtml(t('quote.mail.acceptedBody', 'Hi {name}, we have received your acceptance and our team has been notified.').replace('{name}', body.signer_name))}</p>
     <div style="background:#f9fafb;border:1px solid #e6e8ec;border-radius:8px;padding:16px;margin:16px 0">
-      <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:#6b7280">Quote</span><strong>${escapeHtml(quote.quote_number)}</strong></div>
-      <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:#6b7280">Total</span><strong>${total}</strong></div>
-      ${invoice ? `<div style="display:flex;justify-content:space-between"><span style="color:#6b7280">Invoice</span><strong>${escapeHtml(invoice.invoice_number)}</strong></div>` : ''}
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:#6b7280">${escapeHtml(t('quote.mail.quoteLabel', 'Quote'))}</span><strong>${escapeHtml(quote.quote_number)}</strong></div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:#6b7280">${escapeHtml(t('quote.mail.totalLabel', 'Total'))}</span><strong>${total}</strong></div>
+      ${invoice ? `<div style="display:flex;justify-content:space-between"><span style="color:#6b7280">${escapeHtml(t('quote.mail.invoiceLabel', 'Invoice'))}</span><strong>${escapeHtml(invoice.invoice_number)}</strong></div>` : ''}
     </div>
-    ${invoice ? `<p style="margin:16px 0 0;color:#4b5563">An invoice (${escapeHtml(invoice.invoice_number)}) will be issued shortly. You'll receive it separately.</p>` : ''}
+    ${invoice ? `<p style="margin:16px 0 0;color:#4b5563">${escapeHtml(t('quote.mail.invoiceFollows', 'An invoice ({number}) will be issued shortly. You will receive it separately.').replace('{number}', invoice.invoice_number))}</p>` : ''}
     <hr style="border:none;border-top:1px solid #e6e8ec;margin:24px 0"/>
-    <p style="margin:0;font-size:12px;color:#9ca3af">Sent by ${escapeHtml(siteName)}</p>
+    <p style="margin:0;font-size:12px;color:#9ca3af">${escapeHtml(t('mail.sentBy', 'Sent by {business}').replace('{business}', siteName))}</p>
   </div>
 </body></html>`;
 
         await supabase.functions.invoke('email-send', {
           body: {
             to: body.signer_email,
-            subject: `Thank you — Quote ${quote.quote_number} accepted`,
+            subject: t('quote.mail.acceptedSubject', 'Thank you — quote {number} accepted').replace('{number}', quote.quote_number),
             html: customerHtml,
           },
         });

@@ -135,7 +135,7 @@ async function quoteAccepted(s: Scenario, browser: Browser, base: string): Promi
     await snap(page, 'quote-accepted');
     step.check('the customer\'s acceptance lands on the quote', ok, `quotes.status is ${(await s.one<{ status: string }>('select status from quotes where id = $1', [quoteId]))?.status}`);
     step.check('the page raised no error', errors.length === 0, errors.join(' | '));
-    const thanks = await s.mail(email, 'accepted');
+    const thanks = (await s.mail(email, 'accepted')) ?? (await s.mail(email, 'godkänd'));
     step.check('the customer is mailed a receipt of the acceptance', !!thanks, 'no "accepted" mail in the rail');
   } finally {
     await page.context().close();
@@ -180,7 +180,7 @@ async function contractSigned(s: Scenario, browser: Browser, base: string): Prom
     await snap(page, 'contract-signed');
     step.check('the signature lands on the agreement', ok, `contracts.status is ${(await s.one<{ status: string }>('select status from contracts where id = $1', [contractId]))?.status}`);
     step.check('the page raised no error', errors.length === 0, errors.join(' | '));
-    const receipt = await s.mail(email, 'signed');
+    const receipt = (await s.mail(email, 'signed')) ?? (await s.mail(email, 'signerat'));
     step.check('the counterparty is mailed the signed agreement', !!receipt, 'no "signed" mail in the rail');
   } finally {
     await page.context().close();

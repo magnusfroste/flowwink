@@ -18,6 +18,10 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
   Swedish for all 611 visitor texts, used wherever the reader's language is
   Swedish and the instance has no wording of its own. An instance's own
   wording still wins.
+  The customer portal's menu, title and sign-out, and three mails that were
+  English for everyone — the receipt of an accepted quote, the receipt of a
+  signed agreement and the invitation to the portal — are visitor texts in
+  the site's language now.
 
 - **A quote or an invoice for a customer who is not a contact yet.** New Quote
   and New Invoice offered a list of existing contacts and nothing else: to
