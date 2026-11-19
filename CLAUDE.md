@@ -708,6 +708,15 @@ beside its payload, so an operator branches instead of guessing:
   their `sv` rows in `20261119200000` — inserted only where (name, 'sv') is
   missing. A new template ships `en` AND `sv` in the same migration, with the
   same placeholders (a guard compares them).
+- **A reset does not take the mail templates (2026-11-20).**
+  `sandbox_reset_wipe` emptied `email_templates` every night and migrations
+  never seed twice: sandbox had NO templates and mailed the built-in English.
+  `seed_platform_email_templates()` is the one reseedable home of every
+  template the platform ships (en + sv, inserted only where missing);
+  the sandbox wipe calls it, `reset_site_data` keeps the table. A migration
+  that seeds a template redefines that function in the same file (a guard).
+  The same goes for any platform configuration only a migration seeds: a wipe
+  either keeps its table or can put it back.
 - **The customer hears about their case (2026-11-18).** A support case told
   its customer nothing: no receipt, and a staff reply was "in the portal",
   where a customer entered by hand has no account. Two automations run

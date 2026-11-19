@@ -169,6 +169,13 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Fixed
 
+- **A reset no longer takes the mail templates with it.** The nightly rebuild
+  of the sandbox emptied the mail templates and nothing put them back, so every
+  mail it sent was the built-in English fallback; "reset site data" on a real
+  instance had the same hole. A rebuilt sandbox gets the platform's templates
+  back, a site reset keeps the business's own, and an instance that already
+  lost them has them restored.
+
 - **An invoice no longer tells the customer where it was generated from.** The
   customer's invoice page and PDF read "Notes — Generated from contract
   <internal id>" on invoices made from an agreement, a subscription period, a
