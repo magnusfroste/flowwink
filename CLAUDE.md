@@ -792,6 +792,10 @@ beside its payload, so an operator branches instead of guessing:
   the contact (the pipeline is ordered by score, so a new one was the last
   card of its column — `CreateLeadDialog` now opens it), Create deal. The case
   step: New Ticket, an internal note, a reply — and the customer's two mails.
+  The new-customer step (2026-11-19): New Invoice and New Quote listed existing
+  contacts only; `CustomerPicker` takes a name and e-mail in place and
+  `ensureCustomerLead` (`src/lib/customer-choice.ts`) makes the contact with the
+  draft, reusing the one that already has the address.
   A process a person does in the admin gets a step there.
 - **Where an invoice came from is the business's note (2026-11-19).** Four
   SQL writers (`generate_contract_invoice`, `generate_subscription_invoice`,

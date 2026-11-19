@@ -10,6 +10,13 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Added
 
+- **A quote or an invoice for a customer who is not a contact yet.** New Quote
+  and New Invoice offered a list of existing contacts and nothing else: to
+  invoice someone new, a person had to leave, create the contact and start
+  over. Both dialogs take a new customer's name and e-mail in place; the
+  contact is created with the draft, and an address that already has a contact
+  uses that contact.
+
 - **The core customer mails exist in Swedish.** On an instance whose site
   language is Swedish, the invoice, the quote, the agreement, their reminders,
   the booking confirmation and the order confirmation existed in English only,
