@@ -425,6 +425,13 @@ beside its payload, so an operator branches instead of guessing:
   pair), `FORBIDDEN`, `NOT_FOUND`, `ALREADY_EXISTS`, `INVALID_INPUT`,
   `APPROVAL_REQUIRED`, `TRANSIENT`, `HANDLER_ERROR`, `RETENTION_LOCKED`,
   `RULE_REFUSED`. A handler's own `code`/`hint` wins over the classifier.
+  **A lookup miss is not a broken skill either (2026-11-21):** a handler that
+  answers `found: false`, or a message shaped "No <thing> with / matching /
+  named / found for …", is `NOT_FOUND` (`stampAgentError`, the last
+  alternative of the NOT_FOUND rule). Two probes for wiki pages that did not
+  exist were HANDLER_ERROR on optic; a third would have quarantined
+  `manage_wiki_page`. Answer a miss with `found: false` — not with a new noun
+  in the classifier.
   **A rule the database keeps is not a broken skill (2026-11-15):** an `rpc:`
   skill whose function says no — a RAISE EXCEPTION (SQLSTATE `P0001`) or its
   own `{ success: false, error }` — answers `RULE_REFUSED` where the message
