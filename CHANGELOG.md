@@ -10,6 +10,15 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Added
 
+- **Another system's MCP server can be connected as a source of skills.** A
+  business that keeps its books (or stock, or anything else) in another
+  product connects that product's MCP bridge under Integrations → Connected
+  MCP servers: address, key, and which of its tools the agent may use. Each
+  chosen tool becomes a skill — a read runs by itself, a write waits for a
+  person on every call and exists only on a source opened for writing. The key
+  is kept in the vault, read by the platform alone. No system-specific code:
+  the platform does not know which system it is talking to (#862).
+
 - **A page can be checked at the widths people read it in.** The page editor
   has a "Check widths" button: the page — with unsaved changes too — is drawn
   at phone, tablet and desktop width in your browser and measured. What sticks

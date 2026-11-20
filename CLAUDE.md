@@ -889,6 +889,24 @@ beside its payload, so an operator branches instead of guessing:
   agency reference (only what a person said was filed; a recorded filing
   silences the calendar).
 
+**External MCP sources (2026-11-20, #862 part 2).** The platform is an MCP
+CLIENT too: an admin connects another system's MCP server under Integrations →
+Connected MCP servers (`mcp_sources`), and the tools they choose become rows in
+`agent_skills` with `origin: 'mcp'` and handler `mcp:<source id>/<tool>`
+(`_shared/mcp/client.ts`, `_shared/mcp/sources.ts`, `_shared/handlers/mcp-sources.ts`).
+The NAME carries the read/write verdict the rest of the platform reads:
+`query_<slug>__<tool>` is a read everywhere (`classifyCall`), `ext_<slug>__<tool>`
+is a high-stakes write (trust `approve`, only on a source opened for writing).
+The key is in the vault (`mcp_source:<id>`): `set_mcp_source_key` (admin),
+`mcp_source_key` (service role only) — never a column, a setting or a skill
+argument. At call time the STORED choice is the authority, not the skill row
+(`SOURCE_DISABLED`, `TOOL_NOT_CHOSEN`, `SOURCE_READ_ONLY` are refusals). The
+client goes through `fetchPublic`, follows no redirect, times out at 25 s and
+caps the answer; the answer is marked `untrusted`. `manage_mcp_sources`
+(list | check | set_tools) is `notify` with `risk: 'high'`, so an unattended
+`set_tools` waits for a person. No line names a bookkeeping system — a guard
+reads for it. docs/operators/external-mcp-sources.md.
+
 **`manage_journal_entry` + bank events — the rule loop** — a booking of a
 bank event answers `rule_suggestion` when no rule or vendor default decided
 it: ask the person before making a rule; `remember_counterparty: true` makes

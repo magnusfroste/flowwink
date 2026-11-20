@@ -301,6 +301,9 @@ if (PRUNE) {
             (select max(a.created_at) from agent_activity a where a.skill_name = s.name) as last_used
        from agent_skills s
       where s.name <> all($1::text[])
+        -- A tool of a connected MCP server (#862) is in no seed by design: a
+        -- person chose it on the Integrations page, and only they retire it.
+        and s.origin::text <> 'mcp'
       order by s.name`,
     [Array.from(seeded)],
   );
