@@ -9,10 +9,13 @@ import { Loader2, Printer, ArrowLeft, Receipt } from 'lucide-react';
 import { useMyPayslips, usePayslip } from '@/hooks/usePayslip';
 import { PayslipView, printPayslip } from '@/components/payroll/PayslipView';
 import { useCustomerFormat } from '@/hooks/useCustomerFormat';
+import { useUiText } from '@/lib/ui-text';
+import { payslipStatusWord } from '@/lib/staff-words';
 
 export default function MyPayslipsPage() {
   const { data: list, isLoading, error } = useMyPayslips();
   const { formatCurrency } = useCustomerFormat();
+  const t = useUiText();
   const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
 
   const { data: payslip, isLoading: loadingOne, error: oneErr } = usePayslip(
@@ -30,19 +33,19 @@ export default function MyPayslipsPage() {
   if (selectedRunId) {
     return (
       <>
-        <Helmet><title>Payslip · My Account</title></Helmet>
+        <Helmet><title>{t('staff.payslips.pageTitleOne', 'Payslip · My Account')}</title></Helmet>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <div className="flex items-center gap-3">
               <Button variant="ghost" size="sm" onClick={() => setSelectedRunId(null)}>
                 <ArrowLeft className="h-4 w-4 mr-1" />
-                Back
+                {t('staff.common.back', 'Back')}
               </Button>
-              <CardTitle>Payslip</CardTitle>
+              <CardTitle>{t('staff.payslips.payslip', 'Payslip')}</CardTitle>
             </div>
             <Button onClick={printPayslip} disabled={!payslip}>
               <Printer className="h-4 w-4 mr-2" />
-              Print / Save PDF
+              {t('staff.payslips.print', 'Print / Save PDF')}
             </Button>
           </CardHeader>
           <CardContent>
@@ -63,10 +66,10 @@ export default function MyPayslipsPage() {
 
   return (
     <>
-      <Helmet><title>My payslips · My Account</title></Helmet>
+      <Helmet><title>{t('staff.payslips.pageTitle', 'My payslips · My Account')}</title></Helmet>
       <Card>
         <CardHeader>
-          <CardTitle>My payslips</CardTitle>
+          <CardTitle>{t('staff.payslips.title', 'My payslips')}</CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading && (
@@ -82,10 +85,9 @@ export default function MyPayslipsPage() {
               <div className="rounded-full bg-muted p-4">
                 <Receipt className="h-8 w-8 text-muted-foreground" />
               </div>
-              <h3 className="font-semibold">No payslips yet</h3>
+              <h3 className="font-semibold">{t('staff.payslips.none', 'No payslips yet')}</h3>
               <p className="text-sm text-muted-foreground max-w-md">
-                Your payslips will appear here once HR links your employee record
-                to your account.
+                {t('staff.payslips.noEmployeeHint', 'Your payslips will appear here once HR links your employee record to your account.')}
               </p>
             </div>
           )}
@@ -99,9 +101,9 @@ export default function MyPayslipsPage() {
               <div className="rounded-full bg-muted p-4">
                 <Receipt className="h-8 w-8 text-muted-foreground" />
               </div>
-              <h3 className="font-semibold">No payslips yet</h3>
+              <h3 className="font-semibold">{t('staff.payslips.none', 'No payslips yet')}</h3>
               <p className="text-sm text-muted-foreground">
-                Approved payroll runs will show up here.
+                {t('staff.payslips.noneHint', 'Approved payroll runs will show up here.')}
               </p>
             </div>
           )}
@@ -110,10 +112,10 @@ export default function MyPayslipsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Period</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Gross</TableHead>
-                  <TableHead className="text-right">Net</TableHead>
+                  <TableHead>{t('staff.common.period', 'Period')}</TableHead>
+                  <TableHead>{t('staff.common.status', 'Status')}</TableHead>
+                  <TableHead className="text-right">{t('staff.payslips.gross', 'Gross')}</TableHead>
+                  <TableHead className="text-right">{t('staff.payslips.net', 'Net')}</TableHead>
                   <TableHead></TableHead>
                 </TableRow>
               </TableHeader>
@@ -124,16 +126,15 @@ export default function MyPayslipsPage() {
                     <TableCell>
                       <Badge
                         variant={p.status === 'paid' ? 'default' : 'secondary'}
-                        className="capitalize"
                       >
-                        {p.status}
+                        {payslipStatusWord(p.status, t)}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right font-mono">{formatCurrency(p.gross_cents)}</TableCell>
                     <TableCell className="text-right font-mono">{formatCurrency(p.net_cents)}</TableCell>
                     <TableCell className="text-right">
                       <Button size="sm" variant="outline" onClick={() => setSelectedRunId(p.run_id)}>
-                        View
+                        {t('staff.payslips.view', 'View')}
                       </Button>
                     </TableCell>
                   </TableRow>

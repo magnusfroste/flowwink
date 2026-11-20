@@ -204,7 +204,7 @@ export default function OrderTrackingPage() {
                     {t('orderTracking.placed', 'Placed {date}').replace('{date}', formatDate(order.created_at) ?? '')}
                   </p>
                 </div>
-                <Badge variant={isPaid ? 'default' : 'secondary'} className="capitalize">
+                <Badge variant={isPaid ? 'default' : 'secondary'}>
                   {orderStepWord(order.status, t)}
                 </Badge>
               </CardHeader>

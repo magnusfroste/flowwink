@@ -40,6 +40,8 @@ import {
   Ban,
   Lock,
 } from "lucide-react";
+import { useUiText } from "@/lib/ui-text";
+import { daysWord, leaveStatusWord, leaveTypeWord } from "@/lib/staff-words";
 
 type LeaveRow = {
   id: string;
@@ -55,38 +57,33 @@ type LeaveRow = {
 
 const STATUS_META: Record<
   string,
-  { label: string; className: string; Icon: React.ComponentType<{ className?: string }> }
+  { className: string; Icon: React.ComponentType<{ className?: string }> }
 > = {
   pending: {
-    label: "Pending review",
     className: "bg-yellow-100 text-yellow-800 border-yellow-200",
     Icon: Clock,
   },
   approved: {
-    label: "Approved",
     className: "bg-green-100 text-green-800 border-green-200",
     Icon: CheckCircle2,
   },
   denied: {
-    label: "Denied",
     className: "bg-red-100 text-red-800 border-red-200",
     Icon: XCircle,
   },
   rejected: {
-    label: "Rejected",
     className: "bg-red-100 text-red-800 border-red-200",
     Icon: XCircle,
   },
   cancelled: {
-    label: "Cancelled",
     className: "bg-muted text-muted-foreground border-border",
     Icon: Ban,
   },
 };
 
 function StatusBadge({ status }: { status: string }) {
+  const t = useUiText();
   const meta = STATUS_META[status] ?? {
-    label: status,
     className: "bg-muted text-muted-foreground",
     Icon: Lock,
   };
@@ -94,13 +91,14 @@ function StatusBadge({ status }: { status: string }) {
   return (
     <Badge variant="outline" className={`gap-1 ${meta.className}`}>
       <Icon className="h-3 w-3" />
-      {meta.label}
+      {leaveStatusWord(status, t)}
     </Badge>
   );
 }
 
 export default function LeavePage() {
   const { formatDate } = useCustomerFormat();
+  const t = useUiText();
   const { employee, isEmployee, loading } = useEmployeeSelf();
   const qc = useQueryClient();
   const [leaveType, setLeaveType] = useState("vacation");
@@ -140,8 +138,8 @@ export default function LeavePage() {
 
   const create = useMutation({
     mutationFn: async () => {
-      if (!employee?.id) throw new Error("No linked employee record");
-      if (!startDate || !endDate) throw new Error("Pick dates");
+      if (!employee?.id) throw new Error(t('staff.common.noEmployee', 'No employee record linked'));
+      if (!startDate || !endDate) throw new Error(t('staff.leave.pickDates', 'Pick dates'));
       const days = Math.max(1, differenceInCalendarDays(new Date(endDate), new Date(startDate)) + 1);
       const { error } = await supabase.from("leave_requests").insert({
         employee_id: employee.id,
@@ -155,7 +153,7 @@ export default function LeavePage() {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Leave request submitted");
+      toast.success(t('staff.leave.submitted', 'Leave request submitted'));
       setStartDate("");
       setEndDate("");
       setReason("");
@@ -189,7 +187,7 @@ export default function LeavePage() {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Leave request updated");
+      toast.success(t('staff.leave.updated', 'Leave request updated'));
       setEditing(null);
       qc.invalidateQueries({ queryKey: ["my_leave_requests"] });
     },
@@ -205,7 +203,7 @@ export default function LeavePage() {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Leave request cancelled");
+      toast.success(t('staff.leave.cancelled', 'Leave request cancelled'));
       setCancelTarget(null);
       qc.invalidateQueries({ queryKey: ["my_leave_requests"] });
     },
@@ -219,9 +217,9 @@ export default function LeavePage() {
       <Card>
         <CardContent className="py-12 text-center">
           <CalendarOff className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
-          <p className="font-medium">No employee record linked</p>
+          <p className="font-medium">{t('staff.common.noEmployee', 'No employee record linked')}</p>
           <p className="text-sm text-muted-foreground mt-1">
-            Contact your administrator to link your account to an employee profile.
+            {t('staff.common.noEmployeeHint', 'Contact your administrator to link your account to an employee profile.')}
           </p>
         </CardContent>
       </Card>
@@ -246,13 +244,12 @@ export default function LeavePage() {
       <li key={r.id} className="py-3 flex items-start justify-between gap-4">
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <p className="font-medium capitalize">{r.leave_type}</p>
+            <p className="font-medium">{leaveTypeWord(r.leave_type, t)}</p>
             <StatusBadge status={r.status} />
           </div>
           <p className="text-sm text-muted-foreground mt-0.5">
             {formatDate(r.start_date, { month: "short", day: "numeric" })} –{" "}
-            {formatDate(r.end_date, { year: "numeric", month: "short", day: "numeric" })} · {r.days} day
-            {r.days === 1 ? "" : "s"}
+            {formatDate(r.end_date, { year: "numeric", month: "short", day: "numeric" })} · {daysWord(r.days, t)}
           </p>
           {r.reason && (
             <p className="text-xs text-muted-foreground mt-1">{r.reason}</p>
@@ -260,7 +257,7 @@ export default function LeavePage() {
           {!canEdit && !canCancel && (r.status === "pending" || r.status === "approved") && (
             <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
               <Lock className="h-3 w-3" />
-              Locked — leave has started
+              {t('staff.leave.locked', 'Locked — leave has started')}
             </p>
           )}
         </div>
@@ -270,10 +267,10 @@ export default function LeavePage() {
               size="sm"
               variant="ghost"
               onClick={() => setEditing(r)}
-              aria-label="Edit request"
+              aria-label={t('staff.leave.editRequest', 'Edit request')}
             >
               <Pencil className="h-4 w-4" />
-              Edit
+              {t('staff.common.edit', 'Edit')}
             </Button>
           )}
           {canCancel && (
@@ -282,10 +279,10 @@ export default function LeavePage() {
               variant="ghost"
               className="text-destructive hover:text-destructive"
               onClick={() => setCancelTarget(r)}
-              aria-label="Cancel request"
+              aria-label={t('staff.leave.cancelRequest', 'Cancel request')}
             >
               <Ban className="h-4 w-4" />
-              Cancel
+              {t('staff.leave.cancelAction', 'Cancel')}
             </Button>
           )}
         </div>
@@ -299,32 +296,32 @@ export default function LeavePage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Request leave</CardTitle>
+          <CardTitle>{t('staff.leave.request', 'Request leave')}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label>Type</Label>
+              <Label>{t('staff.common.type', 'Type')}</Label>
               <Select value={leaveType} onValueChange={setLeaveType}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="vacation">Vacation</SelectItem>
-                  <SelectItem value="sick">Sick leave</SelectItem>
-                  <SelectItem value="parental">Parental</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
+                  <SelectItem value="vacation">{leaveTypeWord('vacation', t)}</SelectItem>
+                  <SelectItem value="sick">{leaveTypeWord('sick', t)}</SelectItem>
+                  <SelectItem value="parental">{leaveTypeWord('parental', t)}</SelectItem>
+                  <SelectItem value="other">{leaveTypeWord('other', t)}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Reason (optional)</Label>
-              <Input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Short note" />
+              <Label>{t('staff.leave.reasonOptional', 'Reason (optional)')}</Label>
+              <Input value={reason} onChange={(e) => setReason(e.target.value)} placeholder={t('staff.leave.reasonPlaceholder', 'Short note')} />
             </div>
             <div className="space-y-2">
-              <Label>Start date</Label>
+              <Label>{t('staff.leave.startDate', 'Start date')}</Label>
               <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
             </div>
             <div className="space-y-2">
-              <Label>End date</Label>
+              <Label>{t('staff.leave.endDate', 'End date')}</Label>
               <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
             </div>
           </div>
@@ -337,14 +334,17 @@ export default function LeavePage() {
                   : "border-border bg-muted/40 text-muted-foreground"
               }`}
             >
-              Requesting <strong>{requestedDays} day{requestedDays === 1 ? "" : "s"}</strong>
+              {t('staff.leave.requesting', 'Requesting')} <strong>{daysWord(requestedDays, t)}</strong>
               {remaining !== null && (
                 <>
-                  {" "}· {remaining} day{remaining === 1 ? "" : "s"} available for {leaveType}
-                  {overBalance && " — exceeds your balance"}
+                  {" · "}
+                  {t('staff.leave.available', '{type}: {days} available')
+                    .replace('{type}', leaveTypeWord(leaveType, t))
+                    .replace('{days}', daysWord(remaining, t))}
+                  {overBalance && ` — ${t('staff.leave.exceedsBalance', 'exceeds your balance')}`}
                 </>
               )}
-              {remaining === null && " · no allocation set for this type"}
+              {remaining === null && ` · ${t('staff.leave.noAllocationForType', 'no allocation set for this type')}`}
             </div>
           )}
 
@@ -352,18 +352,18 @@ export default function LeavePage() {
             onClick={() => create.mutate()}
             disabled={create.isPending || !startDate || !endDate}
           >
-            {create.isPending ? "Submitting…" : "Submit request"}
+            {create.isPending ? t('staff.common.submitting', 'Submitting…') : t('staff.leave.submit', 'Submit request')}
           </Button>
         </CardContent>
       </Card>
 
       <Card>
-        <CardHeader><CardTitle>Upcoming & active</CardTitle></CardHeader>
+        <CardHeader><CardTitle>{t('staff.leave.upcoming', 'Upcoming & active')}</CardTitle></CardHeader>
         <CardContent>
           {isLoading ? (
             <Skeleton className="h-24 w-full" />
           ) : !upcoming.length ? (
-            <p className="text-sm text-muted-foreground py-6 text-center">No upcoming leave.</p>
+            <p className="text-sm text-muted-foreground py-6 text-center">{t('staff.leave.noUpcoming', 'No upcoming leave.')}</p>
           ) : (
             <ul className="divide-y">{upcoming.map(renderRow)}</ul>
           )}
@@ -371,12 +371,12 @@ export default function LeavePage() {
       </Card>
 
       <Card>
-        <CardHeader><CardTitle>History</CardTitle></CardHeader>
+        <CardHeader><CardTitle>{t('staff.leave.history', 'History')}</CardTitle></CardHeader>
         <CardContent>
           {isLoading ? (
             <Skeleton className="h-24 w-full" />
           ) : !past.length ? (
-            <p className="text-sm text-muted-foreground py-6 text-center">No past leave on record.</p>
+            <p className="text-sm text-muted-foreground py-6 text-center">{t('staff.leave.noPast', 'No past leave on record.')}</p>
           ) : (
             <ul className="divide-y">{past.map(renderRow)}</ul>
           )}
@@ -387,34 +387,34 @@ export default function LeavePage() {
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Edit leave request</DialogTitle>
+            <DialogTitle>{t('staff.leave.editTitle', 'Edit leave request')}</DialogTitle>
           </DialogHeader>
           {editing && (
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label>Type</Label>
+                <Label>{t('staff.common.type', 'Type')}</Label>
                 <Select
                   value={editing.leave_type}
                   onValueChange={(v) => setEditing({ ...editing, leave_type: v })}
                 >
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="vacation">Vacation</SelectItem>
-                    <SelectItem value="sick">Sick leave</SelectItem>
-                    <SelectItem value="parental">Parental</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
+                    <SelectItem value="vacation">{leaveTypeWord('vacation', t)}</SelectItem>
+                    <SelectItem value="sick">{leaveTypeWord('sick', t)}</SelectItem>
+                    <SelectItem value="parental">{leaveTypeWord('parental', t)}</SelectItem>
+                    <SelectItem value="other">{leaveTypeWord('other', t)}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Reason</Label>
+                <Label>{t('staff.leave.reason', 'Reason')}</Label>
                 <Input
                   value={editing.reason ?? ""}
                   onChange={(e) => setEditing({ ...editing, reason: e.target.value })}
                 />
               </div>
               <div className="space-y-2">
-                <Label>Start date</Label>
+                <Label>{t('staff.leave.startDate', 'Start date')}</Label>
                 <Input
                   type="date"
                   value={editing.start_date}
@@ -422,7 +422,7 @@ export default function LeavePage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>End date</Label>
+                <Label>{t('staff.leave.endDate', 'End date')}</Label>
                 <Input
                   type="date"
                   value={editing.end_date}
@@ -432,7 +432,7 @@ export default function LeavePage() {
             </div>
           )}
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setEditing(null)}>Cancel</Button>
+            <Button variant="ghost" onClick={() => setEditing(null)}>{t('staff.common.cancel', 'Cancel')}</Button>
             <Button
               onClick={() =>
                 editing &&
@@ -446,7 +446,7 @@ export default function LeavePage() {
               }
               disabled={updateRequest.isPending}
             >
-              {updateRequest.isPending ? "Saving…" : "Save changes"}
+              {updateRequest.isPending ? t('staff.common.saving', 'Saving…') : t('staff.common.saveChanges', 'Save changes')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -456,25 +456,25 @@ export default function LeavePage() {
       <AlertDialog open={!!cancelTarget} onOpenChange={(o) => !o && setCancelTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Cancel this leave request?</AlertDialogTitle>
+            <AlertDialogTitle>{t('staff.leave.cancelConfirm', 'Cancel this leave request?')}</AlertDialogTitle>
             <AlertDialogDescription>
               {cancelTarget && (
                 <>
-                  {cancelTarget.leave_type} ·{" "}
+                  {leaveTypeWord(cancelTarget.leave_type, t)} ·{" "}
                   {formatDate(cancelTarget.start_date, { month: "short", day: "numeric" })} –{" "}
-                  {formatDate(cancelTarget.end_date, { year: "numeric", month: "short", day: "numeric" })}.
-                  This action cannot be undone.
+                  {formatDate(cancelTarget.end_date, { year: "numeric", month: "short", day: "numeric" })}.{" "}
+                  {t('staff.leave.cannotUndo', 'This action cannot be undone.')}
                 </>
               )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Keep request</AlertDialogCancel>
+            <AlertDialogCancel>{t('staff.leave.keep', 'Keep request')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => cancelTarget && cancelRequest.mutate(cancelTarget.id)}
               disabled={cancelRequest.isPending}
             >
-              {cancelRequest.isPending ? "Cancelling…" : "Yes, cancel"}
+              {cancelRequest.isPending ? t('staff.leave.cancelling', 'Cancelling…') : t('staff.leave.cancelYes', 'Yes, cancel')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

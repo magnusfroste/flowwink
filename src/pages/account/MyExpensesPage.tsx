@@ -14,6 +14,8 @@ import { useCustomerFormat } from "@/hooks/useCustomerFormat";
 import { toast } from "sonner";
 import { Receipt } from "lucide-react";
 import { businessToday } from '@/lib/platform-fallbacks';
+import { useUiText } from "@/lib/ui-text";
+import { expenseCategoryWord, expenseStatusWord } from "@/lib/staff-words";
 
 const STATUS_COLORS: Record<string, string> = {
   draft: "bg-gray-100 text-gray-800",
@@ -24,6 +26,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 export default function MyExpensesPage() {
   const { formatDate, formatCurrency } = useCustomerFormat();
+  const t = useUiText();
   const { user } = useAuth();
   const { isEmployee } = useEmployeeSelf();
   const qc = useQueryClient();
@@ -49,10 +52,10 @@ export default function MyExpensesPage() {
 
   const create = useMutation({
     mutationFn: async () => {
-      if (!user?.id) throw new Error("Not signed in");
+      if (!user?.id) throw new Error(t('staff.expenses.notSignedIn', 'Not signed in'));
       const cents = Math.round(parseFloat(amount.replace(",", ".") || "0") * 100);
-      if (!cents || cents <= 0) throw new Error("Enter a valid amount");
-      if (!description.trim()) throw new Error("Description required");
+      if (!cents || cents <= 0) throw new Error(t('staff.expenses.invalidAmount', 'Enter a valid amount'));
+      if (!description.trim()) throw new Error(t('staff.expenses.descriptionRequired', 'Description required'));
       const { error } = await supabase.from("expenses").insert({
         user_id: user.id,
         description,
@@ -65,7 +68,7 @@ export default function MyExpensesPage() {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Expense submitted");
+      toast.success(t('staff.expenses.submitted', 'Expense submitted'));
       setDescription("");
       setAmount("");
       setVendor("");
@@ -79,7 +82,7 @@ export default function MyExpensesPage() {
       {!isEmployee && (
         <Card>
           <CardContent className="py-4 text-sm text-muted-foreground">
-            Tip: Ask your administrator to link your account to an employee profile so HR sees these in the same context.
+            {t('staff.expenses.linkTip', 'Tip: Ask your administrator to link your account to an employee profile so HR sees these in the same context.')}
           </CardContent>
         </Card>
       )}
@@ -88,55 +91,55 @@ export default function MyExpensesPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Receipt className="h-5 w-5" />
-            Submit expense
+            {t('staff.expenses.submit', 'Submit expense')}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2 sm:col-span-2">
-              <Label>Description</Label>
-              <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="e.g. Client lunch in Stockholm" />
+              <Label>{t('staff.common.description', 'Description')}</Label>
+              <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder={t('staff.expenses.descriptionPlaceholder', 'e.g. Client lunch in Stockholm')} />
             </div>
             <div className="space-y-2">
-              <Label>Amount (incl. VAT)</Label>
+              <Label>{t('staff.expenses.amount', 'Amount (incl. VAT)')}</Label>
               <Input value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" inputMode="decimal" />
             </div>
             <div className="space-y-2">
-              <Label>Date</Label>
+              <Label>{t('staff.common.date', 'Date')}</Label>
               <Input type="date" value={expenseDate} onChange={(e) => setExpenseDate(e.target.value)} />
             </div>
             <div className="space-y-2">
-              <Label>Category</Label>
+              <Label>{t('staff.expenses.categoryLabel', 'Category')}</Label>
               <Select value={category} onValueChange={setCategory}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="travel">Travel</SelectItem>
-                  <SelectItem value="meals">Meals</SelectItem>
-                  <SelectItem value="lodging">Lodging</SelectItem>
-                  <SelectItem value="supplies">Supplies</SelectItem>
-                  <SelectItem value="software">Software</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
+                  <SelectItem value="travel">{expenseCategoryWord('travel', t)}</SelectItem>
+                  <SelectItem value="meals">{expenseCategoryWord('meals', t)}</SelectItem>
+                  <SelectItem value="lodging">{expenseCategoryWord('lodging', t)}</SelectItem>
+                  <SelectItem value="supplies">{expenseCategoryWord('supplies', t)}</SelectItem>
+                  <SelectItem value="software">{expenseCategoryWord('software', t)}</SelectItem>
+                  <SelectItem value="other">{expenseCategoryWord('other', t)}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Vendor (optional)</Label>
-              <Input value={vendor} onChange={(e) => setVendor(e.target.value)} placeholder="e.g. SAS" />
+              <Label>{t('staff.expenses.vendor', 'Vendor (optional)')}</Label>
+              <Input value={vendor} onChange={(e) => setVendor(e.target.value)} placeholder={t('staff.expenses.vendorPlaceholder', 'e.g. SAS')} />
             </div>
           </div>
           <Button onClick={() => create.mutate()} disabled={create.isPending}>
-            {create.isPending ? "Submitting…" : "Submit expense"}
+            {create.isPending ? t('staff.common.submitting', 'Submitting…') : t('staff.expenses.submit', 'Submit expense')}
           </Button>
         </CardContent>
       </Card>
 
       <Card>
-        <CardHeader><CardTitle>My expenses</CardTitle></CardHeader>
+        <CardHeader><CardTitle>{t('staff.expenses.title', 'My expenses')}</CardTitle></CardHeader>
         <CardContent>
           {isLoading ? (
             <Skeleton className="h-32 w-full" />
           ) : !expenses?.length ? (
-            <p className="text-sm text-muted-foreground py-6 text-center">No expenses yet.</p>
+            <p className="text-sm text-muted-foreground py-6 text-center">{t('staff.expenses.none', 'No expenses yet.')}</p>
           ) : (
             <ul className="divide-y">
               {expenses.map((e: any) => (
@@ -144,14 +147,14 @@ export default function MyExpensesPage() {
                   <div className="min-w-0">
                     <p className="font-medium truncate">{e.description}</p>
                     <p className="text-sm text-muted-foreground">
-                      {formatDate(e.expense_date, { year: "numeric", month: "short", day: "numeric" })} · {e.category}{e.vendor ? ` · ${e.vendor}` : ""}
+                      {formatDate(e.expense_date, { year: "numeric", month: "short", day: "numeric" })} · {expenseCategoryWord(e.category, t)}{e.vendor ? ` · ${e.vendor}` : ""}
                     </p>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
                     <span className="tabular-nums font-medium">
                       {formatCurrency(e.amount_cents, e.currency)}
                     </span>
-                    <Badge variant="outline" className={STATUS_COLORS[e.status] || ""}>{e.status}</Badge>
+                    <Badge variant="outline" className={STATUS_COLORS[e.status] || ""}>{expenseStatusWord(e.status, t)}</Badge>
                   </div>
                 </li>
               ))}

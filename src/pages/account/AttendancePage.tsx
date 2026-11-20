@@ -10,9 +10,11 @@ import { Badge } from "@/components/ui/badge";
 import { Clock, Play, Square } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { useCustomerFormat } from "@/hooks/useCustomerFormat";
+import { useUiText } from "@/lib/ui-text";
 
 export default function AttendancePage() {
   const { formatDateTime, formatTime } = useCustomerFormat();
+  const t = useUiText();
   const { isEmployee, loading } = useEmployeeSelf();
   const { data: open, isLoading: openLoading } = useOpenAttendance();
   const { data: history } = useMyAttendance(20);
@@ -26,7 +28,7 @@ export default function AttendancePage() {
     return (
       <Card>
         <CardContent className="pt-6 text-center text-muted-foreground">
-          Time & attendance is only available for employees.
+          {t('staff.attendance.employeesOnly', 'Time & attendance is only available for employees.')}
         </CardContent>
       </Card>
     );
@@ -37,7 +39,7 @@ export default function AttendancePage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Clock className="h-5 w-5" /> Time clock
+            <Clock className="h-5 w-5" /> {t('staff.attendance.title', 'Time clock')}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -46,19 +48,19 @@ export default function AttendancePage() {
           ) : open ? (
             <div className="space-y-4">
               <div className="rounded-lg border bg-green-50 dark:bg-green-950/20 p-4">
-                <p className="text-sm text-muted-foreground">Currently clocked in</p>
+                <p className="text-sm text-muted-foreground">{t('staff.attendance.clockedIn', 'Currently clocked in')}</p>
                 <p className="text-2xl font-bold tabular-nums">
-                  Since {formatTime(open.clock_in)} — {formatDistanceToNow(new Date(open.clock_in))}
+                  {t('staff.attendance.since', 'Since {time} — {duration}').replace('{time}', formatTime(open.clock_in)).replace('{duration}', formatDistanceToNow(new Date(open.clock_in)))}
                 </p>
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
                 <div>
-                  <Label htmlFor="break">Break (minutes)</Label>
+                  <Label htmlFor="break">{t('staff.attendance.break', 'Break (minutes)')}</Label>
                   <Input id="break" type="number" min={0} value={breakMin} onChange={(e) => setBreakMin(parseInt(e.target.value) || 0)} />
                 </div>
                 <div>
-                  <Label htmlFor="notes">Notes (optional)</Label>
-                  <Input id="notes" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="What did you work on?" />
+                  <Label htmlFor="notes">{t('staff.attendance.notes', 'Notes (optional)')}</Label>
+                  <Input id="notes" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder={t('staff.attendance.notesPlaceholder', 'What did you work on?')} />
                 </div>
               </div>
               <Button
@@ -68,12 +70,12 @@ export default function AttendancePage() {
                 variant="destructive"
                 className="w-full"
               >
-                <Square className="h-4 w-4 mr-2" /> Clock out
+                <Square className="h-4 w-4 mr-2" /> {t('staff.attendance.clockOut', 'Clock out')}
               </Button>
             </div>
           ) : (
             <Button onClick={() => clockIn.mutate()} disabled={clockIn.isPending} size="lg" className="w-full">
-              <Play className="h-4 w-4 mr-2" /> Clock in
+              <Play className="h-4 w-4 mr-2" /> {t('staff.attendance.clockIn', 'Clock in')}
             </Button>
           )}
         </CardContent>
@@ -81,11 +83,11 @@ export default function AttendancePage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Recent entries</CardTitle>
+          <CardTitle>{t('staff.attendance.recent', 'Recent entries')}</CardTitle>
         </CardHeader>
         <CardContent>
           {!history?.length ? (
-            <p className="text-sm text-muted-foreground text-center py-8">No entries yet.</p>
+            <p className="text-sm text-muted-foreground text-center py-8">{t('staff.attendance.none', 'No entries yet.')}</p>
           ) : (
             <div className="space-y-2">
               {history.map((e) => (
@@ -93,8 +95,8 @@ export default function AttendancePage() {
                   <div>
                     <p className="font-medium">{formatDateTime(e.clock_in, { weekday: "short", month: "short", day: "numeric" })}</p>
                     <p className="text-sm text-muted-foreground">
-                      {formatTime(e.clock_in)} – {e.clock_out ? formatTime(e.clock_out) : "open"}
-                      {e.break_minutes > 0 && ` · ${e.break_minutes}m break`}
+                      {formatTime(e.clock_in)} – {e.clock_out ? formatTime(e.clock_out) : t('staff.attendance.open', 'open')}
+                      {e.break_minutes > 0 && ` · ${t('staff.attendance.breakTaken', '{minutes}m break').replace('{minutes}', String(e.break_minutes))}`}
                     </p>
                   </div>
                   <Badge variant={e.clock_out ? "secondary" : "default"} className="tabular-nums">
