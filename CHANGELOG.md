@@ -8,6 +8,15 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ## [Unreleased]
 
+### Fixed
+
+- **The site's menu no longer runs past the right edge on tablets.** The header
+  switched to the menu button at one fixed width (768 px); a site with seven
+  menu items and a cart drew its last item and its theme, account and cart
+  buttons past the edge at 800 px, where the site clips them away. The menu now
+  measures whether it fits beside the logo and folds into the menu button when
+  it does not, at any width. Found by "Check widths" on its first run.
+
 ### Added
 
 - **Another system's MCP server can be connected as a source of skills.** A

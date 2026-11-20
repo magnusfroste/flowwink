@@ -23,6 +23,7 @@ import { menuColumns, menuPanelJustify, type MenuColumn } from '@/lib/menu-colum
 import { BrandMark } from '@/components/public/BrandMark';
 import { safeHref } from '@/lib/safe-url';
 import { blogIndexPath } from '@/lib/language-path';
+import { useNavFits } from '@/hooks/useNavFits';
 
 interface NavPage {
   id: string;
@@ -242,6 +243,23 @@ export function PublicNavigation({ translations, currentLocale: localeProp, onDa
         url: localizeUrl(headerSettings.ctaUrl.trim()),
       }
     : null;
+  // The full menu folds into the menu button when it does not fit beside the
+  // logo — measured, not decided by the window's width (src/lib/nav-fit.ts).
+  const rowRef = useRef<HTMLDivElement>(null);
+  const logoRef = useRef<HTMLAnchorElement>(null);
+  const navRef = useRef<HTMLElement>(null);
+  const navContentKey = [
+    desktopHamburger ? 'panel' : 'row',
+    pages.map((p) => p.title).join('|'),
+    customNavItems.map((i) => i.label).join('|'),
+    blogModuleEnabled && blogSettings?.enabled ? blogLabel : '',
+    headerCta?.label ?? '',
+    accountEnabled ? 'account' : '',
+    cartEnabled ? 'cart' : '',
+    (translations?.length ?? 0) > 1 ? 'languages' : '',
+  ].join('#');
+  const folded = useNavFits(rowRef, logoRef, navRef, headerSettings.navAlignment, navContentKey);
+
   const panelColumns = useMemo((): MenuColumn[] => {
     if (!desktopHamburger) return [];
     const cols = menuColumns(customNavItems);
@@ -312,7 +330,8 @@ export function PublicNavigation({ translations, currentLocale: localeProp, onDa
   // Link color scheme classes
   const getLinkClasses = (isActive: boolean) => {
     const scheme = headerSettings.linkColorScheme || 'default';
-    const base = 'px-4 py-2 rounded-md text-sm font-medium transition-colors';
+    // One line per item: a label that wraps hides that the menu no longer fits.
+    const base = 'px-4 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap';
     
     if (lightOnDark) {
       return cn(base, isActive ? 'bg-white/15 text-white' : 'text-white/85 hover:text-white hover:bg-white/10');
@@ -534,7 +553,7 @@ export function PublicNavigation({ translations, currentLocale: localeProp, onDa
       ))}
       
       <div className="container mx-auto px-6">
-        <div className={cn(
+        <div ref={rowRef} className={cn(
           "flex items-center relative",
           headerSettings.headerHeight === 'compact' && "h-12",
           headerSettings.headerHeight === 'tall' && "h-20",
@@ -545,7 +564,7 @@ export function PublicNavigation({ translations, currentLocale: localeProp, onDa
           lightOnDark && "text-white"
         )}>
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-3">
+          <Link ref={logoRef} to="/" className="flex items-center gap-3 shrink-0">
             {(() => {
               const showLogo = headerSettings.showLogo !== false;
               // One owner: branding. The header block carried a second copy and this
@@ -618,8 +637,8 @@ export function PublicNavigation({ translations, currentLocale: localeProp, onDa
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className={cn(
-            "hidden md:flex items-center gap-2",
+          <nav ref={navRef} className={cn(
+            folded ? "hidden" : "hidden md:flex items-center gap-2",
             headerSettings.navAlignment === 'center' && "absolute left-1/2 -translate-x-1/2"
           )}>
             {!desktopHamburger && pages.map((page) => (
@@ -672,7 +691,7 @@ export function PublicNavigation({ translations, currentLocale: localeProp, onDa
           </nav>
 
           {/* Mobile Menu Button */}
-          <div className="flex items-center gap-2 md:hidden">
+          <div className={cn("flex items-center gap-2", !folded && "md:hidden")}>
             {branding?.allowThemeToggle !== false && <ThemeToggle />}
             <LanguageSwitcher translations={translations} currentLocale={currentLocale} />
             {accountEnabled && <AccountIndicator />}
@@ -694,7 +713,7 @@ export function PublicNavigation({ translations, currentLocale: localeProp, onDa
         {/* Mobile Navigation - Default/Dropdown Style */}
         {mobileMenuOpen && (!headerSettings.mobileMenuStyle || headerSettings.mobileMenuStyle === 'default') && (
           <nav className={cn(
-            "md:hidden py-4 border-t",
+            !folded && "md:hidden", "py-4 border-t",
             headerSettings.mobileMenuAnimation === 'slide-down' && "animate-[slide-in-from-top_0.3s_ease-out]",
             headerSettings.mobileMenuAnimation === 'slide-up' && "animate-[slide-in-from-bottom_0.3s_ease-out]",
             (!headerSettings.mobileMenuAnimation || headerSettings.mobileMenuAnimation === 'fade') && "animate-fade-in"
@@ -741,7 +760,7 @@ export function PublicNavigation({ translations, currentLocale: localeProp, onDa
         {/* Mobile Navigation - Fullscreen Overlay */}
         {mobileMenuOpen && headerSettings.mobileMenuStyle === 'fullscreen' && (
           <div className={cn(
-            "fixed inset-0 top-0 left-0 z-50 bg-background md:hidden flex flex-col",
+            !folded && "md:hidden", "fixed inset-0 top-0 left-0 z-50 bg-background flex flex-col",
             headerSettings.mobileMenuAnimation === 'slide-down' && "animate-[slide-in-from-top_0.3s_ease-out]",
             headerSettings.mobileMenuAnimation === 'slide-up' && "animate-[slide-in-from-bottom_0.3s_ease-out]",
             (!headerSettings.mobileMenuAnimation || headerSettings.mobileMenuAnimation === 'fade') && "animate-fade-in"
@@ -798,7 +817,7 @@ export function PublicNavigation({ translations, currentLocale: localeProp, onDa
         {/* Mobile Navigation - Slide from Right */}
         {mobileMenuOpen && headerSettings.mobileMenuStyle === 'slide' && (
           <div className={cn(
-            "fixed inset-y-0 right-0 z-50 w-80 max-w-full bg-background shadow-2xl md:hidden flex flex-col animate-slide-in-right"
+            !folded && "md:hidden", "fixed inset-y-0 right-0 z-50 w-80 max-w-full bg-background shadow-2xl flex flex-col animate-slide-in-right"
           )}>
             <div className="flex items-center justify-between p-6 border-b">
               <span className="font-serif font-bold text-lg">Menu</span>
@@ -852,7 +871,7 @@ export function PublicNavigation({ translations, currentLocale: localeProp, onDa
         {/* Backdrop for slide menu */}
         {mobileMenuOpen && headerSettings.mobileMenuStyle === 'slide' && (
           <div 
-            className="fixed inset-0 z-40 bg-black/50 md:hidden animate-fade-in"
+            className={cn("fixed inset-0 z-40 bg-black/50 animate-fade-in", !folded && "md:hidden")}
             onClick={() => setMobileMenuOpen(false)}
           />
         )}
@@ -863,7 +882,7 @@ export function PublicNavigation({ translations, currentLocale: localeProp, onDa
         blurred header background makes the header the containing block for
         fixed children, and the panel must cover the viewport. Phones keep
         their own mobile menu. */}
-    {desktopHamburger && mobileMenuOpen && (
+    {desktopHamburger && !folded && mobileMenuOpen && (
       <div
         role="dialog"
         aria-modal="true"
