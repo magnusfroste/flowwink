@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261120090000",
-      "migrations_count": 779,
+      "migration_head": "20261120150000",
+      "migrations_count": 780,
       "migrations": [
         {
           "version": "00000000000000",
@@ -3121,19 +3121,23 @@
         {
           "version": "20261120090000",
           "name": "en-aterstallning-tar-inte-mejlmallarna"
+        },
+        {
+          "version": "20261120150000",
+          "name": "sidans-bredder-matta"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:05a15fcb49bdbcb16bae131f8b5e5c8ff2772d849049252610298c473f30457b",
+      "seed_hash": "sha256:c0a99c0f92bfc55eec97853587c539dec596b7f47743d9b21fd8a581c36b7afb",
       "skill_count": 674,
       "module_count": 69
     },
     "edge_functions": {
       "count": 76,
-      "shared_hash": "sha256:494d2cb2c90fe20f9d3742a7a60076c9f8079173061bbf64a8f7e2c2a94a8e50",
+      "shared_hash": "sha256:5ed07ce016c26c5748e166c590ce375ba02913a316b1643003990f320422afdc",
       "functions": {
-        "agent-execute": "sha256:55dfaa4224f7a3cbe09658bc3f5f64125db481342d45a94bbccc3346877804ed",
+        "agent-execute": "sha256:105d2e54371ab41e55c13d3ecf87b02ecbdea85b10660da4ece40653b2e6e09e",
         "agent-operate": "sha256:4320e02dd3e6a0a1706b42dc1905b631c61e6a4cbe3556c701f474c278c89e1a",
         "ai-task": "sha256:ce3aacdef625bba758f4323da3e49104a1b94a3d3d77d800e89dacd0b803d65e",
         "automation-dispatcher": "sha256:d905660cd907c6f1ef5c7cac0a97ed44a4e4187ef4d5179089fa2714b2751443",
