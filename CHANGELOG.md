@@ -15,7 +15,8 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
   contract and a manager's team were English built into the code, and showed
   stored values as they are ("employee_review", "on_leave", "sent"). They are
   visitor texts with the platform's Swedish, and a stored value is a word
-  (`src/lib/staff-words.ts`).
+  (`src/lib/staff-words.ts`). The payslip itself, the time clock's durations
+  ("8 h 30 min") and the dates of an employment contract follow too.
 
 - **More of what a visitor meets follows the site's language.** Order
   tracking, the page where a subscriber views, exports or deletes their

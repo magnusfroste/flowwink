@@ -117,3 +117,23 @@ export function reviewPeriodWord(periodType: string, t: Words): string {
   if (periodType === 'ad_hoc') return t('staff.performance.period.adHoc', 'Ad-hoc review');
   return t('staff.performance.period.other', '{type} review').replace('{type}', periodType);
 }
+
+/** A line on the payslip: what kind of pay it is. */
+export function payComponentWord(type: string, t: Words): string {
+  if (type === 'salary') return t('staff.payslip.type.salary', 'Salary');
+  if (type === 'benefit') return t('staff.payslip.type.benefit', 'Benefit');
+  if (type === 'deduction') return t('staff.payslip.type.deduction', 'Deduction');
+  if (type === 'bonus') return t('staff.payslip.type.bonus', 'Bonus');
+  if (type === 'overtime') return t('staff.payslip.type.overtime', 'Overtime');
+  return type;
+}
+
+/** Worked time, from minutes: "8 h 30 min". */
+export function durationWord(minutes: number | null | undefined, t: Words): string {
+  if (minutes == null) return '–';
+  const whole = Math.max(0, Math.round(minutes));
+  const h = Math.floor(whole / 60);
+  const m = whole % 60;
+  if (h === 0) return t('staff.common.minutes', '{minutes} min').replace('{minutes}', String(m));
+  return t('staff.common.hoursMinutes', '{hours} h {minutes} min').replace('{hours}', String(h)).replace('{minutes}', String(m));
+}
