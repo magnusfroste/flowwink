@@ -356,6 +356,7 @@ export const SKILL_OWNER_MODULE: Readonly<Record<string, string>> = Object.freez
   "manage_loyalty": "pos",
   "manage_maintenance_request": "maintenance",
   "manage_maintenance_schedule": "maintenance",
+  "manage_mcp_sources": "platform",
   "manage_modules": "platform",
   "manage_newsletter_subscribers": "newsletter",
   "manage_newsletters": "newsletter",

@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261120150000",
-      "migrations_count": 780,
+      "migration_head": "20261120150001",
+      "migrations_count": 781,
       "migrations": [
         {
           "version": "00000000000000",
@@ -3125,19 +3125,23 @@
         {
           "version": "20261120150000",
           "name": "sidans-bredder-matta"
+        },
+        {
+          "version": "20261120150001",
+          "name": "externa-mcp-kallor"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:c0a99c0f92bfc55eec97853587c539dec596b7f47743d9b21fd8a581c36b7afb",
-      "skill_count": 674,
+      "seed_hash": "sha256:3b8565186566de7cd6ce5e2fe7d2add3da8c2cec1cc934bc5dc9bcb82265e54f",
+      "skill_count": 675,
       "module_count": 69
     },
     "edge_functions": {
       "count": 76,
-      "shared_hash": "sha256:5ed07ce016c26c5748e166c590ce375ba02913a316b1643003990f320422afdc",
+      "shared_hash": "sha256:490aea5be44bc88f437d415c4498d04daf004f5a1010ac6a96ff173240ab8ecb",
       "functions": {
-        "agent-execute": "sha256:105d2e54371ab41e55c13d3ecf87b02ecbdea85b10660da4ece40653b2e6e09e",
+        "agent-execute": "sha256:25967fa6c79b6ecbdd99444eeea5ac5499e1231eb31f76b0c8b5a4594c88c8e6",
         "agent-operate": "sha256:4320e02dd3e6a0a1706b42dc1905b631c61e6a4cbe3556c701f474c278c89e1a",
         "ai-task": "sha256:ce3aacdef625bba758f4323da3e49104a1b94a3d3d77d800e89dacd0b803d65e",
         "automation-dispatcher": "sha256:d905660cd907c6f1ef5c7cac0a97ed44a4e4187ef4d5179089fa2714b2751443",
@@ -3192,7 +3196,7 @@
         "quote-pay": "sha256:eac676922cee4e9ebe19650afd1ec708a48c2b3efd8d56d0f77654d21a272c00",
         "quote-sign": "sha256:e7b34cc75b2be5c5f1a3d97afc979467ff190b9323f7930ec359a27d96a147a1",
         "run-autonomy-tests": "sha256:53426062cbb9c3c6963f6c807c77176ca89f56aea35b7bfab3e84e4dff087cd2",
-        "run-platform-tests": "sha256:96f822799b36326c3d087461ac76f4f7563104f08a77d4659fe0f821b9c7f935",
+        "run-platform-tests": "sha256:d3b3b698352857bb8bb8e5a2bad1b193ba4847ae270f69dc55b7a5dc34d6e15f",
         "score-visitor-intent": "sha256:da5637476f5334696ed6b8007524182661416f19b2f1735227dcf0b8f0ee4143",
         "send-webhook": "sha256:796644e9ab3d12a339c4fcc411fb28a9be6ef235b109e4e2e22262d53a44cbcc",
         "setup-database": "sha256:49f03dc85ea4d48cd53b7760b0a68f4e2a628a217207b0fe4590d931f594e56e",
