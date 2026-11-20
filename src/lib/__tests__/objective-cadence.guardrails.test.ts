@@ -199,6 +199,45 @@ describe('objective cadence guardrails', async () => {
     expect(week.actionable).toHaveLength(0);
   });
 
+  // liteit, 2026-11-20: the heartbeat ticks at 06:00 every day and its post
+  // lands at ~06:01, so a window of exactly 7 × 24 h still held last week's post
+  // when this week's tick began — "one a week" became one every eight days
+  // (10-28 → 11-05 → 11-14 → not 11-21). A period is counted in calendar days.
+  describe('a period is calendar days, not hours', () => {
+    const lastPost = [{ skill_name: 'write_blog_post', status: 'success', created_at: '2026-11-14T06:01:03Z' }];
+    const at = (iso: string) => vi.setSystemTime(new Date(iso));
+    afterAll(() => { vi.setSystemTime(new Date('2026-07-15T12:00:00Z')); });
+
+    it("a week later at the same tick, last week's post no longer fills the week", async () => {
+      at('2026-11-21T06:00:30Z');
+      const { actionable } = await R.partitionByCadence(stubClient(lastPost), [blogObjective({ max: 1, per: 'week', counts: 'write_blog_post' })]);
+      expect(actionable).toHaveLength(1);
+    });
+
+    it('six days later the week is still filled', async () => {
+      at('2026-11-20T06:00:30Z');
+      const { actionable, satisfied } = await R.partitionByCadence(stubClient(lastPost), [blogObjective({ max: 1, per: 'week', counts: 'write_blog_post' })]);
+      expect(actionable).toHaveLength(0);
+      expect(satisfied[0].note).toMatch(/1\/1 per week/);
+    });
+
+    it('every: 3 days opens on the third day, at the same tick', async () => {
+      const obj = blogObjective({ max: 1, per: 'day', every: 3, counts: 'write_blog_post' });
+      at('2026-11-17T06:00:30Z');
+      expect((await R.partitionByCadence(stubClient(lastPost), [obj])).actionable).toHaveLength(1);
+      at('2026-11-16T06:00:30Z');
+      expect((await R.partitionByCadence(stubClient(lastPost), [obj])).actionable).toHaveLength(0);
+    });
+
+    it('counts days on the business clock, across a DST change', async () => {
+      const { businessDayStartDaysAgo } = await import('../../../supabase/functions/_shared/pilot/cadence.ts');
+      // Stockholm left summer time on 2026-10-25; six days before 10-28 is 10-22, midnight CEST.
+      expect(businessDayStartDaysAgo('Europe/Stockholm', 6, new Date('2026-10-28T12:00:00Z')).toISOString()).toBe('2026-10-21T22:00:00.000Z');
+      // zero days back is today's midnight (CET after the change)
+      expect(businessDayStartDaysAgo('Europe/Stockholm', 0, new Date('2026-10-28T12:00:00Z')).toISOString()).toBe('2026-10-27T23:00:00.000Z');
+    });
+  });
+
   describe('cadenceRefusal — the quota at the call site', () => {
     // liteit 2026-10-28: the prompt dropped the satisfied objective, the model
     // read it back via list_objectives and published six posts in ten days.
