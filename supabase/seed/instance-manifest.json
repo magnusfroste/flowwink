@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261120150001",
-      "migrations_count": 781,
+      "migration_head": "20261120160000",
+      "migrations_count": 782,
       "migrations": [
         {
           "version": "00000000000000",
@@ -3129,6 +3129,10 @@
         {
           "version": "20261120150001",
           "name": "externa-mcp-kallor"
+        },
+        {
+          "version": "20261120160000",
+          "name": "portalen-visar-kundens-bokningar"
         }
       ]
     },
@@ -3139,9 +3143,9 @@
     },
     "edge_functions": {
       "count": 76,
-      "shared_hash": "sha256:490aea5be44bc88f437d415c4498d04daf004f5a1010ac6a96ff173240ab8ecb",
+      "shared_hash": "sha256:8765973f4ca6d72b1405a74fa17254a47e83f21394f28a99331167216b0a304a",
       "functions": {
-        "agent-execute": "sha256:25967fa6c79b6ecbdd99444eeea5ac5499e1231eb31f76b0c8b5a4594c88c8e6",
+        "agent-execute": "sha256:3162f4bffa8f08a76ec14938f081fae4ad8a5b4e91661c95d45fec02b3b32e61",
         "agent-operate": "sha256:4320e02dd3e6a0a1706b42dc1905b631c61e6a4cbe3556c701f474c278c89e1a",
         "ai-task": "sha256:ce3aacdef625bba758f4323da3e49104a1b94a3d3d77d800e89dacd0b803d65e",
         "automation-dispatcher": "sha256:d905660cd907c6f1ef5c7cac0a97ed44a4e4187ef4d5179089fa2714b2751443",
