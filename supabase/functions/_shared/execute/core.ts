@@ -151,6 +151,7 @@ import { handler as hFetchImage } from '../handlers/fetch-image.ts';
 import { handler as hTestAiConnection } from '../handlers/test-ai-connection.ts';
 import { handler as hUpdateAutonomyCron } from '../handlers/update-autonomy-cron.ts';
 import { executeCheckIntegrations } from '../handlers/check-integrations.ts';
+import { executeManageMcpSources, executeMcpSourceTool } from '../handlers/mcp-sources.ts';
 import { describeWebLayer } from '../web/layer.ts';
 import { executeDescribeBlocks } from '../handlers/describe-blocks.ts';
 import { envelopeOf, readEnvelopeArgs } from '../blocks/envelope.ts';
@@ -256,6 +257,7 @@ const INTERNAL_HANDLERS: Record<string, InternalHandler> = {
   'internal:describe_blocks': ({ args }) => executeDescribeBlocks(args),
   'internal:inspect_rendered_page': ({ supabase, args }) => executeInspectRenderedPage(supabase, args),
   'internal:check_integrations': ({ supabase, args }) => executeCheckIntegrations(supabase, args),
+  'internal:manage_mcp_sources': ({ supabase, args }) => executeManageMcpSources(supabase, args),
   'internal:web_providers_status': ({ supabase }) => describeWebLayer(supabase),
   'internal:get_agent_trace': ({ supabase, args }) => executeAgentTrace(supabase, args),
   'internal:agent_day_report': ({ supabase, args }) => executeAgentDayReport(supabase, args),
@@ -1442,6 +1444,11 @@ export async function executeSkillRequest(input: ExecuteRequest, auth: ExecuteAu
 
       } else if (handler.startsWith('webhook:')) {
         result = await executeWebhook(supabase, args);
+
+      } else if (handler.startsWith('mcp:')) {
+        // A tool of an external MCP server an admin connected (#862): one
+        // outbound tools/call, the source's key read from the vault.
+        result = await executeMcpSourceTool(supabase, handler, args);
 
       } else if (handler.startsWith('responses:')) {
         const peerName = handler.replace('responses:', '');

@@ -14,6 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
 import { WebLayerCard } from "@/components/admin/integrations/WebLayerCard";
+import { McpSourcesCard } from "@/components/admin/integrations/McpSourcesCard";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from "@/components/ui/sheet";
@@ -1633,6 +1634,9 @@ export default function IntegrationsStatusPage() {
 
         {/* One web layer: search and page reading, provider order and status */}
         <WebLayerCard />
+
+        {/* Other systems reached through their own MCP server (#862) */}
+        <McpSourcesCard />
 
         {/* Company Profile moved to Sales Intelligence module */}
 

@@ -102,5 +102,7 @@ export const ADMIN_ONLY_RPCS: Readonly<Record<string, string>> = {
   admin_mfa_status: 'Läser vilka konton som har en andra faktor (auth.mfa_factors) — användaradministration, samma grind som Users-sidan.',
   agent_day: 'Vad en ansluten agent gjorde — läses av en admin ELLER agentens ägare (ägarkontrollen står i kroppen). Agentadministration, inte en moduls; samma grind som Agents-sidan.',
   admin_user_sign_ins: 'Läser när varje person senast loggade in och var aktiv (auth.users, auth.sessions) — användaradministration, samma grind som Users-sidan.',
+  // ── Externa systems nycklar: en nyckel är admins, inte en moduls ───────────
+  set_mcp_source_key: 'Lägger nyckeln till en ansluten extern MCP-server i valvet (Integrations → Connected MCP servers). En modulroll ska aldrig kunna byta vilken nyckel plattformen skickar till ett annat system; Integrations-sidan är adminOnly.',
   admin_reset_mfa: 'Tar bort en kollegas andra faktor (tappad telefon). Återställningsvägen är admins — en modulroll ska aldrig kunna låsa upp en annan persons inloggning.',
 };

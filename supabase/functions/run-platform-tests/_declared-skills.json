@@ -352,6 +352,7 @@
     "manage_loyalty",
     "manage_maintenance_request",
     "manage_maintenance_schedule",
+    "manage_mcp_sources",
     "manage_modules",
     "manage_newsletter_subscribers",
     "manage_newsletters",
