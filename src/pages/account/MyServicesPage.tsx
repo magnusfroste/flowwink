@@ -17,6 +17,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { LifeBuoy, Package, CalendarClock } from 'lucide-react';
 import { useCustomerFormat } from '@/hooks/useCustomerFormat';
 import { ServiceTicketSheet } from '@/components/account/ServiceTicketSheet';
+import { useUiText } from '@/lib/ui-text';
+import { billingIntervalWord, serviceStatusWord } from '@/lib/customer-words';
 
 interface Service {
   id: string;
@@ -41,15 +43,9 @@ const STATUS_STYLE: Record<string, string> = {
 
 // Customer-facing status words — 'provisioning' reads as "being set up", the
 // signed-but-not-yet-delivered state (delivery is a status, not an order).
-const STATUS_LABEL: Record<string, string> = {
-  active: 'Active',
-  provisioning: 'Being set up',
-  trialing: 'Trial',
-  past_due: 'Payment due',
-  canceled: 'Ended',
-};
 
 export default function MyServicesPage() {
+  const t = useUiText();
   const { formatCurrency, formatDate } = useCustomerFormat();
   const [helpFor, setHelpFor] = useState<{ id: string; name: string } | null>(null);
 
@@ -68,9 +64,9 @@ export default function MyServicesPage() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-bold">My services</h1>
+        <h1 className="text-2xl font-bold">{t('account.services.title', 'My services')}</h1>
         <p className="text-muted-foreground text-sm mt-1">
-          The services you have with us — status, term, and support.
+          {t('account.services.lead', 'The services you have with us — status, term, and support.')}
         </p>
       </div>
 
@@ -84,7 +80,7 @@ export default function MyServicesPage() {
       {!isLoading && services.length === 0 && (
         <Card>
           <CardContent className="py-10 text-center text-muted-foreground text-sm">
-            You have no active services yet.
+            {t('account.services.empty', 'You have no active services yet.')}
           </CardContent>
         </Card>
       )}
@@ -96,42 +92,42 @@ export default function MyServicesPage() {
               <div className="flex items-start justify-between gap-2">
                 <CardTitle className="text-base flex items-center gap-2">
                   <Package className="h-4 w-4 text-primary shrink-0" />
-                  {s.product_name || 'Service'}
+                  {s.product_name || t('account.services.service', 'Service')}
                 </CardTitle>
                 <Badge className={STATUS_STYLE[s.status] ?? 'bg-muted text-muted-foreground'}>
-                  {STATUS_LABEL[s.status] ?? s.status}
+                  {serviceStatusWord(s.status, t)}
                 </Badge>
               </div>
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
               {s.unit_amount_cents != null && (
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Price</span>
+                  <span className="text-muted-foreground">{t('account.services.price', 'Price')}</span>
                   <span className="font-mono">
                     {formatCurrency(s.unit_amount_cents, s.currency ?? undefined)}
-                    {s.billing_interval ? ` / ${s.billing_interval}` : ''}
+                    {s.billing_interval ? ` / ${billingIntervalWord(s.billing_interval, t)}` : ''}
                   </span>
                 </div>
               )}
               {s.commitment_months != null && (
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Commitment</span>
-                  <span>{s.commitment_months} months
-                    {s.commitment_end ? ` (until ${formatDate(s.commitment_end)})` : ''}
+                  <span className="text-muted-foreground">{t('account.services.commitment', 'Commitment')}</span>
+                  <span>{t('account.services.months', '{count} months').replace('{count}', String(s.commitment_months))}
+                    {s.commitment_end ? ` ${t('account.services.until', '(until {date})').replace('{date}', formatDate(s.commitment_end))}` : ''}
                   </span>
                 </div>
               )}
               {(s.next_invoice_date || s.current_period_end) && (
                 <div className="flex justify-between">
                   <span className="text-muted-foreground flex items-center gap-1">
-                    <CalendarClock className="h-3.5 w-3.5" /> Next invoice
+                    <CalendarClock className="h-3.5 w-3.5" /> {t('account.services.nextInvoice', 'Next invoice')}
                   </span>
                   <span>{formatDate(s.next_invoice_date || s.current_period_end)}</span>
                 </div>
               )}
               {s.status === 'provisioning' && (
                 <p className="text-xs text-muted-foreground bg-muted/50 rounded-md p-2">
-                  We're setting up your service. You'll see it go active once it's ready.
+                  {t('account.services.settingUp', 'We are setting up your service. You will see it go active once it is ready.')}
                 </p>
               )}
               <div className="pt-2 border-t">
@@ -141,9 +137,9 @@ export default function MyServicesPage() {
                     card the customer is looking at. */}
                 <Button
                   variant="outline" size="sm" className="w-full"
-                  onClick={() => setHelpFor({ id: s.id, name: s.product_name || 'Service' })}
+                  onClick={() => setHelpFor({ id: s.id, name: s.product_name || t('account.services.service', 'Service') })}
                 >
-                  <LifeBuoy className="h-4 w-4 mr-2" /> Get help with this service
+                  <LifeBuoy className="h-4 w-4 mr-2" /> {t('account.services.getHelp', 'Get help with this service')}
                 </Button>
               </div>
             </CardContent>

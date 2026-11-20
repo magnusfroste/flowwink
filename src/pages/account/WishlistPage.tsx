@@ -9,8 +9,10 @@ import { toast } from 'sonner';
 import { useStorefront, productHref } from '@/hooks/useStorefront';
 import { AskAboutProduct } from '@/components/public/AskAboutProduct';
 import { useCustomerFormat } from '@/hooks/useCustomerFormat';
+import { useUiText } from '@/lib/ui-text';
 
 export default function WishlistPage() {
+  const t = useUiText();
   const { formatPrice } = useCustomerFormat();
   const { data: wishlistItems = [], isLoading: wlLoading } = useWishlist();
   const { data: products = [], isLoading: pLoading } = useProducts({ activeOnly: true });
@@ -28,7 +30,7 @@ export default function WishlistPage() {
   const handleAddToCart = (product: typeof products[0]) => {
     const isInCart = cartItems.some(i => i.productId === product.id);
     if (isInCart) {
-      toast.info('Already in cart');
+      toast.info(t('account.wishlist.alreadyInCart', 'Already in cart'));
       return;
     }
     addItem({
@@ -38,7 +40,7 @@ export default function WishlistPage() {
       currency: product.currency,
       imageUrl: product.image_url,
     });
-    toast.success(`${product.name} added to cart`);
+    toast.success(t('account.wishlist.addedToCart', '{product} added to cart').replace('{product}', product.name));
   };
 
   if (isLoading) {
@@ -49,10 +51,10 @@ export default function WishlistPage() {
     return (
       <div className="text-center py-16 space-y-4">
         <Heart className="h-16 w-16 mx-auto text-muted-foreground/30" />
-        <h2 className="text-xl font-semibold">Your wishlist is empty</h2>
-        <p className="text-muted-foreground">Save products you love for later.</p>
+        <h2 className="text-xl font-semibold">{t('account.wishlist.empty', 'Your wishlist is empty')}</h2>
+        <p className="text-muted-foreground">{t('account.wishlist.emptyHint', 'Save products you love for later.')}</p>
         <Button asChild>
-          <Link to="/shop">Browse products</Link>
+          <Link to="/shop">{t('account.browseProducts', 'Browse products')}</Link>
         </Button>
       </div>
     );
@@ -60,7 +62,7 @@ export default function WishlistPage() {
 
   return (
     <div>
-      <h2 className="text-lg font-semibold mb-4">Wishlist ({wishlistProducts.length})</h2>
+      <h2 className="text-lg font-semibold mb-4">{t('account.wishlist.title', 'Wishlist ({count})').replace('{count}', String(wishlistProducts.length))}</h2>
       <div className="space-y-3">
         {wishlistProducts.map((product) => (
           <Card key={product.id}>
@@ -91,7 +93,7 @@ export default function WishlistPage() {
                   ) : (
                   <Button size="sm" variant="outline" onClick={() => handleAddToCart(product)}>
                     <ShoppingCart className="h-4 w-4 mr-1" />
-                    Add to cart
+                    {t('account.wishlist.addToCart', 'Add to cart')}
                   </Button>
                   )}
                   <Button

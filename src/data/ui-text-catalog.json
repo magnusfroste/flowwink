@@ -1,6 +1,176 @@
 {
   "keys": [
     {
+      "key": "account.activate.acceptLead",
+      "group": "account",
+      "fallback": "Continue to activate your account and choose a password."
+    },
+    {
+      "key": "account.activate.acceptTitle",
+      "group": "account",
+      "fallback": "Accept your invitation"
+    },
+    {
+      "key": "account.activate.confirmPassword",
+      "group": "account",
+      "fallback": "Confirm password"
+    },
+    {
+      "key": "account.activate.continue",
+      "group": "account",
+      "fallback": "Continue"
+    },
+    {
+      "key": "account.activate.expiredLead",
+      "group": "account",
+      "fallback": "This activation link is no longer valid — it may already have been used, or it expired. Contact us and we will send a new one."
+    },
+    {
+      "key": "account.activate.expiredTitle",
+      "group": "account",
+      "fallback": "Invitation link expired"
+    },
+    {
+      "key": "account.activate.home",
+      "group": "account",
+      "fallback": "Back to homepage"
+    },
+    {
+      "key": "account.activate.mismatch",
+      "group": "account",
+      "fallback": "The passwords do not match."
+    },
+    {
+      "key": "account.activate.newPassword",
+      "group": "account",
+      "fallback": "New password"
+    },
+    {
+      "key": "account.activate.newPasswordLead",
+      "group": "account",
+      "fallback": "Continue to choose a new password for your account."
+    },
+    {
+      "key": "account.activate.newPasswordTitle",
+      "group": "account",
+      "fallback": "Set a new password"
+    },
+    {
+      "key": "account.activate.setLead",
+      "group": "account",
+      "fallback": "Choose a password to finish setting up your account."
+    },
+    {
+      "key": "account.activate.setTitle",
+      "group": "account",
+      "fallback": "Set your password"
+    },
+    {
+      "key": "account.activate.submit",
+      "group": "account",
+      "fallback": "Activate account"
+    },
+    {
+      "key": "account.activate.tooShort",
+      "group": "account",
+      "fallback": "Password must be at least 8 characters."
+    },
+    {
+      "key": "account.activate.verifying",
+      "group": "account",
+      "fallback": "Verifying your invitation…"
+    },
+    {
+      "key": "account.activate.welcome",
+      "group": "account",
+      "fallback": "Welcome — your account is ready."
+    },
+    {
+      "key": "account.addresses.add",
+      "group": "account",
+      "fallback": "Add address"
+    },
+    {
+      "key": "account.addresses.city",
+      "group": "account",
+      "fallback": "City"
+    },
+    {
+      "key": "account.addresses.country",
+      "group": "account",
+      "fallback": "Country"
+    },
+    {
+      "key": "account.addresses.default",
+      "group": "account",
+      "fallback": "Default"
+    },
+    {
+      "key": "account.addresses.edit",
+      "group": "account",
+      "fallback": "Edit address"
+    },
+    {
+      "key": "account.addresses.empty",
+      "group": "account",
+      "fallback": "No saved addresses"
+    },
+    {
+      "key": "account.addresses.emptyHint",
+      "group": "account",
+      "fallback": "Add an address to speed up checkout."
+    },
+    {
+      "key": "account.addresses.fullName",
+      "group": "account",
+      "fallback": "Full name"
+    },
+    {
+      "key": "account.addresses.label",
+      "group": "account",
+      "fallback": "Label"
+    },
+    {
+      "key": "account.addresses.labelExample",
+      "group": "account",
+      "fallback": "Home"
+    },
+    {
+      "key": "account.addresses.line1",
+      "group": "account",
+      "fallback": "Address line 1"
+    },
+    {
+      "key": "account.addresses.line2",
+      "group": "account",
+      "fallback": "Address line 2"
+    },
+    {
+      "key": "account.addresses.new",
+      "group": "account",
+      "fallback": "New address"
+    },
+    {
+      "key": "account.addresses.phone",
+      "group": "account",
+      "fallback": "Phone"
+    },
+    {
+      "key": "account.addresses.postalCode",
+      "group": "account",
+      "fallback": "Postal code"
+    },
+    {
+      "key": "account.addresses.title",
+      "group": "account",
+      "fallback": "Saved addresses"
+    },
+    {
+      "key": "account.addresses.update",
+      "group": "account",
+      "fallback": "Update address"
+    },
+    {
       "key": "account.agents.intro",
       "group": "account",
       "fallback": "Connect the AI assistant you already use. It works here as you, within your access."
@@ -59,6 +229,141 @@
       "key": "account.agreements.until",
       "group": "account",
       "fallback": "Until"
+    },
+    {
+      "key": "account.assistant.lead",
+      "group": "account",
+      "fallback": "Ask about your orders, invoices, subscriptions or bookings. The assistant sees your own account and can help you get things done."
+    },
+    {
+      "key": "account.assistant.leadNamed",
+      "group": "account",
+      "fallback": "Hi {name} — ask about your orders, invoices, subscriptions or bookings. The assistant sees your own account and can help you get things done."
+    },
+    {
+      "key": "account.auth.alreadyExists",
+      "group": "account",
+      "fallback": "An account with this email already exists"
+    },
+    {
+      "key": "account.auth.backToShop",
+      "group": "account",
+      "fallback": "Continue shopping"
+    },
+    {
+      "key": "account.auth.create",
+      "group": "account",
+      "fallback": "Create account"
+    },
+    {
+      "key": "account.auth.created",
+      "group": "account",
+      "fallback": "Account created! Please check your email to verify your account."
+    },
+    {
+      "key": "account.auth.emailInvalid",
+      "group": "account",
+      "fallback": "Please enter a valid email"
+    },
+    {
+      "key": "account.auth.lead",
+      "group": "account",
+      "fallback": "Sign in to see your orders, invoices, agreements and support requests."
+    },
+    {
+      "key": "account.auth.nameTooShort",
+      "group": "account",
+      "fallback": "Name must be at least 2 characters"
+    },
+    {
+      "key": "account.auth.password",
+      "group": "account",
+      "fallback": "Password"
+    },
+    {
+      "key": "account.auth.passwordHint",
+      "group": "account",
+      "fallback": "At least 6 characters"
+    },
+    {
+      "key": "account.auth.passwordTooShort",
+      "group": "account",
+      "fallback": "Password must be at least 6 characters"
+    },
+    {
+      "key": "account.auth.signIn",
+      "group": "account",
+      "fallback": "Sign in"
+    },
+    {
+      "key": "account.auth.wrongCredentials",
+      "group": "account",
+      "fallback": "Incorrect email or password"
+    },
+    {
+      "key": "account.browseProducts",
+      "group": "account",
+      "fallback": "Browse products"
+    },
+    {
+      "key": "account.cancel",
+      "group": "account",
+      "fallback": "Cancel"
+    },
+    {
+      "key": "account.help.about",
+      "group": "account",
+      "fallback": "About your service:"
+    },
+    {
+      "key": "account.help.created",
+      "group": "account",
+      "fallback": "Request created"
+    },
+    {
+      "key": "account.help.createdNumbered",
+      "group": "account",
+      "fallback": "Request {number} created"
+    },
+    {
+      "key": "account.help.details",
+      "group": "account",
+      "fallback": "Details (optional)"
+    },
+    {
+      "key": "account.help.detailsHint",
+      "group": "account",
+      "fallback": "Anything that helps us understand what is happening…"
+    },
+    {
+      "key": "account.help.issue",
+      "group": "account",
+      "fallback": "What is the issue?"
+    },
+    {
+      "key": "account.help.issueHint",
+      "group": "account",
+      "fallback": "e.g. No connection since this morning"
+    },
+    {
+      "key": "account.help.needSummary",
+      "group": "account",
+      "fallback": "Please add a short summary."
+    },
+    {
+      "key": "account.help.send",
+      "group": "account",
+      "fallback": "Send request"
+    },
+    {
+      "key": "account.help.teamSees",
+      "group": "account",
+      "fallback": "Our team will see which service this concerns."
+    },
+    {
+      "key": "account.help.title",
+      "group": "account",
+      "fallback": "Get help"
     },
     {
       "key": "account.invoices.due",
@@ -216,6 +521,71 @@
       "fallback": "Wishlist"
     },
     {
+      "key": "account.orders.delivered",
+      "group": "account",
+      "fallback": "Delivered"
+    },
+    {
+      "key": "account.orders.deliveryAddress",
+      "group": "account",
+      "fallback": "Delivery address"
+    },
+    {
+      "key": "account.orders.empty",
+      "group": "account",
+      "fallback": "No orders yet"
+    },
+    {
+      "key": "account.orders.emptyHint",
+      "group": "account",
+      "fallback": "When you place an order, it will appear here."
+    },
+    {
+      "key": "account.orders.failed",
+      "group": "account",
+      "fallback": "Failed"
+    },
+    {
+      "key": "account.orders.history",
+      "group": "account",
+      "fallback": "Order history"
+    },
+    {
+      "key": "account.orders.orderNumber",
+      "group": "account",
+      "fallback": "Order #{number}"
+    },
+    {
+      "key": "account.orders.packed",
+      "group": "account",
+      "fallback": "Packed"
+    },
+    {
+      "key": "account.orders.paid",
+      "group": "account",
+      "fallback": "Paid"
+    },
+    {
+      "key": "account.orders.pending",
+      "group": "account",
+      "fallback": "Pending"
+    },
+    {
+      "key": "account.orders.picked",
+      "group": "account",
+      "fallback": "Picked"
+    },
+    {
+      "key": "account.orders.refunded",
+      "group": "account",
+      "fallback": "Refunded"
+    },
+    {
+      "key": "account.orders.shipped",
+      "group": "account",
+      "fallback": "Shipped"
+    },
+    {
       "key": "account.overview.agreements",
       "group": "account",
       "fallback": "Your agreements"
@@ -291,6 +661,61 @@
       "fallback": "Waiting for you"
     },
     {
+      "key": "account.profile.account",
+      "group": "account",
+      "fallback": "Account"
+    },
+    {
+      "key": "account.profile.contactSupport",
+      "group": "account",
+      "fallback": "To delete your account or change your email, please contact support."
+    },
+    {
+      "key": "account.profile.email",
+      "group": "account",
+      "fallback": "Email"
+    },
+    {
+      "key": "account.profile.emailFixed",
+      "group": "account",
+      "fallback": "Email cannot be changed here."
+    },
+    {
+      "key": "account.profile.memberSince",
+      "group": "account",
+      "fallback": "Member since {date}"
+    },
+    {
+      "key": "account.profile.personal",
+      "group": "account",
+      "fallback": "Personal information"
+    },
+    {
+      "key": "account.profile.save",
+      "group": "account",
+      "fallback": "Save changes"
+    },
+    {
+      "key": "account.profile.saved",
+      "group": "account",
+      "fallback": "Profile updated"
+    },
+    {
+      "key": "account.profile.saveFailed",
+      "group": "account",
+      "fallback": "Could not update the profile"
+    },
+    {
+      "key": "account.profile.title",
+      "group": "account",
+      "fallback": "Profile settings"
+    },
+    {
+      "key": "account.profile.yourName",
+      "group": "account",
+      "fallback": "Your name"
+    },
+    {
       "key": "account.quotes.answer",
       "group": "account",
       "fallback": "Read and answer"
@@ -356,9 +781,174 @@
       "fallback": "Valid until"
     },
     {
+      "key": "account.services.commitment",
+      "group": "account",
+      "fallback": "Commitment"
+    },
+    {
+      "key": "account.services.empty",
+      "group": "account",
+      "fallback": "You have no active services yet."
+    },
+    {
+      "key": "account.services.getHelp",
+      "group": "account",
+      "fallback": "Get help with this service"
+    },
+    {
+      "key": "account.services.lead",
+      "group": "account",
+      "fallback": "The services you have with us — status, term, and support."
+    },
+    {
+      "key": "account.services.months",
+      "group": "account",
+      "fallback": "{count} months"
+    },
+    {
+      "key": "account.services.nextInvoice",
+      "group": "account",
+      "fallback": "Next invoice"
+    },
+    {
+      "key": "account.services.price",
+      "group": "account",
+      "fallback": "Price"
+    },
+    {
+      "key": "account.services.service",
+      "group": "account",
+      "fallback": "Service"
+    },
+    {
+      "key": "account.services.settingUp",
+      "group": "account",
+      "fallback": "We are setting up your service. You will see it go active once it is ready."
+    },
+    {
+      "key": "account.services.title",
+      "group": "account",
+      "fallback": "My services"
+    },
+    {
+      "key": "account.services.until",
+      "group": "account",
+      "fallback": "(until {date})"
+    },
+    {
       "key": "account.signOut",
       "group": "account",
       "fallback": "Sign out"
+    },
+    {
+      "key": "account.support.category",
+      "group": "account",
+      "fallback": "Category"
+    },
+    {
+      "key": "account.support.description",
+      "group": "account",
+      "fallback": "Description"
+    },
+    {
+      "key": "account.support.descriptionHint",
+      "group": "account",
+      "fallback": "Tell us more — what happened, and what did you expect?"
+    },
+    {
+      "key": "account.support.empty",
+      "group": "account",
+      "fallback": "You have no support requests yet."
+    },
+    {
+      "key": "account.support.hide",
+      "group": "account",
+      "fallback": "Hide conversation"
+    },
+    {
+      "key": "account.support.lead",
+      "group": "account",
+      "fallback": "Follow your open requests and reply to our team"
+    },
+    {
+      "key": "account.support.new",
+      "group": "account",
+      "fallback": "New request"
+    },
+    {
+      "key": "account.support.newTitle",
+      "group": "account",
+      "fallback": "New support request"
+    },
+    {
+      "key": "account.support.noReplies",
+      "group": "account",
+      "fallback": "No replies yet."
+    },
+    {
+      "key": "account.support.opened",
+      "group": "account",
+      "fallback": "Opened {date} · priority: {priority}"
+    },
+    {
+      "key": "account.support.pageTitle",
+      "group": "account",
+      "fallback": "My support requests"
+    },
+    {
+      "key": "account.support.priority",
+      "group": "account",
+      "fallback": "Priority"
+    },
+    {
+      "key": "account.support.replyHint",
+      "group": "account",
+      "fallback": "Write a reply…"
+    },
+    {
+      "key": "account.support.send",
+      "group": "account",
+      "fallback": "Send reply"
+    },
+    {
+      "key": "account.support.subject",
+      "group": "account",
+      "fallback": "Subject"
+    },
+    {
+      "key": "account.support.subjectHint",
+      "group": "account",
+      "fallback": "Brief summary of your request"
+    },
+    {
+      "key": "account.support.submit",
+      "group": "account",
+      "fallback": "Submit request"
+    },
+    {
+      "key": "account.support.submitting",
+      "group": "account",
+      "fallback": "Submitting…"
+    },
+    {
+      "key": "account.support.team",
+      "group": "account",
+      "fallback": "Support"
+    },
+    {
+      "key": "account.support.title",
+      "group": "account",
+      "fallback": "Support requests"
+    },
+    {
+      "key": "account.support.view",
+      "group": "account",
+      "fallback": "View conversation"
+    },
+    {
+      "key": "account.support.you",
+      "group": "account",
+      "fallback": "You"
     },
     {
       "key": "account.title",
@@ -371,6 +961,36 @@
       "fallback": "Welcome back, {name}"
     },
     {
+      "key": "account.wishlist.addedToCart",
+      "group": "account",
+      "fallback": "{product} added to cart"
+    },
+    {
+      "key": "account.wishlist.addToCart",
+      "group": "account",
+      "fallback": "Add to cart"
+    },
+    {
+      "key": "account.wishlist.alreadyInCart",
+      "group": "account",
+      "fallback": "Already in cart"
+    },
+    {
+      "key": "account.wishlist.empty",
+      "group": "account",
+      "fallback": "Your wishlist is empty"
+    },
+    {
+      "key": "account.wishlist.emptyHint",
+      "group": "account",
+      "fallback": "Save products you love for later."
+    },
+    {
+      "key": "account.wishlist.title",
+      "group": "account",
+      "fallback": "Wishlist ({count})"
+    },
+    {
       "key": "auth.session_ended",
       "group": "auth",
       "fallback": "Your previous session ended"
@@ -379,6 +999,31 @@
       "key": "auth.session_ended_hint",
       "group": "auth",
       "fallback": "Sign in again. If this keeps happening, send this line to your admin."
+    },
+    {
+      "key": "billing.interval.day",
+      "group": "billing",
+      "fallback": "day"
+    },
+    {
+      "key": "billing.interval.month",
+      "group": "billing",
+      "fallback": "month"
+    },
+    {
+      "key": "billing.interval.quarter",
+      "group": "billing",
+      "fallback": "quarter"
+    },
+    {
+      "key": "billing.interval.week",
+      "group": "billing",
+      "fallback": "week"
+    },
+    {
+      "key": "billing.interval.year",
+      "group": "billing",
+      "fallback": "year"
     },
     {
       "key": "blog.aboutAuthor",
@@ -2981,6 +3626,31 @@
       "fallback": "View"
     },
     {
+      "key": "service.status.active",
+      "group": "service",
+      "fallback": "Active"
+    },
+    {
+      "key": "service.status.canceled",
+      "group": "service",
+      "fallback": "Ended"
+    },
+    {
+      "key": "service.status.pastDue",
+      "group": "service",
+      "fallback": "Payment due"
+    },
+    {
+      "key": "service.status.provisioning",
+      "group": "service",
+      "fallback": "Being set up"
+    },
+    {
+      "key": "service.status.trialing",
+      "group": "service",
+      "fallback": "Trial"
+    },
+    {
       "key": "shop.add",
       "group": "shop",
       "fallback": "Add"
@@ -3221,6 +3891,31 @@
       "fallback": "Updated"
     },
     {
+      "key": "ticket.category.billing",
+      "group": "ticket",
+      "fallback": "Billing"
+    },
+    {
+      "key": "ticket.category.bug",
+      "group": "ticket",
+      "fallback": "Something is not working"
+    },
+    {
+      "key": "ticket.category.feature",
+      "group": "ticket",
+      "fallback": "A wish"
+    },
+    {
+      "key": "ticket.category.other",
+      "group": "ticket",
+      "fallback": "Other"
+    },
+    {
+      "key": "ticket.category.question",
+      "group": "ticket",
+      "fallback": "Question"
+    },
+    {
       "key": "ticket.mail.greeting",
       "group": "ticket",
       "fallback": "Hello,"
@@ -3254,6 +3949,56 @@
       "key": "ticket.mail.replySubject",
       "group": "ticket",
       "fallback": "Re: {subject} [{number}]"
+    },
+    {
+      "key": "ticket.priority.high",
+      "group": "ticket",
+      "fallback": "High"
+    },
+    {
+      "key": "ticket.priority.low",
+      "group": "ticket",
+      "fallback": "Low"
+    },
+    {
+      "key": "ticket.priority.medium",
+      "group": "ticket",
+      "fallback": "Medium"
+    },
+    {
+      "key": "ticket.priority.urgent",
+      "group": "ticket",
+      "fallback": "Urgent"
+    },
+    {
+      "key": "ticket.status.closed",
+      "group": "ticket",
+      "fallback": "Closed"
+    },
+    {
+      "key": "ticket.status.inProgress",
+      "group": "ticket",
+      "fallback": "In progress"
+    },
+    {
+      "key": "ticket.status.new",
+      "group": "ticket",
+      "fallback": "New"
+    },
+    {
+      "key": "ticket.status.open",
+      "group": "ticket",
+      "fallback": "Open"
+    },
+    {
+      "key": "ticket.status.resolved",
+      "group": "ticket",
+      "fallback": "Resolved"
+    },
+    {
+      "key": "ticket.status.waiting",
+      "group": "ticket",
+      "fallback": "Waiting"
     },
     {
       "key": "youtube.defaultTitle",

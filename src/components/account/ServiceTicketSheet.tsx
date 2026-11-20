@@ -19,6 +19,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
+import { useUiText } from '@/lib/ui-text';
 
 interface Props {
   open: boolean;
@@ -28,13 +29,14 @@ interface Props {
 }
 
 export function ServiceTicketSheet({ open, onOpenChange, subscriptionId, serviceName }: Props) {
+  const t = useUiText();
   const qc = useQueryClient();
   const [subject, setSubject] = useState('');
   const [description, setDescription] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   const submit = async () => {
-    if (!subject.trim()) { toast.error('Please add a short summary.'); return; }
+    if (!subject.trim()) { toast.error(t('account.help.needSummary', 'Please add a short summary.')); return; }
     setSubmitting(true);
     try {
       const { data, error } = await supabase.rpc('create_ticket_from_portal' as never, {
@@ -44,7 +46,7 @@ export function ServiceTicketSheet({ open, onOpenChange, subscriptionId, service
       } as never);
       if (error) throw error;
       const num = (data as Array<{ ticket_no: string }> | null)?.[0]?.ticket_no;
-      toast.success(num ? `Request ${num} created` : 'Request created');
+      toast.success(num ? t('account.help.createdNumbered', 'Request {number} created').replace('{number}', String(num)) : t('account.help.created', 'Request created'));
       qc.invalidateQueries({ queryKey: ['my-tickets'] });
       setSubject(''); setDescription('');
       onOpenChange(false);
@@ -59,39 +61,39 @@ export function ServiceTicketSheet({ open, onOpenChange, subscriptionId, service
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-full sm:max-w-md">
         <SheetHeader>
-          <SheetTitle>Get help</SheetTitle>
+          <SheetTitle>{t('account.help.title', 'Get help')}</SheetTitle>
           <SheetDescription>
-            About your service: <span className="font-medium">{serviceName}</span>.
-            Our team will see which service this concerns.
+            {t('account.help.about', 'About your service:')} <span className="font-medium">{serviceName}</span>.{' '}
+            {t('account.help.teamSees', 'Our team will see which service this concerns.')}
           </SheetDescription>
         </SheetHeader>
 
         <div className="mt-6 space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="t-subject">What's the issue?</Label>
+            <Label htmlFor="t-subject">{t('account.help.issue', 'What is the issue?')}</Label>
             <Input
               id="t-subject"
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
-              placeholder="e.g. No connection since this morning"
+              placeholder={t('account.help.issueHint', 'e.g. No connection since this morning')}
               autoFocus
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="t-desc">Details (optional)</Label>
+            <Label htmlFor="t-desc">{t('account.help.details', 'Details (optional)')}</Label>
             <Textarea
               id="t-desc"
               rows={5}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Anything that helps us understand what's happening…"
+              placeholder={t('account.help.detailsHint', 'Anything that helps us understand what is happening…')}
             />
           </div>
           <div className="flex justify-end gap-2 pt-2">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => onOpenChange(false)}>{t('account.cancel', 'Cancel')}</Button>
             <Button onClick={submit} disabled={submitting || !subject.trim()}>
               {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Send request
+              {t('account.help.send', 'Send request')}
             </Button>
           </div>
         </div>
