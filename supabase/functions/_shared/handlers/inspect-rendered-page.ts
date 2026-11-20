@@ -271,7 +271,78 @@ export interface RenderedPageReport {
   unknown_block_types?: UnknownTypeFinding[];
   composition?: PageComposition;
   blocks?: BlockReport[];
+  /** Question 4 (#940): what overflows or is cut off at phone, tablet and desktop width. */
+  width_check?: WidthCheckReport;
   summary?: string;
+}
+
+/**
+ * The second tier this file's header promised: layout. It takes a browser,
+ * and the edge runtime has none — the measurement is taken in the page
+ * editor ("Check widths"), in the browser of the person at the keyboard, and
+ * kept in page_width_checks. This reads it; it cannot take a new one.
+ */
+export type WidthCheckReport =
+  | { status: 'never_checked'; how: string }
+  | {
+      status: 'checked';
+      checked_at: string;
+      /** The page was saved after the measurement: it describes an earlier version. */
+      stale: boolean;
+      /** False when the editor measured unsaved changes. */
+      of_saved_page: boolean;
+      fits_everywhere: boolean;
+      widths: Array<{
+        width: number;
+        overflow_px: number;
+        wider_than_screen: Array<Record<string, unknown>>;
+        cut_off: Array<Record<string, unknown>>;
+        squeezed: Array<Record<string, unknown>>;
+      }>;
+      note: string;
+    };
+
+const WIDTH_CHECK_HOW =
+  'No width measurement exists for this page. A person opens it in the page editor and presses "Check widths": '
+  + 'the page is drawn at 390, 768 and 1280 px in their browser and what sticks out or is cut off is recorded here. '
+  + 'An agent cannot take the measurement — ask for it when a layout question matters.';
+
+async function loadWidthCheck(supabase: SupabaseClient, page: { id: string; updated_at: string }): Promise<WidthCheckReport> {
+  // The first three answers must never be lost over the fourth: a read that
+  // fails, or a database that does not carry the table yet, is "never checked".
+  let data: unknown = null;
+  try {
+    const res = await supabase
+      .from('page_width_checks')
+      .select('checked_at, saved, widths')
+      .eq('page_id', page.id)
+      .maybeSingle();
+    if (res.error) console.warn('[inspect_rendered_page] width check read failed:', res.error.message);
+    else data = res.data;
+  } catch (e) {
+    console.warn('[inspect_rendered_page] width check read threw:', e instanceof Error ? e.message : String(e));
+  }
+  if (!data) return { status: 'never_checked', how: WIDTH_CHECK_HOW };
+  const row = data as { checked_at: string; saved: boolean; widths: unknown };
+  const widths = (Array.isArray(row.widths) ? row.widths : []) as Array<{
+    width: number; overflow_px: number; wider_than_screen: Array<Record<string, unknown>>; cut_off: Array<Record<string, unknown>>; squeezed: Array<Record<string, unknown>>;
+  }>;
+  // A second of slack: the save and the measurement of the same click differ by milliseconds.
+  const stale = new Date(page.updated_at).getTime() > new Date(row.checked_at).getTime() + 1000;
+  const fits = widths.every((w) => (w.overflow_px ?? 0) === 0 && !(w.cut_off ?? []).length && !(w.squeezed ?? []).length);
+  return {
+    status: 'checked',
+    checked_at: row.checked_at,
+    stale,
+    of_saved_page: row.saved !== false,
+    fits_everywhere: fits,
+    widths,
+    note: stale
+      ? 'The page has been saved since this measurement — it describes an earlier version. Ask a person to press "Check widths" again before relying on it.'
+      : fits
+        ? 'Nothing sticks out, is cut off or is squeezed at 390, 768 or 1280 px.'
+        : 'Each finding names the block (its id or anchor) it sits in: wider_than_screen sticks out past the right edge (the site clips it — a visitor does not see it), cut_off is clipped text, squeezed is text in a box too narrow to read. On a grid block, fewer columns at that width is the usual fix: responsive: { sm: { columns: 1 } } on the block (see describe_blocks).',
+  };
 }
 
 /* ------------------------------------------------------------------ *
@@ -556,6 +627,7 @@ export async function executeInspectRenderedPage(
     },
 
     blocks: blockReports,
+    width_check: await loadWidthCheck(supabase, page),
     summary: buildSummary(page.slug, blocks.length, unreadFields, emptyBlocks, unknownTypes, notes),
     status: 'success',
   };

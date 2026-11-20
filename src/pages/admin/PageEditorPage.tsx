@@ -12,6 +12,7 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { VersionHistoryPanel } from '@/components/admin/VersionHistoryPanel';
 import { BlockEditor } from '@/components/admin/blocks/BlockEditor';
 import { PreviewFrame } from '@/components/admin/PreviewFrame';
+import { PageWidthCheck } from '@/components/admin/PageWidthCheck';
 import { PageBlocks } from '@/components/public/PageBlocks';
 import { useBranding } from '@/providers/BrandingProvider';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -324,6 +325,13 @@ export default function PageEditorPage() {
                 <Eye className="h-4 w-4 mr-2" />
                 Preview
               </Button>
+              {id && (
+                <PageWidthCheck
+                  pageId={id}
+                  preview={{ slug: page.slug, title, content_json: blocks, meta_json: meta }}
+                  saved={!hasChanges}
+                />
+              )}
               {page.status === 'published' && (
                 <Button variant="outline" size="sm" asChild>
                   <a href={`/${page.slug}`} target="_blank" rel="noopener noreferrer">

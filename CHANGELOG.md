@@ -8,6 +8,16 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ## [Unreleased]
 
+### Added
+
+- **A page can be checked at the widths people read it in.** The page editor
+  has a "Check widths" button: the page — with unsaved changes too — is drawn
+  at phone, tablet and desktop width in your browser and measured. What sticks
+  out past the screen, text that is cut off and text squeezed into a box too
+  narrow to read are listed with the block they sit in. The measurement is
+  kept with the page, and an agent reads it through `inspect_rendered_page`
+  (`width_check`) — with a note when the page has been saved since (#940).
+
 ## [4.1.0] - 2026-11-20
 
 ### Added
