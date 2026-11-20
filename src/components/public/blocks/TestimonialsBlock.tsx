@@ -5,6 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Star, ChevronLeft, ChevronRight, Quote } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { TestimonialsBlockData, Testimonial } from '@/types/cms';
+import { useResponsiveGrid } from '@/components/public/BlockResponsiveContext';
 
 interface TestimonialsBlockProps {
   data: TestimonialsBlockData;
@@ -93,6 +94,8 @@ function TestimonialCard({
 }
 
 export function TestimonialsBlock({ data }: TestimonialsBlockProps) {
+  // Per-width column overrides from the block's envelope (#939).
+  const responsiveGrid = useResponsiveGrid();
   const [currentIndex, setCurrentIndex] = useState(0);
   const testimonials = data.testimonials || [];
   const showRating = data.showRating !== false;
@@ -152,7 +155,8 @@ export function TestimonialsBlock({ data }: TestimonialsBlockProps) {
         {data.layout === 'grid' && (
           <div className={cn(
             'grid gap-6',
-            gridCols[data.columns || 3] ?? gridCols[3]
+            gridCols[data.columns || 3] ?? gridCols[3],
+            responsiveGrid
           )}>
             {testimonials.map((testimonial) => (
               <TestimonialCard

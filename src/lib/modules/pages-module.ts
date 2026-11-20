@@ -345,6 +345,11 @@ theme — on a dark site this is the light "paper" section). Omitted = the rende
 muted/none for you. \`anchorId\` — the section's id for in-page links (#pricing). A page whose
 rhythm needs "dark hero, light intro, dark features" is written with sectionBackground, not
 with CSS; describe_blocks returns this envelope with every answer.
+\`responsive\` — overrides per width, \`{ sm?, md?, lg? }\` (phones below 768 px, tablets 768–1023,
+desktops 1024 and up), each \`{ hidden?: true, columns?: 1–6, align?: left|center|right }\`.
+"Hide this on mobile" is \`responsive: { sm: { hidden: true } }\`; "one column on phones, two on
+tablets" is \`{ sm: { columns: 1 }, md: { columns: 2 } }\`. \`columns\` reaches the grid blocks only
+(describe_blocks lists them); never write a media query in custom_scripts for this.
 - **Two envelope spellings exist — never mix them in one call.**
   This skill takes \`blocks: [{ type, data }]\`.
   Its sibling \`create_page_block\` takes \`block_type\` + \`block_data\` (and also
@@ -436,6 +441,19 @@ with CSS; describe_blocks returns this envelope with every answer.
             position: {
               type: 'number',
               description: 'Insert position (for add)',
+            },
+            responsive: {
+              type: 'object',
+              description: 'Per-width overrides on the block ENVELOPE (for add and update; next to block_data, never inside it): { sm?, md?, lg? } = phones below 768 px, tablets 768–1023, desktops 1024 and up; each { hidden?: true, columns?: 1–6, align?: "left"|"center"|"right" }. "Hide on mobile" = { sm: { hidden: true } }. columns reaches the grid blocks only (describe_blocks lists them). An update may carry ONLY this — no block_data needed. null clears it.',
+              properties: {},
+            },
+            sectionBackground: {
+              type: 'string',
+              description: 'The surface behind the block (for add and update): none | muted | accent | dark. null clears it (the renderer alternates again).',
+            },
+            anchorId: {
+              type: 'string',
+              description: 'The section\'s id for in-page links, e.g. "pricing" (for add and update). null clears it.',
             },
             block_ids: {
               type: 'array',

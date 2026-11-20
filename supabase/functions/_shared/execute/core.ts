@@ -153,6 +153,7 @@ import { handler as hUpdateAutonomyCron } from '../handlers/update-autonomy-cron
 import { executeCheckIntegrations } from '../handlers/check-integrations.ts';
 import { describeWebLayer } from '../web/layer.ts';
 import { executeDescribeBlocks } from '../handlers/describe-blocks.ts';
+import { envelopeOf, readEnvelopeArgs } from '../blocks/envelope.ts';
 // describe_blocks' other half: "what can I build" ↔ "what did I build".
 import { executeInspectRenderedPage } from '../handlers/inspect-rendered-page.ts';
 import { executeAgentTrace } from '../handlers/agent-trace.ts';
@@ -6878,19 +6879,49 @@ async function executePagesAction(
           };
         }
 
+        // The envelope (next to type and data): surface, anchor, per-width overrides.
+        const addEnvelope = readEnvelopeArgs(args as Record<string, unknown>, String(block_type));
+        if (addEnvelope.problems.length) {
+          return {
+            error: `Block envelope refused: ${addEnvelope.problems.join('; ')}`,
+            code: 'INVALID_INPUT', retryable: false,
+            hint: 'describe_blocks returns the envelope with every answer.',
+            status: 'validation_failed',
+          };
+        }
+        Object.assign(newBlock, addEnvelope.set);
+
         const pos = position !== undefined ? Math.min(position, blocks.length) : blocks.length;
         blocks.splice(pos, 0, newBlock);
         await supabase.from('pages')
           .update({ content_json: blocks, updated_at: new Date().toISOString() })
           .eq('id', resolvedPageId);
-        return { page_id: resolvedPageId, block_id: newBlock.id, type: block_type, position: pos, total_blocks: blocks.length };
+        return {
+          page_id: resolvedPageId, block_id: newBlock.id, type: block_type, position: pos, total_blocks: blocks.length,
+          ...envelopeOf(newBlock as Record<string, unknown>),
+          ...(addEnvelope.notes.length ? { notes: addEnvelope.notes } : {}),
+        };
       }
 
       if (action === 'update') {
-        const { block_id, block_data } = args as any;
+        const { block_id } = args as any;
+        const updateArgs = args as Record<string, unknown>;
+        const envelopeOnly = !updateArgs.block_data
+          && ['responsive', 'sectionBackground', 'anchorId'].some((key) => key in updateArgs);
+        // An envelope-only update (hide on phones, another surface) changes no field of the block.
+        const block_data = envelopeOnly ? {} : updateArgs.block_data;
         if (!block_id || !block_data) throw new Error('block_id and block_data required');
         const idx = blocks.findIndex((b: any) => b.id === block_id);
         if (idx === -1) throw new Error(`Block not found: ${block_id}`);
+        const updateEnvelope = readEnvelopeArgs(args as Record<string, unknown>, String(blocks[idx].type));
+        if (updateEnvelope.problems.length) {
+          return {
+            error: `Block envelope refused: ${updateEnvelope.problems.join('; ')}`,
+            code: 'INVALID_INPUT', retryable: false,
+            hint: 'describe_blocks returns the envelope with every answer. Send a key as null to clear it.',
+            status: 'validation_failed',
+          };
+        }
 
         // Merge first, then validate the merged result.
         // block_data accepts BOTH shapes: a bare data-fields object, or a full
@@ -6943,11 +6974,17 @@ async function executePagesAction(
           };
         }
 
+        Object.assign(_mergedBlock, updateEnvelope.set);
+        for (const key of updateEnvelope.clear) delete (_mergedBlock as Record<string, unknown>)[key];
         blocks[idx] = _mergedBlock;
         await supabase.from('pages')
           .update({ content_json: blocks, updated_at: new Date().toISOString() })
           .eq('id', resolvedPageId);
-        return { page_id: resolvedPageId, block_id, type: blocks[idx].type, status: 'updated' };
+        return {
+          page_id: resolvedPageId, block_id, type: blocks[idx].type, status: 'updated',
+          ...envelopeOf(blocks[idx] as Record<string, unknown>),
+          ...(updateEnvelope.notes.length ? { notes: updateEnvelope.notes } : {}),
+        };
       }
 
       if (action === 'get_block') {
@@ -6955,7 +6992,7 @@ async function executePagesAction(
         if (!block_id) throw new Error('block_id is required');
         const block = blocks.find((b: any) => b.id === block_id);
         if (!block) throw new Error(`Block not found: ${block_id}`);
-        return { page_id: resolvedPageId, block_id, type: block.type, data: block.data };
+        return { page_id: resolvedPageId, block_id, type: block.type, data: block.data, ...envelopeOf(block as Record<string, unknown>) };
       }
 
       if (action === 'remove') {

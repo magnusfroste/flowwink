@@ -2,6 +2,8 @@ import React from 'react';
 import { LinkGridBlockData } from '@/types/cms';
 import { ArrowRight } from 'lucide-react';
 import { BlockIcon } from '@/components/public/BlockIcon';
+import { cn } from '@/lib/utils';
+import { useResponsiveGrid } from '@/components/public/BlockResponsiveContext';
 
 interface LinkGridBlockProps {
   data: LinkGridBlockData;
@@ -14,6 +16,8 @@ function renderIcon(iconName: string, className?: string) {
 }
 
 export function LinkGridBlock({ data }: LinkGridBlockProps) {
+  // Per-width column overrides from the block's envelope (#939).
+  const responsiveGrid = useResponsiveGrid();
   if (!data.links || data.links.length === 0) return null;
 
   const gridCols = {
@@ -25,7 +29,7 @@ export function LinkGridBlock({ data }: LinkGridBlockProps) {
   return (
     <section>
       <div className="container mx-auto">
-        <div className={`grid gap-6 ${gridCols[data.columns] ?? gridCols[3]}`}>
+        <div className={cn('grid gap-6', gridCols[data.columns] ?? gridCols[3], responsiveGrid)}>
           {data.links.map((link, index) => {
             return (
               <a

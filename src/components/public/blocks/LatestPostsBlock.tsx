@@ -11,6 +11,8 @@ import { ArrowRight, Calendar } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { LatestPostsBlockData } from '@/types/cms';
 import { useCustomerFormat } from '@/hooks/useCustomerFormat';
+import { cn } from '@/lib/utils';
+import { useResponsiveGrid } from '@/components/public/BlockResponsiveContext';
 
 interface LatestPostsBlockProps {
   data: LatestPostsBlockData;
@@ -24,6 +26,8 @@ const gridCols: Record<number, string> = {
 };
 
 export function LatestPostsBlock({ data }: LatestPostsBlockProps) {
+  // Per-width column overrides from the block's envelope (#939).
+  const responsiveGrid = useResponsiveGrid();
   const { formatDateTime } = useCustomerFormat();
   const t = useUiText();
   const count = Math.min(Math.max(data.count ?? 3, 1), 6);
@@ -101,7 +105,7 @@ export function LatestPostsBlock({ data }: LatestPostsBlockProps) {
         )}
 
         {isLoading ? (
-          <div className={`grid gap-6 ${gridCols[columns] ?? gridCols[3]}`}>
+          <div className={cn('grid gap-6', gridCols[columns] ?? gridCols[3], responsiveGrid)}>
             {Array.from({ length: count }).map((_, i) => (
               <div key={i} className="space-y-3">
                 <Skeleton className="aspect-video w-full rounded-lg" />
@@ -113,7 +117,7 @@ export function LatestPostsBlock({ data }: LatestPostsBlockProps) {
         ) : !posts || posts.length === 0 ? (
           <p className="text-center text-muted-foreground">{t('blog.empty', 'No posts published yet.')}</p>
         ) : (
-          <div className={`grid gap-6 ${gridCols[columns] ?? gridCols[3]}`}>
+          <div className={cn('grid gap-6', gridCols[columns] ?? gridCols[3], responsiveGrid)}>
             {posts.map((post) => (
               <a
                 key={post.id}

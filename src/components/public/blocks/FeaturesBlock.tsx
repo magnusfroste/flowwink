@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { StaggeredReveal } from '@/components/public/StaggeredReveal';
 import { TagGroups } from '@/components/public/TagGroups';
 import { safeHref } from '@/lib/safe-url';
+import { useResponsiveGrid } from '@/components/public/BlockResponsiveContext';
 
 interface FeaturesBlockProps {
   data: FeaturesBlockData;
@@ -149,6 +150,8 @@ function FeatureCard({
 }
 
 export function FeaturesBlock({ data }: FeaturesBlockProps) {
+  // Per-width column overrides from the block's envelope (#939).
+  const responsiveGrid = useResponsiveGrid();
   const features = data.features || [];
   const columns = data.columns || 3;
   const layout = data.layout || 'grid';
@@ -169,6 +172,7 @@ export function FeaturesBlock({ data }: FeaturesBlockProps) {
       'lg:grid-cols-3': columns >= 3,
       'xl:grid-cols-4': columns === 4,
     },
+    layout === 'grid' && responsiveGrid,
     layout === 'list' && "space-y-6"
   );
 

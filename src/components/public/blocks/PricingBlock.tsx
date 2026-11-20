@@ -10,12 +10,15 @@ import { useStorefront } from '@/hooks/useStorefront';
 import { useUiText, useUiTextLanguage } from '@/lib/ui-text';
 import { useCart } from '@/contexts/CartContext';
 import { toast } from 'sonner';
+import { useResponsiveGrid } from '@/components/public/BlockResponsiveContext';
 
 interface PricingBlockProps {
   data: PricingBlockData;
 }
 
 export function PricingBlock({ data }: PricingBlockProps) {
+  // Per-width column overrides from the block's envelope (#939).
+  const responsiveGrid = useResponsiveGrid();
   const navigate = useNavigate();
   const { addItem, items } = useCart();
   const { catalogOnly } = useStorefront();
@@ -130,6 +133,7 @@ export function PricingBlock({ data }: PricingBlockProps) {
         <div className={cn(
           'grid gap-6',
           gridCols[columns] ?? gridCols[3],
+          responsiveGrid,
           tiers.length === 1 && 'max-w-md mx-auto',
           tiers.length === 2 && 'max-w-2xl mx-auto'
         )}>

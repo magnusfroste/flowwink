@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import { LayoutGrid } from 'lucide-react';
 import { useUiTextLanguage } from '@/lib/ui-text';
 import { shopIndexPath } from '@/lib/language-path';
+import { useResponsiveGrid } from '@/components/public/BlockResponsiveContext';
 
 export interface CategoryNavBlockData {
   title?: string;
@@ -18,6 +19,8 @@ interface CategoryNavBlockProps {
 }
 
 export function CategoryNavBlock({ data }: CategoryNavBlockProps) {
+  // Per-width column overrides from the block's envelope (#939).
+  const responsiveGrid = useResponsiveGrid();
   const { lang, siteLang } = useUiTextLanguage();
   const { data: categories = [], isLoading } = useProductCategories({ activeOnly: true, language: lang && lang !== siteLang ? lang : null, defaultLanguage: siteLang });
   const columns = data.columns || 3;
@@ -33,7 +36,7 @@ export function CategoryNavBlock({ data }: CategoryNavBlockProps) {
     return (
       <section>
         <div className="max-w-6xl mx-auto px-4">
-          <div className={cn('grid grid-cols-2 gap-4', colClasses[columns] ?? colClasses[3])}>
+          <div className={cn('grid grid-cols-2 gap-4', colClasses[columns] ?? colClasses[3], responsiveGrid)}>
             {Array.from({ length: columns }).map((_, i) => (
               <div key={i} className="aspect-[4/3] bg-muted rounded-[var(--radius-block,1rem)] animate-pulse" />
             ))}
@@ -63,7 +66,7 @@ export function CategoryNavBlock({ data }: CategoryNavBlockProps) {
           </h2>
         )}
 
-        <div className={cn('grid grid-cols-2 gap-4 md:gap-6', colClasses[columns] ?? colClasses[3])}>
+        <div className={cn('grid grid-cols-2 gap-4 md:gap-6', colClasses[columns] ?? colClasses[3], responsiveGrid)}>
           {categories.map(cat => (
             <Link
               key={cat.id}

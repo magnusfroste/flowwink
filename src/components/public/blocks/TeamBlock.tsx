@@ -11,6 +11,7 @@ import {
   CarouselPrevious,
 } from '@/components/ui/carousel';
 import { StaggeredReveal } from '@/components/public/StaggeredReveal';
+import { useResponsiveGrid } from '@/components/public/BlockResponsiveContext';
 
 // shape-by-design: an icon button is round
 const ICON_BUTTON = 'p-2 rounded-full text-muted-foreground hover:text-accent-foreground hover:bg-accent/50 transition-colors';
@@ -126,6 +127,8 @@ function TeamMemberCard({
 }
 
 export function TeamBlock({ data }: TeamBlockProps) {
+  // Per-width column overrides from the block's envelope (#939).
+  const responsiveGrid = useResponsiveGrid();
   const {
     title,
     subtitle,
@@ -150,8 +153,8 @@ export function TeamBlock({ data }: TeamBlockProps) {
 
   const GridWrapper = staggeredReveal ? StaggeredReveal : 'div';
   const gridProps = staggeredReveal 
-    ? { animation: 'fade-up' as const, delayBetween: 100, className: cn('grid gap-6 md:gap-8', gridCols[columns] ?? gridCols[3]) }
-    : { className: cn('grid gap-6 md:gap-8', gridCols[columns] ?? gridCols[3]) };
+    ? { animation: 'fade-up' as const, delayBetween: 100, className: cn('grid gap-6 md:gap-8', gridCols[columns] ?? gridCols[3], responsiveGrid) }
+    : { className: cn('grid gap-6 md:gap-8', gridCols[columns] ?? gridCols[3], responsiveGrid) };
 
   return (
     <section>

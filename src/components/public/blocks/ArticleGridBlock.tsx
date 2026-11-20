@@ -1,12 +1,16 @@
 import { ArticleGridBlockData } from '@/types/cms';
 import { stripHtml } from '@/lib/utils';
 import { ArrowRight } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { useResponsiveGrid } from '@/components/public/BlockResponsiveContext';
 
 interface ArticleGridBlockProps {
   data: ArticleGridBlockData;
 }
 
 export function ArticleGridBlock({ data }: ArticleGridBlockProps) {
+  // Per-width column overrides from the block's envelope (#939).
+  const responsiveGrid = useResponsiveGrid();
   if (!data.articles || data.articles.length === 0) return null;
 
   const gridCols = {
@@ -21,7 +25,7 @@ export function ArticleGridBlock({ data }: ArticleGridBlockProps) {
         {data.title && (
           <h2 className="font-serif text-3xl font-bold mb-8">{data.title}</h2>
         )}
-        <div className={`grid gap-8 ${gridCols[data.columns] ?? gridCols[3]}`}>
+        <div className={cn('grid gap-8', gridCols[data.columns] ?? gridCols[3], responsiveGrid)}>
           {data.articles.map((article, index) => {
             // The registry advertised link/description until 2026-09-28 while this
             // renderer read url/excerpt: every agent-built grid had dead cards

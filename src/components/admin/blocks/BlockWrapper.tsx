@@ -8,6 +8,8 @@ import { BlockSpacingControl, getSpacingClasses } from './BlockSpacingControl';
 import { BlockAnimationControl } from './BlockAnimationControl';
 import { BlockAnchorControl } from './BlockAnchorControl';
 import { BlockBackgroundControl } from './BlockBackgroundControl';
+import { BlockResponsiveControl } from './BlockResponsiveControl';
+import { normalizeResponsive, RESPONSIVE_WIDTHS, type BlockResponsive } from '@/lib/block-responsive';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 const BLOCK_LABELS: Record<ContentBlockType, string> = {
@@ -100,8 +102,11 @@ interface BlockWrapperProps {
   onAnchorChange?: (anchorId: string | undefined) => void;
   onToggleHidden?: (hidden: boolean) => void;
   onBackgroundChange?: (bg: SectionBackground) => void;
+  onResponsiveChange?: (responsive: BlockResponsive | undefined) => void;
   canEdit: boolean;
 }
+
+const WIDTH_WORD = { sm: 'phone', md: 'tablet', lg: 'desktop' } as const;
 
 export function BlockWrapper({
   block,
@@ -119,8 +124,11 @@ export function BlockWrapper({
   onAnchorChange,
   onToggleHidden,
   onBackgroundChange,
+  onResponsiveChange,
   canEdit,
 }: BlockWrapperProps) {
+  const responsive = normalizeResponsive(block.responsive);
+  const hiddenAt = RESPONSIVE_WIDTHS.filter((width) => responsive?.[width]?.hidden);
   const {
     attributes,
     listeners,
@@ -252,6 +260,13 @@ export function BlockWrapper({
               onChange={onBackgroundChange}
             />
           )}
+          {onResponsiveChange && (
+            <BlockResponsiveControl
+              blockType={block.type}
+              value={block.responsive}
+              onChange={onResponsiveChange}
+            />
+          )}
           {onToggleHidden && (
             <Tooltip>
               <TooltipTrigger asChild>
@@ -280,6 +295,14 @@ export function BlockWrapper({
             </TooltipTrigger>
             <TooltipContent>Delete</TooltipContent>
           </Tooltip>
+        </div>
+      )}
+
+      {/* Hidden at some widths: the editor is one width, so say it in words. */}
+      {!block.hidden && hiddenAt.length > 0 && (
+        <div className="absolute top-2 right-2 z-10 flex items-center gap-1 px-2 py-1 bg-muted border rounded text-muted-foreground text-xs font-medium" data-hidden-at={hiddenAt.join(',')}>
+          <EyeOff className="h-3 w-3" />
+          Hidden on {hiddenAt.map((width) => WIDTH_WORD[width]).join(', ')}
         </div>
       )}
 

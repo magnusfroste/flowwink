@@ -3,6 +3,7 @@ import {
   Truck, RotateCcw, ShieldCheck, CreditCard, Clock, Star, 
   HeartHandshake, Award, Leaf, Zap, Globe, Lock 
 } from 'lucide-react';
+import { useResponsiveGrid } from '@/components/public/BlockResponsiveContext';
 
 export interface TrustBarItem {
   icon?: string;
@@ -43,6 +44,8 @@ const DEFAULT_ITEMS: TrustBarItem[] = [
 ];
 
 export function TrustBarBlock({ data }: TrustBarBlockProps) {
+  // Per-width column overrides from the block's envelope (#939).
+  const responsiveGrid = useResponsiveGrid();
   const items = data.items?.length ? data.items : DEFAULT_ITEMS;
   const variant = data.variant || 'default';
   const size = data.size || 'md';
@@ -72,6 +75,7 @@ export function TrustBarBlock({ data }: TrustBarBlockProps) {
         <div className={cn(
           'grid grid-cols-2 gap-4',
           colClasses[columns] ?? colClasses[4],
+          responsiveGrid,
         )}>
           {items.map((item, i) => {
             const IconComponent = ICON_MAP[item.icon || ''] || ShieldCheck;

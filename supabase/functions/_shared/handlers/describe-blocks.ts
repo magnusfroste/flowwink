@@ -20,6 +20,7 @@
  *   block_type    → that block's full Data contract, verbatim
  */
 import { BLOCK_TYPES_SCHEMA, IMPORTABLE_BLOCK_TYPES } from '../block-schema.ts';
+import { GRID_BLOCK_TYPES } from '../blocks/envelope.ts';
 
 interface BlockEntry {
   type: string;
@@ -65,7 +66,8 @@ export const BLOCK_ENVELOPE = {
   sectionBackground: 'none | muted | accent | dark — the SURFACE the renderer paints behind the block. "dark" is the INVERSE of the current theme (on a dark site: the light "paper" section). Omitted = the renderer alternates muted/none for you.',
   anchorId: 'string — the section\'s DOM id for in-page links (#pricing). Omitted = the block id.',
   hidden: 'boolean — keep the block on the page but do not render it.',
-  note: 'These live NEXT TO type and data ({ type, data, sectionBackground, anchorId }), not inside data. A page rhythm like "dark hero, light intro, dark features" is written with sectionBackground — never with CSS in custom_scripts.',
+  responsive: `{ sm?, md?, lg? } — overrides per width: sm = phones (below 768 px), md = tablets (768–1023 px), lg = desktops (1024 px and up). Each takes { hidden?: true, columns?: 1–6, align?: left | center | right }. hidden: the block is not shown at that width. align: the block's TEXT alignment at that width. columns: honoured by the grid blocks ONLY (${GRID_BLOCK_TYPES.join(', ')}) — every other block ignores it. Example: { "sm": { "columns": 1, "align": "center" }, "md": { "columns": 2 }, "lg": { "hidden": true } }. An unknown key or a value out of range is dropped, never guessed at.`,
+  note: 'These live NEXT TO type and data ({ type, data, sectionBackground, anchorId, responsive }), not inside data. A page rhythm like "dark hero, light intro, dark features" is written with sectionBackground — never with CSS in custom_scripts.',
 } as const;
 
 export function executeDescribeBlocks(args: Record<string, unknown>): {
