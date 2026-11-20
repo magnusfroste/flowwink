@@ -22,6 +22,8 @@ import {
   ExternalLink,
   Clock,
 } from 'lucide-react';
+import { useUiText } from '@/lib/ui-text';
+import { orderStepWord } from '@/lib/customer-words';
 
 type Fulfillment = 'unfulfilled' | 'picked' | 'packed' | 'shipped' | 'delivered';
 
@@ -50,15 +52,14 @@ interface Item {
 
 const STEPS: Array<{
   key: Fulfillment | 'paid';
-  label: string;
   icon: React.ComponentType<{ className?: string }>;
   timeKey: 'created_at' | 'picked_at' | 'packed_at' | 'shipped_at' | 'delivered_at';
 }> = [
-  { key: 'paid', label: 'Paid', icon: CreditCard, timeKey: 'created_at' },
-  { key: 'picked', label: 'Picked', icon: Package, timeKey: 'picked_at' },
-  { key: 'packed', label: 'Packed', icon: PackageCheck, timeKey: 'packed_at' },
-  { key: 'shipped', label: 'Shipped', icon: Truck, timeKey: 'shipped_at' },
-  { key: 'delivered', label: 'Delivered', icon: Home, timeKey: 'delivered_at' },
+  { key: 'paid', icon: CreditCard, timeKey: 'created_at' },
+  { key: 'picked', icon: Package, timeKey: 'picked_at' },
+  { key: 'packed', icon: PackageCheck, timeKey: 'packed_at' },
+  { key: 'shipped', icon: Truck, timeKey: 'shipped_at' },
+  { key: 'delivered', icon: Home, timeKey: 'delivered_at' },
 ];
 
 const STAGE_INDEX: Record<Fulfillment, number> = {
@@ -70,6 +71,7 @@ const STAGE_INDEX: Record<Fulfillment, number> = {
 };
 
 export default function OrderTrackingPage() {
+  const t = useUiText();
   const { id: paramId } = useParams();
   const [searchParams] = useSearchParams();
   const { formatPrice: formatCustomerPrice, formatDateTime } = useCustomerFormat();
@@ -99,13 +101,13 @@ export default function OrderTrackingPage() {
       if (rpcErr) throw rpcErr;
       const result = data as unknown as { found: boolean; order?: TrackedOrder; items?: Item[] };
       if (!result?.found) {
-        setError('No order found matching that ID and email.');
+        setError(t('orderTracking.notFound', 'No order found matching that ID and email.'));
       } else {
         setOrder(result.order!);
         setItems(result.items ?? []);
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not look up order.');
+      setError(e instanceof Error ? e.message : t('orderTracking.lookupFailed', 'Could not look up the order.'));
     } finally {
       setLoading(false);
     }
@@ -122,7 +124,7 @@ export default function OrderTrackingPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!orderId.trim() || !email.trim()) {
-      setError('Enter both order ID and email.');
+      setError(t('orderTracking.needBoth', 'Enter both order ID and email.'));
       return;
     }
     lookup(orderId, email);
@@ -134,8 +136,8 @@ export default function OrderTrackingPage() {
   return (
     <>
       <Helmet>
-        <title>Track Order</title>
-        <meta name="description" content="Check the status of your order step by step." />
+        <title>{t('orderTracking.title', 'Track your order')}</title>
+        <meta name="description" content={t('orderTracking.description', 'Check the status of your order step by step.')} />
       </Helmet>
 
       <PublicNavigation />
@@ -143,9 +145,9 @@ export default function OrderTrackingPage() {
       <main className="pt-[var(--overlay-header-offset,0px)] min-h-screen bg-background py-12 px-4">
         <div className="max-w-3xl mx-auto space-y-8">
           <div className="text-center space-y-2">
-            <h1 className="text-3xl md:text-4xl font-serif font-bold">Track your order</h1>
+            <h1 className="text-3xl md:text-4xl font-serif font-bold">{t('orderTracking.title', 'Track your order')}</h1>
             <p className="text-muted-foreground">
-              Enter your order ID and the email used at checkout.
+              {t('orderTracking.lead', 'Enter your order ID and the email used at checkout.')}
             </p>
           </div>
 
@@ -153,17 +155,17 @@ export default function OrderTrackingPage() {
             <CardContent className="pt-6">
               <form onSubmit={handleSubmit} className="grid gap-4 md:grid-cols-[1fr_1fr_auto] md:items-end">
                 <div className="space-y-2">
-                  <Label htmlFor="order-id">Order ID</Label>
+                  <Label htmlFor="order-id">{t('orderTracking.orderId', 'Order ID')}</Label>
                   <Input
                     id="order-id"
                     value={orderId}
                     onChange={(e) => setOrderId(e.target.value)}
-                    placeholder="e.g. 8f3a…"
+                    placeholder={t('orderTracking.orderIdHint', 'e.g. 8f3a…')}
                     disabled={loading}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email">{t('account.profile.email', 'Email')}</Label>
                   <Input
                     id="email"
                     type="email"
@@ -179,7 +181,7 @@ export default function OrderTrackingPage() {
                   ) : (
                     <>
                       <Search className="h-4 w-4 mr-2" />
-                      Track
+                      {t('orderTracking.track', 'Track')}
                     </>
                   )}
                 </Button>
@@ -196,14 +198,14 @@ export default function OrderTrackingPage() {
               <CardHeader className="flex flex-row items-start justify-between gap-4 flex-wrap">
                 <div>
                   <CardTitle className="text-lg">
-                    Order #{order.id.slice(0, 8).toUpperCase()}
+                    {t('account.orders.orderNumber', 'Order #{number}').replace('{number}', order.id.slice(0, 8).toUpperCase())}
                   </CardTitle>
                   <p className="text-sm text-muted-foreground mt-1">
-                    Placed {formatDate(order.created_at)}
+                    {t('orderTracking.placed', 'Placed {date}').replace('{date}', formatDate(order.created_at) ?? '')}
                   </p>
                 </div>
                 <Badge variant={isPaid ? 'default' : 'secondary'} className="capitalize">
-                  {order.status}
+                  {orderStepWord(order.status, t)}
                 </Badge>
               </CardHeader>
 
@@ -246,13 +248,13 @@ export default function OrderTrackingPage() {
                               reached ? 'text-foreground' : 'text-muted-foreground'
                             }`}
                           >
-                            {step.label}
+                            {orderStepWord(step.key, t)}
                           </p>
                           {time && reached && (
                             <p className="text-xs text-muted-foreground mt-0.5">{time}</p>
                           )}
                           {isCurrent && !time && (
-                            <p className="text-xs text-muted-foreground mt-0.5">In progress…</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">{t('orderTracking.inProgress', 'In progress…')}</p>
                           )}
                         </div>
                       </li>
@@ -265,13 +267,13 @@ export default function OrderTrackingPage() {
                     <Separator />
                     <div className="flex items-center justify-between gap-4 flex-wrap">
                       <div>
-                        <p className="text-sm text-muted-foreground">Tracking number</p>
+                        <p className="text-sm text-muted-foreground">{t('orderTracking.trackingNumber', 'Tracking number')}</p>
                         <p className="font-mono text-sm">{order.tracking_number}</p>
                       </div>
                       {order.tracking_url && (
                         <Button asChild variant="outline" size="sm">
                           <a href={order.tracking_url} target="_blank" rel="noreferrer">
-                            Carrier page
+                            {t('orderTracking.carrierPage', 'Carrier page')}
                             <ExternalLink className="h-3 w-3 ml-1.5" />
                           </a>
                         </Button>
@@ -284,7 +286,7 @@ export default function OrderTrackingPage() {
                   <>
                     <Separator />
                     <div className="space-y-2">
-                      <h3 className="text-sm font-medium text-muted-foreground">Items</h3>
+                      <h3 className="text-sm font-medium text-muted-foreground">{t('orderTracking.items', 'Items')}</h3>
                       {items.map((it, i) => (
                         <div key={i} className="flex justify-between text-sm">
                           <span>
@@ -297,7 +299,7 @@ export default function OrderTrackingPage() {
                       ))}
                       <Separator />
                       <div className="flex justify-between font-semibold">
-                        <span>Total</span>
+                        <span>{t('orderTracking.total', 'Total')}</span>
                         <span>{formatPrice(order.total_cents, order.currency)}</span>
                       </div>
                     </div>

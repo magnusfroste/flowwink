@@ -10,6 +10,13 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Added
 
+- **More of what a visitor meets follows the site's language.** Order
+  tracking, the page where a subscriber views, exports or deletes their
+  newsletter data, the newsletter confirmation, signing a document from a
+  link, the cart sidebar and the stock status ("In stock", "Notify me") were
+  English built into the code. They are visitor texts with the platform's
+  Swedish.
+
 - **The customer's own pages follow the site's language.** Signing in,
   activating an invited account, orders, addresses, the wishlist, the profile,
   support requests, services and the assistant's introduction were English
@@ -201,6 +208,11 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
   translatable and calls a paid invoice a receipt. The PDF is still in English.
 
 ### Fixed
+
+- **A broken signing link no longer shows the database's error.** The page
+  for signing a document printed the raw error to the visitor ("invalid input
+  syntax for type uuid"). It says the link is no longer valid; the error goes
+  to the log.
 
 - **The lines the code adds to a booking confirmation follow the mail's
   language.** A Swedish confirmation for a video meeting carried "Join the

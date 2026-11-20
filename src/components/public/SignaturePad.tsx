@@ -6,6 +6,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Eraser, Undo2 } from 'lucide-react';
+import { useUiText } from '@/lib/ui-text';
 
 type Point = { x: number; y: number };
 
@@ -15,6 +16,7 @@ interface SignaturePadProps {
 }
 
 export function SignaturePad({ onChange, height = 160 }: SignaturePadProps) {
+  const t = useUiText();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const strokesRef = useRef<Point[][]>([]);
   const drawingRef = useRef(false);
@@ -110,7 +112,7 @@ export function SignaturePad({ onChange, height = 160 }: SignaturePadProps) {
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
-        aria-label="Signature drawing area"
+        aria-label={t('signature.area', 'Signature drawing area')}
       />
       <div className="flex items-center justify-between">
         <p className="text-xs text-muted-foreground">
