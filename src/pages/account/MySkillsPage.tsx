@@ -20,9 +20,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, Trash2, Award, GraduationCap } from "lucide-react";
 import { useCustomerFormat } from "@/hooks/useCustomerFormat";
+import { useUiText } from "@/lib/ui-text";
 
 export default function MySkillsPage() {
   const { formatDate } = useCustomerFormat();
+  const t = useUiText();
   const { employee, isEmployee, loading } = useEmployeeSelf();
   const empId = employee?.id;
   const { data: skills } = useEmployeeSkills(empId);
@@ -44,7 +46,7 @@ export default function MySkillsPage() {
     return (
       <Card>
         <CardContent className="pt-6 text-center text-muted-foreground">
-          Skills register is only available for employees.
+          {t('staff.skills.employeesOnly', 'Skills register is only available for employees.')}
         </CardContent>
       </Card>
     );
@@ -57,25 +59,25 @@ export default function MySkillsPage() {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2"><GraduationCap className="h-5 w-5" /> My skills</CardTitle>
+          <CardTitle className="flex items-center gap-2"><GraduationCap className="h-5 w-5" /> {t('staff.skills.title', 'My skills')}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-2 sm:grid-cols-[1fr_120px_120px_auto] items-end">
             <div>
-              <Label>Skill</Label>
+              <Label>{t('staff.skills.skill', 'Skill')}</Label>
               <Select value={skillId} onValueChange={setSkillId}>
-                <SelectTrigger><SelectValue placeholder="Select skill" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder={t('staff.skills.select', 'Select skill')} /></SelectTrigger>
                 <SelectContent>
                   {available.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <Label>Level (1-5)</Label>
+              <Label>{t('staff.skills.level', 'Level (1-5)')}</Label>
               <Input type="number" min={1} max={5} value={level} onChange={(e) => setLevel(parseInt(e.target.value) || 3)} />
             </div>
             <div>
-              <Label>Years</Label>
+              <Label>{t('staff.skills.years', 'Years')}</Label>
               <Input type="number" min={0} step={0.5} value={years} onChange={(e) => setYears(parseFloat(e.target.value) || 0)} />
             </div>
             <Button
@@ -86,14 +88,14 @@ export default function MySkillsPage() {
 
           <div className="space-y-2">
             {!skills?.length ? (
-              <p className="text-sm text-muted-foreground text-center py-4">No skills added yet.</p>
+              <p className="text-sm text-muted-foreground text-center py-4">{t('staff.skills.none', 'No skills added yet.')}</p>
             ) : (
               skills.map((s) => (
                 <div key={s.id} className="flex items-center justify-between border-b pb-2">
                   <div>
                     <p className="font-medium">{s.skills_catalog?.name}</p>
                     <p className="text-xs text-muted-foreground">
-                      Level {s.proficiency_level}/5 · {s.years_experience}y experience
+                      {t('staff.skills.levelAndYears', 'Level {level}/5 · {years}y experience').replace('{level}', String(s.proficiency_level)).replace('{years}', String(s.years_experience))}
                     </p>
                   </div>
                   <Button size="icon" variant="ghost" onClick={() => delSkill.mutate(s.id)}>
@@ -108,17 +110,17 @@ export default function MySkillsPage() {
 
       <Card>
         <CardHeader className="flex-row items-center justify-between">
-          <CardTitle className="flex items-center gap-2"><Award className="h-5 w-5" /> Certifications</CardTitle>
+          <CardTitle className="flex items-center gap-2"><Award className="h-5 w-5" /> {t('staff.skills.certifications', 'Certifications')}</CardTitle>
           <Dialog open={certOpen} onOpenChange={setCertOpen}>
-            <DialogTrigger asChild><Button size="sm"><Plus className="h-4 w-4 mr-1" /> Add</Button></DialogTrigger>
+            <DialogTrigger asChild><Button size="sm"><Plus className="h-4 w-4 mr-1" /> {t('staff.common.add', 'Add')}</Button></DialogTrigger>
             <DialogContent>
-              <DialogHeader><DialogTitle>Add certification</DialogTitle></DialogHeader>
+              <DialogHeader><DialogTitle>{t('staff.skills.addCertification', 'Add certification')}</DialogTitle></DialogHeader>
               <div className="space-y-3">
-                <div><Label>Name *</Label><Input value={newCert.name} onChange={(e) => setNewCert({ ...newCert, name: e.target.value })} /></div>
-                <div><Label>Issuer</Label><Input value={newCert.issuer} onChange={(e) => setNewCert({ ...newCert, issuer: e.target.value })} /></div>
+                <div><Label>{t('staff.skills.certName', 'Name *')}</Label><Input value={newCert.name} onChange={(e) => setNewCert({ ...newCert, name: e.target.value })} /></div>
+                <div><Label>{t('staff.skills.issuer', 'Issuer')}</Label><Input value={newCert.issuer} onChange={(e) => setNewCert({ ...newCert, issuer: e.target.value })} /></div>
                 <div className="grid grid-cols-2 gap-2">
-                  <div><Label>Issued</Label><Input type="date" value={newCert.issued_date} onChange={(e) => setNewCert({ ...newCert, issued_date: e.target.value })} /></div>
-                  <div><Label>Expires</Label><Input type="date" value={newCert.expires_at} onChange={(e) => setNewCert({ ...newCert, expires_at: e.target.value })} /></div>
+                  <div><Label>{t('staff.skills.issued', 'Issued')}</Label><Input type="date" value={newCert.issued_date} onChange={(e) => setNewCert({ ...newCert, issued_date: e.target.value })} /></div>
+                  <div><Label>{t('staff.skills.expires', 'Expires')}</Label><Input type="date" value={newCert.expires_at} onChange={(e) => setNewCert({ ...newCert, expires_at: e.target.value })} /></div>
                 </div>
                 <Button
                   onClick={() => {
@@ -134,14 +136,14 @@ export default function MySkillsPage() {
                     setCertOpen(false);
                   }}
                   className="w-full"
-                >Save</Button>
+                >{t('staff.common.save', 'Save')}</Button>
               </div>
             </DialogContent>
           </Dialog>
         </CardHeader>
         <CardContent>
           {!certs?.length ? (
-            <p className="text-sm text-muted-foreground text-center py-4">No certifications.</p>
+            <p className="text-sm text-muted-foreground text-center py-4">{t('staff.skills.noCertifications', 'No certifications.')}</p>
           ) : (
             <div className="space-y-2">
               {certs.map((c) => {
@@ -152,13 +154,13 @@ export default function MySkillsPage() {
                       <p className="font-medium">{c.name}</p>
                       <p className="text-xs text-muted-foreground">
                         {c.issuer && `${c.issuer} · `}
-                        {c.expires_at ? `expires ${formatDate(c.expires_at, { year: "numeric", month: "short", day: "numeric" })}` : "no expiry"}
+                        {c.expires_at ? t('staff.skills.expiresOn', 'expires {date}').replace('{date}', formatDate(c.expires_at, { year: "numeric", month: "short", day: "numeric" })) : t('staff.skills.noExpiry', 'no expiry')}
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
-                      {status === "expired" && <Badge variant="destructive">Expired</Badge>}
-                      {status === "expiring" && <Badge className="bg-yellow-500">Expiring soon</Badge>}
-                      {status === "valid" && <Badge variant="secondary">Valid</Badge>}
+                      {status === "expired" && <Badge variant="destructive">{t('staff.skills.expired', 'Expired')}</Badge>}
+                      {status === "expiring" && <Badge className="bg-yellow-500">{t('staff.skills.expiringSoon', 'Expiring soon')}</Badge>}
+                      {status === "valid" && <Badge variant="secondary">{t('staff.skills.valid', 'Valid')}</Badge>}
                       <Button size="icon" variant="ghost" onClick={() => delCert.mutate(c.id)}>
                         <Trash2 className="h-4 w-4" />
                       </Button>

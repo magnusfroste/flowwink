@@ -10,6 +10,13 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Added
 
+- **An employee's own pages follow the site's language.** Leave, the time
+  clock, expenses, payslips, skills, goals and reviews, the employment
+  contract and a manager's team were English built into the code, and showed
+  stored values as they are ("employee_review", "on_leave", "sent"). They are
+  visitor texts with the platform's Swedish, and a stored value is a word
+  (`src/lib/staff-words.ts`).
+
 - **More of what a visitor meets follows the site's language.** Order
   tracking, the page where a subscriber views, exports or deletes their
   newsletter data, the newsletter confirmation, signing a document from a

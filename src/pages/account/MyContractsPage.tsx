@@ -8,29 +8,32 @@ import { Helmet } from "react-helmet-async";
 import { useCustomerFormat } from "@/hooks/useCustomerFormat";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { useUiText } from "@/lib/ui-text";
+import { contractStatusWord, employmentTypeWord } from "@/lib/staff-words";
 
 export default function MyContractsPage() {
   const { formatDateTime, formatCurrency } = useCustomerFormat();
+  const t = useUiText();
   const { employee, isEmployee, loading: isLoading } = useEmployeeSelf();
   const { data: contracts } = useEmploymentContracts(employee?.id);
   const sign = useSignEmploymentContract();
   const [openId, setOpenId] = useState<string | null>(null);
 
-  if (isLoading) return <div className="text-muted-foreground">Loading…</div>;
-  if (!isEmployee) return <div className="text-muted-foreground">No employee record found.</div>;
+  if (isLoading) return <div className="text-muted-foreground">{t('staff.common.loading', 'Loading…')}</div>;
+  if (!isEmployee) return <div className="text-muted-foreground">{t('staff.contracts.noEmployee', 'No employee record found.')}</div>;
 
   return (
     <>
-      <Helmet><title>My contracts</title></Helmet>
+      <Helmet><title>{t('staff.contracts.title', 'My contracts')}</title></Helmet>
       <div className="space-y-4">
         <div>
-          <h2 className="text-2xl font-semibold">My contracts</h2>
-          <p className="text-sm text-muted-foreground">Review and sign your employment contracts</p>
+          <h2 className="text-2xl font-semibold">{t('staff.contracts.title', 'My contracts')}</h2>
+          <p className="text-sm text-muted-foreground">{t('staff.contracts.subtitle', 'Review and sign your employment contracts')}</p>
         </div>
 
         {!contracts?.length && (
           <Card><CardContent className="py-12 text-center text-muted-foreground">
-            No contracts yet.
+            {t('staff.contracts.none', 'No contracts yet.')}
           </CardContent></Card>
         )}
 
@@ -46,26 +49,26 @@ export default function MyContractsPage() {
                       {c.title}
                     </CardTitle>
                     <p className="text-xs text-muted-foreground mt-1">
-                      {c.employment_type} · starts {c.start_date}
+                      {employmentTypeWord(c.employment_type, t)} · {t('staff.contracts.starts', 'starts {date}').replace('{date}', c.start_date)}
                     </p>
                   </div>
                   <Badge variant={c.status === "active" || c.status === "signed" ? "default" : "secondary"}>
-                    {c.status}
+                    {contractStatusWord(c.status, t)}
                   </Badge>
                 </div>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div><span className="text-muted-foreground">Salary:</span> {c.monthly_salary_cents ? `${formatCurrency(c.monthly_salary_cents, c.currency)}/mo` : "—"}</div>
-                  <div><span className="text-muted-foreground">Hours:</span> {c.weekly_hours}/wk</div>
-                  <div><span className="text-muted-foreground">Probation until:</span> {c.probation_end_date ?? "—"}</div>
-                  <div><span className="text-muted-foreground">Notice:</span> {c.notice_period_days} days</div>
+                  <div><span className="text-muted-foreground">{t('staff.contracts.salary', 'Salary:')}</span> {c.monthly_salary_cents ? t('staff.contracts.perMonth', '{amount}/mo').replace('{amount}', formatCurrency(c.monthly_salary_cents, c.currency)) : "—"}</div>
+                  <div><span className="text-muted-foreground">{t('staff.contracts.hours', 'Hours:')}</span> {t('staff.contracts.perWeek', '{hours}/wk').replace('{hours}', String(c.weekly_hours))}</div>
+                  <div><span className="text-muted-foreground">{t('staff.contracts.probationUntil', 'Probation until:')}</span> {c.probation_end_date ?? "—"}</div>
+                  <div><span className="text-muted-foreground">{t('staff.contracts.notice', 'Notice:')}</span> {t('staff.contracts.noticeDays', '{count} days').replace('{count}', String(c.notice_period_days))}</div>
                 </div>
 
                 <div className="flex flex-wrap gap-2 pt-2">
                   <Dialog open={openId === c.id} onOpenChange={(o) => setOpenId(o ? c.id : null)}>
                     <DialogTrigger asChild>
-                      <Button size="sm" variant="outline">Read full contract</Button>
+                      <Button size="sm" variant="outline">{t('staff.contracts.read', 'Read full contract')}</Button>
                     </DialogTrigger>
                     <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
                       <DialogHeader><DialogTitle>{c.title}</DialogTitle></DialogHeader>
@@ -76,19 +79,19 @@ export default function MyContractsPage() {
                   {needsSign && (
                     <Button size="sm" onClick={() => sign.mutate({ id: c.id, side: "employee" })}>
                       <CheckCircle2 className="h-4 w-4 mr-2" />
-                      Sign contract
+                      {t('staff.contracts.sign', 'Sign contract')}
                     </Button>
                   )}
                   {c.signed_by_employee_at && (
                     <span className="text-xs text-green-600 flex items-center gap-1">
                       <CheckCircle2 className="h-3 w-3" />
-                      You signed {formatDateTime(c.signed_by_employee_at, { year: "numeric", month: "short", day: "numeric" })}
+                      {t('staff.contracts.youSigned', 'You signed {date}').replace('{date}', formatDateTime(c.signed_by_employee_at, { year: "numeric", month: "short", day: "numeric" }))}
                     </span>
                   )}
                   {!c.signed_by_employer_at && c.signed_by_employee_at && (
                     <span className="text-xs text-muted-foreground flex items-center gap-1">
                       <AlertCircle className="h-3 w-3" />
-                      Awaiting employer signature
+                      {t('staff.contracts.awaitingEmployer', 'Awaiting employer signature')}
                     </span>
                   )}
                 </div>

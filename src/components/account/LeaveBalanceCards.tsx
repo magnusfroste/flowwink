@@ -5,15 +5,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useEmployeeLeaveBalances } from "@/hooks/useLeaveBalances";
 import { supabase } from "@/integrations/supabase/client";
 import { CalendarCheck, Hourglass, Wallet } from "lucide-react";
-
-const LABELS: Record<string, string> = {
-  vacation: "Vacation",
-  sick: "Sick leave",
-  parental: "Parental",
-  other: "Other",
-};
+import { useUiText } from "@/lib/ui-text";
+import { leaveTypeWord } from "@/lib/staff-words";
 
 export function LeaveBalanceCards({ employeeId }: { employeeId: string }) {
+  const t = useUiText();
   const year = new Date().getFullYear();
   const qc = useQueryClient();
   const { data, isLoading } = useEmployeeLeaveBalances(employeeId, year);
@@ -58,7 +54,7 @@ export function LeaveBalanceCards({ employeeId }: { employeeId: string }) {
     return (
       <Card>
         <CardContent className="py-6 text-sm text-muted-foreground text-center">
-          No leave allocation set for {year}. Contact HR to get your annual quota.
+          {t('staff.leave.noAllocationForYear', 'No leave allocation set for {year}. Contact HR to get your annual quota.').replace('{year}', String(year))}
         </CardContent>
       </Card>
     );
@@ -77,12 +73,12 @@ export function LeaveBalanceCards({ employeeId }: { employeeId: string }) {
             <CardContent className="pt-5 pb-4 space-y-3">
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <p className="text-sm text-muted-foreground capitalize">
-                    {LABELS[b.leave_type] ?? b.leave_type}
+                  <p className="text-sm text-muted-foreground">
+                    {leaveTypeWord(b.leave_type, t)}
                   </p>
                   <p className="text-2xl font-bold tabular-nums">
                     {remaining}
-                    <span className="text-sm font-normal text-muted-foreground"> / {total} days</span>
+                    <span className="text-sm font-normal text-muted-foreground">{" "}{t('staff.leave.ofTotal', '/ {total} days').replace('{total}', String(total))}</span>
                   </p>
                 </div>
                 <Wallet className={`h-5 w-5 ${lowBalance ? "text-warning" : "text-muted-foreground"}`} />
@@ -98,12 +94,12 @@ export function LeaveBalanceCards({ employeeId }: { employeeId: string }) {
               <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <span className="flex items-center gap-1">
                   <CalendarCheck className="h-3 w-3" />
-                  Used {Number(b.used_days)}
+                  {t('staff.leave.used', 'Used {count}').replace('{count}', String(Number(b.used_days)))}
                 </span>
                 {Number(b.pending_days) > 0 && (
                   <span className="flex items-center gap-1">
                     <Hourglass className="h-3 w-3" />
-                    {Number(b.pending_days)} pending
+                    {t('staff.leave.pendingDays', '{count} pending').replace('{count}', String(Number(b.pending_days)))}
                   </span>
                 )}
               </div>

@@ -29,6 +29,8 @@ import { useCustomerFormat } from "@/hooks/useCustomerFormat";
 import { Check, X, Users, CalendarOff } from "lucide-react";
 import { toast } from "sonner";
 import { useMyTeam, useTeamLeaveRequests, TeamLeaveRequest } from "@/hooks/useTeam";
+import { useUiText } from "@/lib/ui-text";
+import { daysWord, employeeStatusWord, leaveStatusWord, leaveTypeWord } from "@/lib/staff-words";
 
 const STATUS_COLORS: Record<string, string> = {
   pending: "bg-yellow-100 text-yellow-800 border-yellow-200",
@@ -40,6 +42,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 export default function TeamPage() {
   const { formatDate } = useCustomerFormat();
+  const t = useUiText();
   const { data: team, isLoading: teamLoading } = useMyTeam();
   const { data: requests, isLoading: reqLoading } = useTeamLeaveRequests();
   const qc = useQueryClient();
@@ -63,7 +66,7 @@ export default function TeamPage() {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Decision saved");
+      toast.success(t('staff.team.decisionSaved', 'Decision saved'));
       setDecision(null);
       setNote("");
       qc.invalidateQueries({ queryKey: ["team_leave_requests"] });
@@ -84,14 +87,14 @@ export default function TeamPage() {
           )}
         </div>
       </TableCell>
-      <TableCell className="capitalize">{r.leave_type}</TableCell>
+      <TableCell>{leaveTypeWord(r.leave_type, t)}</TableCell>
       <TableCell className="text-sm">
         {formatDate(r.start_date, { month: "short", day: "numeric" })} – {formatDate(r.end_date, { year: "numeric", month: "short", day: "numeric" })}
       </TableCell>
       <TableCell className="tabular-nums">{r.days}</TableCell>
       <TableCell>
         <Badge variant="outline" className={STATUS_COLORS[r.status] ?? ""}>
-          {r.status}
+          {leaveStatusWord(r.status, t)}
         </Badge>
       </TableCell>
       <TableCell className="text-right">
@@ -104,7 +107,7 @@ export default function TeamPage() {
               onClick={() => setDecision({ request: r, action: "approved" })}
             >
               <Check className="h-4 w-4 mr-1" />
-              Approve
+              {t('staff.team.approve', 'Approve')}
             </Button>
             <Button
               size="sm"
@@ -113,7 +116,7 @@ export default function TeamPage() {
               onClick={() => setDecision({ request: r, action: "rejected" })}
             >
               <X className="h-4 w-4 mr-1" />
-              Reject
+              {t('staff.team.reject', 'Reject')}
             </Button>
           </div>
         )}
@@ -128,7 +131,7 @@ export default function TeamPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <CalendarOff className="h-5 w-5" />
-            Pending approvals
+            {t('staff.team.pending', 'Pending approvals')}
             {pending.length > 0 && (
               <Badge variant="secondary" className="ml-1">
                 {pending.length}
@@ -141,17 +144,17 @@ export default function TeamPage() {
             <Skeleton className="h-24 w-full" />
           ) : !pending.length ? (
             <p className="text-sm text-muted-foreground py-6 text-center">
-              No requests waiting for your decision.
+              {t('staff.team.noPending', 'No requests waiting for your decision.')}
             </p>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Employee</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Period</TableHead>
-                  <TableHead>Days</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead>{t('staff.team.employee', 'Employee')}</TableHead>
+                  <TableHead>{t('staff.common.type', 'Type')}</TableHead>
+                  <TableHead>{t('staff.common.period', 'Period')}</TableHead>
+                  <TableHead>{t('staff.team.days', 'Days')}</TableHead>
+                  <TableHead>{t('staff.common.status', 'Status')}</TableHead>
                   <TableHead></TableHead>
                 </TableRow>
               </TableHeader>
@@ -166,7 +169,7 @@ export default function TeamPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
-            My team
+            {t('staff.team.title', 'My team')}
             {team && team.length > 0 && (
               <Badge variant="secondary" className="ml-1">
                 {team.length}
@@ -179,16 +182,16 @@ export default function TeamPage() {
             <Skeleton className="h-24 w-full" />
           ) : !team?.length ? (
             <p className="text-sm text-muted-foreground py-6 text-center">
-              No direct reports yet.
+              {t('staff.team.none', 'No direct reports yet.')}
             </p>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Title</TableHead>
-                  <TableHead>Department</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead>{t('staff.common.name', 'Name')}</TableHead>
+                  <TableHead>{t('staff.team.jobTitle', 'Title')}</TableHead>
+                  <TableHead>{t('staff.team.department', 'Department')}</TableHead>
+                  <TableHead>{t('staff.common.status', 'Status')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -205,8 +208,8 @@ export default function TeamPage() {
                     <TableCell>{m.title ?? "—"}</TableCell>
                     <TableCell>{m.department ?? "—"}</TableCell>
                     <TableCell>
-                      <Badge variant="outline" className="capitalize">
-                        {m.status.replace("_", " ")}
+                      <Badge variant="outline">
+                        {employeeStatusWord(m.status, t)}
                       </Badge>
                     </TableCell>
                   </TableRow>
@@ -221,17 +224,17 @@ export default function TeamPage() {
       {!!recent.length && (
         <Card>
           <CardHeader>
-            <CardTitle>Recent decisions</CardTitle>
+            <CardTitle>{t('staff.team.recent', 'Recent decisions')}</CardTitle>
           </CardHeader>
           <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Employee</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Period</TableHead>
-                  <TableHead>Days</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead>{t('staff.team.employee', 'Employee')}</TableHead>
+                  <TableHead>{t('staff.common.type', 'Type')}</TableHead>
+                  <TableHead>{t('staff.common.period', 'Period')}</TableHead>
+                  <TableHead>{t('staff.team.days', 'Days')}</TableHead>
+                  <TableHead>{t('staff.common.status', 'Status')}</TableHead>
                   <TableHead></TableHead>
                 </TableRow>
               </TableHeader>
@@ -246,21 +249,23 @@ export default function TeamPage() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {decision?.action === "approved" ? "Approve" : "Reject"} leave request
+              {decision?.action === "approved"
+                ? t('staff.team.approveTitle', 'Approve leave request')
+                : t('staff.team.rejectTitle', 'Reject leave request')}
             </AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-3">
                 {decision && (
                   <p>
-                    {decision.request.employees?.name} · {decision.request.leave_type} ·{" "}
+                    {decision.request.employees?.name} · {leaveTypeWord(decision.request.leave_type, t)} ·{" "}
                     {formatDate(decision.request.start_date, { month: "short", day: "numeric" })} –{" "}
                     {formatDate(decision.request.end_date, { year: "numeric", month: "short", day: "numeric" })} (
-                    {decision.request.days} day{decision.request.days === 1 ? "" : "s"})
+                    {daysWord(decision.request.days, t)})
                   </p>
                 )}
                 <div className="space-y-1.5">
                   <Label htmlFor="decision-note" className="text-xs">
-                    Note (optional)
+                    {t('staff.team.note', 'Note (optional)')}
                   </Label>
                   <Textarea
                     id="decision-note"
@@ -269,8 +274,8 @@ export default function TeamPage() {
                     onChange={(e) => setNote(e.target.value)}
                     placeholder={
                       decision?.action === "approved"
-                        ? "e.g. Enjoy your time off!"
-                        : "Reason for rejection…"
+                        ? t('staff.team.notePlaceholderApprove', 'e.g. Enjoy your time off!')
+                        : t('staff.team.notePlaceholderReject', 'Reason for rejection…')
                     }
                   />
                 </div>
@@ -278,7 +283,7 @@ export default function TeamPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('staff.common.cancel', 'Cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() =>
                 decision &&
@@ -291,10 +296,10 @@ export default function TeamPage() {
               disabled={updateStatus.isPending}
             >
               {updateStatus.isPending
-                ? "Saving…"
+                ? t('staff.common.saving', 'Saving…')
                 : decision?.action === "approved"
-                ? "Approve"
-                : "Reject"}
+                ? t('staff.team.approve', 'Approve')
+                : t('staff.team.reject', 'Reject')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
