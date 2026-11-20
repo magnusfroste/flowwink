@@ -213,7 +213,7 @@ describe('the MCP client', () => {
 });
 
 describe('where the key lives', () => {
-  const migration = readFileSync('supabase/migrations/20261120120000_externa-mcp-kallor.sql', 'utf8');
+  const migration = readFileSync('supabase/migrations/20261120150001_externa-mcp-kallor.sql', 'utf8');
   const handler = readFileSync('supabase/functions/_shared/handlers/mcp-sources.ts', 'utf8');
   const card = readFileSync('src/components/admin/integrations/McpSourcesCard.tsx', 'utf8');
   const seeds = readFileSync('src/lib/platform-seeds.ts', 'utf8');
