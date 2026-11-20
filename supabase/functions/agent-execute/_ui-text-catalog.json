@@ -4416,9 +4416,19 @@
       "fallback": "Edit"
     },
     {
+      "key": "staff.common.hoursMinutes",
+      "group": "staff",
+      "fallback": "{hours} h {minutes} min"
+    },
+    {
       "key": "staff.common.loading",
       "group": "staff",
       "fallback": "Loading…"
+    },
+    {
+      "key": "staff.common.minutes",
+      "group": "staff",
+      "fallback": "{minutes} min"
     },
     {
       "key": "staff.common.name",
@@ -4929,6 +4939,171 @@
       "key": "staff.leave.used",
       "group": "staff",
       "fallback": "Used {count}"
+    },
+    {
+      "key": "staff.payslip.advance",
+      "group": "staff",
+      "fallback": "Advance deduction"
+    },
+    {
+      "key": "staff.payslip.amount",
+      "group": "staff",
+      "fallback": "Amount"
+    },
+    {
+      "key": "staff.payslip.benefits",
+      "group": "staff",
+      "fallback": "Benefits"
+    },
+    {
+      "key": "staff.payslip.components",
+      "group": "staff",
+      "fallback": "Pay lines"
+    },
+    {
+      "key": "staff.payslip.deductions",
+      "group": "staff",
+      "fallback": "Deductions"
+    },
+    {
+      "key": "staff.payslip.employee",
+      "group": "staff",
+      "fallback": "Employee"
+    },
+    {
+      "key": "staff.payslip.employer",
+      "group": "staff",
+      "fallback": "Employer"
+    },
+    {
+      "key": "staff.payslip.employerContributions",
+      "group": "staff",
+      "fallback": "Employer contributions"
+    },
+    {
+      "key": "staff.payslip.grossToNet",
+      "group": "staff",
+      "fallback": "Gross to net"
+    },
+    {
+      "key": "staff.payslip.line",
+      "group": "staff",
+      "fallback": "Line"
+    },
+    {
+      "key": "staff.payslip.netPay",
+      "group": "staff",
+      "fallback": "Net pay"
+    },
+    {
+      "key": "staff.payslip.noComponents",
+      "group": "staff",
+      "fallback": "No pay lines."
+    },
+    {
+      "key": "staff.payslip.pensionEmployee",
+      "group": "staff",
+      "fallback": "Pension (employee)"
+    },
+    {
+      "key": "staff.payslip.pensionEmployer",
+      "group": "staff",
+      "fallback": "Pension (employer)"
+    },
+    {
+      "key": "staff.payslip.role",
+      "group": "staff",
+      "fallback": "Role"
+    },
+    {
+      "key": "staff.payslip.sickDeduction",
+      "group": "staff",
+      "fallback": "Sick deduction"
+    },
+    {
+      "key": "staff.payslip.sickPay",
+      "group": "staff",
+      "fallback": "Sick pay"
+    },
+    {
+      "key": "staff.payslip.socialFee",
+      "group": "staff",
+      "fallback": "Social fee"
+    },
+    {
+      "key": "staff.payslip.socialFeePct",
+      "group": "staff",
+      "fallback": "Social fee ({percent}%)"
+    },
+    {
+      "key": "staff.payslip.tax",
+      "group": "staff",
+      "fallback": "Preliminary tax (PAYE)"
+    },
+    {
+      "key": "staff.payslip.taxable",
+      "group": "staff",
+      "fallback": "Taxable"
+    },
+    {
+      "key": "staff.payslip.taxableBase",
+      "group": "staff",
+      "fallback": "Taxable base"
+    },
+    {
+      "key": "staff.payslip.taxCorrection",
+      "group": "staff",
+      "fallback": "Tax correction"
+    },
+    {
+      "key": "staff.payslip.taxShort",
+      "group": "staff",
+      "fallback": "Tax"
+    },
+    {
+      "key": "staff.payslip.type.benefit",
+      "group": "staff",
+      "fallback": "Benefit"
+    },
+    {
+      "key": "staff.payslip.type.bonus",
+      "group": "staff",
+      "fallback": "Bonus"
+    },
+    {
+      "key": "staff.payslip.type.deduction",
+      "group": "staff",
+      "fallback": "Deduction"
+    },
+    {
+      "key": "staff.payslip.type.overtime",
+      "group": "staff",
+      "fallback": "Overtime"
+    },
+    {
+      "key": "staff.payslip.type.salary",
+      "group": "staff",
+      "fallback": "Salary"
+    },
+    {
+      "key": "staff.payslip.yes",
+      "group": "staff",
+      "fallback": "Yes"
+    },
+    {
+      "key": "staff.payslip.ytd",
+      "group": "staff",
+      "fallback": "Year-to-date"
+    },
+    {
+      "key": "staff.payslip.ytdMonths",
+      "group": "staff",
+      "fallback": "Year-to-date ({count} months)"
+    },
+    {
+      "key": "staff.payslip.ytdOneMonth",
+      "group": "staff",
+      "fallback": "Year-to-date (1 month)"
     },
     {
       "key": "staff.payslips.gross",
