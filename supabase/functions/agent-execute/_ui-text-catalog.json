@@ -4311,6 +4311,1096 @@
       "fallback": "Signature drawing area"
     },
     {
+      "key": "staff.attendance.break",
+      "group": "staff",
+      "fallback": "Break (minutes)"
+    },
+    {
+      "key": "staff.attendance.breakTaken",
+      "group": "staff",
+      "fallback": "{minutes}m break"
+    },
+    {
+      "key": "staff.attendance.clockedIn",
+      "group": "staff",
+      "fallback": "Currently clocked in"
+    },
+    {
+      "key": "staff.attendance.clockIn",
+      "group": "staff",
+      "fallback": "Clock in"
+    },
+    {
+      "key": "staff.attendance.clockOut",
+      "group": "staff",
+      "fallback": "Clock out"
+    },
+    {
+      "key": "staff.attendance.employeesOnly",
+      "group": "staff",
+      "fallback": "Time & attendance is only available for employees."
+    },
+    {
+      "key": "staff.attendance.none",
+      "group": "staff",
+      "fallback": "No entries yet."
+    },
+    {
+      "key": "staff.attendance.notes",
+      "group": "staff",
+      "fallback": "Notes (optional)"
+    },
+    {
+      "key": "staff.attendance.notesPlaceholder",
+      "group": "staff",
+      "fallback": "What did you work on?"
+    },
+    {
+      "key": "staff.attendance.open",
+      "group": "staff",
+      "fallback": "open"
+    },
+    {
+      "key": "staff.attendance.recent",
+      "group": "staff",
+      "fallback": "Recent entries"
+    },
+    {
+      "key": "staff.attendance.since",
+      "group": "staff",
+      "fallback": "Since {time} — {duration}"
+    },
+    {
+      "key": "staff.attendance.title",
+      "group": "staff",
+      "fallback": "Time clock"
+    },
+    {
+      "key": "staff.common.add",
+      "group": "staff",
+      "fallback": "Add"
+    },
+    {
+      "key": "staff.common.back",
+      "group": "staff",
+      "fallback": "Back"
+    },
+    {
+      "key": "staff.common.cancel",
+      "group": "staff",
+      "fallback": "Cancel"
+    },
+    {
+      "key": "staff.common.date",
+      "group": "staff",
+      "fallback": "Date"
+    },
+    {
+      "key": "staff.common.dayMany",
+      "group": "staff",
+      "fallback": "{count} days"
+    },
+    {
+      "key": "staff.common.dayOne",
+      "group": "staff",
+      "fallback": "{count} day"
+    },
+    {
+      "key": "staff.common.description",
+      "group": "staff",
+      "fallback": "Description"
+    },
+    {
+      "key": "staff.common.edit",
+      "group": "staff",
+      "fallback": "Edit"
+    },
+    {
+      "key": "staff.common.loading",
+      "group": "staff",
+      "fallback": "Loading…"
+    },
+    {
+      "key": "staff.common.name",
+      "group": "staff",
+      "fallback": "Name"
+    },
+    {
+      "key": "staff.common.noEmployee",
+      "group": "staff",
+      "fallback": "No employee record linked"
+    },
+    {
+      "key": "staff.common.noEmployeeHint",
+      "group": "staff",
+      "fallback": "Contact your administrator to link your account to an employee profile."
+    },
+    {
+      "key": "staff.common.period",
+      "group": "staff",
+      "fallback": "Period"
+    },
+    {
+      "key": "staff.common.save",
+      "group": "staff",
+      "fallback": "Save"
+    },
+    {
+      "key": "staff.common.saveChanges",
+      "group": "staff",
+      "fallback": "Save changes"
+    },
+    {
+      "key": "staff.common.saving",
+      "group": "staff",
+      "fallback": "Saving…"
+    },
+    {
+      "key": "staff.common.status",
+      "group": "staff",
+      "fallback": "Status"
+    },
+    {
+      "key": "staff.common.submitting",
+      "group": "staff",
+      "fallback": "Submitting…"
+    },
+    {
+      "key": "staff.common.type",
+      "group": "staff",
+      "fallback": "Type"
+    },
+    {
+      "key": "staff.contracts.awaitingEmployer",
+      "group": "staff",
+      "fallback": "Awaiting employer signature"
+    },
+    {
+      "key": "staff.contracts.hours",
+      "group": "staff",
+      "fallback": "Hours:"
+    },
+    {
+      "key": "staff.contracts.noEmployee",
+      "group": "staff",
+      "fallback": "No employee record found."
+    },
+    {
+      "key": "staff.contracts.none",
+      "group": "staff",
+      "fallback": "No contracts yet."
+    },
+    {
+      "key": "staff.contracts.notice",
+      "group": "staff",
+      "fallback": "Notice:"
+    },
+    {
+      "key": "staff.contracts.noticeDays",
+      "group": "staff",
+      "fallback": "{count} days"
+    },
+    {
+      "key": "staff.contracts.perMonth",
+      "group": "staff",
+      "fallback": "{amount}/mo"
+    },
+    {
+      "key": "staff.contracts.perWeek",
+      "group": "staff",
+      "fallback": "{hours}/wk"
+    },
+    {
+      "key": "staff.contracts.probationUntil",
+      "group": "staff",
+      "fallback": "Probation until:"
+    },
+    {
+      "key": "staff.contracts.read",
+      "group": "staff",
+      "fallback": "Read full contract"
+    },
+    {
+      "key": "staff.contracts.salary",
+      "group": "staff",
+      "fallback": "Salary:"
+    },
+    {
+      "key": "staff.contracts.sign",
+      "group": "staff",
+      "fallback": "Sign contract"
+    },
+    {
+      "key": "staff.contracts.starts",
+      "group": "staff",
+      "fallback": "starts {date}"
+    },
+    {
+      "key": "staff.contracts.status.active",
+      "group": "staff",
+      "fallback": "Active"
+    },
+    {
+      "key": "staff.contracts.status.draft",
+      "group": "staff",
+      "fallback": "Draft"
+    },
+    {
+      "key": "staff.contracts.status.expired",
+      "group": "staff",
+      "fallback": "Expired"
+    },
+    {
+      "key": "staff.contracts.status.sent",
+      "group": "staff",
+      "fallback": "To sign"
+    },
+    {
+      "key": "staff.contracts.status.signed",
+      "group": "staff",
+      "fallback": "Signed"
+    },
+    {
+      "key": "staff.contracts.status.terminated",
+      "group": "staff",
+      "fallback": "Terminated"
+    },
+    {
+      "key": "staff.contracts.subtitle",
+      "group": "staff",
+      "fallback": "Review and sign your employment contracts"
+    },
+    {
+      "key": "staff.contracts.title",
+      "group": "staff",
+      "fallback": "My contracts"
+    },
+    {
+      "key": "staff.contracts.type.contractor",
+      "group": "staff",
+      "fallback": "Contractor"
+    },
+    {
+      "key": "staff.contracts.type.fullTime",
+      "group": "staff",
+      "fallback": "Full time"
+    },
+    {
+      "key": "staff.contracts.type.partTime",
+      "group": "staff",
+      "fallback": "Part time"
+    },
+    {
+      "key": "staff.contracts.youSigned",
+      "group": "staff",
+      "fallback": "You signed {date}"
+    },
+    {
+      "key": "staff.expenses.amount",
+      "group": "staff",
+      "fallback": "Amount (incl. VAT)"
+    },
+    {
+      "key": "staff.expenses.category.lodging",
+      "group": "staff",
+      "fallback": "Lodging"
+    },
+    {
+      "key": "staff.expenses.category.meals",
+      "group": "staff",
+      "fallback": "Meals"
+    },
+    {
+      "key": "staff.expenses.category.other",
+      "group": "staff",
+      "fallback": "Other"
+    },
+    {
+      "key": "staff.expenses.category.software",
+      "group": "staff",
+      "fallback": "Software"
+    },
+    {
+      "key": "staff.expenses.category.supplies",
+      "group": "staff",
+      "fallback": "Supplies"
+    },
+    {
+      "key": "staff.expenses.category.travel",
+      "group": "staff",
+      "fallback": "Travel"
+    },
+    {
+      "key": "staff.expenses.categoryLabel",
+      "group": "staff",
+      "fallback": "Category"
+    },
+    {
+      "key": "staff.expenses.descriptionPlaceholder",
+      "group": "staff",
+      "fallback": "e.g. Client lunch in Stockholm"
+    },
+    {
+      "key": "staff.expenses.descriptionRequired",
+      "group": "staff",
+      "fallback": "Description required"
+    },
+    {
+      "key": "staff.expenses.invalidAmount",
+      "group": "staff",
+      "fallback": "Enter a valid amount"
+    },
+    {
+      "key": "staff.expenses.linkTip",
+      "group": "staff",
+      "fallback": "Tip: Ask your administrator to link your account to an employee profile so HR sees these in the same context."
+    },
+    {
+      "key": "staff.expenses.none",
+      "group": "staff",
+      "fallback": "No expenses yet."
+    },
+    {
+      "key": "staff.expenses.notSignedIn",
+      "group": "staff",
+      "fallback": "Not signed in"
+    },
+    {
+      "key": "staff.expenses.status.approved",
+      "group": "staff",
+      "fallback": "Approved"
+    },
+    {
+      "key": "staff.expenses.status.booked",
+      "group": "staff",
+      "fallback": "Booked"
+    },
+    {
+      "key": "staff.expenses.status.draft",
+      "group": "staff",
+      "fallback": "Draft"
+    },
+    {
+      "key": "staff.expenses.status.paid",
+      "group": "staff",
+      "fallback": "Paid"
+    },
+    {
+      "key": "staff.expenses.status.rejected",
+      "group": "staff",
+      "fallback": "Rejected"
+    },
+    {
+      "key": "staff.expenses.status.submitted",
+      "group": "staff",
+      "fallback": "Submitted"
+    },
+    {
+      "key": "staff.expenses.submit",
+      "group": "staff",
+      "fallback": "Submit expense"
+    },
+    {
+      "key": "staff.expenses.submitted",
+      "group": "staff",
+      "fallback": "Expense submitted"
+    },
+    {
+      "key": "staff.expenses.title",
+      "group": "staff",
+      "fallback": "My expenses"
+    },
+    {
+      "key": "staff.expenses.vendor",
+      "group": "staff",
+      "fallback": "Vendor (optional)"
+    },
+    {
+      "key": "staff.expenses.vendorPlaceholder",
+      "group": "staff",
+      "fallback": "e.g. SAS"
+    },
+    {
+      "key": "staff.leave.available",
+      "group": "staff",
+      "fallback": "{type}: {days} available"
+    },
+    {
+      "key": "staff.leave.cancelAction",
+      "group": "staff",
+      "fallback": "Cancel"
+    },
+    {
+      "key": "staff.leave.cancelConfirm",
+      "group": "staff",
+      "fallback": "Cancel this leave request?"
+    },
+    {
+      "key": "staff.leave.cancelled",
+      "group": "staff",
+      "fallback": "Leave request cancelled"
+    },
+    {
+      "key": "staff.leave.cancelling",
+      "group": "staff",
+      "fallback": "Cancelling…"
+    },
+    {
+      "key": "staff.leave.cancelRequest",
+      "group": "staff",
+      "fallback": "Cancel request"
+    },
+    {
+      "key": "staff.leave.cancelYes",
+      "group": "staff",
+      "fallback": "Yes, cancel"
+    },
+    {
+      "key": "staff.leave.cannotUndo",
+      "group": "staff",
+      "fallback": "This action cannot be undone."
+    },
+    {
+      "key": "staff.leave.editRequest",
+      "group": "staff",
+      "fallback": "Edit request"
+    },
+    {
+      "key": "staff.leave.editTitle",
+      "group": "staff",
+      "fallback": "Edit leave request"
+    },
+    {
+      "key": "staff.leave.endDate",
+      "group": "staff",
+      "fallback": "End date"
+    },
+    {
+      "key": "staff.leave.exceedsBalance",
+      "group": "staff",
+      "fallback": "exceeds your balance"
+    },
+    {
+      "key": "staff.leave.history",
+      "group": "staff",
+      "fallback": "History"
+    },
+    {
+      "key": "staff.leave.keep",
+      "group": "staff",
+      "fallback": "Keep request"
+    },
+    {
+      "key": "staff.leave.locked",
+      "group": "staff",
+      "fallback": "Locked — leave has started"
+    },
+    {
+      "key": "staff.leave.noAllocationForType",
+      "group": "staff",
+      "fallback": "no allocation set for this type"
+    },
+    {
+      "key": "staff.leave.noAllocationForYear",
+      "group": "staff",
+      "fallback": "No leave allocation set for {year}. Contact HR to get your annual quota."
+    },
+    {
+      "key": "staff.leave.noPast",
+      "group": "staff",
+      "fallback": "No past leave on record."
+    },
+    {
+      "key": "staff.leave.noUpcoming",
+      "group": "staff",
+      "fallback": "No upcoming leave."
+    },
+    {
+      "key": "staff.leave.ofTotal",
+      "group": "staff",
+      "fallback": "/ {total} days"
+    },
+    {
+      "key": "staff.leave.pendingDays",
+      "group": "staff",
+      "fallback": "{count} pending"
+    },
+    {
+      "key": "staff.leave.pickDates",
+      "group": "staff",
+      "fallback": "Pick dates"
+    },
+    {
+      "key": "staff.leave.reason",
+      "group": "staff",
+      "fallback": "Reason"
+    },
+    {
+      "key": "staff.leave.reasonOptional",
+      "group": "staff",
+      "fallback": "Reason (optional)"
+    },
+    {
+      "key": "staff.leave.reasonPlaceholder",
+      "group": "staff",
+      "fallback": "Short note"
+    },
+    {
+      "key": "staff.leave.request",
+      "group": "staff",
+      "fallback": "Request leave"
+    },
+    {
+      "key": "staff.leave.requesting",
+      "group": "staff",
+      "fallback": "Requesting"
+    },
+    {
+      "key": "staff.leave.startDate",
+      "group": "staff",
+      "fallback": "Start date"
+    },
+    {
+      "key": "staff.leave.status.approved",
+      "group": "staff",
+      "fallback": "Approved"
+    },
+    {
+      "key": "staff.leave.status.cancelled",
+      "group": "staff",
+      "fallback": "Cancelled"
+    },
+    {
+      "key": "staff.leave.status.denied",
+      "group": "staff",
+      "fallback": "Denied"
+    },
+    {
+      "key": "staff.leave.status.pending",
+      "group": "staff",
+      "fallback": "Pending review"
+    },
+    {
+      "key": "staff.leave.status.rejected",
+      "group": "staff",
+      "fallback": "Rejected"
+    },
+    {
+      "key": "staff.leave.submit",
+      "group": "staff",
+      "fallback": "Submit request"
+    },
+    {
+      "key": "staff.leave.submitted",
+      "group": "staff",
+      "fallback": "Leave request submitted"
+    },
+    {
+      "key": "staff.leave.type.other",
+      "group": "staff",
+      "fallback": "Other"
+    },
+    {
+      "key": "staff.leave.type.parental",
+      "group": "staff",
+      "fallback": "Parental"
+    },
+    {
+      "key": "staff.leave.type.sick",
+      "group": "staff",
+      "fallback": "Sick leave"
+    },
+    {
+      "key": "staff.leave.type.vacation",
+      "group": "staff",
+      "fallback": "Vacation"
+    },
+    {
+      "key": "staff.leave.upcoming",
+      "group": "staff",
+      "fallback": "Upcoming & active"
+    },
+    {
+      "key": "staff.leave.updated",
+      "group": "staff",
+      "fallback": "Leave request updated"
+    },
+    {
+      "key": "staff.leave.used",
+      "group": "staff",
+      "fallback": "Used {count}"
+    },
+    {
+      "key": "staff.payslips.gross",
+      "group": "staff",
+      "fallback": "Gross"
+    },
+    {
+      "key": "staff.payslips.net",
+      "group": "staff",
+      "fallback": "Net"
+    },
+    {
+      "key": "staff.payslips.noEmployeeHint",
+      "group": "staff",
+      "fallback": "Your payslips will appear here once HR links your employee record to your account."
+    },
+    {
+      "key": "staff.payslips.none",
+      "group": "staff",
+      "fallback": "No payslips yet"
+    },
+    {
+      "key": "staff.payslips.noneHint",
+      "group": "staff",
+      "fallback": "Approved payroll runs will show up here."
+    },
+    {
+      "key": "staff.payslips.pageTitle",
+      "group": "staff",
+      "fallback": "My payslips · My Account"
+    },
+    {
+      "key": "staff.payslips.pageTitleOne",
+      "group": "staff",
+      "fallback": "Payslip · My Account"
+    },
+    {
+      "key": "staff.payslips.payslip",
+      "group": "staff",
+      "fallback": "Payslip"
+    },
+    {
+      "key": "staff.payslips.print",
+      "group": "staff",
+      "fallback": "Print / Save PDF"
+    },
+    {
+      "key": "staff.payslips.status.approved",
+      "group": "staff",
+      "fallback": "Approved"
+    },
+    {
+      "key": "staff.payslips.status.cancelled",
+      "group": "staff",
+      "fallback": "Cancelled"
+    },
+    {
+      "key": "staff.payslips.status.draft",
+      "group": "staff",
+      "fallback": "Draft"
+    },
+    {
+      "key": "staff.payslips.status.paid",
+      "group": "staff",
+      "fallback": "Paid"
+    },
+    {
+      "key": "staff.payslips.title",
+      "group": "staff",
+      "fallback": "My payslips"
+    },
+    {
+      "key": "staff.payslips.view",
+      "group": "staff",
+      "fallback": "View"
+    },
+    {
+      "key": "staff.performance.achievements",
+      "group": "staff",
+      "fallback": "Achievements:"
+    },
+    {
+      "key": "staff.performance.acknowledge",
+      "group": "staff",
+      "fallback": "Acknowledge"
+    },
+    {
+      "key": "staff.performance.agenda",
+      "group": "staff",
+      "fallback": "Agenda:"
+    },
+    {
+      "key": "staff.performance.category.business",
+      "group": "staff",
+      "fallback": "Business"
+    },
+    {
+      "key": "staff.performance.category.personal",
+      "group": "staff",
+      "fallback": "Personal"
+    },
+    {
+      "key": "staff.performance.category.professional",
+      "group": "staff",
+      "fallback": "Professional"
+    },
+    {
+      "key": "staff.performance.category.skill",
+      "group": "staff",
+      "fallback": "Skill"
+    },
+    {
+      "key": "staff.performance.due",
+      "group": "staff",
+      "fallback": "Due {date}"
+    },
+    {
+      "key": "staff.performance.employeesOnly",
+      "group": "staff",
+      "fallback": "Performance is available for employees only."
+    },
+    {
+      "key": "staff.performance.goalTitle",
+      "group": "staff",
+      "fallback": "Title"
+    },
+    {
+      "key": "staff.performance.improvements",
+      "group": "staff",
+      "fallback": "Improvements:"
+    },
+    {
+      "key": "staff.performance.meeting.cancelled",
+      "group": "staff",
+      "fallback": "Cancelled"
+    },
+    {
+      "key": "staff.performance.meeting.completed",
+      "group": "staff",
+      "fallback": "Completed"
+    },
+    {
+      "key": "staff.performance.meeting.scheduled",
+      "group": "staff",
+      "fallback": "Scheduled"
+    },
+    {
+      "key": "staff.performance.meetingsTitle",
+      "group": "staff",
+      "fallback": "Upcoming & past 1:1s"
+    },
+    {
+      "key": "staff.performance.myGoals",
+      "group": "staff",
+      "fallback": "My Goals"
+    },
+    {
+      "key": "staff.performance.newGoal",
+      "group": "staff",
+      "fallback": "New Goal"
+    },
+    {
+      "key": "staff.performance.nextPeriod",
+      "group": "staff",
+      "fallback": "Next period:"
+    },
+    {
+      "key": "staff.performance.noGoals",
+      "group": "staff",
+      "fallback": "No goals yet — add one to start tracking your development."
+    },
+    {
+      "key": "staff.performance.noMeetings",
+      "group": "staff",
+      "fallback": "No 1:1s scheduled."
+    },
+    {
+      "key": "staff.performance.noReviews",
+      "group": "staff",
+      "fallback": "No reviews yet."
+    },
+    {
+      "key": "staff.performance.period.adHoc",
+      "group": "staff",
+      "fallback": "Ad-hoc review"
+    },
+    {
+      "key": "staff.performance.period.annual",
+      "group": "staff",
+      "fallback": "Annual review"
+    },
+    {
+      "key": "staff.performance.period.other",
+      "group": "staff",
+      "fallback": "{type} review"
+    },
+    {
+      "key": "staff.performance.period.probation",
+      "group": "staff",
+      "fallback": "Probation review"
+    },
+    {
+      "key": "staff.performance.period.quarterly",
+      "group": "staff",
+      "fallback": "Quarterly review"
+    },
+    {
+      "key": "staff.performance.review.acknowledged",
+      "group": "staff",
+      "fallback": "Acknowledged"
+    },
+    {
+      "key": "staff.performance.review.completed",
+      "group": "staff",
+      "fallback": "Completed"
+    },
+    {
+      "key": "staff.performance.review.draft",
+      "group": "staff",
+      "fallback": "Draft"
+    },
+    {
+      "key": "staff.performance.review.employeeReview",
+      "group": "staff",
+      "fallback": "Awaiting your acknowledgement"
+    },
+    {
+      "key": "staff.performance.reviews",
+      "group": "staff",
+      "fallback": "Reviews"
+    },
+    {
+      "key": "staff.performance.subtitle",
+      "group": "staff",
+      "fallback": "Your goals, 1:1s and reviews"
+    },
+    {
+      "key": "staff.performance.tabGoals",
+      "group": "staff",
+      "fallback": "Goals ({count})"
+    },
+    {
+      "key": "staff.performance.tabMeetings",
+      "group": "staff",
+      "fallback": "1:1s ({count})"
+    },
+    {
+      "key": "staff.performance.tabReviews",
+      "group": "staff",
+      "fallback": "Reviews ({count})"
+    },
+    {
+      "key": "staff.performance.targetDate",
+      "group": "staff",
+      "fallback": "Target date"
+    },
+    {
+      "key": "staff.performance.title",
+      "group": "staff",
+      "fallback": "Performance"
+    },
+    {
+      "key": "staff.performance.update",
+      "group": "staff",
+      "fallback": "Update"
+    },
+    {
+      "key": "staff.performance.updateProgress",
+      "group": "staff",
+      "fallback": "Update progress"
+    },
+    {
+      "key": "staff.skills.addCertification",
+      "group": "staff",
+      "fallback": "Add certification"
+    },
+    {
+      "key": "staff.skills.certifications",
+      "group": "staff",
+      "fallback": "Certifications"
+    },
+    {
+      "key": "staff.skills.certName",
+      "group": "staff",
+      "fallback": "Name *"
+    },
+    {
+      "key": "staff.skills.employeesOnly",
+      "group": "staff",
+      "fallback": "Skills register is only available for employees."
+    },
+    {
+      "key": "staff.skills.expired",
+      "group": "staff",
+      "fallback": "Expired"
+    },
+    {
+      "key": "staff.skills.expires",
+      "group": "staff",
+      "fallback": "Expires"
+    },
+    {
+      "key": "staff.skills.expiresOn",
+      "group": "staff",
+      "fallback": "expires {date}"
+    },
+    {
+      "key": "staff.skills.expiringSoon",
+      "group": "staff",
+      "fallback": "Expiring soon"
+    },
+    {
+      "key": "staff.skills.issued",
+      "group": "staff",
+      "fallback": "Issued"
+    },
+    {
+      "key": "staff.skills.issuer",
+      "group": "staff",
+      "fallback": "Issuer"
+    },
+    {
+      "key": "staff.skills.level",
+      "group": "staff",
+      "fallback": "Level (1-5)"
+    },
+    {
+      "key": "staff.skills.levelAndYears",
+      "group": "staff",
+      "fallback": "Level {level}/5 · {years}y experience"
+    },
+    {
+      "key": "staff.skills.noCertifications",
+      "group": "staff",
+      "fallback": "No certifications."
+    },
+    {
+      "key": "staff.skills.noExpiry",
+      "group": "staff",
+      "fallback": "no expiry"
+    },
+    {
+      "key": "staff.skills.none",
+      "group": "staff",
+      "fallback": "No skills added yet."
+    },
+    {
+      "key": "staff.skills.select",
+      "group": "staff",
+      "fallback": "Select skill"
+    },
+    {
+      "key": "staff.skills.skill",
+      "group": "staff",
+      "fallback": "Skill"
+    },
+    {
+      "key": "staff.skills.title",
+      "group": "staff",
+      "fallback": "My skills"
+    },
+    {
+      "key": "staff.skills.valid",
+      "group": "staff",
+      "fallback": "Valid"
+    },
+    {
+      "key": "staff.skills.years",
+      "group": "staff",
+      "fallback": "Years"
+    },
+    {
+      "key": "staff.team.approve",
+      "group": "staff",
+      "fallback": "Approve"
+    },
+    {
+      "key": "staff.team.approveTitle",
+      "group": "staff",
+      "fallback": "Approve leave request"
+    },
+    {
+      "key": "staff.team.days",
+      "group": "staff",
+      "fallback": "Days"
+    },
+    {
+      "key": "staff.team.decisionSaved",
+      "group": "staff",
+      "fallback": "Decision saved"
+    },
+    {
+      "key": "staff.team.department",
+      "group": "staff",
+      "fallback": "Department"
+    },
+    {
+      "key": "staff.team.employee",
+      "group": "staff",
+      "fallback": "Employee"
+    },
+    {
+      "key": "staff.team.jobTitle",
+      "group": "staff",
+      "fallback": "Title"
+    },
+    {
+      "key": "staff.team.none",
+      "group": "staff",
+      "fallback": "No direct reports yet."
+    },
+    {
+      "key": "staff.team.noPending",
+      "group": "staff",
+      "fallback": "No requests waiting for your decision."
+    },
+    {
+      "key": "staff.team.note",
+      "group": "staff",
+      "fallback": "Note (optional)"
+    },
+    {
+      "key": "staff.team.notePlaceholderApprove",
+      "group": "staff",
+      "fallback": "e.g. Enjoy your time off!"
+    },
+    {
+      "key": "staff.team.notePlaceholderReject",
+      "group": "staff",
+      "fallback": "Reason for rejection…"
+    },
+    {
+      "key": "staff.team.pending",
+      "group": "staff",
+      "fallback": "Pending approvals"
+    },
+    {
+      "key": "staff.team.recent",
+      "group": "staff",
+      "fallback": "Recent decisions"
+    },
+    {
+      "key": "staff.team.reject",
+      "group": "staff",
+      "fallback": "Reject"
+    },
+    {
+      "key": "staff.team.rejectTitle",
+      "group": "staff",
+      "fallback": "Reject leave request"
+    },
+    {
+      "key": "staff.team.status.active",
+      "group": "staff",
+      "fallback": "Active"
+    },
+    {
+      "key": "staff.team.status.onLeave",
+      "group": "staff",
+      "fallback": "On leave"
+    },
+    {
+      "key": "staff.team.status.terminated",
+      "group": "staff",
+      "fallback": "Terminated"
+    },
+    {
+      "key": "staff.team.title",
+      "group": "staff",
+      "fallback": "My team"
+    },
+    {
       "key": "stock.getNotified",
       "group": "stock",
       "fallback": "Get notified when this product is back in stock"
