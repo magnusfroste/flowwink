@@ -209,6 +209,12 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Fixed
 
+- **The cart block said "Totalt" on every site.** One Swedish word was built
+  into the cart block, so an English site showed Swedish there. It is a
+  visitor text now, like the rest — as are the booking block's default texts
+  ("Request appointment", "Thank you! We will contact you…") and the survey
+  page a customer answers from a link.
+
 - **A broken signing link no longer shows the database's error.** The page
   for signing a document printed the raw error to the visitor ("invalid input
   syntax for type uuid"). It says the link is no longer valid; the error goes

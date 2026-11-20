@@ -50,13 +50,13 @@ export function BookingBlock({ data, blockId, pageId }: BookingBlockProps) {
     e.preventDefault();
     
     if (!formData.name || !formData.email) {
-      toast.error('Please fill in required fields');
+      toast.error(t('booking.fillRequired', 'Please fill in the required fields'));
       return;
     }
 
     // Check if service selection is required but not selected
     if (data.showServiceSelector && data.services && data.services.length > 0 && !selectedService) {
-      toast.error('Please select a service');
+      toast.error(t('booking.pickService', 'Please select a service'));
       return;
     }
 
@@ -102,10 +102,10 @@ export function BookingBlock({ data, blockId, pageId }: BookingBlockProps) {
       }
 
       setSubmitted(true);
-      toast.success(data.successMessage || 'Booking request submitted!');
+      toast.success(data.successMessage || t('booking.submitted', 'Booking Request Submitted!'));
     } catch (error) {
       // Extract specific error message for user feedback
-      let errorMessage = 'Failed to submit booking request';
+      let errorMessage = t('booking.submit_failed_generic', 'Failed to submit booking — please try again or contact us.');
 
       if (error instanceof Error) {
         errorMessage = error.message;
@@ -179,7 +179,7 @@ export function BookingBlock({ data, blockId, pageId }: BookingBlockProps) {
             <div className="p-8 border-2 border-dashed rounded-lg bg-muted/30">
               <Calendar className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
               <p className="text-muted-foreground">
-                Booking calendar not configured. Please add your calendar URL.
+                {t('booking.calendarMissing', 'Online booking is not available here yet.')}
               </p>
             </div>
           </div>
@@ -206,7 +206,7 @@ export function BookingBlock({ data, blockId, pageId }: BookingBlockProps) {
           >
             <iframe
               src={embedUrl}
-              title={data.title || 'Booking Calendar'}
+              title={data.title || t('booking.calendarTitle', 'Booking calendar')}
               className="w-full h-full border-0"
               loading="lazy"
               allow="payment"
@@ -225,7 +225,7 @@ export function BookingBlock({ data, blockId, pageId }: BookingBlockProps) {
           <CheckCircle2 className="h-16 w-16 text-success mx-auto mb-4" />
           <h3 className="text-xl font-semibold mb-2">{t('booking.submitted', 'Booking Request Submitted!')}</h3>
           <p className="text-muted-foreground">
-            {data.successMessage || "Thank you! We'll contact you to confirm your appointment."}
+            {data.successMessage || t('booking.thanks', 'Thank you! We will contact you to confirm your appointment.')}
           </p>
         </div>
       </section>
@@ -357,10 +357,10 @@ export function BookingBlock({ data, blockId, pageId }: BookingBlockProps) {
             {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Submitting...
+                {t('booking.submitting', 'Submitting…')}
               </>
             ) : (
-              data.submitButtonText || 'Request Appointment'
+              data.submitButtonText || t('booking.request', 'Request appointment')
             )}
           </Button>
         </form>
