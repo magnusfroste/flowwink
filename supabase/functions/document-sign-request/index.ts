@@ -1,6 +1,10 @@
 // document-sign-request — send a signing request email with a tokenized link.
 // POST { request_id }
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
+import { escapeHtml } from "../_shared/email/mail-template.ts";
+import { loadUiText } from "../_shared/locale/load-ui-text.ts";
+import { resolveUiText } from "../_shared/locale/ui-text.ts";
+import { loadOrgName } from "../_shared/org-name.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -12,7 +16,8 @@ const resolveOrigin = async (supabase: any): Promise<string> => {
   if (env) return env.replace(/\/$/, "");
   const { data } = await supabase.from("site_settings").select("value").eq("key", "general").maybeSingle();
   const url = (data?.value as any)?.siteUrl;
-  return (url ?? "https://flowwink.lovable.app").replace(/\/$/, "");
+  // No guessed fallback: a link to another site is worse than none.
+  return String(url ?? "").replace(/\/$/, "");
 };
 
 Deno.serve(async (req) => {
@@ -37,25 +42,48 @@ Deno.serve(async (req) => {
 
     const origin = await resolveOrigin(supabase);
     const signUrl = `${origin}/sign/document/${rq.token}`;
-    const docTitle = (rq as any).documents?.title ?? "Document";
+    // The signer is mailed in the site's language (it was English for everyone),
+    // and every value they did not write is escaped: the title and the message
+    // came into the HTML as typed.
+    const texts = await loadUiText(supabase);
+    const t = resolveUiText(texts.map, texts.siteLang, texts.siteLang);
+    const business = await loadOrgName(supabase, "");
+    const docTitle = String((rq as any).documents?.title ?? t("docsign.mail.untitled", "Document"));
+    const subject = t("docsign.mail.subject", "Please sign: {title}").replace("{title}", docTitle);
+    const greeting = rq.signer_name
+      ? t("docsign.mail.greetingNamed", "Hello {name},").replace("{name}", String(rq.signer_name))
+      : t("docsign.mail.greeting", "Hello,");
+    const lead = (business
+      ? t("docsign.mail.leadFrom", "{business} asks you to sign the document \"{title}\".")
+      : t("docsign.mail.lead", "You are asked to sign the document \"{title}\".")
+    ).replace("{business}", business).replace("{title}", docTitle);
 
     const html = `
 <!doctype html><html><body style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#111">
-  <h2 style="margin:0 0 12px">Signature requested — ${docTitle}</h2>
-  <p>Hi${rq.signer_name ? ` ${rq.signer_name}` : ""},</p>
-  <p>You've been asked to sign the document "<strong>${docTitle}</strong>".</p>
-  ${rq.message ? `<p style="border-left:3px solid #ddd;padding-left:12px;color:#555">${rq.message}</p>` : ""}
+  <h2 style="margin:0 0 12px">${escapeHtml(subject)}</h2>
+  <p>${escapeHtml(greeting)}</p>
+  <p>${escapeHtml(lead)}</p>
+  ${rq.message ? `<p style="border-left:3px solid #ddd;padding-left:12px;color:#555">${escapeHtml(rq.message)}</p>` : ""}
   <p style="margin:24px 0">
-    <a href="${signUrl}" style="background:#111;color:#fff;padding:12px 20px;border-radius:6px;text-decoration:none">Review &amp; sign</a>
+    <a href="${escapeHtml(signUrl)}" style="background:#111;color:#fff;padding:12px 20px;border-radius:6px;text-decoration:none">${escapeHtml(t("docsign.mail.button", "Read and sign"))}</a>
   </p>
-  <p style="font-size:12px;color:#888">Or paste this link into your browser: ${signUrl}</p>
+  <p style="font-size:12px;color:#888">${escapeHtml(t("docsign.mail.pasteLink", "Or paste this link into your browser:"))} ${escapeHtml(signUrl)}</p>
 </body></html>`.trim();
+
+    // Without the site's own address the link in the mail would lead nowhere
+    // (it used to lead to another site): say so, send nothing.
+    if (!origin) {
+      return new Response(
+        JSON.stringify({ ok: false, email: "not_sent", error: "The site's address is not set (Site settings → General → Site URL), so the signing link cannot be mailed." }),
+        { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
 
     // Best-effort send via router
     const sendRes = await supabase.functions.invoke("email-send", {
       body: {
         to: rq.signer_email,
-        subject: `Signature requested — ${docTitle}`,
+        subject,
         html,
         source: "document-sign-request",
         related_entity_type: "document",

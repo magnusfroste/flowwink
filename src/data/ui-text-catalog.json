@@ -2406,6 +2406,46 @@
       "fallback": "We use cookies"
     },
     {
+      "key": "docsign.mail.button",
+      "group": "docsign",
+      "fallback": "Read and sign"
+    },
+    {
+      "key": "docsign.mail.greeting",
+      "group": "docsign",
+      "fallback": "Hello,"
+    },
+    {
+      "key": "docsign.mail.greetingNamed",
+      "group": "docsign",
+      "fallback": "Hello {name},"
+    },
+    {
+      "key": "docsign.mail.lead",
+      "group": "docsign",
+      "fallback": "You are asked to sign the document \\\"{title}\\\"."
+    },
+    {
+      "key": "docsign.mail.leadFrom",
+      "group": "docsign",
+      "fallback": "{business} asks you to sign the document \\\"{title}\\\"."
+    },
+    {
+      "key": "docsign.mail.pasteLink",
+      "group": "docsign",
+      "fallback": "Or paste this link into your browser:"
+    },
+    {
+      "key": "docsign.mail.subject",
+      "group": "docsign",
+      "fallback": "Please sign: {title}"
+    },
+    {
+      "key": "docsign.mail.untitled",
+      "group": "docsign",
+      "fallback": "Document"
+    },
+    {
       "key": "documentSign.done",
       "group": "documentSign",
       "fallback": "Document signed"
@@ -4019,6 +4059,41 @@
       "key": "pagination.prev",
       "group": "pagination",
       "fallback": "Previous page"
+    },
+    {
+      "key": "po.mail.date",
+      "group": "po",
+      "fallback": "Date"
+    },
+    {
+      "key": "po.mail.expected",
+      "group": "po",
+      "fallback": "Expected delivery"
+    },
+    {
+      "key": "po.mail.items",
+      "group": "po",
+      "fallback": "Items"
+    },
+    {
+      "key": "po.mail.notes",
+      "group": "po",
+      "fallback": "Notes"
+    },
+    {
+      "key": "po.mail.number",
+      "group": "po",
+      "fallback": "Purchase order"
+    },
+    {
+      "key": "po.mail.subject",
+      "group": "po",
+      "fallback": "Purchase order {number}"
+    },
+    {
+      "key": "po.mail.total",
+      "group": "po",
+      "fallback": "Total"
     },
     {
       "key": "portal.invite.accountReady",

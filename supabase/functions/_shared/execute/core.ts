@@ -520,6 +520,8 @@ import { businessDateIn, businessPeriod, dateInZone, homeFormat, startOfBusiness
 import { businessToday, loadHomeCached } from '../locale/load-home.ts';
 import { handleGetBusinessHome, handleSetBusinessHome, type SetBusinessHomeArgs } from '../handlers/business-home.ts';
 import { loadHome } from '../locale/load-home.ts';
+import { loadUiText as loadUiTextForMail } from '../locale/load-ui-text.ts';
+import { resolveUiText as resolveUiTextForMail } from '../locale/ui-text.ts';
 import { isExtractable } from '../documents/extractable.ts';
 
 // ─── Skill → owning module (rollsvepet #102) ─────────────────────────────
@@ -15501,24 +15503,29 @@ async function executeDbAction(
                 // total_cents — line_total_cents does not exist, the query
                 // failed unread, and the vendor got a PO with no lines (2026-10-31).
 
-                // A supplier reads this: the business's grouping and decimals.
-                const poFmt = homeFormat(await loadHomeCached(supabase), 'en');
+                // A supplier reads this: the business's grouping and decimals, in
+                // the site's language (it was English for every vendor).
+                const poTexts = await loadUiTextForMail(supabase);
+                const t = resolveUiTextForMail(poTexts.map, poTexts.siteLang, poTexts.siteLang);
+                const poFmt = homeFormat(await loadHomeCached(supabase), poTexts.siteLang);
                 const lineItems = (lines || []).map((l: any) =>
-                  `• ${l.description}: ${l.quantity}x @ ${poFmt.money(l.unit_price_cents, po.currency)} = ${poFmt.money(l.total_cents, po.currency)}`
+                  `• ${l.description}: ${l.quantity} × ${poFmt.money(l.unit_price_cents, po.currency)} = ${poFmt.money(l.total_cents, po.currency)}`
                 ).join('\n');
 
                 const emailBody = [
-                  `Purchase Order: ${po.po_number}`, `Date: ${po.order_date}`,
-                  po.expected_delivery ? `Expected Delivery: ${po.expected_delivery}` : '',
-                  '', 'Items:', lineItems, '',
-                  `Total: ${poFmt.money(po.total_cents, po.currency)}`,
-                  po.notes ? `\nNotes: ${po.notes}` : '',
+                  `${t('po.mail.number', 'Purchase order')}: ${po.po_number}`,
+                  `${t('po.mail.date', 'Date')}: ${poFmt.date(po.order_date)}`,
+                  po.expected_delivery ? `${t('po.mail.expected', 'Expected delivery')}: ${poFmt.date(po.expected_delivery)}` : '',
+                  '', `${t('po.mail.items', 'Items')}:`, lineItems, '',
+                  `${t('po.mail.total', 'Total')}: ${poFmt.money(po.total_cents, po.currency)}`,
+                  po.notes ? `\n${t('po.mail.notes', 'Notes')}: ${po.notes}` : '',
                 ].filter(Boolean).join('\n');
+                const poSubject = t('po.mail.subject', 'Purchase order {number}').replace('{number}', String(po.po_number));
 
                 const emailRes = await fetch(`${supabaseUrl}/functions/v1/composio-proxy`, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${serviceKey}` },
-                  body: JSON.stringify({ action: 'gmail_send', params: { to: vendorEmail, subject: `Purchase Order ${po.po_number}`, body: emailBody } }),
+                  body: JSON.stringify({ action: 'gmail_send', params: { to: vendorEmail, subject: poSubject, body: emailBody } }),
                 });
                 const emailData = await emailRes.json();
                 emailSent = emailRes.ok && !emailData.error;
