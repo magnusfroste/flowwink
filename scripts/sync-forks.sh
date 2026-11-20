@@ -14,7 +14,9 @@
 # button (POST /repos/{fork}/merge-upstream) with a per-fork token from
 # .env.local:
 #
-#   GITHUB_TOKEN_<NAME>=ghp_…   GITHUB_REPO_<NAME>=owner/repo
+#   FORK_TOKEN_<NAME>=ghp_…   FORK_REPO_<NAME>=owner/repo
+#
+# (the workflow's names; the older GITHUB_TOKEN_/GITHUB_REPO_ still work).
 #
 # Tokens need Contents: Read and write on their fork — nothing more. Repos are
 # listed here (they are not secrets); tokens never are.
@@ -68,14 +70,20 @@ for NAME in $FORKS; do
   # GITHUB_TOKEN_/GITHUB_REPO_ — then from .env.local (a developer's machine).
   TOKEN=$(eval "printf '%s' \"\${FORK_TOKEN_${NAME}:-\${GITHUB_TOKEN_${NAME}:-}}\"")
   REPO=$(eval "printf '%s' \"\${FORK_REPO_${NAME}:-\${GITHUB_REPO_${NAME}:-}}\"")
-  if [ -z "$TOKEN" ] && [ -f .env.local ]; then
-    TOKEN=$(grep -E "^GITHUB_TOKEN_${NAME}=" .env.local | grep -oE "(ghp_|github_pat_)[A-Za-z0-9_]+" | head -1 || true)
-  fi
-  if [ -z "$REPO" ] && [ -f .env.local ]; then
-    REPO=$(grep -E "GITHUB_REPO_${NAME}=" .env.local | grep -oE "GITHUB_REPO_${NAME}=[^ ]+" | cut -d= -f2 || true)
-  fi
+  # .env.local takes the same two spellings, FORK_ first — the env names the
+  # workflow uses are the ones a developer copies into the file (MJP's were
+  # written that way and the script skipped the fork, 2026-11-20).
+  for PREFIX in FORK GITHUB; do
+    [ -f .env.local ] || break
+    if [ -z "$TOKEN" ]; then
+      TOKEN=$(grep -E "^${PREFIX}_TOKEN_${NAME}=" .env.local | grep -oE "(ghp_|github_pat_)[A-Za-z0-9_]+" | head -1 || true)
+    fi
+    if [ -z "$REPO" ]; then
+      REPO=$(grep -E "^${PREFIX}_REPO_${NAME}=" .env.local | head -1 | cut -d= -f2- | tr -d "\"' " || true)
+    fi
+  done
   if [ -z "$TOKEN" ] || [ -z "$REPO" ]; then
-    printf "%-11s SKIPPAD — GITHUB_TOKEN_%s/GITHUB_REPO_%s saknas (env eller .env.local)\n" "$NAME" "$NAME" "$NAME"
+    printf "%-11s SKIPPAD — FORK_TOKEN_%s/FORK_REPO_%s (eller GITHUB_…) saknas (env eller .env.local)\n" "$NAME" "$NAME" "$NAME"
     fail=1
     continue
   fi
