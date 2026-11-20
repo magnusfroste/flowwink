@@ -301,6 +301,71 @@
       "fallback": "Incorrect email or password"
     },
     {
+      "key": "account.bookings.ahead",
+      "group": "account",
+      "fallback": "Coming up"
+    },
+    {
+      "key": "account.bookings.booking",
+      "group": "account",
+      "fallback": "Booking"
+    },
+    {
+      "key": "account.bookings.change",
+      "group": "account",
+      "fallback": "Change or cancel"
+    },
+    {
+      "key": "account.bookings.empty",
+      "group": "account",
+      "fallback": "You have no bookings with us."
+    },
+    {
+      "key": "account.bookings.intro",
+      "group": "account",
+      "fallback": "The times you have booked with us — move or cancel one that is coming up."
+    },
+    {
+      "key": "account.bookings.join",
+      "group": "account",
+      "fallback": "Join the meeting"
+    },
+    {
+      "key": "account.bookings.passed",
+      "group": "account",
+      "fallback": "Earlier"
+    },
+    {
+      "key": "account.bookings.status.cancelled",
+      "group": "account",
+      "fallback": "Cancelled"
+    },
+    {
+      "key": "account.bookings.status.confirmed",
+      "group": "account",
+      "fallback": "Confirmed"
+    },
+    {
+      "key": "account.bookings.status.missed",
+      "group": "account",
+      "fallback": "Missed"
+    },
+    {
+      "key": "account.bookings.status.past",
+      "group": "account",
+      "fallback": "Done"
+    },
+    {
+      "key": "account.bookings.status.pending",
+      "group": "account",
+      "fallback": "Booked — awaiting confirmation"
+    },
+    {
+      "key": "account.bookings.title",
+      "group": "account",
+      "fallback": "My bookings"
+    },
+    {
       "key": "account.browseProducts",
       "group": "account",
       "fallback": "Browse products"
@@ -444,6 +509,11 @@
       "key": "account.nav.backToWork",
       "group": "account",
       "fallback": "Back to work"
+    },
+    {
+      "key": "account.nav.bookings",
+      "group": "account",
+      "fallback": "My bookings"
     },
     {
       "key": "account.nav.employmentContract",
@@ -599,6 +669,11 @@
       "key": "account.overview.answerQuote",
       "group": "account",
       "fallback": "Quote to answer: {title}"
+    },
+    {
+      "key": "account.overview.bookings",
+      "group": "account",
+      "fallback": "Your coming bookings"
     },
     {
       "key": "account.overview.cases",

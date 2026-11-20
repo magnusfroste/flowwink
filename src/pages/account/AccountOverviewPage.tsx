@@ -14,15 +14,15 @@ import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { AlertCircle, ArrowRight, FileSignature, LifeBuoy, Package, Receipt, ShoppingBag } from 'lucide-react';
+import { AlertCircle, ArrowRight, CalendarClock, FileSignature, LifeBuoy, Package, Receipt, ShoppingBag } from 'lucide-react';
 import { useCustomerFormat } from '@/hooks/useCustomerFormat';
 import { useUiText } from '@/lib/ui-text';
 import { billingIntervalWord } from '@/lib/customer-words';
-import { agreementAwaitsSignature, invoiceIsOpen, useMyAccount } from '@/hooks/useMyAccount';
+import { agreementAwaitsSignature, bookingIsAhead, invoiceIsOpen, useMyAccount } from '@/hooks/useMyAccount';
 
 export default function AccountOverviewPage() {
   const t = useUiText();
-  const { formatCurrency, formatDate } = useCustomerFormat();
+  const { formatCurrency, formatDate, formatDateTime } = useCustomerFormat();
   const { data, isLoading } = useMyAccount();
 
   if (isLoading || !data) {
@@ -39,9 +39,11 @@ export default function AccountOverviewPage() {
   const toSign = data.agreements.filter(agreementAwaitsSignature);
   const toAnswer = data.quotes_waiting;
   const inForce = data.agreements.filter((a) => !agreementAwaitsSignature(a) && a.status !== 'terminated' && a.status !== 'expired');
+  const ahead = (data.bookings ?? []).filter(bookingIsAhead);
   const waiting = toPay.length + toSign.length + toAnswer.length;
   const nothing = waiting === 0 && data.services.length === 0 && data.agreements.length === 0
-    && data.invoices.length === 0 && data.recent_orders.length === 0 && data.open_cases.length === 0;
+    && data.invoices.length === 0 && data.recent_orders.length === 0 && data.open_cases.length === 0
+    && (data.bookings ?? []).length === 0;
 
   return (
     <div className="space-y-6">
@@ -108,6 +110,14 @@ export default function AccountOverviewPage() {
       )}
 
       <div className="grid gap-4 md:grid-cols-2">
+        {ahead.length > 0 && (
+          <Section icon={<CalendarClock className="h-4 w-4 text-primary" />} title={t('account.overview.bookings', 'Your coming bookings')} to="/account/bookings" more={t('account.overview.all', 'See all')}>
+            {ahead.slice(0, 4).map((b) => (
+              <Row key={b.id} label={b.service_name || t('account.bookings.booking', 'Booking')}
+                value={formatDateTime(b.start_time, { month: 'short', day: 'numeric' })} />
+            ))}
+          </Section>
+        )}
         {data.services.length > 0 && (
           <Section icon={<Package className="h-4 w-4 text-primary" />} title={t('account.overview.services', 'Your services')} to="/account/services" more={t('account.overview.all', 'See all')}>
             {data.services.slice(0, 4).map((s) => (

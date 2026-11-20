@@ -776,7 +776,8 @@ beside its payload, so an operator branches instead of guessing:
   their agreement ("Contracts" there is the EMPLOYEE's). It opens on an
   overview now — what waits for them (invoice to pay, quote to answer,
   agreement to sign) and what they have — and has `/account/invoices`,
-  `/account/agreements`, `/account/orders`. ONE rule says which rows are a
+  `/account/agreements`, `/account/orders`, `/account/bookings` (2026-11-20: a booking's
+  manage link only while it is ahead). ONE rule says which rows are a
   customer's: `portal_email()` (the account's CONFIRMED address — never the
   token's bare claim) and `portal_company_ids()` (active `company_contacts`),
   read by `my_account()`. A shop purchase is an `orders` row, a service is a

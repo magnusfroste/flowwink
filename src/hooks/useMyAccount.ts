@@ -49,6 +49,17 @@ export interface MyWaitingQuote {
   valid_until: string | null;
   accept_token: string;
 }
+export interface MyBooking {
+  id: string;
+  status: 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'no_show' | string;
+  start_time: string;
+  end_time: string | null;
+  service_name: string | null;
+  meeting_url: string | null;
+  upcoming: boolean;
+  /** Only for a booking that can still be moved or called off — the key the confirmation mail carried. */
+  manage_token: string | null;
+}
 export interface MyAccount {
   email_confirmed: boolean;
   invoices: MyInvoice[];
@@ -57,10 +68,13 @@ export interface MyAccount {
   quotes_waiting: MyWaitingQuote[];
   recent_orders: Array<{ id: string; status: string; fulfillment_status: string | null; total_cents: number; currency: string | null; created_at: string }>;
   open_cases: Array<{ id: string; ticket_number: string | null; subject: string; status: string; created_at: string }>;
+  bookings: MyBooking[];
 }
 
-const EMPTY: MyAccount = { email_confirmed: false, invoices: [], agreements: [], services: [], quotes_waiting: [], recent_orders: [], open_cases: [] };
+const EMPTY: MyAccount = { email_confirmed: false, invoices: [], agreements: [], services: [], quotes_waiting: [], recent_orders: [], open_cases: [], bookings: [] };
 
+/** A booking that is still ahead and not called off. */
+export const bookingIsAhead = (b: MyBooking) => b.upcoming && b.status !== 'cancelled' && b.status !== 'no_show';
 /** An invoice the customer still owes money on. */
 export const invoiceIsOpen = (i: MyInvoice) => i.status !== 'paid' && i.total_cents - i.paid_amount_cents > 0;
 /** An agreement that waits for the customer's signature. */

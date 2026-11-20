@@ -65,3 +65,12 @@ export function orderStepWord(step: string, t: Words): string {
   if (step === 'delivered') return t('account.orders.delivered', 'Delivered');
   return step;
 }
+
+/** Where a booking stands, in the customer's words. */
+export function bookingStatusWord(status: string, upcoming: boolean, t: Words): string {
+  if (status === 'cancelled') return t('account.bookings.status.cancelled', 'Cancelled');
+  if (status === 'no_show') return t('account.bookings.status.missed', 'Missed');
+  if (!upcoming || status === 'completed') return t('account.bookings.status.past', 'Done');
+  if (status === 'pending') return t('account.bookings.status.pending', 'Booked — awaiting confirmation');
+  return t('account.bookings.status.confirmed', 'Confirmed');
+}
