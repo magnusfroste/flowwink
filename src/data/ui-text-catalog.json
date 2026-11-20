@@ -1536,9 +1536,34 @@
       "fallback": "Continue shopping"
     },
     {
+      "key": "cart.empty",
+      "group": "cart",
+      "fallback": "Your cart is empty"
+    },
+    {
       "key": "cart.emptyHint",
       "group": "cart",
       "fallback": "Browse products and add them to your cart."
+    },
+    {
+      "key": "cart.emptyStart",
+      "group": "cart",
+      "fallback": "Add products to get started"
+    },
+    {
+      "key": "cart.items",
+      "group": "cart",
+      "fallback": "{count} items"
+    },
+    {
+      "key": "cart.oneItem",
+      "group": "cart",
+      "fallback": "1 item"
+    },
+    {
+      "key": "cart.short",
+      "group": "cart",
+      "fallback": "Cart"
     },
     {
       "key": "cart.summary",
@@ -1549,6 +1574,11 @@
       "key": "cart.title",
       "group": "cart",
       "fallback": "Your cart"
+    },
+    {
+      "key": "cart.total",
+      "group": "cart",
+      "fallback": "Total"
     },
     {
       "key": "chat.assistantTitle",
@@ -2136,6 +2166,91 @@
       "fallback": "We use cookies"
     },
     {
+      "key": "documentSign.done",
+      "group": "documentSign",
+      "fallback": "Document signed"
+    },
+    {
+      "key": "documentSign.draw",
+      "group": "documentSign",
+      "fallback": "Draw"
+    },
+    {
+      "key": "documentSign.drawSignature",
+      "group": "documentSign",
+      "fallback": "Draw your signature"
+    },
+    {
+      "key": "documentSign.expired",
+      "group": "documentSign",
+      "fallback": "This signing link has expired. Please contact the sender for a new one."
+    },
+    {
+      "key": "documentSign.legal",
+      "group": "documentSign",
+      "fallback": "By signing, you agree that your electronic signature is the legal equivalent of a handwritten one for this document."
+    },
+    {
+      "key": "documentSign.loading",
+      "group": "documentSign",
+      "fallback": "Loading…"
+    },
+    {
+      "key": "documentSign.noLongerValid",
+      "group": "documentSign",
+      "fallback": "This signing link is no longer valid."
+    },
+    {
+      "key": "documentSign.sign",
+      "group": "documentSign",
+      "fallback": "Sign"
+    },
+    {
+      "key": "documentSign.signed",
+      "group": "documentSign",
+      "fallback": "Signed"
+    },
+    {
+      "key": "documentSign.signer",
+      "group": "documentSign",
+      "fallback": "Signer:"
+    },
+    {
+      "key": "documentSign.submit",
+      "group": "documentSign",
+      "fallback": "Sign document"
+    },
+    {
+      "key": "documentSign.thanks",
+      "group": "documentSign",
+      "fallback": "Thank you — the sender has been notified."
+    },
+    {
+      "key": "documentSign.type",
+      "group": "documentSign",
+      "fallback": "Type"
+    },
+    {
+      "key": "documentSign.typeFullName",
+      "group": "documentSign",
+      "fallback": "Type your full name"
+    },
+    {
+      "key": "documentSign.typeName",
+      "group": "documentSign",
+      "fallback": "Type your name"
+    },
+    {
+      "key": "documentSign.unavailable",
+      "group": "documentSign",
+      "fallback": "Link unavailable"
+    },
+    {
+      "key": "documentSign.view",
+      "group": "documentSign",
+      "fallback": "View document"
+    },
+    {
       "key": "error.description",
       "group": "error",
       "fallback": "We hit an unexpected error rendering this page. Try again, or head back home."
@@ -2621,9 +2736,19 @@
       "fallback": "For payment details, contact {email}."
     },
     {
+      "key": "invoice.payFailed",
+      "group": "invoice",
+      "fallback": "Could not start the payment"
+    },
+    {
       "key": "invoice.paymentConfirming",
       "group": "invoice",
       "fallback": "Payment received — confirming…"
+    },
+    {
+      "key": "invoice.pdfFailed",
+      "group": "invoice",
+      "fallback": "Could not download the PDF"
     },
     {
       "key": "invoice.qty",
@@ -3341,6 +3466,191 @@
       "fallback": "Open menu"
     },
     {
+      "key": "newsletter.confirmed.body",
+      "group": "newsletter",
+      "fallback": "Thank you for confirming your email. You are now subscribed to our newsletter."
+    },
+    {
+      "key": "newsletter.confirmed.home",
+      "group": "newsletter",
+      "fallback": "Back to the homepage"
+    },
+    {
+      "key": "newsletter.confirmed.title",
+      "group": "newsletter",
+      "fallback": "Subscription confirmed!"
+    },
+    {
+      "key": "newsletter.manage.access",
+      "group": "newsletter",
+      "fallback": "Access my data"
+    },
+    {
+      "key": "newsletter.manage.actions",
+      "group": "newsletter",
+      "fallback": "Your data"
+    },
+    {
+      "key": "newsletter.manage.checkEmail",
+      "group": "newsletter",
+      "fallback": "Check your email"
+    },
+    {
+      "key": "newsletter.manage.confirmDelete",
+      "group": "newsletter",
+      "fallback": "Are you sure you want to permanently delete all your data? This cannot be undone."
+    },
+    {
+      "key": "newsletter.manage.delete",
+      "group": "newsletter",
+      "fallback": "Delete all my data"
+    },
+    {
+      "key": "newsletter.manage.deleted",
+      "group": "newsletter",
+      "fallback": "Your data has been permanently deleted"
+    },
+    {
+      "key": "newsletter.manage.deletedBody",
+      "group": "newsletter",
+      "fallback": "You have been unsubscribed and all associated data has been removed from our systems."
+    },
+    {
+      "key": "newsletter.manage.deletedLead",
+      "group": "newsletter",
+      "fallback": "All your newsletter data has been permanently deleted."
+    },
+    {
+      "key": "newsletter.manage.deletedTitle",
+      "group": "newsletter",
+      "fallback": "Data deleted"
+    },
+    {
+      "key": "newsletter.manage.deleteFailed",
+      "group": "newsletter",
+      "fallback": "The deletion failed"
+    },
+    {
+      "key": "newsletter.manage.deleteWarning",
+      "group": "newsletter",
+      "fallback": "Deleting your data is permanent and cannot be undone. You will be unsubscribed from the newsletter and all activity data will be removed."
+    },
+    {
+      "key": "newsletter.manage.download",
+      "group": "newsletter",
+      "fallback": "Download my data"
+    },
+    {
+      "key": "newsletter.manage.downloaded",
+      "group": "newsletter",
+      "fallback": "Your data has been downloaded"
+    },
+    {
+      "key": "newsletter.manage.emailAddress",
+      "group": "newsletter",
+      "fallback": "Email address"
+    },
+    {
+      "key": "newsletter.manage.enterEmail",
+      "group": "newsletter",
+      "fallback": "Enter your email to access, export, or delete your newsletter subscription data"
+    },
+    {
+      "key": "newsletter.manage.error",
+      "group": "newsletter",
+      "fallback": "Something went wrong. Please try again later."
+    },
+    {
+      "key": "newsletter.manage.exportFailed",
+      "group": "newsletter",
+      "fallback": "The export failed"
+    },
+    {
+      "key": "newsletter.manage.gdprFooter",
+      "group": "newsletter",
+      "fallback": "This page allows you to exercise your rights under GDPR Article 15 (Right of Access) and Article 17 (Right to Erasure)."
+    },
+    {
+      "key": "newsletter.manage.gdprRight",
+      "group": "newsletter",
+      "fallback": "Under GDPR, you have the right to access and delete your personal data"
+    },
+    {
+      "key": "newsletter.manage.lead",
+      "group": "newsletter",
+      "fallback": "View, export, or delete your newsletter subscription data"
+    },
+    {
+      "key": "newsletter.manage.linkSent",
+      "group": "newsletter",
+      "fallback": "If this email is registered, you will receive a verification link to access your data."
+    },
+    {
+      "key": "newsletter.manage.name",
+      "group": "newsletter",
+      "fallback": "Name"
+    },
+    {
+      "key": "newsletter.manage.requestFailed",
+      "group": "newsletter",
+      "fallback": "The request failed"
+    },
+    {
+      "key": "newsletter.manage.status",
+      "group": "newsletter",
+      "fallback": "Status"
+    },
+    {
+      "key": "newsletter.manage.statusConfirmed",
+      "group": "newsletter",
+      "fallback": "Confirmed"
+    },
+    {
+      "key": "newsletter.manage.statusPending",
+      "group": "newsletter",
+      "fallback": "Not confirmed yet"
+    },
+    {
+      "key": "newsletter.manage.statusUnsubscribed",
+      "group": "newsletter",
+      "fallback": "Unsubscribed"
+    },
+    {
+      "key": "newsletter.manage.subscribedOn",
+      "group": "newsletter",
+      "fallback": "Subscribed"
+    },
+    {
+      "key": "newsletter.manage.subscription",
+      "group": "newsletter",
+      "fallback": "Your subscription"
+    },
+    {
+      "key": "newsletter.manage.title",
+      "group": "newsletter",
+      "fallback": "Manage your data"
+    },
+    {
+      "key": "newsletter.manage.unsubscribed",
+      "group": "newsletter",
+      "fallback": "You have been unsubscribed"
+    },
+    {
+      "key": "newsletter.manage.unsubscribeFailed",
+      "group": "newsletter",
+      "fallback": "Could not unsubscribe. Please try again."
+    },
+    {
+      "key": "newsletter.manage.verifyFailed",
+      "group": "newsletter",
+      "fallback": "Verification failed. Please try again."
+    },
+    {
+      "key": "newsletter.manage.verifying",
+      "group": "newsletter",
+      "fallback": "Verifying…"
+    },
+    {
       "key": "notFound.goBack",
       "group": "notFound",
       "fallback": "Go back"
@@ -3349,6 +3659,81 @@
       "key": "notFound.title",
       "group": "notFound",
       "fallback": "Page not found"
+    },
+    {
+      "key": "orderTracking.carrierPage",
+      "group": "orderTracking",
+      "fallback": "Carrier page"
+    },
+    {
+      "key": "orderTracking.description",
+      "group": "orderTracking",
+      "fallback": "Check the status of your order step by step."
+    },
+    {
+      "key": "orderTracking.inProgress",
+      "group": "orderTracking",
+      "fallback": "In progress…"
+    },
+    {
+      "key": "orderTracking.items",
+      "group": "orderTracking",
+      "fallback": "Items"
+    },
+    {
+      "key": "orderTracking.lead",
+      "group": "orderTracking",
+      "fallback": "Enter your order ID and the email used at checkout."
+    },
+    {
+      "key": "orderTracking.lookupFailed",
+      "group": "orderTracking",
+      "fallback": "Could not look up the order."
+    },
+    {
+      "key": "orderTracking.needBoth",
+      "group": "orderTracking",
+      "fallback": "Enter both order ID and email."
+    },
+    {
+      "key": "orderTracking.notFound",
+      "group": "orderTracking",
+      "fallback": "No order found matching that ID and email."
+    },
+    {
+      "key": "orderTracking.orderId",
+      "group": "orderTracking",
+      "fallback": "Order ID"
+    },
+    {
+      "key": "orderTracking.orderIdHint",
+      "group": "orderTracking",
+      "fallback": "e.g. 8f3a…"
+    },
+    {
+      "key": "orderTracking.placed",
+      "group": "orderTracking",
+      "fallback": "Placed {date}"
+    },
+    {
+      "key": "orderTracking.title",
+      "group": "orderTracking",
+      "fallback": "Track your order"
+    },
+    {
+      "key": "orderTracking.total",
+      "group": "orderTracking",
+      "fallback": "Total"
+    },
+    {
+      "key": "orderTracking.track",
+      "group": "orderTracking",
+      "fallback": "Track"
+    },
+    {
+      "key": "orderTracking.trackingNumber",
+      "group": "orderTracking",
+      "fallback": "Tracking number"
     },
     {
       "key": "page.backHome",
@@ -3504,6 +3889,16 @@
       "key": "quote.optional",
       "group": "quote",
       "fallback": "Optional"
+    },
+    {
+      "key": "quote.payFailed",
+      "group": "quote",
+      "fallback": "Could not start the payment"
+    },
+    {
+      "key": "quote.payLater",
+      "group": "quote",
+      "fallback": "Online payment is not configured — the invoice will be sent separately."
     },
     {
       "key": "quote.paymentCancelled",
@@ -3869,6 +4264,66 @@
       "key": "sign.yourName",
       "group": "sign",
       "fallback": "Your name"
+    },
+    {
+      "key": "signature.area",
+      "group": "signature",
+      "fallback": "Signature drawing area"
+    },
+    {
+      "key": "stock.getNotified",
+      "group": "stock",
+      "fallback": "Get notified when this product is back in stock"
+    },
+    {
+      "key": "stock.inStock",
+      "group": "stock",
+      "fallback": "In stock"
+    },
+    {
+      "key": "stock.low",
+      "group": "stock",
+      "fallback": "Low stock"
+    },
+    {
+      "key": "stock.notifyFailed",
+      "group": "stock",
+      "fallback": "Could not save your request. Please try again."
+    },
+    {
+      "key": "stock.notifyMe",
+      "group": "stock",
+      "fallback": "Notify me"
+    },
+    {
+      "key": "stock.notifySaved",
+      "group": "stock",
+      "fallback": "We will notify you when it is back!"
+    },
+    {
+      "key": "stock.onlyLeft",
+      "group": "stock",
+      "fallback": "Only {count} left"
+    },
+    {
+      "key": "stock.out",
+      "group": "stock",
+      "fallback": "Out of stock"
+    },
+    {
+      "key": "stock.preorder",
+      "group": "stock",
+      "fallback": "Pre-order"
+    },
+    {
+      "key": "stock.saving",
+      "group": "stock",
+      "fallback": "Saving…"
+    },
+    {
+      "key": "stock.willEmail",
+      "group": "stock",
+      "fallback": "We will email you when this is back in stock:"
     },
     {
       "key": "terms.empty",

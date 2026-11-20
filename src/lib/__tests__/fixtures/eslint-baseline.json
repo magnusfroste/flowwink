@@ -1,6 +1,6 @@
 {
-  "errors": 3099,
-  "warnings": 91,
+  "errors": 3095,
+  "warnings": 92,
   "files": {
     "scripts/agent-surface-sweep.ts": 2,
     "scripts/check-doc-drift.ts": 4,
@@ -313,7 +313,7 @@
     "src/pages/AuthPage.tsx": 1,
     "src/pages/CheckoutSuccessPage.tsx": 1,
     "src/pages/KnowledgeBasePage.tsx": 1,
-    "src/pages/NewsletterManagePage.tsx": 4,
+    "src/pages/NewsletterManagePage.tsx": 1,
     "src/pages/OrderTrackingPage.tsx": 1,
     "src/pages/PublicDocumentSignPage.tsx": 4,
     "src/pages/PublicInvoicePage.tsx": 3,

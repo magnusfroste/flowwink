@@ -11,8 +11,10 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { useCustomerFormat } from '@/hooks/useCustomerFormat';
+import { useUiText } from '@/lib/ui-text';
 
 export function CartSidebar() {
+  const t = useUiText();
   const {
     items,
     removeItem,
@@ -33,10 +35,10 @@ export function CartSidebar() {
           <div className="flex items-center justify-between">
             <SheetTitle className="flex items-center gap-2">
               <ShoppingCart className="h-5 w-5" />
-              Cart
+              {t('cart.short', 'Cart')}
               {totalItems > 0 && (
                 <span className="text-sm font-normal text-muted-foreground">
-                  ({totalItems} {totalItems === 1 ? 'item' : 'items'})
+                  ({totalItems === 1 ? t('cart.oneItem', '1 item') : t('cart.items', '{count} items').replace('{count}', String(totalItems))})
                 </span>
               )}
             </SheetTitle>
@@ -51,12 +53,12 @@ export function CartSidebar() {
             <div className="h-20 w-20 rounded-full bg-muted flex items-center justify-center mb-4">
               <ShoppingCart className="h-8 w-8 text-muted-foreground" />
             </div>
-            <p className="text-lg font-medium mb-1">Your cart is empty</p>
+            <p className="text-lg font-medium mb-1">{t('cart.empty', 'Your cart is empty')}</p>
             <p className="text-sm text-muted-foreground mb-6">
-              Add products to get started
+              {t('cart.emptyStart', 'Add products to get started')}
             </p>
             <Button variant="outline" onClick={closeCart}>
-              Continue Shopping
+              {t('cart.continueShopping', 'Continue shopping')}
             </Button>
           </div>
         ) : (
@@ -138,7 +140,7 @@ export function CartSidebar() {
             {/* Footer */}
             <div className="px-6 py-4 space-y-4">
               <div className="flex items-center justify-between">
-                <span className="font-medium">Total</span>
+                <span className="font-medium">{t('cart.total', 'Total')}</span>
                 <span className="text-xl font-bold">
                   {formatCurrency(totalPriceCents, currency, { minimumFractionDigits: 0 })}
                 </span>
@@ -147,7 +149,7 @@ export function CartSidebar() {
               <div className="grid gap-2">
                 <Button asChild className="w-full" size="lg" onClick={closeCart}>
                   <Link to="/checkout">
-                    Checkout
+                    {t('cart.checkout', 'Checkout')}
                     <ArrowRight className="h-4 w-4 ml-2" />
                   </Link>
                 </Button>
@@ -156,7 +158,7 @@ export function CartSidebar() {
                   className="w-full"
                   onClick={closeCart}
                 >
-                  Continue Shopping
+                  {t('cart.continueShopping', 'Continue shopping')}
                 </Button>
               </div>
             </div>

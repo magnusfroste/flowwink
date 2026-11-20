@@ -52,3 +52,16 @@ export function billingIntervalWord(interval: string, t: Words): string {
   if (interval === 'year') return t('billing.interval.year', 'year');
   return interval;
 }
+
+/** Where an order is: paid, then the four steps of its way to the customer. */
+export function orderStepWord(step: string, t: Words): string {
+  if (step === 'paid') return t('account.orders.paid', 'Paid');
+  if (step === 'pending') return t('account.orders.pending', 'Pending');
+  if (step === 'failed') return t('account.orders.failed', 'Failed');
+  if (step === 'refunded') return t('account.orders.refunded', 'Refunded');
+  if (step === 'picked') return t('account.orders.picked', 'Picked');
+  if (step === 'packed') return t('account.orders.packed', 'Packed');
+  if (step === 'shipped') return t('account.orders.shipped', 'Shipped');
+  if (step === 'delivered') return t('account.orders.delivered', 'Delivered');
+  return step;
+}

@@ -99,7 +99,7 @@ export default function PublicInvoicePage() {
         throw new Error('No payment URL returned');
       }
     } catch (err: any) {
-      toast.error(err.message || 'Failed to start payment');
+      toast.error(err.message || t('invoice.payFailed', 'Could not start the payment'));
       setPaying(false);
     }
   };
@@ -128,7 +128,7 @@ export default function PublicInvoicePage() {
       a.click();
       URL.revokeObjectURL(url);
     } catch (err: any) {
-      toast.error(err.message || 'Failed to download PDF');
+      toast.error(err.message || t('invoice.pdfFailed', 'Could not download the PDF'));
     } finally {
       setDownloading(false);
     }

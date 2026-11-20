@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import type { Product, StockStatus as StockStatusType } from '@/hooks/useProducts';
 import { getStockStatus } from '@/hooks/useProducts';
+import { useUiText } from '@/lib/ui-text';
 
 interface StockStatusBadgeProps {
   product: Product;
@@ -16,23 +17,24 @@ interface StockStatusBadgeProps {
 }
 
 export function StockStatusBadge({ product, className }: StockStatusBadgeProps) {
+  const t = useUiText();
   const status = getStockStatus(product);
 
   if (status === 'untracked') return null;
 
   const config: Record<StockStatusType, { label: string; icon: React.ReactNode; variant: string }> = {
     in_stock: {
-      label: 'In stock',
+      label: t('stock.inStock', 'In stock'),
       icon: <CheckCircle2 className="h-3.5 w-3.5" />,
       variant: 'text-success bg-success/10',
     },
     low_stock: {
-      label: product.stock_quantity !== null ? `Only ${product.stock_quantity} left` : 'Low stock',
+      label: product.stock_quantity !== null ? t('stock.onlyLeft', 'Only {count} left').replace('{count}', String(product.stock_quantity)) : t('stock.low', 'Low stock'),
       icon: <AlertTriangle className="h-3.5 w-3.5" />,
       variant: 'text-warning bg-warning/10',
     },
     out_of_stock: {
-      label: product.allow_backorder ? 'Pre-order' : 'Out of stock',
+      label: product.allow_backorder ? t('stock.preorder', 'Pre-order') : t('stock.out', 'Out of stock'),
       icon: <XCircle className="h-3.5 w-3.5" />,
       variant: product.allow_backorder
         ? 'text-info bg-info/10'
@@ -65,6 +67,7 @@ interface BackInStockFormProps {
 }
 
 export function BackInStockForm({ productId, productName, className }: BackInStockFormProps) {
+  const t = useUiText();
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -109,19 +112,19 @@ export function BackInStockForm({ productId, productName, className }: BackInSto
     setLoading(false);
 
     if (error) {
-      toast.error('Could not save your request. Please try again.');
+      toast.error(t('stock.notifyFailed', 'Could not save your request. Please try again.'));
       return;
     }
 
     setSubmitted(true);
-    toast.success('We\'ll notify you when it\'s back!');
+    toast.success(t('stock.notifySaved', 'We will notify you when it is back!'));
   };
 
   if (submitted) {
     return (
       <div className={cn('flex items-center gap-2 text-sm text-muted-foreground', className)}>
         <Bell className="h-4 w-4 text-primary" />
-        <span>We'll email you when <strong>{productName}</strong> is back in stock.</span>
+        <span>{t('stock.willEmail', 'We will email you when this is back in stock:')} <strong>{productName}</strong></span>
       </div>
     );
   }
@@ -130,7 +133,7 @@ export function BackInStockForm({ productId, productName, className }: BackInSto
     <form onSubmit={handleSubmit} className={cn('space-y-3', className)}>
       <p className="text-sm text-muted-foreground flex items-center gap-2">
         <Bell className="h-4 w-4" />
-        Get notified when this product is back in stock
+        {t('stock.getNotified', 'Get notified when this product is back in stock')}
       </p>
       <div className="flex gap-2">
         <Input
@@ -142,7 +145,7 @@ export function BackInStockForm({ productId, productName, className }: BackInSto
           className="h-10"
         />
         <Button type="submit" size="sm" className="h-10 px-4 shrink-0" disabled={loading}>
-          {loading ? 'Saving...' : 'Notify me'}
+          {loading ? t('stock.saving', 'Saving…') : t('stock.notifyMe', 'Notify me')}
         </Button>
       </div>
     </form>

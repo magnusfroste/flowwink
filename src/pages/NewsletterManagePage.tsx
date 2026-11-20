@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { Shield, Download, Trash2, Mail, CheckCircle, AlertTriangle, Loader2 } from "lucide-react";
 import { useCustomerFormat } from "@/hooks/useCustomerFormat";
 import { businessToday } from '@/lib/platform-fallbacks';
+import { useUiText } from '@/lib/ui-text';
 
 interface SubscriberData {
   email: string;
@@ -24,6 +25,7 @@ interface SubscriberData {
 }
 
 export default function NewsletterManagePage() {
+  const t = useUiText();
   const { formatDateTime } = useCustomerFormat();
   const [searchParams] = useSearchParams();
   const [email, setEmail] = useState("");
@@ -63,14 +65,14 @@ export default function NewsletterManagePage() {
 
       if (error) {
         logger.error("Unsubscribe error:", error);
-        toast.error("Failed to unsubscribe. Please try again.");
+        toast.error(t('newsletter.manage.unsubscribeFailed', 'Could not unsubscribe. Please try again.'));
       } else {
         setIsDeleted(true); // Reuse the deleted state to show success message
-        toast.success("You have been unsubscribed");
+        toast.success(t('newsletter.manage.unsubscribed', 'You have been unsubscribed'));
       }
     } catch (err) {
       logger.error("Unsubscribe error:", err);
-      toast.error("An error occurred. Please try again later.");
+      toast.error(t('newsletter.manage.error', 'Something went wrong. Please try again later.'));
     } finally {
       setIsLoading(false);
     }
@@ -90,8 +92,8 @@ export default function NewsletterManagePage() {
         setSubscriber(data.subscriber);
         setToken(tokenToVerify);
       }
-    } catch (err: any) {
-      toast.error("Verification failed. Please try again.");
+    } catch (caught) {
+      toast.error(t('newsletter.manage.verifyFailed', 'Verification failed. Please try again.'));
     } finally {
       setIsLoading(false);
     }
@@ -116,8 +118,8 @@ export default function NewsletterManagePage() {
         setToken(data._dev_token);
         await verifyToken(email.trim(), data._dev_token);
       }
-    } catch (err: any) {
-      toast.error(err.message || "Request failed");
+    } catch (caught) {
+      toast.error((caught as Error).message || t('newsletter.manage.requestFailed', 'The request failed'));
     } finally {
       setIsLoading(false);
     }
@@ -145,9 +147,9 @@ export default function NewsletterManagePage() {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
 
-      toast.success("Your data has been downloaded");
-    } catch (err: any) {
-      toast.error(err.message || "Export failed");
+      toast.success(t('newsletter.manage.downloaded', 'Your data has been downloaded'));
+    } catch (caught) {
+      toast.error((caught as Error).message || t('newsletter.manage.exportFailed', 'The export failed'));
     } finally {
       setIsLoading(false);
     }
@@ -156,7 +158,7 @@ export default function NewsletterManagePage() {
   const handleDeleteData = async () => {
     if (!token || !email) return;
 
-    if (!confirm("Are you sure you want to permanently delete all your data? This cannot be undone.")) {
+    if (!confirm(t('newsletter.manage.confirmDelete', 'Are you sure you want to permanently delete all your data? This cannot be undone.'))) {
       return;
     }
 
@@ -169,9 +171,9 @@ export default function NewsletterManagePage() {
       if (error) throw error;
 
       setIsDeleted(true);
-      toast.success("Your data has been permanently deleted");
-    } catch (err: any) {
-      toast.error(err.message || "Deletion failed");
+      toast.success(t('newsletter.manage.deleted', 'Your data has been permanently deleted'));
+    } catch (caught) {
+      toast.error((caught as Error).message || t('newsletter.manage.deleteFailed', 'The deletion failed'));
     } finally {
       setIsLoading(false);
     }
@@ -186,14 +188,14 @@ export default function NewsletterManagePage() {
             <div className="mx-auto w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-4">
               <CheckCircle className="h-6 w-6 text-green-600" />
             </div>
-            <CardTitle>Data Deleted</CardTitle>
+            <CardTitle>{t('newsletter.manage.deletedTitle', 'Data deleted')}</CardTitle>
             <CardDescription>
-              All your newsletter data has been permanently deleted.
+              {t('newsletter.manage.deletedLead', 'All your newsletter data has been permanently deleted.')}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground">
-              You have been unsubscribed and all associated data has been removed from our systems.
+              {t('newsletter.manage.deletedBody', 'You have been unsubscribed and all associated data has been removed from our systems.')}
             </p>
           </CardContent>
         </Card>
@@ -208,44 +210,44 @@ export default function NewsletterManagePage() {
         <div className="max-w-2xl mx-auto space-y-6">
           <div className="text-center mb-8">
             <Shield className="h-12 w-12 text-primary mx-auto mb-4" />
-            <h1 className="text-2xl font-bold">Manage Your Data</h1>
+            <h1 className="text-2xl font-bold">{t('newsletter.manage.title', 'Manage your data')}</h1>
             <p className="text-muted-foreground mt-2">
-              View, export, or delete your newsletter subscription data
+              {t('newsletter.manage.lead', 'View, export, or delete your newsletter subscription data')}
             </p>
           </div>
 
           {/* Subscriber Info */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Your Subscription</CardTitle>
+              <CardTitle className="text-lg">{t('newsletter.manage.subscription', 'Your subscription')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid gap-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Email</span>
+                  <span className="text-muted-foreground">{t('account.profile.email', 'Email')}</span>
                   <span className="font-medium">{subscriber.email}</span>
                 </div>
                 {subscriber.name && (
                   <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground">Name</span>
+                    <span className="text-muted-foreground">{t('newsletter.manage.name', 'Name')}</span>
                     <span className="font-medium">{subscriber.name}</span>
                   </div>
                 )}
                 <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Status</span>
+                  <span className="text-muted-foreground">{t('newsletter.manage.status', 'Status')}</span>
                   <Badge variant={subscriber.status === "confirmed" ? "default" : "secondary"}>
-                    {subscriber.status}
+                    {subscriber.status === 'confirmed' ? t('newsletter.manage.statusConfirmed', 'Confirmed') : subscriber.status === 'pending' ? t('newsletter.manage.statusPending', 'Not confirmed yet') : subscriber.status === 'unsubscribed' ? t('newsletter.manage.statusUnsubscribed', 'Unsubscribed') : subscriber.status}
                   </Badge>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Subscribed</span>
+                  <span className="text-muted-foreground">{t('newsletter.manage.subscribedOn', 'Subscribed')}</span>
                   <span className="text-sm">
                     {formatDateTime(subscriber.created_at, { year: "numeric", month: "long", day: "numeric" })}
                   </span>
                 </div>
                 {subscriber.confirmed_at && (
                   <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground">Confirmed</span>
+                    <span className="text-muted-foreground">{t('newsletter.manage.statusConfirmed', 'Confirmed')}</span>
                     <span className="text-sm">
                       {formatDateTime(subscriber.confirmed_at, { year: "numeric", month: "long", day: "numeric" })}
                     </span>
@@ -258,9 +260,9 @@ export default function NewsletterManagePage() {
           {/* Actions */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Data Actions</CardTitle>
+              <CardTitle className="text-lg">{t('newsletter.manage.actions', 'Your data')}</CardTitle>
               <CardDescription>
-                Under GDPR, you have the right to access and delete your personal data
+                {t('newsletter.manage.gdprRight', 'Under GDPR, you have the right to access and delete your personal data')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -276,7 +278,7 @@ export default function NewsletterManagePage() {
                   ) : (
                     <Download className="h-4 w-4 mr-2" />
                   )}
-                  Download My Data
+                  {t('newsletter.manage.download', 'Download my data')}
                 </Button>
                 <Button
                   variant="destructive"
@@ -289,15 +291,14 @@ export default function NewsletterManagePage() {
                   ) : (
                     <Trash2 className="h-4 w-4 mr-2" />
                   )}
-                  Delete All My Data
+                  {t('newsletter.manage.delete', 'Delete all my data')}
                 </Button>
               </div>
 
               <Alert>
                 <AlertTriangle className="h-4 w-4" />
                 <AlertDescription>
-                  Deleting your data is permanent and cannot be undone. You will be unsubscribed 
-                  from the newsletter and all activity data will be removed.
+                  {t('newsletter.manage.deleteWarning', 'Deleting your data is permanent and cannot be undone. You will be unsubscribed from the newsletter and all activity data will be removed.')}
                 </AlertDescription>
               </Alert>
             </CardContent>
@@ -315,24 +316,24 @@ export default function NewsletterManagePage() {
           <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4">
             <Shield className="h-6 w-6 text-primary" />
           </div>
-          <CardTitle>Manage Your Data</CardTitle>
+          <CardTitle>{t('newsletter.manage.title', 'Manage your data')}</CardTitle>
           <CardDescription>
-            Enter your email to access, export, or delete your newsletter subscription data
+            {t('newsletter.manage.enterEmail', 'Enter your email to access, export, or delete your newsletter subscription data')}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {requestSent && !isVerified ? (
             <div className="text-center py-4">
               <Mail className="h-12 w-12 text-primary mx-auto mb-4" />
-              <p className="font-medium">Check your email</p>
+              <p className="font-medium">{t('newsletter.manage.checkEmail', 'Check your email')}</p>
               <p className="text-sm text-muted-foreground mt-2">
-                If this email is registered, you will receive a verification link to access your data.
+                {t('newsletter.manage.linkSent', 'If this email is registered, you will receive a verification link to access your data.')}
               </p>
             </div>
           ) : (
             <form onSubmit={handleRequestAccess} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email Address</Label>
+                <Label htmlFor="email">{t('newsletter.manage.emailAddress', 'Email address')}</Label>
                 <Input
                   id="email"
                   type="email"
@@ -346,10 +347,10 @@ export default function NewsletterManagePage() {
                 {isLoading ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Verifying...
+                    {t('newsletter.manage.verifying', 'Verifying…')}
                   </>
                 ) : (
-                  "Access My Data"
+                  t('newsletter.manage.access', 'Access my data')
                 )}
               </Button>
             </form>
@@ -358,8 +359,7 @@ export default function NewsletterManagePage() {
           <Separator className="my-6" />
           
           <p className="text-xs text-center text-muted-foreground">
-            This page allows you to exercise your rights under GDPR Article 15 (Right of Access) 
-            and Article 17 (Right to Erasure).
+            {t('newsletter.manage.gdprFooter', 'This page allows you to exercise your rights under GDPR Article 15 (Right of Access) and Article 17 (Right to Erasure).')}
           </p>
         </CardContent>
       </Card>

@@ -101,9 +101,9 @@ export default function PublicQuotePage() {
         }
       );
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Could not start payment');
+      if (!res.ok) throw new Error(data.error || t('quote.payFailed', 'Could not start the payment'));
       if (data.configured === false) {
-        setPayNotice(data.message || 'Online payment is not configured — the invoice will be sent separately.');
+        setPayNotice(data.message || t('quote.payLater', 'Online payment is not configured — the invoice will be sent separately.'));
       } else if (data.already_paid) {
         refetchPayStatus();
       } else if (data.url) {
