@@ -9,6 +9,7 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 ## [Unreleased]
 
 ### Fixed
+- Mail to people outside the business speaks the site's language: the signature request ("Signature requested — …") and the purchase order to a vendor were English on every site. The signature request also wrote the document title and the sender's message into its HTML unescaped, and fell back to another site's address when the site had none — it now escapes both and sends nothing (422) without the site's own address.
 - The business's own notices speak the site's language: a new, moved or customer-cancelled booking, an accepted or declined quote and a signed or declined agreement were mailed to the admins in English, the booking ones with a raw UTC timestamp and a relative link. One renderer (`_shared/notices/admin-notice.ts`, texts `admin.mail.*` with Swedish lines) writes them on the business's clock with an absolute link; `email_admins` takes `notice` + `booking_id`, and quote-sign / contract-sign send through it to every admin (they mailed the first five profiles). Live automation rows move to the new arguments only while they carry the seeded text.
 
 - **The site's menu no longer runs past the right edge on tablets.** The header
