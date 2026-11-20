@@ -6,6 +6,7 @@ import { useCart } from '@/contexts/CartContext';
 import { useCustomerFormat } from '@/hooks/useCustomerFormat';
 import { ShoppingCart, Trash2, Plus, Minus } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useUiText } from '@/lib/ui-text';
 
 export interface CartBlockData {
   title?: string;
@@ -22,6 +23,7 @@ interface CartBlockProps {
 }
 
 export function CartBlock({ data }: CartBlockProps) {
+  const t = useUiText();
   const { items, removeItem, updateQuantity, totalPriceCents, currency, totalItems } = useCart();
   // A customer always sees the exact amount, in the page's language.
   const { formatPrice: formatCustomerPrice } = useCustomerFormat();
@@ -30,9 +32,9 @@ export function CartBlock({ data }: CartBlockProps) {
   const formatPrice = (cents: number, curr: string) =>
     formatCustomerPrice(cents, curr);
 
-  const title = data.title || 'Your Cart';
-  const emptyMessage = data.emptyMessage || 'Your cart is empty';
-  const checkoutButtonText = data.checkoutButtonText || 'Proceed to Checkout';
+  const title = data.title || t('cart.title', 'Your cart');
+  const emptyMessage = data.emptyMessage || t('cart.empty', 'Your cart is empty');
+  const checkoutButtonText = data.checkoutButtonText || t('cart.proceed', 'Proceed to checkout');
   const checkoutUrl = data.checkoutUrl || '/checkout';
   const variant = data.variant || 'default';
 
@@ -151,7 +153,7 @@ export function CartBlock({ data }: CartBlockProps) {
           {/* Footer */}
           <div className="border-t p-4 bg-muted/30">
             <div className="flex items-center justify-between mb-4">
-              <span className="text-lg font-medium">Totalt</span>
+              <span className="text-lg font-medium">{t('cart.total', 'Total')}</span>
               <span className="text-2xl font-bold">
                 {formatPrice(totalPriceCents, currency)}
               </span>
@@ -161,7 +163,7 @@ export function CartBlock({ data }: CartBlockProps) {
               {data.showContinueShopping !== false && (
                 <Link to={data.continueShoppingUrl || '/'} className="flex-1">
                   <Button variant="outline" className="w-full">
-                    Continue shopping
+                    {t('cart.continueShopping', 'Continue shopping')}
                   </Button>
                 </Link>
               )}

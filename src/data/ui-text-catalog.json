@@ -1081,9 +1081,24 @@
       "fallback": "Back"
     },
     {
+      "key": "booking.calendarMissing",
+      "group": "booking",
+      "fallback": "Online booking is not available here yet."
+    },
+    {
+      "key": "booking.calendarTitle",
+      "group": "booking",
+      "fallback": "Booking calendar"
+    },
+    {
       "key": "booking.email",
       "group": "booking",
       "fallback": "Email"
+    },
+    {
+      "key": "booking.fillRequired",
+      "group": "booking",
+      "fallback": "Please fill in the required fields"
     },
     {
       "key": "booking.intake_required",
@@ -1231,6 +1246,16 @@
       "fallback": "Your phone number"
     },
     {
+      "key": "booking.pickService",
+      "group": "booking",
+      "fallback": "Please select a service"
+    },
+    {
+      "key": "booking.request",
+      "group": "booking",
+      "fallback": "Request appointment"
+    },
+    {
       "key": "booking.selectDateTime",
       "group": "booking",
       "fallback": "Select Date & Time"
@@ -1259,6 +1284,16 @@
       "key": "booking.submitted",
       "group": "booking",
       "fallback": "Booking Request Submitted!"
+    },
+    {
+      "key": "booking.submitting",
+      "group": "booking",
+      "fallback": "Submitting…"
+    },
+    {
+      "key": "booking.thanks",
+      "group": "booking",
+      "fallback": "Thank you! We will contact you to confirm your appointment."
     },
     {
       "key": "booking.waitlist.email",
@@ -1559,6 +1594,11 @@
       "key": "cart.oneItem",
       "group": "cart",
       "fallback": "1 item"
+    },
+    {
+      "key": "cart.proceed",
+      "group": "cart",
+      "fallback": "Proceed to checkout"
     },
     {
       "key": "cart.short",
@@ -4324,6 +4364,51 @@
       "key": "stock.willEmail",
       "group": "stock",
       "fallback": "We will email you when this is back in stock:"
+    },
+    {
+      "key": "survey.already",
+      "group": "survey",
+      "fallback": "This survey has already been submitted. Thank you!"
+    },
+    {
+      "key": "survey.expired",
+      "group": "survey",
+      "fallback": "This survey link has expired."
+    },
+    {
+      "key": "survey.failed",
+      "group": "survey",
+      "fallback": "Your answer could not be saved. Please try again."
+    },
+    {
+      "key": "survey.notLikely",
+      "group": "survey",
+      "fallback": "Not at all likely"
+    },
+    {
+      "key": "survey.optional",
+      "group": "survey",
+      "fallback": "Optional"
+    },
+    {
+      "key": "survey.submit",
+      "group": "survey",
+      "fallback": "Submit feedback"
+    },
+    {
+      "key": "survey.thanks",
+      "group": "survey",
+      "fallback": "Thanks — your feedback was recorded."
+    },
+    {
+      "key": "survey.unavailable",
+      "group": "survey",
+      "fallback": "We could not load this survey."
+    },
+    {
+      "key": "survey.veryLikely",
+      "group": "survey",
+      "fallback": "Extremely likely"
     },
     {
       "key": "terms.empty",

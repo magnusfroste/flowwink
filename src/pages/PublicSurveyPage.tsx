@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2, CheckCircle2, AlertCircle, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useUiText } from '@/lib/ui-text';
 
 interface SurveyQuestion {
   id: string;
@@ -30,6 +31,7 @@ interface SurveyData {
 }
 
 export default function PublicSurveyPage() {
+  const t = useUiText();
   const { token } = useParams<{ token: string }>();
   const [search] = useSearchParams();
   const presetScore = search.get('score');
@@ -74,7 +76,7 @@ export default function PublicSurveyPage() {
     setSubmitting(false);
     const r = result as unknown as { success: boolean; error?: string };
     if (error || !r?.success) {
-      setData({ success: false, error: error?.message || r?.error || 'Failed to submit' });
+      setData({ success: false, error: r?.error || 'failed' });
     } else {
       setSubmitted(true);
     }
@@ -92,12 +94,14 @@ export default function PublicSurveyPage() {
   if (!data?.success || submitted) {
     const isError = !data?.success;
     const message = submitted
-      ? 'Thanks — your feedback was recorded.'
+      ? t('survey.thanks', 'Thanks — your feedback was recorded.')
       : data?.error === 'already_responded'
-        ? 'This survey has already been submitted. Thank you!'
+        ? t('survey.already', 'This survey has already been submitted. Thank you!')
         : data?.error === 'expired'
-          ? 'This survey link has expired.'
-          : 'We could not load this survey.';
+          ? t('survey.expired', 'This survey link has expired.')
+          : data?.error === 'failed'
+            ? t('survey.failed', 'Your answer could not be saved. Please try again.')
+            : t('survey.unavailable', 'We could not load this survey.');
 
     return (
       <div className="min-h-screen flex items-center justify-center bg-muted/30 p-4">
@@ -157,8 +161,8 @@ export default function PublicSurveyPage() {
                     ))}
                   </div>
                   <div className="flex justify-between text-xs text-muted-foreground">
-                    <span>Not at all likely</span>
-                    <span>Extremely likely</span>
+                    <span>{t('survey.notLikely', 'Not at all likely')}</span>
+                    <span>{t('survey.veryLikely', 'Extremely likely')}</span>
                   </div>
                 </>
               )}
@@ -195,7 +199,7 @@ export default function PublicSurveyPage() {
                 value={comment}
                 onChange={e => setComment(e.target.value)}
                 rows={4}
-                placeholder="Optional"
+                placeholder={t('survey.optional', 'Optional')}
                 className="resize-none"
               />
             </div>
@@ -295,7 +299,7 @@ export default function PublicSurveyPage() {
             className="w-full"
           >
             {submitting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
-            Submit feedback
+            {t('survey.submit', 'Submit feedback')}
           </Button>
 
         </CardContent>
