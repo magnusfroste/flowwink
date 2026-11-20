@@ -12,7 +12,7 @@ import { useUiText } from "@/lib/ui-text";
 import { contractStatusWord, employmentTypeWord } from "@/lib/staff-words";
 
 export default function MyContractsPage() {
-  const { formatDateTime, formatCurrency } = useCustomerFormat();
+  const { formatDate, formatDateTime, formatCurrency } = useCustomerFormat();
   const t = useUiText();
   const { employee, isEmployee, loading: isLoading } = useEmployeeSelf();
   const { data: contracts } = useEmploymentContracts(employee?.id);
@@ -49,7 +49,7 @@ export default function MyContractsPage() {
                       {c.title}
                     </CardTitle>
                     <p className="text-xs text-muted-foreground mt-1">
-                      {employmentTypeWord(c.employment_type, t)} · {t('staff.contracts.starts', 'starts {date}').replace('{date}', c.start_date)}
+                      {employmentTypeWord(c.employment_type, t)} · {t('staff.contracts.starts', 'starts {date}').replace('{date}', formatDate(c.start_date, { year: "numeric", month: "short", day: "numeric" }))}
                     </p>
                   </div>
                   <Badge variant={c.status === "active" || c.status === "signed" ? "default" : "secondary"}>
@@ -61,7 +61,7 @@ export default function MyContractsPage() {
                 <div className="grid grid-cols-2 gap-2 text-sm">
                   <div><span className="text-muted-foreground">{t('staff.contracts.salary', 'Salary:')}</span> {c.monthly_salary_cents ? t('staff.contracts.perMonth', '{amount}/mo').replace('{amount}', formatCurrency(c.monthly_salary_cents, c.currency)) : "—"}</div>
                   <div><span className="text-muted-foreground">{t('staff.contracts.hours', 'Hours:')}</span> {t('staff.contracts.perWeek', '{hours}/wk').replace('{hours}', String(c.weekly_hours))}</div>
-                  <div><span className="text-muted-foreground">{t('staff.contracts.probationUntil', 'Probation until:')}</span> {c.probation_end_date ?? "—"}</div>
+                  <div><span className="text-muted-foreground">{t('staff.contracts.probationUntil', 'Probation until:')}</span> {c.probation_end_date ? formatDate(c.probation_end_date, { year: "numeric", month: "short", day: "numeric" }) : "—"}</div>
                   <div><span className="text-muted-foreground">{t('staff.contracts.notice', 'Notice:')}</span> {t('staff.contracts.noticeDays', '{count} days').replace('{count}', String(c.notice_period_days))}</div>
                 </div>
 

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useEmployeeSelf } from "@/hooks/useEmployeeSelf";
-import { useMyAttendance, useOpenAttendance, useClockIn, useClockOut, formatMinutes } from "@/hooks/useAttendance";
+import { useMyAttendance, useOpenAttendance, useClockIn, useClockOut } from "@/hooks/useAttendance";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,9 +8,9 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Clock, Play, Square } from "lucide-react";
-import { format, formatDistanceToNow } from "date-fns";
 import { useCustomerFormat } from "@/hooks/useCustomerFormat";
 import { useUiText } from "@/lib/ui-text";
+import { durationWord } from "@/lib/staff-words";
 
 export default function AttendancePage() {
   const { formatDateTime, formatTime } = useCustomerFormat();
@@ -50,7 +50,7 @@ export default function AttendancePage() {
               <div className="rounded-lg border bg-green-50 dark:bg-green-950/20 p-4">
                 <p className="text-sm text-muted-foreground">{t('staff.attendance.clockedIn', 'Currently clocked in')}</p>
                 <p className="text-2xl font-bold tabular-nums">
-                  {t('staff.attendance.since', 'Since {time} — {duration}').replace('{time}', formatTime(open.clock_in)).replace('{duration}', formatDistanceToNow(new Date(open.clock_in)))}
+                  {t('staff.attendance.since', 'Since {time} — {duration}').replace('{time}', formatTime(open.clock_in)).replace('{duration}', durationWord((Date.now() - new Date(open.clock_in).getTime()) / 60000, t))}
                 </p>
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
@@ -100,7 +100,7 @@ export default function AttendancePage() {
                     </p>
                   </div>
                   <Badge variant={e.clock_out ? "secondary" : "default"} className="tabular-nums">
-                    {formatMinutes(e.total_minutes)}
+                    {durationWord(e.total_minutes, t)}
                   </Badge>
                 </div>
               ))}

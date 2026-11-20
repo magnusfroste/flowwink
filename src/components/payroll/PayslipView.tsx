@@ -3,6 +3,8 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Separator } from '@/components/ui/separator';
 import { usePlatformFormat } from '@/hooks/usePlatformFormat';
+import { useUiText } from '@/lib/ui-text';
+import { payComponentWord, payslipStatusWord } from '@/lib/staff-words';
 
 export type PayslipData = {
   employer?: { name?: string } | null;
@@ -63,6 +65,7 @@ interface PayslipViewProps {
 
 export const PayslipView = forwardRef<HTMLDivElement, PayslipViewProps>(({ payslip }, ref) => {
   const { employer, employee, period, status, components, amounts, ytd } = payslip;
+  const t = useUiText();
   const { formatCurrency } = usePlatformFormat();
 
   const row = (label: string, cents: number | null | undefined, opts?: { muted?: boolean; negative?: boolean }) => {
@@ -80,14 +83,14 @@ export const PayslipView = forwardRef<HTMLDivElement, PayslipViewProps>(({ paysl
       {/* Header */}
       <div className="flex items-start justify-between gap-6 border-b pb-4">
         <div>
-          <div className="text-xs uppercase tracking-wide text-muted-foreground">Employer</div>
+          <div className="text-xs uppercase tracking-wide text-muted-foreground">{t('staff.payslip.employer', 'Employer')}</div>
           <div className="text-lg font-semibold">{employer?.name ?? '—'}</div>
         </div>
         <div className="text-right">
-          <div className="text-xs uppercase tracking-wide text-muted-foreground">Payslip</div>
+          <div className="text-xs uppercase tracking-wide text-muted-foreground">{t('staff.payslips.payslip', 'Payslip')}</div>
           <div className="text-lg font-semibold">{period}</div>
-          <Badge variant={STATUS_VARIANTS[status] ?? 'outline'} className="mt-1 capitalize">
-            {status}
+          <Badge variant={STATUS_VARIANTS[status] ?? 'outline'} className="mt-1">
+            {payslipStatusWord(status, t)}
           </Badge>
         </div>
       </div>
@@ -95,12 +98,12 @@ export const PayslipView = forwardRef<HTMLDivElement, PayslipViewProps>(({ paysl
       {/* Employee */}
       <div className="grid grid-cols-2 gap-4 text-sm">
         <div>
-          <div className="text-xs uppercase tracking-wide text-muted-foreground">Employee</div>
+          <div className="text-xs uppercase tracking-wide text-muted-foreground">{t('staff.payslip.employee', 'Employee')}</div>
           <div className="font-medium">{employee?.name ?? '—'}</div>
           {employee?.email && <div className="text-muted-foreground">{employee.email}</div>}
         </div>
         <div>
-          <div className="text-xs uppercase tracking-wide text-muted-foreground">Role</div>
+          <div className="text-xs uppercase tracking-wide text-muted-foreground">{t('staff.payslip.role', 'Role')}</div>
           <div>{employee?.title ?? '—'}</div>
           {employee?.department && <div className="text-muted-foreground">{employee.department}</div>}
         </div>
@@ -108,26 +111,26 @@ export const PayslipView = forwardRef<HTMLDivElement, PayslipViewProps>(({ paysl
 
       {/* Components */}
       <div>
-        <h3 className="text-sm font-semibold mb-2">Components</h3>
+        <h3 className="text-sm font-semibold mb-2">{t('staff.payslip.components', 'Pay lines')}</h3>
         {components.length === 0 ? (
-          <div className="text-sm text-muted-foreground italic">No components.</div>
+          <div className="text-sm text-muted-foreground italic">{t('staff.payslip.noComponents', 'No pay lines.')}</div>
         ) : (
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Label</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead className="text-center">Taxable</TableHead>
-                <TableHead className="text-right">Amount</TableHead>
+                <TableHead>{t('staff.payslip.line', 'Line')}</TableHead>
+                <TableHead>{t('staff.common.type', 'Type')}</TableHead>
+                <TableHead className="text-center">{t('staff.payslip.taxable', 'Taxable')}</TableHead>
+                <TableHead className="text-right">{t('staff.payslip.amount', 'Amount')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {components.map((c, i) => (
                 <TableRow key={i}>
                   <TableCell>{c.label}</TableCell>
-                  <TableCell className="text-muted-foreground capitalize">{c.type}</TableCell>
+                  <TableCell className="text-muted-foreground">{payComponentWord(c.type, t)}</TableCell>
                   <TableCell className="text-center text-muted-foreground">
-                    {c.taxable ? 'Yes' : '—'}
+                    {c.taxable ? t('staff.payslip.yes', 'Yes') : '—'}
                   </TableCell>
                   <TableCell className="text-right font-mono">{formatCurrency(c.amount_cents)}</TableCell>
                 </TableRow>
@@ -139,22 +142,22 @@ export const PayslipView = forwardRef<HTMLDivElement, PayslipViewProps>(({ paysl
 
       {/* Gross → Net */}
       <div>
-        <h3 className="text-sm font-semibold mb-2">Gross to net</h3>
+        <h3 className="text-sm font-semibold mb-2">{t('staff.payslip.grossToNet', 'Gross to net')}</h3>
         <div className="rounded-md border p-4 space-y-1">
-          {row('Gross', amounts.gross_cents)}
-          {row('Benefits', amounts.benefits_cents)}
-          {row('Deductions', amounts.deductions_cents, { negative: true })}
-          {row('Sick deduction', amounts.sick_deduction_cents, { negative: true })}
-          {row('Sick pay', amounts.sick_pay_cents)}
-          {row('Pension (employee)', amounts.pension_employee_cents, { negative: true })}
-          {row('Advance deduction', amounts.advance_deduction_cents, { negative: true })}
+          {row(t('staff.payslips.gross', 'Gross'), amounts.gross_cents)}
+          {row(t('staff.payslip.benefits', 'Benefits'), amounts.benefits_cents)}
+          {row(t('staff.payslip.deductions', 'Deductions'), amounts.deductions_cents, { negative: true })}
+          {row(t('staff.payslip.sickDeduction', 'Sick deduction'), amounts.sick_deduction_cents, { negative: true })}
+          {row(t('staff.payslip.sickPay', 'Sick pay'), amounts.sick_pay_cents)}
+          {row(t('staff.payslip.pensionEmployee', 'Pension (employee)'), amounts.pension_employee_cents, { negative: true })}
+          {row(t('staff.payslip.advance', 'Advance deduction'), amounts.advance_deduction_cents, { negative: true })}
           <Separator className="my-2" />
-          {row('Taxable base', amounts.taxable_cents, { muted: true })}
-          {row('Preliminary tax (PAYE)', amounts.tax_cents, { negative: true })}
-          {row('Tax correction', amounts.tax_correction_cents)}
+          {row(t('staff.payslip.taxableBase', 'Taxable base'), amounts.taxable_cents, { muted: true })}
+          {row(t('staff.payslip.tax', 'Preliminary tax (PAYE)'), amounts.tax_cents, { negative: true })}
+          {row(t('staff.payslip.taxCorrection', 'Tax correction'), amounts.tax_correction_cents)}
           <Separator className="my-2" />
           <div className="flex justify-between text-base font-semibold pt-1">
-            <span>Net pay</span>
+            <span>{t('staff.payslip.netPay', 'Net pay')}</span>
             <span className="font-mono">{formatCurrency(amounts.net_cents)}</span>
           </div>
         </div>
@@ -162,13 +165,15 @@ export const PayslipView = forwardRef<HTMLDivElement, PayslipViewProps>(({ paysl
 
       {/* Employer contributions */}
       <div>
-        <h3 className="text-sm font-semibold mb-2">Employer contributions</h3>
+        <h3 className="text-sm font-semibold mb-2">{t('staff.payslip.employerContributions', 'Employer contributions')}</h3>
         <div className="rounded-md border p-4 space-y-1">
           {row(
-            `Social fee${amounts.employer_social_pct ? ` (${amounts.employer_social_pct}%)` : ''}`,
+            amounts.employer_social_pct
+              ? t('staff.payslip.socialFeePct', 'Social fee ({percent}%)').replace('{percent}', String(amounts.employer_social_pct))
+              : t('staff.payslip.socialFee', 'Social fee'),
             amounts.social_fee_cents,
           )}
-          {row('Pension (employer)', amounts.pension_employer_cents)}
+          {row(t('staff.payslip.pensionEmployer', 'Pension (employer)'), amounts.pension_employer_cents)}
         </div>
       </div>
 
@@ -176,13 +181,15 @@ export const PayslipView = forwardRef<HTMLDivElement, PayslipViewProps>(({ paysl
       {ytd && (
         <div>
           <h3 className="text-sm font-semibold mb-2">
-            Year-to-date{ytd.months ? ` (${ytd.months} month${ytd.months === 1 ? '' : 's'})` : ''}
+            {ytd.months
+              ? (ytd.months === 1 ? t('staff.payslip.ytdOneMonth', 'Year-to-date (1 month)') : t('staff.payslip.ytdMonths', 'Year-to-date ({count} months)').replace('{count}', String(ytd.months)))
+              : t('staff.payslip.ytd', 'Year-to-date')}
           </h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-            <YtdStat label="Gross" value={formatCurrency(ytd.gross_cents)} />
-            <YtdStat label="Taxable" value={formatCurrency(ytd.taxable_cents)} />
-            <YtdStat label="Tax" value={formatCurrency(ytd.tax_cents)} />
-            <YtdStat label="Net" value={formatCurrency(ytd.net_cents)} />
+            <YtdStat label={t('staff.payslips.gross', 'Gross')} value={formatCurrency(ytd.gross_cents)} />
+            <YtdStat label={t('staff.payslip.taxable', 'Taxable')} value={formatCurrency(ytd.taxable_cents)} />
+            <YtdStat label={t('staff.payslip.taxShort', 'Tax')} value={formatCurrency(ytd.tax_cents)} />
+            <YtdStat label={t('staff.payslips.net', 'Net')} value={formatCurrency(ytd.net_cents)} />
           </div>
         </div>
       )}
