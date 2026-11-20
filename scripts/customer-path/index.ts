@@ -284,6 +284,22 @@ async function portalShowsWhatTheCustomerHas(s: Scenario, browser: Browser, base
     if (!step.check('the business invoices, quotes and sends an agreement to one customer', sentInvoice.ok && sentQuote.ok && sentContract.ok && draft.ok,
       sentInvoice.error || sentQuote.error || sentContract.error || draft.error)) return step.result();
 
+    // …and the customer has booked a time (the booking step proves the booking itself; here only that the portal shows it).
+    const bookedService = await s.skill('manage_booking_service', { action: 'create', name: `Portal booking ${s.tag}`, description: 'customer path', duration_minutes: 30 });
+    const tuesdays = await s.one<{ n: string }>(`select count(*) as n from booking_availability where day_of_week = 2 and is_active and service_id is null`);
+    if (Number(tuesdays?.n) === 0) await s.skill('manage_booking_availability', { action: 'set_hours', day_of_week: 2, start_time: '09:00', end_time: '12:00' });
+    // A January Tuesday at 11:00 (+01:00) far ahead — booking_rules judge it like any booking; the service is the step's own.
+    let hh = 11;
+    for (const ch of s.tag) hh = (hh * 31 + ch.charCodeAt(0)) >>> 0;
+    const when = new Date(Date.UTC(2100 + (hh % 300), 0, 8));
+    while (when.getUTCDay() !== 2) when.setUTCDate(when.getUTCDate() + 1);
+    const at = `${when.toISOString().slice(0, 10)}T11:00:00+01:00`;
+    const bookingRow = bookedService.ok ? await s.one<{ id: string; manage_token: string }>(
+      `insert into public.bookings (service_id, customer_name, customer_email, start_time, end_time, status)
+       values ($1, $2, $3, $4::timestamptz, $4::timestamptz + interval '30 minutes', 'confirmed')
+       returning id, manage_token`, [s.idOf(bookedService.data, 'booking_service'), name, email, at]) : null;
+    if (!step.check('the customer has a time booked', !!bookingRow?.manage_token, bookedService.error || 'the booking was not stored')) return step.result();
+
     const signIn = async (user: FixtureUser) => {
       const ctx = await browser.newContext({ viewport: { width: 1280, height: 1000 } });
       await ctx.addInitScript(
@@ -316,6 +332,14 @@ async function portalShowsWhatTheCustomerHas(s: Scenario, browser: Browser, base
       await page.getByRole('link', { name: /view and pay|visa och betala/i }).first().click();
       step.check('…and opens one where it is paid', await page.getByTestId('invoice-how-to-pay').or(page.getByRole('button', { name: /pay by card|download pdf|betala med kort|ladda ner pdf/i }).first()).first().waitFor({ state: 'visible', timeout: 45_000 }).then(() => true, () => false), `the invoice page did not open: ${page.url()}`);
 
+      // FINDING 2026-11-20: the portal showed no booking — the time was only in the confirmation mail.
+      await page.goto(`${base}/account/bookings`, { waitUntil: 'domcontentloaded' });
+      const booking = page.getByTestId('my-booking').filter({ hasText: `Portal booking ${s.tag}` }).first();
+      step.check('the customer finds the time they booked', await booking.waitFor({ state: 'visible', timeout: 20_000 }).then(() => true, () => false), 'the booking is not on /account/bookings');
+      const door = await booking.getByRole('link', { name: /change or cancel|ändra eller avboka/i }).getAttribute('href').catch(() => null);
+      step.check('…with the same door to change it as the mail', door === `/my-booking/${bookingRow!.manage_token}`, `the link is ${door}`);
+      await snap(page, 'portal-bookings');
+
       await page.goto(`${base}/account/agreements`, { waitUntil: 'domcontentloaded' });
       step.check('the customer finds their agreement', await page.getByTestId('my-agreement').filter({ hasText: `Portal agreement ${s.tag}` }).first().waitFor({ state: 'visible', timeout: 20_000 }).then(() => true, () => false), 'the agreement is not on /account/agreements');
       step.check('the portal raised no error', errors.length === 0, errors.join(' | '));
@@ -330,6 +354,9 @@ async function portalShowsWhatTheCustomerHas(s: Scenario, browser: Browser, base
       await p2.goto(`${base}/account/invoices`, { waitUntil: 'domcontentloaded' });
       const empty = await p2.getByText(/you have no invoices yet|du har inga fakturor än/i).first().waitFor({ state: 'visible', timeout: 45_000 }).then(() => true, () => false);
       step.check('another customer sees none of it', empty && !(await p2.content()).includes(invoiceNumber), 'another signed-in customer can see the invoice');
+      await p2.goto(`${base}/account/bookings`, { waitUntil: 'domcontentloaded' });
+      const noBookings = await p2.getByText(/you have no bookings with us|du har inga bokningar hos oss/i).first().waitFor({ state: 'visible', timeout: 45_000 }).then(() => true, () => false);
+      step.check('…nor their booking', noBookings && !(await p2.content()).includes(`Portal booking ${s.tag}`), 'another signed-in customer can see the booking');
     } finally {
       await other.close();
     }

@@ -125,6 +125,7 @@ const CustomerOrdersPage = lazy(() => import("./pages/account/OrdersPage"));
 const AccountOverviewPage = lazy(() => import("./pages/account/AccountOverviewPage"));
 const MyInvoicesPage = lazy(() => import("./pages/account/MyInvoicesPage"));
 const MyAgreementsPage = lazy(() => import("./pages/account/MyAgreementsPage"));
+const MyBookingsPage = lazy(() => import("./pages/account/MyBookingsPage"));
 const AccountAssistantPage = lazy(() => import("./pages/account/AccountAssistantPage"));
 const AddressesPage = lazy(() => import("./pages/account/AddressesPage"));
 const WishlistPage = lazy(() => import("./pages/account/WishlistPage"));
@@ -298,6 +299,7 @@ const router = createBrowserRouter([
           { path: "orders", element: <CustomerOrdersPage /> },
           { path: "invoices", element: <MyInvoicesPage /> },
           { path: "agreements", element: <MyAgreementsPage /> },
+          { path: "bookings", element: <MyBookingsPage /> },
           { path: "assistant", element: <AccountAssistantPage /> },
           { path: "addresses", element: <AddressesPage /> },
           { path: "wishlist", element: <WishlistPage /> },

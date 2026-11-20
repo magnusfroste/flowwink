@@ -6,7 +6,7 @@ import { PublicFooter } from '@/components/public/PublicFooter';
 import { useCustomerAuth } from '@/hooks/useCustomerAuth';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { Package, LayoutDashboard, ShoppingBag, MapPin, Heart, User, LogOut, Loader2, CalendarOff, Receipt, Users, Target, Clock, GraduationCap, FileText, Sparkles, LifeBuoy, FileSignature, Bot, ArrowLeft } from 'lucide-react';
+import { Package, LayoutDashboard, ShoppingBag, MapPin, Heart, User, LogOut, Loader2, CalendarOff, Receipt, Users, Target, Clock, GraduationCap, FileText, Sparkles, LifeBuoy, FileSignature, Bot, ArrowLeft, CalendarClock } from 'lucide-react';
 import { useEmployeeSelf } from '@/hooks/useEmployeeSelf';
 import { useIsManager } from '@/hooks/useTeam';
 import { useIsModuleEnabled, useModules } from '@/hooks/useModules';
@@ -43,6 +43,11 @@ const invoicesNav = [
 ];
 const agreementsNav = [
   { to: '/account/agreements', label: (t: Words) => t('account.nav.agreements', 'My agreements'), icon: FileSignature },
+];
+
+// The times the customer has booked — shown when the booking module is on.
+const bookingsNav = [
+  { to: '/account/bookings', label: (t: Words) => t('account.nav.bookings', 'My bookings'), icon: CalendarClock },
 ];
 
 // Quotes the customer has been sent — shown when the quotes module is on.
@@ -87,6 +92,7 @@ export default function AccountLayout() {
   const quotesEnabled = useIsModuleEnabled('quotes');
   const invoicingEnabled = useIsModuleEnabled('invoicing');
   const contractsEnabled = useIsModuleEnabled('contracts');
+  const bookingsEnabled = useIsModuleEnabled('bookings');
   const { isLoading: modulesLoading } = useModules();
   const location = useLocation();
   const navigate = useNavigate();
@@ -104,6 +110,7 @@ export default function AccountLayout() {
     ...(subscriptionsEnabled ? servicesNav : []),
     ...(invoicingEnabled ? invoicesNav : []),
     ...(contractsEnabled ? agreementsNav : []),
+    ...(bookingsEnabled ? bookingsNav : []),
     ...(quotesEnabled ? quotesNav : []),
     ...(ecommerceEnabled ? commerceNav : []),
     ...assistantNav,
