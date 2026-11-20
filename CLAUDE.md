@@ -381,6 +381,20 @@ add/update take `responsive`, `sectionBackground` and `anchorId` beside
 is refused (`INVALID_INPUT`), `columns` on a non-grid block is stored with a note.
 A new grid block joins the list AND reads the hook — a guard counts both.
 
+**`inspect_rendered_page` → `width_check` (2026-11-20, #940)** — layout takes
+a browser and the edge runtime has none, so the measurement is taken in the page
+editor ("Check widths", `PageWidthCheck.tsx` + `src/lib/page-width-check.ts`): the
+preview is drawn in an off-screen frame at 390, 768 and 1280 px in the browser of
+the person at the keyboard and measured — `wider_than_screen` (judged by each
+element's right EDGE: the site clips its own overflow, so a page never "scrolls
+sideways"), `cut_off` (clipped text without an ellipsis), `squeezed` (text in a box
+under 44 px). Each finding names its block. Kept in `page_width_checks` (its own
+table: a measurement is not an edit of the page) through
+`record_page_width_check`; the sensor returns it with `stale` when the page was
+saved since, or `never_checked`. An agent cannot take one — it asks a person.
+Three false "Fits." are pinned by tests: measuring after the frame was removed,
+before the lazily loaded blocks had drawn, and a frame hidden with `visibility`.
+
 **`site_branding_update`** — non-destructive (only passed fields change) and
 theme-aware: `logo_dark_url` / `primary_color_dark` are what the header, footer and
 chat widget show in dark theme; `heading_font` / `body_font` split `font_family`.
