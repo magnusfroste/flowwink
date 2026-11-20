@@ -54,11 +54,14 @@ export async function loadBookingFacts(
   };
 }
 
+// `client: unknown` — the signing functions pin an older supabase-js than the
+// shared code; the notice needs only from() and functions.invoke().
 export async function sendAdminNotice(
-  supabase: SupabaseClient,
+  client: unknown,
   input: AdminNoticeInput,
   source: string,
 ): Promise<Record<string, unknown>> {
+  const supabase = client as SupabaseClient;
   const ctx = await loadAdminNoticeContext(supabase);
   const { subject, html } = renderAdminNotice(input, ctx);
   return deliverToAdmins(supabase, subject, html, source);
