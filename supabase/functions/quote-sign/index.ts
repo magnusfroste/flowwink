@@ -18,6 +18,7 @@ import {
   resolveSignedQuoteLines,
 } from '../_shared/quote-lines.ts';
 import { loadOrgName } from '../_shared/org-name.ts';
+import { sendAdminNotice } from '../_shared/notices/admin-notice-send.ts';
 import { resolveUiText } from '../_shared/locale/ui-text.ts';
 import { loadUiText } from '../_shared/locale/load-ui-text.ts';
 
@@ -338,34 +339,20 @@ Deno.serve(async (req: Request) => {
         });
       }
 
-      // Internal notification to admins
-      const adminHtml = `<!doctype html><html><body style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:24px">
-  <h2>Quote ${escapeHtml(quote.quote_number)} ${body.action === 'accept' ? 'ACCEPTED ✅' : 'REJECTED ❌'}</h2>
-  <p><strong>Signer:</strong> ${escapeHtml(body.signer_name)} &lt;${escapeHtml(body.signer_email)}&gt;</p>
-  <p><strong>Total:</strong> ${total}</p>
-  ${body.comment ? `<p><strong>Comment:</strong><br/>${escapeHtml(body.comment)}</p>` : ''}
-  ${invoice ? `<p><strong>Invoice auto-created:</strong> ${escapeHtml(invoice.invoice_number)} (draft, due ${escapeHtml(invoice.due_date)})</p>` : ''}
-</body></html>`;
-
-      // Best-effort lookup of admin emails
-      const { data: admins } = await supabase
-        .from('user_roles')
-        .select('user_id, profiles:profiles!inner(email)')
-        .eq('role', 'admin')
-        .limit(5);
-      const adminEmails = (admins || [])
-        .map((r: any) => r?.profiles?.email)
-        .filter(Boolean);
-
-      if (adminEmails.length) {
-        await supabase.functions.invoke('email-send', {
-          body: {
-            to: adminEmails,
-            subject: `Quote ${quote.quote_number} ${body.action === 'accept' ? 'accepted' : 'rejected'}`,
-            html: adminHtml,
-          },
-        });
-      }
+      // The business is told in the site's language (admin-notice.ts), to every
+      // admin from user_roles — it was English, to the first five profiles.
+      await sendAdminNotice(supabase, {
+        kind: 'quote.answered',
+        quote: {
+          quote_number: quote.quote_number,
+          accepted: body.action === 'accept',
+          signer_name: body.signer_name,
+          signer_email: body.signer_email,
+          total,
+          comment: body.comment ?? null,
+          invoice_number: invoice?.invoice_number ?? null,
+        },
+      }, 'quote-sign');
     } catch (emailErr) {
       console.error('Email notification failed (non-fatal):', emailErr);
     }

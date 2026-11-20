@@ -564,13 +564,14 @@ const BOOKING_AUTOMATIONS: AutomationSeed[] = [
   {
     name: 'Notify admins when a customer moves a booking',
     description:
-      'When a customer moves their booking from the link in the confirmation mail, email every instance admin with who and the old and new time.',
+      'When a customer moves their booking from the link in the confirmation mail, email every instance admin with who and the old and new time — written by email_admins itself (notice), in the site language and on the business clock.',
     trigger_type: 'event',
     trigger_config: { event: 'booking.rescheduled' },
     skill_name: 'email_admins',
     skill_arguments: {
-      subject: 'Booking moved: {{event.payload.data.customer_name}} — {{event.payload.data.start_time}}',
-      html: '<p><strong>{{event.payload.data.customer_name}}</strong> ({{event.payload.data.customer_email}}) moved their booking from {{event.payload.data.previous_start_time}} to <strong>{{event.payload.data.start_time}}</strong>.</p><p><a href="/admin/bookings">Open bookings</a></p>',
+      notice: 'booking.rescheduled',
+      booking_id: '{{event.payload.id}}',
+      previous_start_time: '{{event.payload.data.previous_start_time}}',
       source: 'booking.rescheduled',
     },
   },
@@ -582,8 +583,9 @@ const BOOKING_AUTOMATIONS: AutomationSeed[] = [
     trigger_config: { event: 'booking.cancelled_by_customer' },
     skill_name: 'email_admins',
     skill_arguments: {
-      subject: 'Booking cancelled by the customer: {{event.payload.data.customer_name}} — {{event.payload.data.start_time}}',
-      html: '<p><strong>{{event.payload.data.customer_name}}</strong> ({{event.payload.data.customer_email}}) cancelled their booking at <strong>{{event.payload.data.start_time}}</strong>. The time is free again.</p><p>Their message: {{event.payload.data.reason}}</p><p><a href="/admin/bookings">Open bookings</a></p>',
+      notice: 'booking.cancelled_by_customer',
+      booking_id: '{{event.payload.id}}',
+      reason: '{{event.payload.data.reason}}',
       source: 'booking.cancelled_by_customer',
     },
   },
@@ -595,8 +597,8 @@ const BOOKING_AUTOMATIONS: AutomationSeed[] = [
     trigger_config: { event: 'booking.created' },
     skill_name: 'email_admins',
     skill_arguments: {
-      subject: 'New booking: {{event.payload.data.customer_name}} — {{event.payload.data.start_time}}',
-      html: '<p><strong>{{event.payload.data.customer_name}}</strong> ({{event.payload.data.customer_email}}) booked <strong>{{event.payload.data.start_time}}</strong>–{{event.payload.data.end_time}}.</p><p>Status: {{event.payload.data.status}}</p><p><a href="/admin/bookings">Open bookings</a></p>',
+      notice: 'booking.created',
+      booking_id: '{{event.payload.id}}',
       source: 'booking.created',
     },
   },
