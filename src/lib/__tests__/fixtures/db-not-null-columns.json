@@ -293,7 +293,8 @@
     ],
     "flag_invoice_variance": [
       "invoice_number",
-      "vendor_id"
+      "vendor_id",
+      "currency"
     ],
     "create_return": [
       "rma_number"
