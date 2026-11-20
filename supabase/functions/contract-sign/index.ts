@@ -6,6 +6,7 @@ import { getServiceClient } from '../_shared/supabase-clients.ts';
 import { sha256Hex } from '../_shared/agent-audit.ts';
 import { provisionPortalAccount } from '../_shared/provision-portal-account.ts';
 import { loadOrgName } from '../_shared/org-name.ts';
+import { sendAdminNotice } from '../_shared/notices/admin-notice-send.ts';
 import { resolveUiText } from '../_shared/locale/ui-text.ts';
 import { loadUiText } from '../_shared/locale/load-ui-text.ts';
 
@@ -241,25 +242,19 @@ Deno.serve(async (req: Request) => {
         });
       }
 
-      const adminHtml = `<!doctype html><html><body style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:24px">
-  <h2>Contract ${escapeHtml(contract.title)} ${body.action === 'accept' ? 'SIGNED ✅' : 'DECLINED ❌'}</h2>
-  <p><strong>Counterparty:</strong> ${escapeHtml(contract.counterparty_name)}</p>
-  <p><strong>Signer:</strong> ${escapeHtml(body.signer_name)} &lt;${escapeHtml(body.signer_email)}&gt;</p>
-  ${body.comment ? `<p><strong>Comment:</strong><br/>${escapeHtml(body.comment)}</p>` : ''}
-</body></html>`;
-      const { data: admins } = await supabase
-        .from('user_roles')
-        .select('user_id, profiles:profiles!inner(email)')
-        .eq('role', 'admin')
-        .limit(5);
-      const adminEmails = ((admins as unknown as Array<{ profiles?: { email?: string } }>) || [])
-        .map((r) => r?.profiles?.email)
-        .filter(Boolean) as string[];
-      if (adminEmails.length) {
-        await supabase.functions.invoke('email-send', {
-          body: { to: adminEmails, subject: `Contract ${body.action === 'accept' ? 'signed' : 'declined'}: ${contract.title}`, html: adminHtml },
-        });
-      }
+      // The business is told in the site's language (admin-notice.ts), to every
+      // admin from user_roles — it was English, to the first five profiles.
+      await sendAdminNotice(supabase, {
+        kind: 'contract.answered',
+        contract: {
+          title: contract.title,
+          signed: body.action === 'accept',
+          counterparty_name: contract.counterparty_name ?? null,
+          signer_name: body.signer_name,
+          signer_email: body.signer_email,
+          comment: body.comment ?? null,
+        },
+      }, 'contract-sign');
     } catch (emailErr) {
       console.error('Email notification failed (non-fatal):', emailErr);
     }

@@ -1066,6 +1066,131 @@
       "fallback": "Wishlist ({count})"
     },
     {
+      "key": "admin.mail.bookingCancelledLead",
+      "group": "admin",
+      "fallback": "cancelled their booking. The time is free again."
+    },
+    {
+      "key": "admin.mail.bookingCancelledSubject",
+      "group": "admin",
+      "fallback": "Booking cancelled by the customer: {name} — {day} {time}"
+    },
+    {
+      "key": "admin.mail.bookingMovedLead",
+      "group": "admin",
+      "fallback": "moved their booking."
+    },
+    {
+      "key": "admin.mail.bookingMovedSubject",
+      "group": "admin",
+      "fallback": "Booking moved: {name} — {day} {time}"
+    },
+    {
+      "key": "admin.mail.bookingNewLead",
+      "group": "admin",
+      "fallback": "booked a time."
+    },
+    {
+      "key": "admin.mail.bookingNewSubject",
+      "group": "admin",
+      "fallback": "New booking: {name} — {day} {time}"
+    },
+    {
+      "key": "admin.mail.bookingPending",
+      "group": "admin",
+      "fallback": "The booking waits for your confirmation."
+    },
+    {
+      "key": "admin.mail.comment",
+      "group": "admin",
+      "fallback": "Their message"
+    },
+    {
+      "key": "admin.mail.contractDeclinedSubject",
+      "group": "admin",
+      "fallback": "Agreement declined: {title}"
+    },
+    {
+      "key": "admin.mail.contractSignedSubject",
+      "group": "admin",
+      "fallback": "Agreement signed: {title}"
+    },
+    {
+      "key": "admin.mail.counterparty",
+      "group": "admin",
+      "fallback": "Counterparty"
+    },
+    {
+      "key": "admin.mail.footer",
+      "group": "admin",
+      "fallback": "Sent by {business} to its administrators."
+    },
+    {
+      "key": "admin.mail.from",
+      "group": "admin",
+      "fallback": "From"
+    },
+    {
+      "key": "admin.mail.openBookings",
+      "group": "admin",
+      "fallback": "Open bookings"
+    },
+    {
+      "key": "admin.mail.openContracts",
+      "group": "admin",
+      "fallback": "Open agreements"
+    },
+    {
+      "key": "admin.mail.openQuotes",
+      "group": "admin",
+      "fallback": "Open quotes"
+    },
+    {
+      "key": "admin.mail.quoteAcceptedSubject",
+      "group": "admin",
+      "fallback": "Quote {number} accepted by {name}"
+    },
+    {
+      "key": "admin.mail.quoteInvoiceDraft",
+      "group": "admin",
+      "fallback": "Invoice {invoice} was created as a draft — check it and send it."
+    },
+    {
+      "key": "admin.mail.quoteRejectedSubject",
+      "group": "admin",
+      "fallback": "Quote {number} declined by {name}"
+    },
+    {
+      "key": "admin.mail.service",
+      "group": "admin",
+      "fallback": "Service"
+    },
+    {
+      "key": "admin.mail.signer",
+      "group": "admin",
+      "fallback": "Answered by"
+    },
+    {
+      "key": "admin.mail.someone",
+      "group": "admin",
+      "fallback": "A customer"
+    },
+    {
+      "key": "admin.mail.to",
+      "group": "admin",
+      "fallback": "To"
+    },
+    {
+      "key": "admin.mail.total",
+      "group": "admin",
+      "fallback": "Total"
+    },
+    {
+      "key": "admin.mail.when",
+      "group": "admin",
+      "fallback": "When"
+    },
+    {
       "key": "auth.session_ended",
       "group": "auth",
       "fallback": "Your previous session ended"

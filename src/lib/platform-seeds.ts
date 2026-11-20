@@ -542,11 +542,14 @@ The artifact's sha256 is stored in site_settings.skills_artifact_sha on success.
         parameters: {
           type: 'object',
           properties: {
-            subject: { type: 'string', description: 'Email subject line.' },
-            html: { type: 'string', description: 'HTML body — compose the full message before calling.' },
+            notice: { type: 'string', enum: ['booking.created', 'booking.rescheduled', 'booking.cancelled_by_customer'], description: 'What happened — the skill writes the message itself, in the site\'s language, times on the business\'s clock, with a link into the admin. Pass booking_id with it; subject/html are then not used.' },
+            booking_id: { type: 'string', format: 'uuid', description: 'With notice: the booking.' },
+            previous_start_time: { type: 'string', description: 'notice booking.rescheduled: the time it was moved from (ISO).' },
+            reason: { type: 'string', description: 'notice booking.cancelled_by_customer: what the customer wrote.' },
+            subject: { type: 'string', description: 'Without notice: the subject line, in the site\'s language.' },
+            html: { type: 'string', description: 'Without notice: the HTML body — compose the full message before calling.' },
             source: { type: 'string', description: 'Originating label for outbound_communications (default "email_admins").' },
           },
-          required: ['subject', 'html'],
         },
       },
     },
@@ -555,6 +558,8 @@ The artifact's sha256 is stored in site_settings.skills_artifact_sha on success.
 One message → every admin (user_roles role='admin', emails via auth at send time). Routed through email-send: provider-agnostic, allowlist-guarded, every outcome logged to outbound_communications.
 ### When
 Automations reacting to platform events (booking.created and friends) and agents that must reach the instance operators. Not a customer channel.
+### Notice or your own words
+A booking event: pass \`notice\` + \`booking_id\` and the skill writes the mail — the site's language, the business's clock, an absolute link. Your own message: \`subject\` + \`html\`, written in the site's language (the admins read the same language as the site).
 ### Read the result honestly
 {sent, blocked, failed, detail[]} — 'blocked' is the outbound allowlist doing its job on pilot instances and is neither success nor failure; report it as withheld. Born from the booking incident where a skipped confirmation left zero trace.`,
   },

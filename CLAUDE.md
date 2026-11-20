@@ -738,6 +738,13 @@ beside its payload, so an operator branches instead of guessing:
   catalogue, both ways). The customer path's text matches take both
   languages: run it once with `site_languages.default = 'sv'` when a customer
   page changes.
+- **The business is told in the site's language too (2026-11-20).** A notice
+  to the admins (a booking made, moved or called off by the customer, a quote
+  or agreement answered) is `renderAdminNotice` (`_shared/notices/admin-notice.ts`):
+  visitor texts `admin.mail.*`, times on the business's clock, a link that is
+  absolute or absent. `email_admins` with `notice` + `booking_id` writes it; an
+  automation never carries an English subject in its arguments. A new admin
+  notice is a kind there, not HTML in an edge function.
 - **A mail template is seeded in every language the platform speaks
   (2026-11-19).** `resolve_email_template` walks recipient language → site
   language → ANY active version, so a mail seeded in English only is English

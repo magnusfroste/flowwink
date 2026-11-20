@@ -23,8 +23,10 @@ const SEEDS = readFileSync(join(__dirname, '../platform-seeds.ts'), 'utf-8');
 const BOOKING = readFileSync(join(__dirname, '../modules/booking-module.ts'), 'utf-8');
 const EXEC = readFileSync(
   join(ROOT, 'supabase/functions/_shared/execute/core.ts'), 'utf-8');
+// The skill and its delivery half (split 2026-11-20 so the admin notices share it).
 const HANDLER = readFileSync(
-  join(ROOT, 'supabase/functions/_shared/handlers/email-admins.ts'), 'utf-8');
+  join(ROOT, 'supabase/functions/_shared/handlers/email-admins.ts'), 'utf-8')
+  + readFileSync(join(ROOT, 'supabase/functions/_shared/notices/deliver-to-admins.ts'), 'utf-8');
 
 describe('bokningen blir en nyhet', () => {
   it('eventet föds i tabellen — den BEFINTLIGA emittern består (uppmätt: tg_emit_booking_created)', () => {
@@ -37,7 +39,8 @@ describe('bokningen blir en nyhet', () => {
     const carrier = readdirSync(dir).some((f: string) =>
       readFileSync(join(dir, f), 'utf-8').includes('emit_booking_created'));
     expect(carrier, 'ingen migration bär booking-emittern').toBe(true);
-    expect(BOOKING).toContain('{{event.payload.data.customer_name}}');
+    // Since 2026-11-20 the notice reads the booking itself by the event's id.
+    expect(BOOKING).toContain("notice: 'booking.created',\n      booking_id: '{{event.payload.id}}'");
   });
 
   it('email_admins är en plattformsprimitiv med railen wirad', () => {

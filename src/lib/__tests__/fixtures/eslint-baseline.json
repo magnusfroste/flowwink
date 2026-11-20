@@ -1,5 +1,5 @@
 {
-  "errors": 3095,
+  "errors": 3087,
   "warnings": 92,
   "files": {
     "scripts/agent-surface-sweep.ts": 2,
@@ -398,7 +398,6 @@
     "supabase/functions/_shared/handlers/customer-360.ts": 14,
     "supabase/functions/_shared/handlers/docs-sync.ts": 1,
     "supabase/functions/_shared/handlers/draft-email-reply.ts": 2,
-    "supabase/functions/_shared/handlers/email-admins.ts": 7,
     "supabase/functions/_shared/handlers/enrich-company-profile.ts": 2,
     "supabase/functions/_shared/handlers/enrich-company.ts": 1,
     "supabase/functions/_shared/handlers/extract-receipt.ts": 5,
@@ -487,7 +486,7 @@
     "supabase/functions/newsletter/subscribe.ts": 5,
     "supabase/functions/openclaw-responses/index.ts": 10,
     "supabase/functions/quote-expiry-reminders/index.ts": 3,
-    "supabase/functions/quote-sign/index.ts": 3,
+    "supabase/functions/quote-sign/index.ts": 2,
     "supabase/functions/run-autonomy-tests/index.ts": 100,
     "supabase/functions/run-platform-tests/index.ts": 4,
     "supabase/functions/send-webhook/index.ts": 6,
