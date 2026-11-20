@@ -7,8 +7,10 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Pencil, Trash2, MapPin } from 'lucide-react';
+import { useUiText } from '@/lib/ui-text';
 
 function AddressForm({ address, onClose }: { address?: CustomerAddress; onClose: () => void }) {
+  const t = useUiText();
   const upsert = useUpsertAddress();
   const [form, setForm] = useState({
     label: address?.label || 'Home',
@@ -31,44 +33,44 @@ function AddressForm({ address, onClose }: { address?: CustomerAddress; onClose:
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label>Label</Label>
-          <Input value={form.label} onChange={e => setForm(p => ({ ...p, label: e.target.value }))} placeholder="Home" required />
+          <Label>{t('account.addresses.label', 'Label')}</Label>
+          <Input value={form.label} onChange={e => setForm(p => ({ ...p, label: e.target.value }))} placeholder={t('account.addresses.labelExample', 'Home')} required />
         </div>
         <div className="space-y-2">
-          <Label>Full Name</Label>
+          <Label>{t('account.addresses.fullName', 'Full name')}</Label>
           <Input value={form.full_name} onChange={e => setForm(p => ({ ...p, full_name: e.target.value }))} required />
         </div>
       </div>
       <div className="space-y-2">
-        <Label>Address Line 1</Label>
+        <Label>{t('account.addresses.line1', 'Address line 1')}</Label>
         <Input value={form.address_line1} onChange={e => setForm(p => ({ ...p, address_line1: e.target.value }))} required />
       </div>
       <div className="space-y-2">
-        <Label>Address Line 2</Label>
+        <Label>{t('account.addresses.line2', 'Address line 2')}</Label>
         <Input value={form.address_line2} onChange={e => setForm(p => ({ ...p, address_line2: e.target.value }))} />
       </div>
       <div className="grid grid-cols-3 gap-4">
         <div className="space-y-2">
-          <Label>City</Label>
+          <Label>{t('account.addresses.city', 'City')}</Label>
           <Input value={form.city} onChange={e => setForm(p => ({ ...p, city: e.target.value }))} required />
         </div>
         <div className="space-y-2">
-          <Label>Postal Code</Label>
+          <Label>{t('account.addresses.postalCode', 'Postal code')}</Label>
           <Input value={form.postal_code} onChange={e => setForm(p => ({ ...p, postal_code: e.target.value }))} required />
         </div>
         <div className="space-y-2">
-          <Label>Country</Label>
+          <Label>{t('account.addresses.country', 'Country')}</Label>
           <Input value={form.country} onChange={e => setForm(p => ({ ...p, country: e.target.value }))} required />
         </div>
       </div>
       <div className="space-y-2">
-        <Label>Phone</Label>
+        <Label>{t('account.addresses.phone', 'Phone')}</Label>
         <Input value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} />
       </div>
       <div className="flex justify-end gap-3 pt-2">
-        <Button type="button" variant="ghost" onClick={onClose}>Cancel</Button>
+        <Button type="button" variant="ghost" onClick={onClose}>{t('account.cancel', 'Cancel')}</Button>
         <Button type="submit" disabled={upsert.isPending}>
-          {address ? 'Update' : 'Add'} Address
+          {address ? t('account.addresses.update', 'Update address') : t('account.addresses.add', 'Add address')}
         </Button>
       </div>
     </form>
@@ -76,6 +78,7 @@ function AddressForm({ address, onClose }: { address?: CustomerAddress; onClose:
 }
 
 export default function AddressesPage() {
+  const t = useUiText();
   const { data: addresses = [], isLoading } = useCustomerAddresses();
   const deleteAddress = useDeleteAddress();
   const [editingAddress, setEditingAddress] = useState<CustomerAddress | undefined>();
@@ -92,17 +95,17 @@ export default function AddressesPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold">Saved Addresses</h2>
+        <h2 className="text-lg font-semibold">{t('account.addresses.title', 'Saved addresses')}</h2>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button size="sm" onClick={openNew}>
               <Plus className="h-4 w-4 mr-2" />
-              Add Address
+              {t('account.addresses.add', 'Add address')}
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>{editingAddress ? 'Edit Address' : 'New Address'}</DialogTitle>
+              <DialogTitle>{editingAddress ? t('account.addresses.edit', 'Edit address') : t('account.addresses.new', 'New address')}</DialogTitle>
             </DialogHeader>
             <AddressForm address={editingAddress} onClose={closeDialog} />
           </DialogContent>
@@ -112,8 +115,8 @@ export default function AddressesPage() {
       {addresses.length === 0 ? (
         <div className="text-center py-16 space-y-4">
           <MapPin className="h-16 w-16 mx-auto text-muted-foreground/30" />
-          <h3 className="text-lg font-medium">No saved addresses</h3>
-          <p className="text-muted-foreground">Add an address to speed up checkout.</p>
+          <h3 className="text-lg font-medium">{t('account.addresses.empty', 'No saved addresses')}</h3>
+          <p className="text-muted-foreground">{t('account.addresses.emptyHint', 'Add an address to speed up checkout.')}</p>
         </div>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">
@@ -124,7 +127,7 @@ export default function AddressesPage() {
                   <div>
                     <div className="flex items-center gap-2 mb-1">
                       <span className="font-medium">{addr.label}</span>
-                      {addr.is_default && <Badge variant="secondary" className="text-xs">Default</Badge>}
+                      {addr.is_default && <Badge variant="secondary" className="text-xs">{t('account.addresses.default', 'Default')}</Badge>}
                     </div>
                     <p className="text-sm text-muted-foreground">{addr.full_name}</p>
                     <p className="text-sm text-muted-foreground">{addr.address_line1}</p>

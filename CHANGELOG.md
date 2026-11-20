@@ -10,6 +10,14 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Added
 
+- **The customer's own pages follow the site's language.** Signing in,
+  activating an invited account, orders, addresses, the wishlist, the profile,
+  support requests, services and the assistant's introduction were English
+  built into the code. They are visitor texts now, with the platform's
+  Swedish. A ticket's status, priority and category, a service's state and a
+  price's "/ month" are words in the customer's language instead of the stored
+  value (`src/lib/customer-words.ts`).
+
 - **A Swedish site is Swedish from the first day.** What a visitor reads on
   the platform's own pages (the shop, the checkout, the customer portal, the
   booking, quote, agreement and invoice pages, the invoice PDF, the ticket and

@@ -13,19 +13,28 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, Mail, Lock, User } from 'lucide-react';
 import { toast } from 'sonner';
 import { z } from 'zod';
+import { useUiText } from '@/lib/ui-text';
 
 const loginSchema = z.object({
-  email: z.string().trim().email('Please enter a valid email'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  email: z.string().trim().email(),
+  password: z.string().min(6),
 });
 
 const signupSchema = z.object({
-  email: z.string().trim().email('Please enter a valid email'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
-  fullName: z.string().trim().min(2, 'Name must be at least 2 characters'),
+  email: z.string().trim().email(),
+  password: z.string().min(6),
+  fullName: z.string().trim().min(2),
 });
 
+/** What is wrong with a field, in the visitor's language — the schema only says which. */
+function fieldProblem(field: unknown, t: (key: string, fallback: string) => string): string {
+  if (field === 'password') return t('account.auth.passwordTooShort', 'Password must be at least 6 characters');
+  if (field === 'fullName') return t('account.auth.nameTooShort', 'Name must be at least 2 characters');
+  return t('account.auth.emailInvalid', 'Please enter a valid email');
+}
+
 export default function CustomerAuthPage() {
+  const t = useUiText();
   const [searchParams] = useSearchParams();
   const { data: portal } = useCustomerPortalSettings();
   const signupAllowed = portal ? portal.enabled && portal.allowSelfSignup : true;
@@ -55,14 +64,14 @@ export default function CustomerAuthPage() {
     e.preventDefault();
     const result = loginSchema.safeParse({ email: loginEmail, password: loginPassword });
     if (!result.success) {
-      toast.error(result.error.issues[0].message);
+      toast.error(fieldProblem(result.error.issues[0].path[0], t));
       return;
     }
     setIsLoading(true);
     const { error } = await customerSignIn(loginEmail, loginPassword);
     setIsLoading(false);
     if (error) {
-      toast.error(error.message === 'Invalid login credentials' ? 'Incorrect email or password' : error.message);
+      toast.error(error.message === 'Invalid login credentials' ? t('account.auth.wrongCredentials', 'Incorrect email or password') : error.message);
     } else {
       navigate(redirectTo);
     }
@@ -72,44 +81,44 @@ export default function CustomerAuthPage() {
     e.preventDefault();
     const result = signupSchema.safeParse({ email: signupEmail, password: signupPassword, fullName: signupName });
     if (!result.success) {
-      toast.error(result.error.issues[0].message);
+      toast.error(fieldProblem(result.error.issues[0].path[0], t));
       return;
     }
     setIsLoading(true);
     const { error } = await customerSignUp(signupEmail, signupPassword, signupName);
     setIsLoading(false);
     if (error) {
-      toast.error(error.message.includes('already registered') ? 'An account with this email already exists' : error.message);
+      toast.error(error.message.includes('already registered') ? t('account.auth.alreadyExists', 'An account with this email already exists') : error.message);
     } else {
-      toast.success('Account created! Please check your email to verify your account.');
+      toast.success(t('account.auth.created', 'Account created! Please check your email to verify your account.'));
     }
   };
 
   return (
     <>
-      <Helmet><title>{'Account'}</title></Helmet>
+      <Helmet><title>{t('account.title', 'My Account')}</title></Helmet>
       <PublicNavigation />
 
       <main className="min-h-screen bg-background flex items-center justify-center p-4">
         <div className="w-full max-w-md">
           <Card className="shadow-lg border-0 bg-card">
             <CardHeader className="text-center pb-2">
-              <CardTitle className="font-serif text-2xl">My Account</CardTitle>
+              <CardTitle className="font-serif text-2xl">{t('account.title', 'My Account')}</CardTitle>
               <CardDescription>
-                Sign in to track orders, save addresses, and manage your wishlist.
+                {t('account.auth.lead', 'Sign in to see your orders, invoices, agreements and support requests.')}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <Tabs defaultValue={defaultTab} className="w-full">
                 <TabsList className={`grid w-full mb-6 ${signupAllowed ? 'grid-cols-2' : 'grid-cols-1'}`}>
-                  <TabsTrigger value="login">Sign In</TabsTrigger>
-                  {signupAllowed && <TabsTrigger value="signup">Create Account</TabsTrigger>}
+                  <TabsTrigger value="login">{t('account.auth.signIn', 'Sign in')}</TabsTrigger>
+                  {signupAllowed && <TabsTrigger value="signup">{t('account.auth.create', 'Create account')}</TabsTrigger>}
                 </TabsList>
 
                 <TabsContent value="login">
                   <form onSubmit={handleLogin} className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="login-email">Email</Label>
+                      <Label htmlFor="login-email">{t('account.profile.email', 'Email')}</Label>
                       <div className="relative">
                         <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
@@ -125,7 +134,7 @@ export default function CustomerAuthPage() {
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="login-password">Password</Label>
+                      <Label htmlFor="login-password">{t('account.auth.password', 'Password')}</Label>
                       <div className="relative">
                         <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
@@ -142,7 +151,7 @@ export default function CustomerAuthPage() {
                     </div>
                     <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
                       {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                      Sign In
+                      {t('account.auth.signIn', 'Sign in')}
                     </Button>
                   </form>
                 </TabsContent>
@@ -150,7 +159,7 @@ export default function CustomerAuthPage() {
                 {signupAllowed && <TabsContent value="signup">
                   <form onSubmit={handleSignup} className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="signup-name">Full Name</Label>
+                      <Label htmlFor="signup-name">{t('account.addresses.fullName', 'Full name')}</Label>
                       <div className="relative">
                         <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
@@ -165,7 +174,7 @@ export default function CustomerAuthPage() {
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="signup-email">Email</Label>
+                      <Label htmlFor="signup-email">{t('account.profile.email', 'Email')}</Label>
                       <div className="relative">
                         <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
@@ -181,13 +190,13 @@ export default function CustomerAuthPage() {
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="signup-password">Password</Label>
+                      <Label htmlFor="signup-password">{t('account.auth.password', 'Password')}</Label>
                       <div className="relative">
                         <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
                           id="signup-password"
                           type="password"
-                          placeholder="At least 6 characters"
+                          placeholder={t('account.auth.passwordHint', 'At least 6 characters')}
                           value={signupPassword}
                           onChange={(e) => setSignupPassword(e.target.value)}
                           className="pl-10"
@@ -198,7 +207,7 @@ export default function CustomerAuthPage() {
                     </div>
                     <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
                       {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                      Create Account
+                      {t('account.auth.create', 'Create account')}
                     </Button>
                   </form>
                 </TabsContent>}
@@ -208,7 +217,7 @@ export default function CustomerAuthPage() {
 
           <div className="text-center mt-6 space-y-2">
             <Link to="/shop" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-              ← Continue shopping
+              ← {t('account.auth.backToShop', 'Continue shopping')}
             </Link>
           </div>
         </div>

@@ -17,6 +17,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { AlertCircle, ArrowRight, FileSignature, LifeBuoy, Package, Receipt, ShoppingBag } from 'lucide-react';
 import { useCustomerFormat } from '@/hooks/useCustomerFormat';
 import { useUiText } from '@/lib/ui-text';
+import { billingIntervalWord } from '@/lib/customer-words';
 import { agreementAwaitsSignature, invoiceIsOpen, useMyAccount } from '@/hooks/useMyAccount';
 
 export default function AccountOverviewPage() {
@@ -111,7 +112,7 @@ export default function AccountOverviewPage() {
           <Section icon={<Package className="h-4 w-4 text-primary" />} title={t('account.overview.services', 'Your services')} to="/account/services" more={t('account.overview.all', 'See all')}>
             {data.services.slice(0, 4).map((s) => (
               <Row key={s.id} label={s.product_name || t('account.overview.service', 'Service')}
-                value={s.unit_amount_cents != null ? `${formatCurrency(s.unit_amount_cents, s.currency ?? undefined)}${s.billing_interval ? ` / ${s.billing_interval}` : ''}` : ''} />
+                value={s.unit_amount_cents != null ? `${formatCurrency(s.unit_amount_cents, s.currency ?? undefined)}${s.billing_interval ? ` / ${billingIntervalWord(s.billing_interval, t)}` : ''}` : ''} />
             ))}
           </Section>
         )}

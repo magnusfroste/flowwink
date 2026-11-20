@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Package, ChevronDown, ChevronUp, ShoppingBag } from 'lucide-react';
 import { useCustomerFormat } from '@/hooks/useCustomerFormat';
+import { useUiText } from '@/lib/ui-text';
 
 const statusVariant: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
   paid: 'default',
@@ -22,15 +23,25 @@ const statusVariant: Record<string, 'default' | 'secondary' | 'destructive' | 'o
  * been destroyed to say it. Now the two axes have a chip each: payment on the
  * left, where the goods are on the right.
  */
-const FULFILLMENT_LABELS: Record<string, string> = {
-  picked: 'Picked',
-  packed: 'Packed',
-  shipped: 'Shipped',
-  delivered: 'Delivered',
+type Words = (key: string, fallback: string) => string;
+const fulfillmentLabel = (status: string, t: Words): string | null => {
+  if (status === 'picked') return t('account.orders.picked', 'Picked');
+  if (status === 'packed') return t('account.orders.packed', 'Packed');
+  if (status === 'shipped') return t('account.orders.shipped', 'Shipped');
+  if (status === 'delivered') return t('account.orders.delivered', 'Delivered');
+  return null;
+};
+const paymentLabel = (status: string, t: Words): string => {
+  if (status === 'paid') return t('account.orders.paid', 'Paid');
+  if (status === 'pending') return t('account.orders.pending', 'Pending');
+  if (status === 'failed') return t('account.orders.failed', 'Failed');
+  if (status === 'refunded') return t('account.orders.refunded', 'Refunded');
+  return status;
 };
 
 function OrderRow({ order }: { order: CustomerOrder }) {
   const { formatPrice, formatDateTime } = useCustomerFormat();
+  const t = useUiText();
   const [expanded, setExpanded] = useState(false);
   const { data: items = [] } = useCustomerOrderItems(expanded ? order.id : null);
 
@@ -46,18 +57,18 @@ function OrderRow({ order }: { order: CustomerOrder }) {
               <Package className="h-5 w-5 text-muted-foreground" />
             </div>
             <div className="min-w-0">
-              <p className="font-medium text-sm truncate">Order #{order.id.slice(0, 8)}</p>
+              <p className="font-medium text-sm truncate">{t('account.orders.orderNumber', 'Order #{number}').replace('{number}', order.id.slice(0, 8))}</p>
               <p className="text-xs text-muted-foreground">
                 {formatDateTime(order.created_at, { hour: undefined, minute: undefined })}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-3 shrink-0">
-            {order.fulfillment_status && FULFILLMENT_LABELS[order.fulfillment_status] && (
-              <Badge variant="outline">{FULFILLMENT_LABELS[order.fulfillment_status]}</Badge>
+            {order.fulfillment_status && fulfillmentLabel(order.fulfillment_status, t) && (
+              <Badge variant="outline">{fulfillmentLabel(order.fulfillment_status, t)}</Badge>
             )}
-            <Badge variant={statusVariant[order.status] || 'secondary'} className="capitalize">
-              {order.status}
+            <Badge variant={statusVariant[order.status] || 'secondary'}>
+              {paymentLabel(order.status, t)}
             </Badge>
             <span className="font-bold text-sm">{formatPrice(order.total_cents, order.currency)}</span>
             {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
@@ -85,7 +96,7 @@ function OrderRow({ order }: { order: CustomerOrder }) {
 
         {expanded && order.shipping_address_line1 && (
           <div className="mt-4 pt-4 border-t text-sm">
-            <p className="text-xs font-medium text-muted-foreground mb-1">Delivery address</p>
+            <p className="text-xs font-medium text-muted-foreground mb-1">{t('account.orders.deliveryAddress', 'Delivery address')}</p>
             <p>{order.shipping_name}</p>
             <p>{order.shipping_address_line1}</p>
             {order.shipping_address_line2 && <p>{order.shipping_address_line2}</p>}
@@ -102,6 +113,7 @@ function OrderRow({ order }: { order: CustomerOrder }) {
 
 export default function CustomerOrdersPage() {
   const { data: orders = [], isLoading } = useCustomerOrders();
+  const t = useUiText();
 
   if (isLoading) {
     return <div className="space-y-3">{[1, 2, 3].map(i => <div key={i} className="h-20 rounded-xl bg-muted animate-pulse" />)}</div>;
@@ -111,10 +123,10 @@ export default function CustomerOrdersPage() {
     return (
       <div className="text-center py-16 space-y-4">
         <ShoppingBag className="h-16 w-16 mx-auto text-muted-foreground/30" />
-        <h2 className="text-xl font-semibold">No orders yet</h2>
-        <p className="text-muted-foreground">When you place an order, it will appear here.</p>
+        <h2 className="text-xl font-semibold">{t('account.orders.empty', 'No orders yet')}</h2>
+        <p className="text-muted-foreground">{t('account.orders.emptyHint', 'When you place an order, it will appear here.')}</p>
         <Button asChild>
-          <Link to="/shop">Browse products</Link>
+          <Link to="/shop">{t('account.browseProducts', 'Browse products')}</Link>
         </Button>
       </div>
     );
@@ -122,7 +134,7 @@ export default function CustomerOrdersPage() {
 
   return (
     <div className="space-y-3">
-      <h2 className="text-lg font-semibold mb-4">Order History</h2>
+      <h2 className="text-lg font-semibold mb-4">{t('account.orders.history', 'Order history')}</h2>
       {orders.map((order) => (
         <OrderRow key={order.id} order={order} />
       ))}

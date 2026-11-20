@@ -2,6 +2,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { ChatConversation } from '@/components/chat/ChatConversation';
 import { useCustomerAuth } from '@/hooks/useCustomerAuth';
 import { Sparkles } from 'lucide-react';
+import { useUiText } from '@/lib/ui-text';
 
 // build-marker: 2026-07-15 redeploy trigger for /account/assistant route
 /**
@@ -12,6 +13,7 @@ import { Sparkles } from 'lucide-react';
  * the same one engine, one rung up.
  */
 export default function AccountAssistantPage() {
+  const t = useUiText();
   const { profile } = useCustomerAuth();
   const firstName = profile?.full_name?.split(' ')[0];
 
@@ -20,11 +22,12 @@ export default function AccountAssistantPage() {
       <div>
         <h1 className="flex items-center gap-2 text-2xl font-semibold">
           <Sparkles className="h-6 w-6 text-primary" />
-          Assistant
+          {t('account.nav.assistant', 'Assistant')}
         </h1>
         <p className="text-muted-foreground">
-          {firstName ? `Hi ${firstName} — ask` : 'Ask'} about your orders, invoices, subscriptions or bookings.
-          The assistant sees your own account and can help you get things done.
+          {firstName
+            ? t('account.assistant.leadNamed', 'Hi {name} — ask about your orders, invoices, subscriptions or bookings. The assistant sees your own account and can help you get things done.').replace('{name}', firstName)
+            : t('account.assistant.lead', 'Ask about your orders, invoices, subscriptions or bookings. The assistant sees your own account and can help you get things done.')}
         </p>
       </div>
 

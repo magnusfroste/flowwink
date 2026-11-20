@@ -139,7 +139,10 @@ describe('the intake form asks only what the system cannot know', () => {
 
 describe('the customer sees delivery as a state, in plain words', () => {
   it("labels 'provisioning' as being set up, not the raw enum", () => {
-    expect(myServices).toMatch(/provisioning:\s*['"]Being set up['"]/);
+    // The word lives with the customer's other words now, in the site's language.
+    const words = readFileSync('src/lib/customer-words.ts', 'utf8');
+    expect(words).toMatch(/status === 'provisioning'\) return t\('service\.status\.provisioning', 'Being set up'\)/);
+    expect(myServices).toMatch(/serviceStatusWord\(s\.status, t\)/);
   });
 
   it('explains the wait while a service is provisioning', () => {

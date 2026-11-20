@@ -21,8 +21,10 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
+import { useUiText } from '@/lib/ui-text';
 
 export default function ActivateAccountPage() {
+  const t = useUiText();
   const navigate = useNavigate();
   const [params] = useSearchParams();
   // 'confirm': the link carries token_hash — nothing has been consumed yet,
@@ -61,14 +63,14 @@ export default function ActivateAccountPage() {
       }
     };
     // Give the client a beat to parse the URL hash on first mount.
-    const t = setTimeout(resolve, 400);
+    const timer = setTimeout(resolve, 400);
     const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
       if (session?.user?.email) {
         setEmail(session.user.email);
         setStatus('ready');
       }
     });
-    return () => { active = false; clearTimeout(t); sub.subscription.unsubscribe(); };
+    return () => { active = false; clearTimeout(timer); sub.subscription.unsubscribe(); };
   }, [tokenHash]);
 
   const [verifying, setVerifying] = useState(false);
@@ -90,15 +92,15 @@ export default function ActivateAccountPage() {
   };
 
   const submit = async () => {
-    if (password.length < 8) { toast.error('Password must be at least 8 characters.'); return; }
-    if (password !== confirm) { toast.error('The passwords do not match.'); return; }
+    if (password.length < 8) { toast.error(t('account.activate.tooShort', 'Password must be at least 8 characters.')); return; }
+    if (password !== confirm) { toast.error(t('account.activate.mismatch', 'The passwords do not match.')); return; }
     setSubmitting(true);
     try {
       // Sets the password on the ALREADY-EXISTING invited account (the session
       // is that account). The email is never sent — it cannot be changed here.
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw error;
-      toast.success('Welcome — your account is ready.');
+      toast.success(t('account.activate.welcome', 'Welcome — your account is ready.'));
       // Where the invitation was headed. A colleague invited to the admin should
       // land in the admin, a portal customer in the portal — one activation
       // screen, two destinations, rather than a second copy of a password form.
@@ -119,7 +121,7 @@ export default function ActivateAccountPage() {
         {status === 'checking' && (
           <CardContent className="py-16 flex flex-col items-center gap-3 text-muted-foreground">
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
-            <span className="text-sm">Verifying your invitation…</span>
+            <span className="text-sm">{t('account.activate.verifying', 'Verifying your invitation…')}</span>
           </CardContent>
         )}
 
@@ -128,17 +130,17 @@ export default function ActivateAccountPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <ShieldCheck className="h-5 w-5 text-primary" />
-                {tokenType === 'recovery' ? 'Set a new password' : 'Accept your invitation'}
+                {tokenType === 'recovery' ? t('account.activate.newPasswordTitle', 'Set a new password') : t('account.activate.acceptTitle', 'Accept your invitation')}
               </CardTitle>
               <CardDescription>
                 {tokenType === 'recovery'
-                  ? 'Continue to choose a new password for your account.'
-                  : 'Continue to activate your account and choose a password.'}
+                  ? t('account.activate.newPasswordLead', 'Continue to choose a new password for your account.')
+                  : t('account.activate.acceptLead', 'Continue to activate your account and choose a password.')}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <Button className="w-full" onClick={confirmLink} disabled={verifying} autoFocus>
-                {verifying ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Continue'}
+                {verifying ? <Loader2 className="h-4 w-4 animate-spin" /> : t('account.activate.continue', 'Continue')}
               </Button>
             </CardContent>
           </>
@@ -147,15 +149,14 @@ export default function ActivateAccountPage() {
         {status === 'invalid' && (
           <>
             <CardHeader>
-              <CardTitle>Invitation link expired</CardTitle>
+              <CardTitle>{t('account.activate.expiredTitle', 'Invitation link expired')}</CardTitle>
               <CardDescription>
-                This activation link is no longer valid — it may already have
-                been used, or it expired. Contact us and we'll send a new one.
+                {t('account.activate.expiredLead', 'This activation link is no longer valid — it may already have been used, or it expired. Contact us and we will send a new one.')}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <Button variant="outline" className="w-full" onClick={() => navigate('/')}>
-                Back to homepage
+                {t('account.activate.home', 'Back to homepage')}
               </Button>
             </CardContent>
           </>
@@ -165,32 +166,32 @@ export default function ActivateAccountPage() {
           <>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <ShieldCheck className="h-5 w-5 text-primary" /> Set your password
+                <ShieldCheck className="h-5 w-5 text-primary" /> {t('account.activate.setTitle', 'Set your password')}
               </CardTitle>
               <CardDescription>
-                Choose a password to finish setting up your account.
+                {t('account.activate.setLead', 'Choose a password to finish setting up your account.')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label>Email</Label>
+                <Label>{t('account.profile.email', 'Email')}</Label>
                 {/* Read-only, from the invite session — the whole point. */}
                 <Input value={email} readOnly disabled className="bg-muted" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="pw">New password</Label>
+                <Label htmlFor="pw">{t('account.activate.newPassword', 'New password')}</Label>
                 <Input id="pw" type="password" value={password}
                   onChange={(e) => setPassword(e.target.value)} autoFocus />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="pw2">Confirm password</Label>
+                <Label htmlFor="pw2">{t('account.activate.confirmPassword', 'Confirm password')}</Label>
                 <Input id="pw2" type="password" value={confirm}
                   onChange={(e) => setConfirm(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && submit()} />
               </div>
               <Button className="w-full" onClick={submit} disabled={submitting || !password || !confirm}>
                 {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                Activate account
+                {t('account.activate.submit', 'Activate account')}
               </Button>
             </CardContent>
           </>
