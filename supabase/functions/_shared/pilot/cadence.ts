@@ -7,7 +7,7 @@
  * execute_automation, workflow_execute, chain_skills — handlers.ts, which
  * reason.ts imports). A route that skips it is a way around the quota.
  */
-import { startOfBusinessDay } from '../locale/home.ts';
+import { addDaysToDate, dateInZone, startOfBusinessDay, wallClockToInstant } from '../locale/home.ts';
 import { loadHomeCached } from '../locale/load-home.ts';
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
@@ -17,6 +17,16 @@ type Cadence = { max?: unknown; per?: unknown; every?: unknown; counts?: unknown
 type CadenceSubject = { goal?: unknown; constraints?: unknown };
 const cadenceOf = (o: CadenceSubject): Cadence | undefined =>
   ((o.constraints ?? undefined) as { cadence?: Cadence | null } | undefined)?.cadence ?? undefined;
+/**
+ * Midnight on the business's clock, `daysAgo` calendar days before today — on
+ * the date, not by subtracting hours, so a DST change inside the window moves
+ * nothing.
+ */
+export function businessDayStartDaysAgo(timeZone: string, daysAgo: number, at: Date = new Date()): Date {
+  if (daysAgo <= 0) return startOfBusinessDay(timeZone, at);
+  const instant = wallClockToInstant(`${addDaysToDate(dateInZone(timeZone, at), -daysAgo)}T00:00`, timeZone);
+  return instant ? new Date(instant) : new Date(startOfBusinessDay(timeZone, at).getTime() - daysAgo * 86_400_000);
+}
 type ActivityRow = { skill_name: string; created_at: string; answer?: string | null };
 
 /**
@@ -38,10 +48,17 @@ type ActivityRow = { skill_name: string; created_at: string; answer?: string | n
  * the honest way: it reads the blog (browse_blog, content_calendar_view) before
  * it writes.
  * `every` stretches the period: { max: 1, per: 'day', every: 3 } is one post
- * per rolling three days, { max: 1, per: 'week', every: 2 } one per fortnight.
- * Without `every`, 'day' means the current UTC day and 'week' the rolling
- * seven days — unchanged. "Var tredje dag" in prose was how autoversio came
- * to publish daily (2026-09-04): the rhythm has to live in structure.
+ * per three days, { max: 1, per: 'week', every: 2 } one per fortnight.
+ * "Var tredje dag" in prose was how autoversio came to publish daily
+ * (2026-09-04): the rhythm has to live in structure.
+ *
+ * A period is counted in the business's CALENDAR days, today included — 'day'
+ * is today, 'week' is today and the six days before it, every: 3 days is today
+ * and the two before. Never in hours: the heartbeat ticks at the same minute
+ * every day and the delivery lands a minute into the tick, so a window of
+ * exactly 7 × 24 h still held last week's post when this week's tick started.
+ * On liteit "one post a week" became one every eight days (10-28 → 11-05 →
+ * 11-14 → not 11-21, 2026-11-20).
  *
  * A satisfied objective is DROPPED FROM THE WORKING SET for this turn, not
  * failed and not completed: the loop then spends the turn on other work rather
@@ -63,13 +80,11 @@ export async function partitionByCadence<T extends CadenceSubject>(
   const skills = [...new Set(withCadence.map((o) => String(cadenceOf(o)?.counts)))];
   // "One post a day" is the business's day — on the UTC day, a post at 00:30
   // in Stockholm counted toward yesterday's quota.
-  const dayStart = startOfBusinessDay((await loadHomeCached(supabase)).timeZone);
-  const weekStart = new Date(Date.now() - 7 * 86_400_000);
+  const timeZone = (await loadHomeCached(supabase)).timeZone;
   const windowStartOf = (c: Cadence): Date => {
     const every = Number(c.every) > 1 ? Math.floor(Number(c.every)) : 1;
-    if (every === 1) return c.per === 'week' ? weekStart : dayStart;
     const days = (c.per === 'week' ? 7 : 1) * every;
-    return new Date(Date.now() - days * 86_400_000);
+    return businessDayStartDaysAgo(timeZone, days - 1);
   };
   const earliest = Math.min(...withCadence.map((o) => windowStartOf(cadenceOf(o) ?? {}).getTime()));
   const since = new Date(earliest).toISOString();
