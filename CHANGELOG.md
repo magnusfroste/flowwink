@@ -10,6 +10,15 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 
 ### Added
 
+- **A block can be set per screen width.** Every block takes `responsive`
+  on its envelope: hide it on phones, tablets or desktops, align its text, and
+  — on the eleven grid blocks (features, team, testimonials, pricing, gallery,
+  products …) — choose the number of columns at each width. In the page
+  editor it is the "Per screen width" button on a block; an agent sets it with
+  `manage_page` or `manage_page_blocks` (`describe_blocks` returns the rule).
+  A single-block add or update can now also set the section surface and the
+  anchor, which only a whole-page write could before.
+
 - **An employee's own pages follow the site's language.** Leave, the time
   clock, expenses, payslips, skills, goals and reviews, the employment
   contract and a manager's team were English built into the code, and showed

@@ -732,6 +732,19 @@ export function BlockEditor({ blocks, onChange, canEdit }: BlockEditorProps) {
     [blocks, onChange]
   );
 
+  const handleUpdateBlockResponsive = useCallback(
+    (blockId: string, responsive: import('@/lib/block-responsive').BlockResponsive | undefined) => {
+      onChange(
+        blocks.map((block) => {
+          if (block.id !== blockId) return block;
+          const { responsive: _previous, ...rest } = block;
+          return responsive ? { ...rest, responsive } : rest;
+        })
+      );
+    },
+    [blocks, onChange]
+  );
+
   const handleMoveBlock = useCallback(
     (blockId: string, direction: -1 | 1) => {
       const oldIndex = blocks.findIndex((block) => block.id === blockId);
@@ -1338,6 +1351,7 @@ export function BlockEditor({ blocks, onChange, canEdit }: BlockEditorProps) {
               onAnchorChange={(anchorId) => handleUpdateBlockAnchor(block.id, anchorId)}
               onToggleHidden={(hidden) => handleToggleHidden(block.id, hidden)}
               onBackgroundChange={(bg) => handleUpdateBlockBackground(block.id, bg)}
+              onResponsiveChange={(responsive) => handleUpdateBlockResponsive(block.id, responsive)}
               canEdit={canEdit}
             >
               {renderBlockContent(block, editingBlockId === block.id)}

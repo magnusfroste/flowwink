@@ -463,6 +463,8 @@ export interface ContentBlock {
   hidden?: boolean;
   /** Full-width section background style */
   sectionBackground?: SectionBackground;
+  /** Per-width overrides: hidden, columns (grid blocks), text alignment — see src/lib/block-responsive.ts */
+  responsive?: import('@/lib/block-responsive').BlockResponsive;
 }
 
 export type HeroLayout = 'centered' | 'split-left' | 'split-right';

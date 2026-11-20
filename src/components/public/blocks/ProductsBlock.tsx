@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils';
 import { useUiText, useUiTextLanguage } from '@/lib/ui-text';
 import { Link } from 'react-router-dom';
 import { usePricePeriodText } from '@/lib/price-period-text';
+import { useResponsiveGrid } from '@/components/public/BlockResponsiveContext';
 
 export interface ProductsBlockData {
   title?: string;
@@ -33,6 +34,8 @@ interface ProductsBlockProps {
 }
 
 export function ProductsBlock({ data }: ProductsBlockProps) {
+  // Per-width column overrides from the block's envelope (#939).
+  const responsiveGrid = useResponsiveGrid();
   const { formatCurrency } = useCustomerFormat();
   // The page's language (null on the site's own): products and categories
   // in that language, links to /<lang>/shop/<id> (page-translations.md §10).
@@ -145,7 +148,7 @@ export function ProductsBlock({ data }: ProductsBlockProps) {
             <p className="text-muted-foreground">{t('shop.emptyCategory', 'No products in this category')}</p>
           </div>
         ) : (
-          <div className={cn('grid gap-6', gridCols[columns] ?? gridCols[3])}>
+          <div className={cn('grid gap-6', gridCols[columns] ?? gridCols[3], responsiveGrid)}>
             {filteredProducts.map(product => {
               const inCart = isInCart(product.id);
               const hasVariants = variantProductIds?.has(product.id) ?? false;

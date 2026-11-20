@@ -5,12 +5,15 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useResponsiveGrid } from '@/components/public/BlockResponsiveContext';
 
 interface GalleryBlockProps {
   data: GalleryBlockData;
 }
 
 export function GalleryBlock({ data }: GalleryBlockProps) {
+  // Per-width column overrides from the block's envelope (#939).
+  const responsiveGrid = useResponsiveGrid();
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const images = data.images || [];
   const columns = data.columns || 3;
@@ -41,7 +44,7 @@ export function GalleryBlock({ data }: GalleryBlockProps) {
   if (images.length === 0) return null;
 
   const renderGrid = () => (
-    <div className={cn('grid', spacing.gap, gridCols)}>
+    <div className={cn('grid', spacing.gap, gridCols, responsiveGrid)}>
       {images.map((image, index) => (
         <button
           key={index}
@@ -69,7 +72,7 @@ export function GalleryBlock({ data }: GalleryBlockProps) {
       'sm:columns-2': columns >= 2,
       'lg:columns-3': columns >= 3,
       'xl:columns-4': columns >= 4,
-    })}>
+    }, responsiveGrid)}>
       {images.map((image, index) => (
         <button
           key={index}

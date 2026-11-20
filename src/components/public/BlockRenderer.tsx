@@ -136,6 +136,8 @@ import type { AiAssistantBlockData } from './blocks/AiAssistantBlock';
 import type { QuickLinksBlockData } from './blocks/QuickLinksBlock';
 import type { HandbookBlockData } from './blocks/HandbookBlock';
 import type { JobListingsBlockData } from './blocks/JobListingsBlock';
+import { responsiveGridClasses, responsiveShellClasses } from '@/lib/block-responsive';
+import { BlockResponsiveGridContext } from './BlockResponsiveContext';
 
 interface BlockRendererProps {
   block: ContentBlock;
@@ -210,6 +212,11 @@ function getSectionBackgroundClasses(bg?: SectionBackground): { section: string;
 export function BlockRenderer({ block, pageId, index = 0, resolvedBackground }: BlockRendererProps) {
   // Skip hidden blocks on public site
   if (block.hidden) return null;
+
+  // Per-width overrides (#939): where the block is hidden and how its text
+  // aligns go on the shell; a grid block picks its column classes up itself.
+  const responsiveShell = responsiveShellClasses(block.responsive);
+  const responsiveGrid = responsiveGridClasses(block.responsive);
 
   const spacingClasses = getSpacingClasses(block.spacing);
   
@@ -368,7 +375,11 @@ export function BlockRenderer({ block, pageId, index = 0, resolvedBackground }: 
 
   // Wrap in Suspense so lazy-loaded block chunks resolve gracefully without
   // blocking the rest of the page. fallback={null} avoids a visible flicker.
-  const content = <Suspense fallback={null}>{renderBlock()}</Suspense>;
+  const content = (
+    <BlockResponsiveGridContext.Provider value={responsiveGrid}>
+      <Suspense fallback={null}>{renderBlock()}</Suspense>
+    </BlockResponsiveGridContext.Provider>
+  );
   const anchorId = block.anchorId || block.id;
   // Overlay blocks (fixed position) render without any wrapper to avoid taking up document flow
   if (OVERLAY_TYPES.has(block.type)) {
@@ -400,12 +411,13 @@ export function BlockRenderer({ block, pageId, index = 0, resolvedBackground }: 
         bgClass,
         textClass,
         !isFullBleed && 'py-8 md:py-12 lg:py-16',
+        responsiveShell,
       )}
     >
       {innerContent}
     </section>
   ) : (
-    <div id={anchorId} className={spacingClasses}>
+    <div id={anchorId} className={cn(spacingClasses, responsiveShell)}>
       {content}
     </div>
   );

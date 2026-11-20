@@ -368,6 +368,19 @@ product's translation carries the attributes its variants use
 (`variant_labels` in the answer), one attribute alone is `translate_content(entity:
 "product_attribute", attribute_id)`.
 
+**Block envelope: `responsive` (2026-11-20, #939)** — next to `type` and `data`,
+`{ sm?, md?, lg? }` (phones below 768 px, tablets 768–1023, desktops 1024 up), each
+`{ hidden?: true, columns?: 1–6, align?: left|center|right }`. `hidden` and `align`
+(TEXT alignment) go on the block's shell in `BlockRenderer`; `columns` reaches the
+grid blocks only (`GRID_BLOCK_TYPES`), each of which adds `useResponsiveGrid()` to
+its grid element. The RULES live in `_shared/blocks/envelope.ts` (shared with the
+executor); the CLASSES in `src/lib/block-responsive.ts`, spelled out in full because
+Tailwind reads `src/` only — never assemble one from parts. `manage_page_blocks`
+add/update take `responsive`, `sectionBackground` and `anchorId` beside
+`block_data` (an update may carry only these; `null` clears); a wrong width or key
+is refused (`INVALID_INPUT`), `columns` on a non-grid block is stored with a note.
+A new grid block joins the list AND reads the hook — a guard counts both.
+
 **`site_branding_update`** — non-destructive (only passed fields change) and
 theme-aware: `logo_dark_url` / `primary_color_dark` are what the header, footer and
 chat widget show in dark theme; `heading_font` / `body_font` split `font_family`.
