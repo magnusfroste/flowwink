@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { HelpCircle, ChevronRight } from 'lucide-react';
 import { useKbSlug } from '@/hooks/useKbSlug';
+import { useUiText } from '@/lib/ui-text';
 
 export interface KbFeaturedBlockData {
   title?: string;
@@ -37,8 +38,9 @@ interface KbFeaturedArticle {
 }
 
 export function KbFeaturedBlock({ data }: KbFeaturedBlockProps) {
+  const t = useUiText();
   const {
-    title = 'Frequently Asked Questions',
+    title = t('kbFeatured.title', 'Frequently Asked Questions'),
     subtitle,
     maxItems = 6,
     showCategory = true,

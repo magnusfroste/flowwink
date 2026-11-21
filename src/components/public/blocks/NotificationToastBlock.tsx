@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import { X, ShoppingCart, User, Star, MessageCircle, Heart, Bell, Check } from 'lucide-react';
+import { useUiText } from '@/lib/ui-text';
 
 export interface NotificationItem {
   id: string;
@@ -57,6 +58,7 @@ function getRandomLocation(): string {
 }
 
 export function NotificationToastBlock({ data }: NotificationToastBlockProps) {
+  const t = useUiText();
   const {
     notifications = [],
     variant = 'default',
@@ -218,7 +220,7 @@ export function NotificationToastBlock({ data }: NotificationToastBlockProps) {
         <button
           onClick={handleClose}
           className="flex-shrink-0 p-1 rounded-full hover:bg-muted transition-colors"
-          aria-label="Close notification"
+          aria-label={t('notification.close', 'Close notification')}
         >
           <X className="w-4 h-4 text-muted-foreground" />
         </button>

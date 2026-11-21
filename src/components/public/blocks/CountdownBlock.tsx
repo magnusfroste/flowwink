@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { cn } from '@/lib/utils';
+import { useUiText } from '@/lib/ui-text';
 
 export interface CountdownBlockData {
   title?: string;
@@ -49,11 +50,12 @@ interface CountdownBlockProps {
 }
 
 export function CountdownBlock({ data }: CountdownBlockProps) {
+  const t = useUiText();
   const {
     title,
     subtitle,
     targetDate,
-    expiredMessage = 'Time has expired!',
+    expiredMessage = t('countdown.expiredMessage', 'Time has expired!'),
     showDays = true,
     showHours = true,
     showMinutes = true,

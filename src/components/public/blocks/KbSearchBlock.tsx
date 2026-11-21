@@ -4,6 +4,7 @@ import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useKbSlug } from '@/hooks/useKbSlug';
+import { useUiText } from '@/lib/ui-text';
 
 interface KbSearchBlockData {
   title?: string;
@@ -20,14 +21,15 @@ interface KbSearchBlockProps {
 }
 
 export function KbSearchBlock({ data }: KbSearchBlockProps) {
+  const t = useUiText();
   const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
   
   const {
     title,
     subtitle,
-    placeholder = 'Search for answers...',
-    buttonText = 'Search',
+    placeholder = t('kbSearch.placeholder', 'Search for answers...'),
+    buttonText = t('kbSearch.buttonText', 'Search'),
     variant = 'default',
     showButton = true,
     kbPageSlug,

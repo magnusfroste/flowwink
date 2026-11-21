@@ -211,7 +211,7 @@ export function SmartBookingBlock({ data, blockId, pageId }: SmartBookingBlockPr
           const checkoutData = await checkoutResponse.json();
 
           if (!checkoutResponse.ok) {
-            throw new Error(checkoutData.error || 'Checkout failed');
+            throw new Error(checkoutData.error || t('booking.checkoutFailed', 'Checkout failed'));
           }
 
           // Sandbox mode — payment simulated, confirm booking directly
@@ -719,10 +719,10 @@ export function SmartBookingBlock({ data, blockId, pageId }: SmartBookingBlockPr
                 ) : serviceRequiresPayment ? (
                   <>
                     <CreditCard className="mr-2 h-4 w-4" />
-                    {`Confirm & Pay ${selectedService ? formatCurrency(selectedService.price_cents!, selectedService.currency) : ''}`}
+                    {t('booking.confirmAndPay', 'Confirm & pay {amount}').replace('{amount}', selectedService ? formatCurrency(selectedService.price_cents!, selectedService.currency) : '')}
                   </>
                 ) : (
-                  data.submitButtonText || 'Confirm Booking'
+                  data.submitButtonText || t('booking.confirm', 'Confirm booking')
                 )}
               </Button>
             </form>

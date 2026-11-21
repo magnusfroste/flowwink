@@ -3,12 +3,14 @@ import { Rocket, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SeoHead } from '@/components/public/SeoHead';
 import { useBrandingSettings } from '@/hooks/useSiteSettings';
+import { useUiText } from '@/lib/ui-text';
 
 export function ComingSoonPage() {
+  const t = useUiText();
   const navigate = useNavigate();
   const { data: branding } = useBrandingSettings();
   
-  const siteName = branding?.organizationName || 'Our Website';
+  const siteName = branding?.organizationName || t('comingSoon.siteName', 'Our website');
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center">

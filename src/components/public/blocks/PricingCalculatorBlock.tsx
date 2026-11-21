@@ -6,6 +6,7 @@ import { BlockSection, SectionHeading } from './_shared';
 import { cn } from '@/lib/utils';
 import { useCustomerFormat } from '@/hooks/useCustomerFormat';
 import { homeCurrency } from '@/lib/platform-fallbacks';
+import { useUiText } from '@/lib/ui-text';
 
 export interface PricingCalculatorVariable {
   id: string;
@@ -37,10 +38,11 @@ interface Props {
 }
 
 export function PricingCalculatorBlock({ data }: Props) {
+  const t = useUiText();
   // Numbers in the page's language, written the business's way.
   const { locale, formatNumber } = useCustomerFormat();
   const {
-    title = 'Estimate your price',
+    title = t('pricingCalculator.title', 'Estimate your price'),
     subtitle,
     eyebrow,
     basePrice = 0,

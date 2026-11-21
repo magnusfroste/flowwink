@@ -164,7 +164,7 @@ export default function CustomerAuthPage() {
                         <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
                           id="signup-name"
-                          placeholder="Jane Doe"
+                          placeholder={t('auth.namePlaceholder', 'Jane Doe')}
                           value={signupName}
                           onChange={(e) => setSignupName(e.target.value)}
                           className="pl-10"

@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import { createLeadFromWebinar } from '@/lib/lead-utils';
 import { useCustomerFormat } from '@/hooks/useCustomerFormat';
 import { useUiTextLanguage } from '@/lib/ui-text';
+import { useUiText } from '@/lib/ui-text';
 
 interface WebinarBlockData {
   title?: string;
@@ -50,6 +51,7 @@ const PLATFORM_LABELS: Record<string, string> = {
 };
 
 export function WebinarBlock({ data, blockId, pageId }: WebinarBlockProps) {
+  const t = useUiText();
   const [webinars, setWebinars] = useState<WebinarItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [registrationCounts, setRegistrationCounts] = useState<Record<string, number>>({});
@@ -118,7 +120,7 @@ export function WebinarBlock({ data, blockId, pageId }: WebinarBlockProps) {
       <section className={containerClasses}>
         <div className="text-center py-12">
           <Video className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <p className="text-muted-foreground">No webinars scheduled</p>
+          <p className="text-muted-foreground">{t('webinar.none', 'No webinars scheduled')}</p>
         </div>
       </section>
     );
@@ -153,7 +155,7 @@ export function WebinarBlock({ data, blockId, pageId }: WebinarBlockProps) {
       {/* Past */}
       {data.showPast && past.length > 0 && (
         <div>
-          <h3 className="text-lg font-semibold mb-4 text-muted-foreground text-center">Previous Webinars</h3>
+          <h3 className="text-lg font-semibold mb-4 text-muted-foreground text-center">{t('webinar.previous', 'Previous webinars')}</h3>
           <div className="max-w-2xl mx-auto space-y-4">
             {past.map(webinar => (
               <WebinarCard
@@ -185,6 +187,7 @@ function WebinarCard({
   blockId?: string;
   pageId?: string;
 }) {
+  const t = useUiText();
   const { formatDateTime, formatTime } = useCustomerFormat();
   // The language the visitor is reading — mail about this action speaks it.
   const { lang: uiLang, siteLang } = useUiTextLanguage();
@@ -281,7 +284,7 @@ function WebinarCard({
                 </Badge>
               )}
               {isPast && webinar.recording_url && (
-                <Badge variant="secondary" className="text-xs">Recording available</Badge>
+                <Badge variant="secondary" className="text-xs">{t('webinar.recording', 'Recording available')}</Badge>
               )}
             </div>
 
@@ -347,7 +350,7 @@ function WebinarCard({
                     id={`name-${webinar.id}`}
                     value={formData.name}
                     onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                    placeholder="Your name"
+                    placeholder={t('webinar.namePlaceholder', 'Your name')}
                     required
                   />
                 </div>

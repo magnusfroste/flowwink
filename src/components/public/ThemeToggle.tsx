@@ -10,8 +10,10 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
+import { useUiText } from '@/lib/ui-text';
 
 export function ThemeToggle() {
+  const t = useUiText();
   const { theme, setTheme } = useTheme();
   const resolvedTheme = useEffectiveTheme();
   const [mounted, setMounted] = useState(false);
@@ -36,7 +38,7 @@ export function ThemeToggle() {
           variant="ghost" 
           size="icon" 
           className="h-9 w-9 rounded-full hover:bg-muted"
-          aria-label="Toggle theme"
+          aria-label={t('theme.toggle', 'Toggle theme')}
         >
           {resolvedTheme === 'dark' ? (
             <Moon className="h-4 w-4 transition-transform" />

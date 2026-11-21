@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { MapBlockData } from '@/types/cms';
 import { MapPin, Cookie, Loader2, MapPinOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useUiText } from '@/lib/ui-text';
 
 interface MapBlockProps {
   data: MapBlockData;
@@ -21,6 +22,7 @@ interface GeocodedLocation {
 }
 
 export function MapBlock({ data }: MapBlockProps) {
+  const t = useUiText();
   const [hasConsent, setHasConsent] = useState(!data.loadOnConsent);
   const [manualConsent, setManualConsent] = useState(false);
   const [location, setLocation] = useState<GeocodedLocation | null>(null);
@@ -125,15 +127,15 @@ export function MapBlock({ data }: MapBlockProps) {
             <div className="w-full h-full bg-muted flex items-center justify-center">
               <div className="text-center p-6">
                 <Cookie className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                <h3 className="font-medium mb-2 text-foreground">External Content Blocked</h3>
+                <h3 className="font-medium mb-2 text-foreground">{t('map.blocked', 'External content blocked')}</h3>
                 <p className="text-sm text-muted-foreground mb-4 max-w-xs mx-auto">
-                  This map uses OpenStreetMap. Click to load external content.
+                  {t('map.blockedBody', 'This map uses OpenStreetMap. Click to load external content.')}
                 </p>
                 <Button
                   variant="outline"
                   onClick={() => setManualConsent(true)}
                 >
-                  Load Map
+                  {t('map.load', 'Load map')}
                 </Button>
               </div>
             </div>
@@ -141,16 +143,16 @@ export function MapBlock({ data }: MapBlockProps) {
             <div className="w-full h-full bg-muted flex items-center justify-center">
               <div className="text-center">
                 <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground">Loading map...</p>
+                <p className="text-sm text-muted-foreground">{t('map.loading', 'Loading map...')}</p>
               </div>
             </div>
           ) : error ? (
             <div className="w-full h-full bg-muted flex items-center justify-center">
               <div className="text-center p-6">
                 <MapPinOff className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                <h3 className="font-medium mb-2 text-foreground">Address Not Found</h3>
+                <h3 className="font-medium mb-2 text-foreground">{t('map.notFound', 'Address not found')}</h3>
                 <p className="text-sm text-muted-foreground max-w-xs mx-auto">
-                  Could not locate: {data.address}
+                  {t('map.couldNotLocate', 'Could not locate: {address}').replace('{address}', String(data.address ?? ''))}
                 </p>
               </div>
             </div>

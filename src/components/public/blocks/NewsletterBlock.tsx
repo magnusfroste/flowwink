@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useUiTextLanguage } from '@/lib/ui-text';
+import { useUiText } from '@/lib/ui-text';
 
 interface NewsletterBlockData {
   title?: string;
@@ -21,6 +22,7 @@ interface NewsletterBlockProps {
 }
 
 export function NewsletterBlock({ data }: NewsletterBlockProps) {
+  const t = useUiText();
   // The language the visitor is reading — mail about this action speaks it.
   const { lang: uiLang, siteLang } = useUiTextLanguage();
   const visitorLang = uiLang ?? siteLang;
@@ -31,18 +33,18 @@ export function NewsletterBlock({ data }: NewsletterBlockProps) {
   const [error, setError] = useState<string | null>(null);
 
   const {
-    title = "Subscribe to our newsletter",
-    description = "Get the latest updates delivered to your inbox.",
-    buttonText = "Subscribe",
-    successMessage = "Thanks for subscribing! Please check your email to confirm.",
+    title = t('newsletter.title', 'Subscribe to our newsletter'),
+    description = t('newsletter.description', 'Get the latest updates delivered to your inbox.'),
+    buttonText = t('newsletter.button', 'Subscribe'),
+    successMessage = t('newsletter.success', 'Thanks for subscribing! Please check your email to confirm.'),
     variant = "default",
     showNameField = false,
     // Placeholders were the only strings in this block that could not be
     // edited — so a Swedish site could translate the heading, the button and
     // the thank-you and still ask visitors to "Enter your email". Text is
     // data, same rule as the cookie banner; English stays the fallback.
-    emailPlaceholder = "Enter your email",
-    namePlaceholder = "Your name (optional)",
+    emailPlaceholder = t('newsletter.emailPlaceholder', 'Enter your email'),
+    namePlaceholder = t('newsletter.namePlaceholder', 'Your name (optional)'),
   } = data;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -69,14 +71,14 @@ export function NewsletterBlock({ data }: NewsletterBlockProps) {
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.error || "Failed to subscribe");
+        throw new Error(result.error || t('newsletter.failed', 'Failed to subscribe'));
       }
 
       setIsSuccess(true);
       setEmail("");
       setName("");
     } catch (err: any) {
-      setError(err.message || "Something went wrong");
+      setError(err.message || t('newsletter.error', 'Something went wrong'));
     } finally {
       setIsSubmitting(false);
     }

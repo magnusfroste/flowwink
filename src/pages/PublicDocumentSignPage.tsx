@@ -135,7 +135,7 @@ export default function PublicDocumentSignPage() {
               </TabsList>
               <TabsContent value="typed" className="pt-3">
                 <Label>{t('documentSign.typeFullName', 'Type your full name')}</Label>
-                <Input value={typed} onChange={(e) => setTyped(e.target.value)} placeholder="Jane Doe" />
+                <Input value={typed} onChange={(e) => setTyped(e.target.value)} placeholder={t('docsign.namePlaceholder', 'Jane Doe')} />
               </TabsContent>
               <TabsContent value="drawn" className="pt-3">
                 <SignaturePad onChange={setDrawn} />

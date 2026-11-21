@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { PopupBlockData } from '@/types/cms';
 import { safeHref } from '@/lib/safe-url';
+import { useUiText } from '@/lib/ui-text';
 
 interface PopupBlockProps {
   data: PopupBlockData;
@@ -13,6 +14,7 @@ interface PopupBlockProps {
 const STORAGE_KEY_PREFIX = 'popup-dismissed-';
 
 export function PopupBlock({ data }: PopupBlockProps) {
+  const t = useUiText();
   const [isVisible, setIsVisible] = useState(false);
   const [hasTriggered, setHasTriggered] = useState(false);
 
@@ -137,7 +139,7 @@ export function PopupBlock({ data }: PopupBlockProps) {
         <button
           onClick={handleDismiss}
           className="absolute top-3 right-3 p-1 rounded-full hover:bg-muted transition-colors"
-          aria-label="Close popup"
+          aria-label={t('popup.close', 'Close popup')}
         >
           <X className="h-4 w-4" />
         </button>
