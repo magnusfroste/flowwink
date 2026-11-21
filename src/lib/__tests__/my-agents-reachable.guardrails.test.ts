@@ -36,6 +36,10 @@ describe('one owner-module table for every surface that offers or runs a skill',
     expect(SKILL_OWNER_MODULE['describe_blocks']).toBe('platform');
     expect(ownerModuleOf('describe_blocks')).toBe('pages');
     expect(ownerModuleOf('inspect_rendered_page')).toBe('pages');
+    // optic, 2026-11-21: built for Svante's Claude (owner: sales + marketing),
+    // and admin-only for it until it had a module to be authorized by.
+    expect(SKILL_OWNER_MODULE['find_in_content']).toBe('platform');
+    expect(ownerModuleOf('find_in_content')).toBe('blog');
     expect(SKILL_OWNER_MODULE['generate_contract_invoice']).toBe('contracts');
     expect(ownerModuleOf('generate_contract_invoice')).toBe('invoicing');
     expect(ownerModuleOf('manage_page')).toBe('pages');

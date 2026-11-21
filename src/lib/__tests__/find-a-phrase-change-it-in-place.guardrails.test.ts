@@ -4,6 +4,7 @@ import { join, resolve } from 'node:path';
 import { applyBodyEdits, readBodyEdits, MAX_BODY_EDITS } from '../../../supabase/functions/_shared/wiki/body-edits';
 import { PLATFORM_SKILLS } from '../platform-seeds';
 import { wikiModule } from '../modules/wiki-module';
+import { ownerModuleOf } from '../../../supabase/functions/_shared/skills/owner-module';
 
 /**
  * Guardrail: a phrase can be found everywhere it stands, and changed where it
@@ -169,6 +170,12 @@ describe('find_in_content', () => {
     const all = migration.match(/v_all\s+text\[\] := ARRAY\[([^\]]+)\]/)![1].replace(/'/g, '').split(',').map((s) => s.trim());
     expect(fn.properties.p_sources.items?.enum).toEqual(all);
     for (const source of all) expect(migration).toContain(`'${source}' = ANY (v_src)`);
+  });
+
+  it('a colleague\'s agent reaches it, not only an admin\'s', () => {
+    // A platform seed with no owner module is admin-only for an owned agent:
+    // the agent it was built for (owner: sales + marketing) never saw it.
+    expect(ownerModuleOf('find_in_content')).toBe('blog');
   });
 
   it('only the executor may call it', () => {
