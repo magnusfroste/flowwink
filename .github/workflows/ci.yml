@@ -6,6 +6,13 @@ on:
   push:
     branches: [main]
 
+# A pull request's newer push replaces its older run (the older verdict is
+# about a commit nobody will merge). main's runs never cancel each other:
+# main-red alert reads every one of them.
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   lint-and-typecheck:
     name: Lint & Type Check
