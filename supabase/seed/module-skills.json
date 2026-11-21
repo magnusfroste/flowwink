@@ -19794,7 +19794,7 @@
                   },
                   "budget_seconds": {
                     "type": "integer",
-                    "description": "Seconds this call may spend (default 100, at most 120)."
+                    "description": "Seconds this call may spend (default 60, at most 100)."
                   }
                 }
               }
@@ -21634,6 +21634,10 @@
               "parameters": {
                 "type": "object",
                 "properties": {
+                  "budget_seconds": {
+                    "type": "integer",
+                    "description": "Seconds this call may spend (default 60, at most 110). What it did is saved; `remaining` says how many strings are left — call again until it is 0."
+                  },
                   "locale": {
                     "type": "string",
                     "description": "Target language tag, e.g. \"sv\""
