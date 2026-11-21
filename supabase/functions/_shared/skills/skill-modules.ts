@@ -162,6 +162,7 @@ export const SKILL_OWNER_MODULE: Readonly<Record<string, string>> = Object.freez
   "fetch_image_base64": "mediaLibrary",
   "find_duplicate_companies": "companies",
   "find_duplicate_leads": "leads",
+  "find_in_content": "platform",
   "flag_at_risk_subscriptions": "subscriptions",
   "flag_invoice_variance": "purchasing",
   "fulfill_order_line": "ecommerce",

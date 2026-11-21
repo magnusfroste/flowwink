@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261121090000",
-      "migrations_count": 784,
+      "migration_head": "20261121100000",
+      "migrations_count": 785,
       "migrations": [
         {
           "version": "00000000000000",
@@ -3141,19 +3141,23 @@
         {
           "version": "20261121090000",
           "name": "hela-sajten-pa-ett-sprak"
+        },
+        {
+          "version": "20261121100000",
+          "name": "find-in-content"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:0b1808d902a09f388d80cf3f312967e7c0ed82e45bf5585141f3b9a4dee667df",
-      "skill_count": 676,
+      "seed_hash": "sha256:617f4685314e3443a2e152ba0e03eaff44c7574382fa759ce0d4ca613b0ee65c",
+      "skill_count": 677,
       "module_count": 69
     },
     "edge_functions": {
       "count": 76,
-      "shared_hash": "sha256:8d964edbbcf17989a9720987eff35675a8f9baeb5b258030debc768903bee215",
+      "shared_hash": "sha256:24c8d13c89d1540e72a11413fdbb654269f1d22acefd7e83d3b0751c7dce3960",
       "functions": {
-        "agent-execute": "sha256:92c90ddb7cec2bc327b20f7434d387786c5cf35541e1440f50d8997ee06bcbc5",
+        "agent-execute": "sha256:29bca20f2b35d3860d93d83923c6ed8c09c2a3b930bb8dbe941292c79120b4cd",
         "agent-operate": "sha256:4320e02dd3e6a0a1706b42dc1905b631c61e6a4cbe3556c701f474c278c89e1a",
         "ai-task": "sha256:ce3aacdef625bba758f4323da3e49104a1b94a3d3d77d800e89dacd0b803d65e",
         "automation-dispatcher": "sha256:d905660cd907c6f1ef5c7cac0a97ed44a4e4187ef4d5179089fa2714b2751443",
@@ -3208,7 +3212,7 @@
         "quote-pay": "sha256:eac676922cee4e9ebe19650afd1ec708a48c2b3efd8d56d0f77654d21a272c00",
         "quote-sign": "sha256:efcc488ed630f2e861be848ef6e951bddd0ab43ae0ef98b67b8f5d6061ffc541",
         "run-autonomy-tests": "sha256:53426062cbb9c3c6963f6c807c77176ca89f56aea35b7bfab3e84e4dff087cd2",
-        "run-platform-tests": "sha256:4f164fe17f8fd279f2b314c69463e358fd085c09d3bad4d706effb1126a91527",
+        "run-platform-tests": "sha256:b6b336f10bd2811b5e6d0a30e0d5b240693237c85928361a6e5ca026ae779bd1",
         "score-visitor-intent": "sha256:da5637476f5334696ed6b8007524182661416f19b2f1735227dcf0b8f0ee4143",
         "send-webhook": "sha256:796644e9ab3d12a339c4fcc411fb28a9be6ef235b109e4e2e22262d53a44cbcc",
         "setup-database": "sha256:49f03dc85ea4d48cd53b7760b0a68f4e2a628a217207b0fe4590d931f594e56e",

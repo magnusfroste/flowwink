@@ -287,6 +287,26 @@ The `/rest/execute` endpoint mirrors the MCP tool surface but over plain HTTP PO
 
 **`manage_wiki_page` create** — requires `content_md` (markdown body). Empty bodies are rejected at the handler level to prevent blank pages.
 
+**`manage_wiki_page` update — `replace` (2026-11-21)** — `replace: [{ find, with,
+all? }]` changes named text in place: the stored body is read, each edit applied
+in order, and the result written once (one revision). `find` is exact and must
+occur once unless `all: true`; any edit that cannot apply refuses the whole call
+(`INVALID_INPUT`, `failed_edits`). Not together with `content_md`; with
+`append_md` it edits first. Never rewrite a page to change a phrase — on optic a
+98 KB page was re-sent in four 25 KB calls, three times (`_shared/wiki/body-edits.ts`).
+
+**`find_in_content` — where do we say this (2026-11-21)** — a platform read
+(`rpc:find_in_content`, params `p_text`, `p_sources`, `p_limit`): the exact
+phrase, case-insensitive, across `page | blog_post | kb_article | wiki_page |
+translation`, counted in the database before the limit cuts, each match with
+`occurrences`, `fields`, `snippets` and `edit_with`. It is the literal twin of
+`search_knowledge` (ranked, by meaning): a rename needs every occurrence, a
+question needs the best few. `json_strings(jsonb)` is the walk it reads rich
+text with — a Tiptap sentence with a bold word in it is one string. A new
+content table joins the function's `leaves` and the seed's enum in the same PR
+(a guard compares them). `search_wiki` says `match: all_terms | some_terms`;
+`browse_blog` searches title and excerpt and reads `query` as `search`.
+
 **`manage_company`** — B2B master data lives on `companies`: `org_number`, `vat_number`, `parent_company_id` (subsidiary hierarchy; self-parent rejected), `employee_count`, `annual_revenue_cents`, `credit_limit_cents`, `account_owner`, `tags` (text[]). Use `find_duplicate_companies` before creating a company that might already exist (identical domain scores 1.0).
 
 **`refund_return`** — supports **partial refunds**: each call adds `refund_cents` to the running total; the expected total is Σ(return_items qty × unit_refund_cents) − `restocking_fee_cents`. Over-refunds are rejected. The RMA closes when the total is reached or `p_final: true` is passed. Set the restocking fee via `inspect_return` (QC step, only valid in status `received`).
