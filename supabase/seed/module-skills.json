@@ -3237,7 +3237,11 @@
                   },
                   "limit": {
                     "type": "number",
-                    "description": "Max results (default 5, max 100)"
+                    "description": "Max results (default 5, max 100). Over 10 posts are listed by slug, title and date only."
+                  },
+                  "full": {
+                    "type": "boolean",
+                    "description": "Excerpt and image for every post of a list over 10 (default false)."
                   }
                 }
               }
@@ -21908,7 +21912,11 @@
                   },
                   "limit": {
                     "type": "number",
-                    "description": "Max chunks to return (default 8, max 20)"
+                    "description": "Max chunks to return (default 8, max 20). The three best are whole, the rest previews."
+                  },
+                  "full": {
+                    "type": "boolean",
+                    "description": "Every hit whole instead of previews after the third (default false)."
                   },
                   "sources": {
                     "type": "array",
