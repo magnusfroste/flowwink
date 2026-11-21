@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261121100000",
-      "migrations_count": 785,
+      "migration_head": "20261121100001",
+      "migrations_count": 786,
       "migrations": [
         {
           "version": "00000000000000",
@@ -3145,6 +3145,10 @@
         {
           "version": "20261121100000",
           "name": "find-in-content"
+        },
+        {
+          "version": "20261121100001",
+          "name": "en-aterstallning-behaller-plattformens-grunddata"
         }
       ]
     },
