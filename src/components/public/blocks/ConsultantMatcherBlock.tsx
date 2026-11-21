@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, FileUser, Star, ArrowRight, Sparkles, Type } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useUiText } from '@/lib/ui-text';
 
 interface ConsultantMatch {
   id: string;
@@ -249,6 +250,7 @@ const MatchDetail = memo(function MatchDetail({
 });
 
 export function ConsultantMatcherBlock({ data }: ConsultantMatcherBlockProps) {
+  const t = useUiText();
   const [jobDescription, setJobDescription] = useState('');
   const [matches, setMatches] = useState<ConsultantMatch[]>([]);
   const [loading, setLoading] = useState(false);
@@ -257,12 +259,12 @@ export function ConsultantMatcherBlock({ data }: ConsultantMatcherBlockProps) {
   const [queryKeywords, setQueryKeywords] = useState<string[]>([]);
   const { toast } = useToast();
 
-  const title = data.title || 'Find the Perfect Consultant';
+  const title = data.title || t('consultantMatcher.title', 'Find the Perfect Consultant');
   const subtitle =
     data.subtitle ||
     'Paste a job description or assignment brief. We rank consultants using hybrid semantic + keyword search.';
-  const placeholder = data.placeholder || 'Paste the job description or assignment brief here...';
-  const buttonText = data.buttonText || 'Find Match';
+  const placeholder = data.placeholder || t('consultantMatcher.placeholder', 'Paste the job description or assignment brief here...');
+  const buttonText = data.buttonText || t('consultantMatcher.button', 'Find Match');
 
   const handleMatch = useCallback(async () => {
     const query = jobDescription.trim();
@@ -297,7 +299,7 @@ export function ConsultantMatcherBlock({ data }: ConsultantMatcherBlockProps) {
       const result = await response.json();
 
       if (!result?.success) {
-        throw new Error(result?.error || 'Search failed');
+        throw new Error(result?.error || t('consultantMatcher.failed', 'Search failed'));
       }
 
       const raw: ConsultantMatch[] = result.matches || [];
@@ -344,7 +346,7 @@ export function ConsultantMatcherBlock({ data }: ConsultantMatcherBlockProps) {
     } finally {
       setLoading(false);
     }
-  }, [jobDescription, toast]);
+  }, [jobDescription, toast, t]);
 
   return (
     <section className="w-full">

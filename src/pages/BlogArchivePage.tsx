@@ -98,7 +98,7 @@ export default function BlogArchivePage() {
           <link
             rel="alternate"
             type="application/rss+xml"
-            title={blogSettings.rssTitle || "RSS Feed"}
+            title={blogSettings.rssTitle || t('blog.rssTitle', 'RSS feed')}
             href={rssHref}
           />
         )}

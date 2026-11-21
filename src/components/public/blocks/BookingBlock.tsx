@@ -73,7 +73,7 @@ export function BookingBlock({ data, blockId, pageId }: BookingBlockProps) {
       const { error } = await supabase.from('form_submissions').insert({
         block_id: blockId || 'booking-block',
         page_id: pageId || null,
-        form_name: data.title || 'Booking Request',
+        form_name: data.title || t('booking.formName', 'Booking Request'),
         data: submissionData,
         metadata: {
           type: 'booking',

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useUiText } from '@/lib/ui-text';
 
 export interface CarouselSlide {
   id: string;
@@ -39,6 +40,7 @@ const HEIGHT_MAP = {
 };
 
 export function FeaturedCarouselBlock({ data }: FeaturedCarouselBlockProps) {
+  const t = useUiText();
   const {
     slides = [],
     autoPlay = true,
@@ -85,7 +87,7 @@ export function FeaturedCarouselBlock({ data }: FeaturedCarouselBlockProps) {
       onMouseEnter={() => pauseOnHover && setIsPaused(true)}
       onMouseLeave={() => pauseOnHover && setIsPaused(false)}
       aria-roledescription="carousel"
-      aria-label="Featured content"
+      aria-label={t('carousel.label', 'Featured content')}
     >
       {/* Slides */}
       {slides.map((slide, i) => {
@@ -174,14 +176,14 @@ export function FeaturedCarouselBlock({ data }: FeaturedCarouselBlockProps) {
           <button
             onClick={prev}
             className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-[hsl(var(--hero-overlay)/0.3)] backdrop-blur-sm text-on-image flex items-center justify-center hover:bg-[hsl(var(--hero-overlay)/0.5)] transition-colors"
-            aria-label="Previous slide"
+            aria-label={t('carousel.previous', 'Previous slide')}
           >
             <ChevronLeft className="h-6 w-6" />
           </button>
           <button
             onClick={next}
             className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-[hsl(var(--hero-overlay)/0.3)] backdrop-blur-sm text-on-image flex items-center justify-center hover:bg-[hsl(var(--hero-overlay)/0.5)] transition-colors"
-            aria-label="Next slide"
+            aria-label={t('carousel.next', 'Next slide')}
           >
             <ChevronRight className="h-6 w-6" />
           </button>

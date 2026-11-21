@@ -42,13 +42,13 @@ interface Props {
 export function AiFaqBlock({ data }: Props) {
   const t = useUiText();
   const {
-    title = 'Frequently asked questions',
+    title = t('aiFaq.title', 'Frequently asked questions'),
     subtitle,
     eyebrow,
     items = [],
     searchPlaceholder = 'Ask a question or search…',
-    askAiLabel = 'Ask AI',
-    emptyStateText = "No matching answers. Try asking the assistant instead.",
+    askAiLabel = t('aiFaq.askAiLabel', 'Ask AI'),
+    emptyStateText = t('aiFaq.emptyStateText', 'No matching answers. Try asking the assistant instead.'),
   } = data;
 
   const [query, setQuery] = useState('');
@@ -137,7 +137,7 @@ export function AiFaqBlock({ data }: Props) {
           }
         }
       }
-      setAiAnswer(answer.trim() || 'No response.');
+      setAiAnswer(answer.trim() || t('aiFaq.noResponse', 'No response.'));
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Something went wrong');
     } finally {

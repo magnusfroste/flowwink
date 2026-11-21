@@ -5,6 +5,7 @@ import { LayoutGrid } from 'lucide-react';
 import { useUiTextLanguage } from '@/lib/ui-text';
 import { shopIndexPath } from '@/lib/language-path';
 import { useResponsiveGrid } from '@/components/public/BlockResponsiveContext';
+import { useUiText } from '@/lib/ui-text';
 
 export interface CategoryNavBlockData {
   title?: string;
@@ -19,6 +20,7 @@ interface CategoryNavBlockProps {
 }
 
 export function CategoryNavBlock({ data }: CategoryNavBlockProps) {
+  const t = useUiText();
   // Per-width column overrides from the block's envelope (#939).
   const responsiveGrid = useResponsiveGrid();
   const { lang, siteLang } = useUiTextLanguage();
@@ -51,7 +53,7 @@ export function CategoryNavBlock({ data }: CategoryNavBlockProps) {
       <section>
         <div className="max-w-6xl mx-auto px-4 text-center text-muted-foreground">
           <LayoutGrid className="h-10 w-10 mx-auto mb-3 opacity-40" />
-          <p>No categories yet</p>
+          <p>{t('categoryNav.empty', 'No categories yet')}</p>
         </div>
       </section>
     );

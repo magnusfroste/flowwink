@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { ChatConversation } from '@/components/chat/ChatConversation';
 import { useChatSettings } from '@/hooks/useSiteSettings';
+import { useUiText } from '@/lib/ui-text';
 
 export interface AiAssistantBlockData {
   title?: string;
@@ -30,6 +31,7 @@ const iconMap = {
 };
 
 export function AiAssistantBlock({ data }: AiAssistantBlockProps) {
+  const t = useUiText();
   const [inputValue, setInputValue] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const [activeMessage, setActiveMessage] = useState<string | null>(null);
@@ -37,9 +39,9 @@ export function AiAssistantBlock({ data }: AiAssistantBlockProps) {
   const { data: _chatSettings } = useChatSettings();
 
   const {
-    title = 'Find Your Perfect Product',
-    subtitle = 'Ask our AI shopping assistant anything — it knows our entire catalog.',
-    placeholder = 'What are you looking for?',
+    title = t('aiAssistant.title', 'Find Your Perfect Product'),
+    subtitle = t('aiAssistant.subtitle', 'Ask our AI shopping assistant anything — it knows our entire catalog.'),
+    placeholder = t('aiAssistant.placeholder', 'What are you looking for?'),
     variant = 'card',
     backgroundImage,
     overlayOpacity = 50,
@@ -50,7 +52,7 @@ export function AiAssistantBlock({ data }: AiAssistantBlockProps) {
       'Tell me about Pro Membership',
     ],
     showBadge = true,
-    badgeText = 'AI-Powered Shopping',
+    badgeText = t('aiAssistant.badgeText', 'AI-Powered Shopping'),
     iconStyle = 'sparkles',
   } = data;
 

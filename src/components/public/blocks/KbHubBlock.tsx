@@ -70,18 +70,18 @@ interface KbArticle {
 export function KbHubBlock({ data }: KbHubBlockProps) {
   const t = useUiText();
   const {
-    title = 'How can we help you?',
-    subtitle = 'Search our knowledge base or browse by category',
-    searchPlaceholder = 'Search for questions or answers...',
+    title = t('kbHub.title', 'How can we help you?'),
+    subtitle = t('kbHub.subtitle', 'Search our knowledge base or browse by category'),
+    searchPlaceholder = t('kbHub.searchPlaceholder', 'Search for questions or answers...'),
     showSearch = true,
     showCategories = true,
     showContactCta = true,
     contactTitle = 'Can\'t find the answer?',
-    contactSubtitle = 'Our team is happy to help with your questions',
-    contactButtonText = 'Contact us',
+    contactSubtitle = t('kbHub.contactSubtitle', 'Our team is happy to help with your questions'),
+    contactButtonText = t('kbHub.contactButtonText', 'Contact us'),
     contactLink = '/contact',
-    emptyStateTitle = 'No results found',
-    emptyStateSubtitle = 'Try different search terms or browse all categories',
+    emptyStateTitle = t('kbHub.emptyStateTitle', 'No results found'),
+    emptyStateSubtitle = t('kbHub.emptyStateSubtitle', 'Try different search terms or browse all categories'),
     layout = 'accordion',
     kbPageSlug,
   } = data;

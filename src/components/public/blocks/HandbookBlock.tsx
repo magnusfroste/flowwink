@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import ReactMarkdown from 'react-markdown';
 import { resolveChapterLink } from '../../../../supabase/functions/_shared/handbook/chapter-path';
 import remarkGfm from 'remark-gfm';
+import { useUiText } from '@/lib/ui-text';
 
 export interface HandbookBlockData {
   title?: string;
@@ -34,6 +35,7 @@ interface Chapter {
 }
 
 export function HandbookBlock({ data }: HandbookBlockProps) {
+  const t = useUiText();
   const {
     title = 'Handbook',
     subtitle,
@@ -135,7 +137,7 @@ export function HandbookBlock({ data }: HandbookBlockProps) {
     return (
       <div className="text-center py-12">
         <Book className="h-10 w-10 mx-auto text-muted-foreground/40 mb-3" />
-        <p className="text-muted-foreground">No handbook chapters synced yet.</p>
+        <p className="text-muted-foreground">{t('handbook.empty', 'No handbook chapters synced yet.')}</p>
       </div>
     );
   }
@@ -263,7 +265,7 @@ export function HandbookBlock({ data }: HandbookBlockProps) {
               <div className="flex items-center justify-center h-full text-muted-foreground">
                 <div className="text-center space-y-2">
                   <Book className="h-8 w-8 mx-auto opacity-40" />
-                  <p className="text-sm">Select a chapter to start reading</p>
+                  <p className="text-sm">{t('handbook.pick', 'Select a chapter to start reading')}</p>
                 </div>
               </div>
             )}

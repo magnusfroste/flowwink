@@ -21,6 +21,7 @@ import { useQuoteProcessSettings } from '@/hooks/useSiteSettings';
 // from the writer rather than retyped here, so the reader can never disagree
 // with what was actually stored (same pattern as src/lib/email-preview.ts).
 import { QUOTE_CONTENT_HASH_ALG } from '../../supabase/functions/_shared/quote-lines';
+import { useUiText } from '@/lib/ui-text';
 
 interface CertificateSignature {
   action: 'accept' | 'reject';
@@ -70,6 +71,7 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
 }
 
 export default function SignatureCertificatePage() {
+  const t = useUiText();
   const { token } = useParams<{ token: string }>();
   const location = useLocation();
   const { formatCurrency } = useCustomerFormat();
@@ -92,7 +94,7 @@ export default function SignatureCertificatePage() {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-muted-foreground">Loading…</p>
+        <p className="text-muted-foreground">{t('certificate.loading', 'Loading…')}</p>
       </div>
     );
   }
@@ -102,9 +104,11 @@ export default function SignatureCertificatePage() {
       <div className="min-h-screen flex items-center justify-center px-4">
         <Card className="max-w-md">
           <CardContent className="pt-6">
-            <p className="font-medium">Certificate not available</p>
+            <p className="font-medium">{t('certificate.unavailable', 'Certificate not available')}</p>
             <p className="text-sm text-muted-foreground mt-1">
-              This link is invalid, or the {kind} has not been signed or declined yet.
+              {kind === 'contract'
+                ? t('certificate.unavailableContract', 'This link is invalid, or the agreement has not been signed or declined yet.')
+                : t('certificate.unavailableQuote', 'This link is invalid, or the quote has not been signed or declined yet.')}
             </p>
           </CardContent>
         </Card>
@@ -116,7 +120,7 @@ export default function SignatureCertificatePage() {
   const accepted = sig?.action === 'accept';
   const amountCents = cert.kind === 'quote' ? cert.total_cents : cert.value_cents;
   const fmtAmount = (cents: number) => formatCurrency(cents, cert.currency);
-  const docLabel = cert.kind === 'quote' ? 'Quote' : 'Contract';
+  const docLabel = cert.kind === 'quote' ? t('certificate.quote', 'Quote') : t('certificate.contract', 'Agreement');
   const payment = cert.payment ?? null;
 
   // What the stored digest actually covers.
@@ -141,18 +145,18 @@ export default function SignatureCertificatePage() {
   return (
     <div className="min-h-screen bg-muted/20 print:bg-background py-8 px-4">
       <Helmet>
-        <title>{`${kind === 'quote' && contractMode ? 'Acceptance record' : 'Signature certificate'} — ${cert.reference}`}</title>
+        <title>{`${kind === 'quote' && contractMode ? t('certificate.acceptanceTitle', 'Acceptance record') : t('certificate.title', 'Signature certificate')} — ${cert.reference}`}</title>
         <meta name="robots" content="noindex" />
       </Helmet>
       <div className="max-w-2xl mx-auto space-y-4">
         <div className="flex items-center justify-between print:hidden">
           <Button variant="ghost" size="sm" asChild>
             <Link to={`/${cert.kind}/${token}`}>
-              <ArrowLeft className="h-4 w-4 mr-1" /> Back to {docLabel.toLowerCase()}
+              <ArrowLeft className="h-4 w-4 mr-1" /> {cert.kind === 'quote' ? t('certificate.backToQuote', 'Back to the quote') : t('certificate.backToContract', 'Back to the agreement')}
             </Link>
           </Button>
           <Button variant="outline" size="sm" onClick={() => window.print()}>
-            <Printer className="h-4 w-4 mr-1" /> Print / Save as PDF
+            <Printer className="h-4 w-4 mr-1" /> {t('certificate.print', 'Print / Save as PDF')}
           </Button>
         </div>
 
@@ -167,43 +171,43 @@ export default function SignatureCertificatePage() {
                       agreement. Contract certificates keep the signature
                       framing in both modes. */}
                   <h1 className="text-xl font-semibold">
-                    {kind === 'quote' && contractMode ? 'Acceptance Record' : 'Signature Certificate'}
+                    {kind === 'quote' && contractMode ? t('certificate.acceptanceTitle', 'Acceptance record') : t('certificate.title', 'Signature certificate')}
                   </h1>
                   <p className="text-sm text-muted-foreground">
                     {kind === 'quote' && contractMode
-                      ? `Record of approval — ${docLabel.toLowerCase()} ${cert.reference}`
-                      : `Electronic signature evidence — ${docLabel.toLowerCase()} ${cert.reference}`}
+                      ? t('certificate.approvalLead', 'Record of approval — {doc} {reference}').replace('{doc}', docLabel.toLowerCase()).replace('{reference}', cert.reference)
+                      : t('certificate.signatureLead', 'Electronic signature evidence — {doc} {reference}').replace('{doc}', docLabel.toLowerCase()).replace('{reference}', cert.reference)}
                   </p>
                 </div>
               </div>
               <div className="flex flex-col items-end gap-1 mt-1">
                 <Badge variant={accepted ? 'default' : 'secondary'}>
-                  {accepted ? 'Accepted' : 'Declined'}
+                  {accepted ? t('certificate.accepted', 'Accepted') : t('certificate.declined', 'Declined')}
                 </Badge>
-                {fullyPaid && <Badge variant="outline">Paid</Badge>}
-                {partiallyPaid && <Badge variant="outline">Deposit paid</Badge>}
+                {fullyPaid && <Badge variant="outline">{t('certificate.paid', 'Paid')}</Badge>}
+                {partiallyPaid && <Badge variant="outline">{t('certificate.depositPaid', 'Deposit paid')}</Badge>}
               </div>
             </div>
 
             <dl>
-              <Row label="Document">
+              <Row label={t('certificate.document', 'Document')}>
                 {docLabel} <span className="font-mono">{cert.reference}</span>
                 {cert.title && cert.title !== cert.reference ? ` — ${cert.title}` : ''}
               </Row>
-              <Row label="Version">v{cert.version}</Row>
-              <Row label="Status">{cert.status.replace('_', ' ')}</Row>
-              {cert.counterparty_name && <Row label="Counterparty">{cert.counterparty_name}</Row>}
+              <Row label={t('certificate.version', 'Version')}>v{cert.version}</Row>
+              <Row label={t('certificate.status', 'Status')}>{cert.status.replace('_', ' ')}</Row>
+              {cert.counterparty_name && <Row label={t('certificate.counterparty', 'Counterparty')}>{cert.counterparty_name}</Row>}
               {typeof amountCents === 'number' && amountCents > 0 && (
-                <Row label="Amount">{fmtAmount(amountCents)}</Row>
+                <Row label={t('certificate.amount', 'Amount')}>{fmtAmount(amountCents)}</Row>
               )}
-              {cert.valid_until && <Row label="Valid until">{cert.valid_until}</Row>}
+              {cert.valid_until && <Row label={t('certificate.validUntil', 'Valid until')}>{cert.valid_until}</Row>}
               {payment && paidCents > 0 && (
-                <Row label="Payment">
-                  {fmtAmount(paidCents)} of {fmtAmount(payment.total_cents)} paid
-                  {partiallyPaid && payment.prepayment_pct ? ` (${payment.prepayment_pct}% prepayment)` : ''} on
-                  invoice <span className="font-mono">{payment.invoice_number}</span>
+                <Row label={t('certificate.payment', 'Payment')}>
+                  {t('certificate.paidOf', '{paid} of {total} paid').replace('{paid}', fmtAmount(paidCents)).replace('{total}', fmtAmount(payment.total_cents))}
+                  {partiallyPaid && payment.prepayment_pct ? ` (${t('certificate.prepayment', '{pct}% prepayment').replace('{pct}', String(payment.prepayment_pct))})` : ''}{' '}
+                  {t('certificate.onInvoice', 'on invoice')} <span className="font-mono">{payment.invoice_number}</span>
                   {payment.quote_paid_at
-                    ? ` — first payment ${format(new Date(payment.quote_paid_at), 'yyyy-MM-dd HH:mm')}`
+                    ? ` — ${t('certificate.firstPayment', 'first payment')} ${format(new Date(payment.quote_paid_at), 'yyyy-MM-dd HH:mm')}`
                     : ''}
                 </Row>
               )}
@@ -218,7 +222,7 @@ export default function SignatureCertificatePage() {
                     ) : (
                       <XCircle className="h-4 w-4 text-destructive" />
                     )}
-                    {accepted ? (kind === 'quote' && contractMode ? 'Approved' : 'Signed') : 'Declined'} by {sig.signer_name || 'Unknown'}
+                    {(accepted ? (kind === 'quote' && contractMode ? t('certificate.approvedBy', 'Approved by {name}') : t('certificate.signedBy', 'Signed by {name}')) : t('certificate.declinedBy', 'Declined by {name}')).replace('{name}', sig.signer_name || t('certificate.unknown', 'Unknown'))}
                     {sig.signer_email && (
                       <span className="text-muted-foreground font-normal">&lt;{sig.signer_email}&gt;</span>
                     )}
@@ -227,7 +231,7 @@ export default function SignatureCertificatePage() {
                   {sig.signature_image ? (
                     <img
                       src={sig.signature_image}
-                      alt={`Drawn signature of ${sig.signer_name || 'signer'}`}
+                      alt={t('certificate.drawnAlt', 'Drawn signature of {name}').replace('{name}', sig.signer_name || '')}
                       className="max-h-32 border rounded-md bg-background p-2"
                     />
                   ) : (
@@ -236,43 +240,39 @@ export default function SignatureCertificatePage() {
                     </p>
                   )}
                   <p className="text-xs text-muted-foreground">
-                    {sig.signature_image ? 'Drawn signature' : 'Typed signature'}
+                    {sig.signature_image ? t('certificate.drawn', 'Drawn signature') : t('certificate.typed', 'Typed signature')}
                   </p>
                 </div>
 
                 <dl>
-                  <Row label="Timestamp">
-                    {format(new Date(sig.signed_at), 'yyyy-MM-dd HH:mm:ss')} (local) ·{' '}
+                  <Row label={t('certificate.timestamp', 'Timestamp')}>
+                    {format(new Date(sig.signed_at), 'yyyy-MM-dd HH:mm:ss')} ({t('certificate.local', 'local')}) ·{' '}
                     <span className="font-mono text-xs">{sig.signed_at}</span>
                   </Row>
                   {sig.ip_address && (
-                    <Row label="IP address">
+                    <Row label={t('certificate.ip', 'IP address')}>
                       <span className="font-mono">{sig.ip_address}</span>
                     </Row>
                   )}
                   {sig.user_agent && (
-                    <Row label="Device">
+                    <Row label={t('certificate.device', 'Device')}>
                       <span className="text-xs text-muted-foreground break-all">{sig.user_agent}</span>
                     </Row>
                   )}
                   {rawHash && (
-                    <Row label="Content hash">
+                    <Row label={t('certificate.hash', 'Content hash')}>
                       <span className="font-mono text-xs break-all">sha256:{hashDigest}</span>
                     </Row>
                   )}
                   {rawHash && (
-                    <Row label="Hash covers">
+                    <Row label={t('certificate.hashCovers', 'Hash covers')}>
                       {cert.kind === 'contract' ? (
-                        'The agreement text, its value, and every appendix attached at signing.'
+                        t('certificate.coversContract', 'The agreement text, its value, and every appendix attached at signing.')
                       ) : hashCoversLines ? (
-                        'The quote number, title, every line item with its quantity and price, the totals, the terms and the validity date.'
+                        t('certificate.coversQuote', 'The quote number, title, every line item with its quantity and price, the totals, the terms and the validity date.')
                       ) : (
                         <span className="text-amber-700 dark:text-amber-500">
-                          The quote number, title, totals, terms and validity date — but{' '}
-                          <strong>not the individual line items</strong>. This signature was
-                          recorded before line items were included in the digest, so the hash cannot
-                          evidence them. The line items themselves are unchanged by this; they are
-                          simply outside what this hash can prove.
+                          {t('certificate.coversLegacy', 'The quote number, title, totals, terms and validity date — but not the individual line items. This signature was recorded before line items were included in the digest, so the hash cannot evidence them. The line items themselves are unchanged by this; they are simply outside what this hash can prove.')}
                         </span>
                       )}
                     </Row>
@@ -281,37 +281,27 @@ export default function SignatureCertificatePage() {
               </div>
             ) : (
               <p className="text-sm text-muted-foreground">
-                No signature record found for this {cert.kind} — the status may have been set manually by staff.
+                {cert.kind === 'contract'
+                  ? t('certificate.noRecordContract', 'No signature record found for this agreement — the status may have been set by hand.')
+                  : t('certificate.noRecordQuote', 'No signature record found for this quote — the status may have been set by hand.')}
               </p>
             )}
 
             <p className="text-xs text-muted-foreground border-t pt-4">
-              This certificate documents a simple electronic signature.{' '}
+              {t('certificate.footer', 'This certificate documents a simple electronic signature.')}{' '}
               {rawHash ? (
-                <>
-                  The content hash is a SHA-256 digest, computed at the moment of signing, of the
-                  content listed under “Hash covers” above — recomputing that same content today and
-                  getting the same hash proves those parts of the document have not been altered
-                  since.
-                </>
+                <>{t('certificate.footerHash', 'The content hash is a SHA-256 digest, computed at the moment of signing, of the content listed under “Hash covers” above — recomputing that same content today and getting the same hash proves those parts of the document have not been altered since.')}</>
               ) : (
-                <>
-                  No content hash was recorded for this signature, so this certificate evidences the
-                  decision, the signer and the moment — not the document’s contents.
-                </>
+                <>{t('certificate.footerNoHash', 'No content hash was recorded for this signature, so this certificate evidences the decision, the signer and the moment — not the document’s contents.')}</>
               )}
               {rawHash && !hashCoversLines && (
                 <>
                   {' '}
-                  <strong>
-                    A matching hash therefore does not, on this signature, say anything about the line
-                    items.
-                  </strong>{' '}
-                  The hash is reported exactly as it was recorded; it has not been recalculated.
+                  <strong>{t('certificate.footerLegacy', 'A matching hash therefore does not, on this signature, say anything about the line items.')}</strong>{' '}
+                  {t('certificate.footerAsRecorded', 'The hash is reported exactly as it was recorded; it has not been recalculated.')}
                 </>
               )}{' '}
-              Timestamp, IP address, and device information were recorded when the signer submitted
-              their decision via the private signing link.
+              {t('certificate.footerRecorded', 'Timestamp, IP address, and device information were recorded when the signer submitted their decision via the private signing link.')}
             </p>
           </CardContent>
         </Card>

@@ -69,7 +69,7 @@ describe('certificate page', () => {
   const code = read('src/pages/SignatureCertificatePage.tsx');
 
   it('a quote accept in contract mode is a record, not a certificate', () => {
-    expect(code).toContain('Acceptance Record');
+    expect(code).toContain("t('certificate.acceptanceTitle', 'Acceptance record')");
     // Contract certificates keep the signature framing in BOTH modes —
     // the agreement is always signed.
     expect(code).toMatch(/kind === 'quote' && contractMode/);

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { BlockSection, SectionHeading } from './_shared';
+import { useUiText } from '@/lib/ui-text';
 
 export interface StickyScrollChapter {
   id: string;
@@ -23,6 +24,7 @@ interface Props {
 }
 
 export function StickyScrollBlock({ data }: Props) {
+  const t = useUiText();
   const { title, subtitle, eyebrow, chapters = [], visualSide = 'right' } = data;
   const [activeIdx, setActiveIdx] = useState(0);
   const chapterRefs = useRef<Array<HTMLDivElement | null>>([]);
@@ -48,8 +50,8 @@ export function StickyScrollBlock({ data }: Props) {
   if (chapters.length === 0) {
     return (
       <BlockSection>
-        <SectionHeading eyebrow={eyebrow} title={title || 'Sticky-scroll story'} align="center" />
-        <p className="text-center text-muted-foreground text-sm mt-4">No chapters yet.</p>
+        <SectionHeading eyebrow={eyebrow} title={title || t('stickyScroll.title', 'Sticky-scroll story')} align="center" />
+        <p className="text-center text-muted-foreground text-sm mt-4">{t('stickyScroll.empty', 'No chapters yet.')}</p>
       </BlockSection>
     );
   }

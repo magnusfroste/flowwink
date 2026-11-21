@@ -27,6 +27,10 @@ const ATTR = /(?:placeholder|aria-label|alt)="([A-Z][A-Za-z][A-Za-z '’,!?.&—
 // it is where a week of "one more English string" fixes came from (chat
 // defaults, widget title, cart, launcher). Multi-word only, same as the rest.
 const FALLBACK = /\|\| *['"]([A-Z][A-Za-z][A-Za-z '’,!?.&—-]{2,70})['"]/g;
+// `title = "Subscribe to our newsletter",` — a destructured default, the other
+// shape of the same fallback (2026-11-21: the newsletter block's six texts and
+// placeholders sat here, invisible to the three patterns above).
+const DEFAULT = /^\s+[A-Za-z]\w* = ['"]([A-Z][A-Za-z][A-Za-z '’,!?.&—-]{2,70})['"],?\s*$/gm;
 
 function isSkipped(path) {
   return path.includes('__tests__') || path.includes('/admin');
@@ -51,7 +55,7 @@ export function scanHardcodedVisitorText(root = process.cwd()) {
     for (const file of walk(join(root, rootDir))) {
       const source = readFileSync(file, 'utf8');
       const found = new Set();
-      for (const re of [JSX_TEXT, ATTR, FALLBACK]) {
+      for (const re of [JSX_TEXT, ATTR, FALLBACK, DEFAULT]) {
         re.lastIndex = 0;
         let m;
         while ((m = re.exec(source)) !== null) {
