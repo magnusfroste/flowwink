@@ -29,6 +29,7 @@ import { retiredSkillResult } from '../skills/retired-skills.ts';
 import { hideSkills, isMissingQuarantineColumn, isQuarantined } from '../skills/skill-visibility.ts';
 import { isIdleScheduledRun, declaredWorkDone } from '../activity/work-done.ts';
 import { stampAgentError, classifyRuleRefusal, RAISE_EXCEPTION_SQLSTATE } from '../agent-errors.ts';
+import { applyBodyEdits, readBodyEdits } from '../wiki/body-edits.ts';
 import { scheduleState, SCHEDULE_STATE_LEGEND, type ScheduledAutomation } from '../automations/schedule-state.ts';
 import { fetchPublic } from '../net/outbound-url.ts';
 import { classifySkillModule } from '../mcp/groups.ts';
@@ -8008,6 +8009,26 @@ async function executeWikiAction(
       }
     }
 
+    // Nothing bears ALL the terms. The partial fallback further down ranks
+    // pages by how many terms they bear — but it ranked `data`, and `data` came
+    // from the AND query, so it was always empty and the fallback never ran:
+    // eight words describing a product found nothing while two of them alone
+    // found the page (optic, 2026-11-20). Ask for ANY term, then let the same
+    // ranking decide; the answer says it is a partial match.
+    if ((data || []).length === 0 && terms.length > 1) {
+      let q = supabase.from('wiki_pages').select('slug, title, updated_at, content_md, all_tags');
+      if (tagFilter) q = q.contains('all_tags', [tagFilter]);
+      const anyTerm = terms.flatMap((t) => {
+        const safe = sanitizeOrTerm(t);
+        return [`title.ilike.%${safe}%`, `content_md.ilike.%${safe}%`];
+      }).join(',');
+      const any = await q.or(anyTerm).limit(Math.max(limit * 5, 50));
+      if (!any.error && (any.data || []).length > 0) {
+        data = any.data;
+        effectiveTerms = terms;
+      }
+    }
+
     const lowerTerms = effectiveTerms.map((t) => t.toLowerCase());
     const scored = (data || []).map((p: any) => {
       const title = String(p.title || '').toLowerCase();
@@ -8039,15 +8060,33 @@ async function executeWikiAction(
       .filter((r) => r.matched > 0)
       .sort((a, b) => b.score - a.score)).slice(0, limit);
 
+    // The excerpt is where the page says it, not how the page begins: the
+    // first 240 characters of a 98 KB reference document say nothing about
+    // why it matched.
+    const excerptAt = (md: string): string => {
+      const lower = md.toLowerCase();
+      const hits = lowerTerms.map((t) => lower.indexOf(t)).filter((i) => i >= 0);
+      const at = hits.length ? Math.min(...hits) : -1;
+      if (at <= 80) return md.slice(0, 240);
+      return `…${md.slice(at - 80, at + 160)}${at + 160 < md.length ? '…' : ''}`;
+    };
+    const allMatched = scored.length > 0;
     return {
-      matches: rows.map(({ p }) => ({
-        slug: p.slug,
-        title: p.title,
-        updated_at: p.updated_at,
-        excerpt: String(p.content_md || '').slice(0, 240),
-        all_tags: p.all_tags ?? [],
-        url: `/admin/wiki/${p.slug}`,
-      })),
+      matches: rows.map(({ p, matched }) => {
+        const hay = `${String(p.title || '')} ${String(p.content_md || '')}`.toLowerCase();
+        return {
+          slug: p.slug,
+          title: p.title,
+          updated_at: p.updated_at,
+          excerpt: excerptAt(String(p.content_md || '')),
+          ...(allMatched ? {} : { matched_terms: lowerTerms.filter((t) => hay.includes(t)), matched }),
+          all_tags: p.all_tags ?? [],
+          url: `/admin/wiki/${p.slug}`,
+        };
+      }),
+      ...(rows.length && !allMatched
+        ? { match: 'some_terms', note: `No page bears all ${lowerTerms.length} terms — these bear some of them, most first. A shorter query is a sharper one; find_in_content finds an exact phrase.` }
+        : rows.length ? { match: 'all_terms' } : {}),
     };
   }
 
@@ -8212,15 +8251,45 @@ async function executeWikiAction(
     // The wiki_page_revisions row is written by the trg_wiki_pages_revision
     // BEFORE UPDATE trigger (20260708070000_wiki-parity-r7.sql), so an append
     // is captured in history exactly like any other update — no extra write.
+    // replace: change part of the body without sending the body. The stored
+    // text is read, each { find, with } applied to it, and the result written
+    // once — one call, one revision, and nothing the edit did not name is
+    // typed again (_shared/wiki/body-edits.ts has the measurement).
+    const edits = readBodyEdits((args as any).replace);
+    if (edits && hasContentMd) {
+      return {
+        error: 'content_md and replace were both sent — content_md replaces the whole body, so the edits would have nothing to apply to.',
+        code: 'INVALID_INPUT',
+        retryable: true,
+        hint: 'Send replace alone to change part of the page, or content_md alone to rewrite it.',
+      };
+    }
     let appended = false;
-    if (appendMd && !hasContentMd) {
+    let replaced: Array<{ find: string; replaced: number }> | null = null;
+    if ((appendMd || edits) && !hasContentMd) {
       const { data: existing, error: readErr } = await supabase
         .from('wiki_pages').select('content_md').eq('slug', slug).maybeSingle();
       if (readErr) throw new Error(`update wiki failed: ${readErr.message}`);
       if (!existing) throw new Error(`No wiki page with slug "${slug}" — use action=list or search_wiki to find the right slug.`);
-      const base = String(existing.content_md || '').replace(/\s+$/, '');
-      patch.content_md = base ? `${base}\n\n${appendMd}` : appendMd;
-      appended = true;
+      let body = String(existing.content_md || '');
+      if (edits) {
+        const outcome = applyBodyEdits(body, edits);
+        if (!outcome.ok) {
+          // The caller's text, not the skill: never a streak toward self-healing.
+          return { slug, error: outcome.error, code: 'INVALID_INPUT', retryable: true, hint: outcome.hint, failed_edits: outcome.failed };
+        }
+        body = outcome.body;
+        replaced = outcome.applied;
+      }
+      // Both modes fall into the one write below, so the revision trigger
+      // sees an edit, an append, or both, as it sees any other update.
+      if (appendMd && !hasContentMd) {
+        const base = body.replace(/\s+$/, '');
+        patch.content_md = base ? `${base}\n\n${appendMd}` : appendMd;
+        appended = true;
+      } else {
+        patch.content_md = body;
+      }
     }
     if (Object.keys(patch).length === 0) throw new Error('nothing to update');
     patch.updated_by = (args as any)._caller_user_id ?? null;
@@ -8233,8 +8302,10 @@ async function executeWikiAction(
       ...data,
       url: `/admin/wiki/${data.slug}`,
       status: 'updated',
-      mode: appended ? 'append' : (hasContentMd ? 'replace' : 'metadata'),
-      ...(appended ? { note: 'Appended to the end of the existing body — nothing existing was replaced.' } : {}),
+      mode: replaced ? (appended ? 'edit+append' : 'edit') : appended ? 'append' : (hasContentMd ? 'replace' : 'metadata'),
+      ...(replaced ? { edits: replaced, replaced: replaced.reduce((n, e) => n + e.replaced, 0) } : {}),
+      ...(replaced && !appended ? { note: 'Only the named text was changed — the rest of the body is as it was.' } : {}),
+      ...(appended && !replaced ? { note: 'Appended to the end of the existing body — nothing existing was replaced.' } : {}),
       ...(hasContentMd && appendMd ? { note: 'content_md was sent, so the WHOLE body was replaced; append_md was ignored.' } : {}),
     };
   }
@@ -8249,7 +8320,7 @@ async function executeWikiAction(
 
   return {
     error: `Unknown wiki action: ${action}. Valid actions: list, get, create, update, delete.`,
-    hint: 'To label a page, update it: tags replaces its labels, add_tags adds to them. To add a section, update with append_md.',
+    hint: 'To label a page, update it: tags replaces its labels, add_tags adds to them. To add a section, update with append_md; to change a phrase, update with replace: [{ find, with }].',
   };
 }
 
@@ -9730,16 +9801,32 @@ async function executeBlogAction(
 
   // browse_blog — list published posts for visitors
   if (skillName === 'browse_blog') {
-    const { search, limit = 5 } = args as any;
+    const a = args as Record<string, unknown>;
+    // `search` is the parameter; an agent also reaches for `query` — which was
+    // read by nobody, so "posts about Edge Colocation" answered every post
+    // there is and the caller took the list for the matches (optic,
+    // 2026-11-19). The aliases the generic list reads are read here too.
+    const aliased = SEARCH_ALIASES.map((k) => a[k]).find((v) => typeof v === 'string' && v.trim());
+    const search = String((typeof a.search === 'string' && a.search.trim() ? a.search : aliased) ?? '').trim();
+    const limit = Math.min(Math.max(Number(a.limit) || 5, 1), 100);
     let query = supabase.from('blog_posts')
       .select('id, title, slug, excerpt, featured_image, published_at, reading_time_minutes')
       .eq('status', 'published')
       .order('published_at', { ascending: false })
       .limit(limit);
-    if (search) query = query.ilike('title', `%${search}%`);
+    // Title or excerpt — what a visitor sees in the list. The body is
+    // find_in_content's (every post, every status, with the place it says it).
+    if (search) query = query.or(searchOrFilter(['title', 'excerpt'], search));
     const { data, error } = await query;
     if (error) throw new Error(`Browse blog failed: ${error.message}`);
-    return { posts: data || [] };
+    return {
+      posts: data || [],
+      ...(search ? { search, searched: ['title', 'excerpt'] } : {}),
+      // The pointer names an internal skill, so a visitor's chat is not given it.
+      ...(search && !(data || []).length
+        ? { note: `No published post has this in its title or excerpt.${a._public_chat === true ? '' : ' To find a phrase inside post bodies, use find_in_content.'}` }
+        : {}),
+    };
   }
 
   // manage_blog_categories

@@ -38,7 +38,7 @@ const WIKI_SKILLS: SkillSeed[] = [
   {
     name: 'manage_wiki_page',
     description:
-      'Manage internal wiki pages (intranet): list, get, create, update, delete. THE skill whenever someone asks for a wiki page — "skriv en wikisida om X", "skapa en intern sida i wikin", "uppdatera wikisidan". update with content_md REPLACES the whole body — for an addition use append_md instead, never regenerate a page you have not read in full. Use when: creating or editing any wiki page; drafting onboarding notes; updating an internal SOP; capturing a process; seeding the intranet with a new topic. NOT for: product documentation pages (manage_docs_page); public knowledge base articles (manage_kb_article); public website pages (manage_page); blog posts (write_blog_post).',
+      'Manage internal wiki pages (intranet): list, get, create, update, delete. THE skill whenever someone asks for a wiki page — "skriv en wikisida om X", "skapa en intern sida i wikin", "uppdatera wikisidan". update with content_md REPLACES the whole body — to change a phrase or a paragraph use replace ([{ find, with }]: only the named text changes, the page is not re-sent), for an addition use append_md, and never regenerate a page you have not read in full. Use when: creating or editing any wiki page; drafting onboarding notes; updating an internal SOP; capturing a process; seeding the intranet with a new topic. NOT for: product documentation pages (manage_docs_page); public knowledge base articles (manage_kb_article); public website pages (manage_page); blog posts (write_blog_post).',
     category: 'content',
     handler: 'module:wiki',
     scope: 'internal',
@@ -47,7 +47,7 @@ const WIKI_SKILLS: SkillSeed[] = [
       function: {
         name: 'manage_wiki_page',
         description:
-          'Manage internal wiki pages (intranet): list, get, create, update, delete. On update, content_md replaces the ENTIRE body; append_md adds a section without touching what is already there.',
+          'Manage internal wiki pages (intranet): list, get, create, update, delete. On update, content_md replaces the ENTIRE body; replace changes named text in place; append_md adds a section without touching what is already there.',
         parameters: {
           type: 'object',
           properties: {
@@ -73,6 +73,20 @@ const WIKI_SKILLS: SkillSeed[] = [
               type: 'string',
               description:
                 'Append this markdown as a new section at the end — use for ADDITIVE changes instead of regenerating the whole body; full-body content_md REPLACES everything.',
+            },
+            replace: {
+              type: 'array',
+              description:
+                'update: change part of the body WITHOUT sending the body — the way to fix a phrase, a figure or a paragraph on a long page. Each edit names the text as it stands (find, matched exactly) and what replaces it (with; "" removes it). find must occur exactly once unless all is true. All edits apply or none does; one call is one revision. Not together with content_md.',
+              items: {
+                type: 'object',
+                properties: {
+                  find: { type: 'string', description: 'The text as it stands in the page — exact case, spaces and line breaks. Long enough to occur once.' },
+                  with: { type: 'string', description: 'What replaces it. An empty string removes the text.' },
+                  all: { type: 'boolean', description: 'true: change every occurrence (a renamed product, a term). Default false: the text must occur exactly once.' },
+                },
+                required: ['find', 'with'],
+              },
             },
             tags: {
               type: 'array',
@@ -118,9 +132,21 @@ a body from memory is how sections disappear silently.
 - **Adding** a section, a note, a new step → **\`append_md\`**. The server reads
   the stored body and concatenates \`\\n\\n\` + your markdown. Nothing existing
   can be lost, and the revision is recorded exactly like any other update.
+- **Changing** a phrase, a figure, a paragraph → **\`replace\`**:
+  \`[{ find: "the text as it stands", with: "the new text" }]\`. The server
+  reads the stored body, changes exactly what you named and writes once. You
+  do not send the page, so nothing else can change — on a long page this is
+  one short call instead of the whole body again. \`find\` is matched exactly
+  and must occur once; \`all: true\` changes every occurrence (a renamed
+  product). All edits apply or none does: a refusal lists \`failed_edits\`
+  (not in the page, or occurs N times) and nothing was written.
 - **Rewriting** the page on purpose → \`content_md\`, and only after an
-  \`action: 'get'\` so you are replacing text you have actually read.
-- Sending both wins for \`content_md\` (full replacement) and the response says so.
+  \`action: 'get'\` so you are replacing text you have actually read. Never
+  rewrite a page to change a phrase, and never in several calls: between the
+  first and the last the page is a fragment.
+- \`append_md\` with \`content_md\`: \`content_md\` wins (full replacement) and
+  the response says so. \`replace\` with \`content_md\` is refused; \`replace\`
+  with \`append_md\` edits first, then appends.
 
 ### Parameters
 - **action**: list | get | create | update | delete
@@ -133,6 +159,8 @@ a body from memory is how sections disappear silently.
   blank-page artifacts. Use \`[[Slug]]\` or \`CamelCase\` to link.
 - **append_md**: additive alternative to content_md on update — appended as a
   new section at the end.
+- **replace**: \`[{ find, with, all? }]\` on update — changes the named text in
+  place. The answer carries \`edits\` (how many times each was replaced).
 - **tags** / **add_tags**: labels the wiki groups on (the left column is
   grouped by tag, not by tree). A page may bear several. \`tags\` replaces the
   field, \`add_tags\` adds. A \`#tag\` written in the body counts too and
@@ -152,7 +180,7 @@ a body from memory is how sections disappear silently.
   {
     name: 'search_wiki',
     description:
-      'Search the internal wiki by query string against title and markdown body. Use when: finding existing intranet pages before creating duplicates; answering a support/HR question that may already be documented; building a list of related pages. NOT for: public knowledge base search.',
+      'Search the internal wiki by words against title and markdown body: pages bearing all the words first, else those bearing some (the answer says which). Use when: finding existing intranet pages before creating duplicates; answering a support/HR question that may already be documented; building a list of related pages. NOT for: public knowledge base search (search_kb); every place an exact phrase occurs, across wiki, pages, blog and KB (find_in_content).',
     category: 'content',
     handler: 'module:wiki',
     scope: 'internal',
@@ -185,14 +213,22 @@ a body from memory is how sections disappear silently.
     },
     instructions: `## search_wiki
 ### What
-ILIKE search over wiki page title + content_md.
+Word search over wiki page title + content_md. Each word is matched on its
+own, anywhere in the page.
 ### When to use
 - Before creating a new wiki page, check for existing coverage.
 - Looking up an internal process during a support chat.
 ### Parameters
-- **query**: required free-text.
+- **query**: required free-text — a few words, not a sentence.
 - **limit**: optional, defaults to 10.
-- **tag**: optional — narrow to pages bearing the tag.`,
+- **tag**: optional — narrow to pages bearing the tag.
+### The answer
+- \`match: "all_terms"\` — every page bears every word, title hits first.
+- \`match: "some_terms"\` — no page bears them all; these bear some, most
+  first, each with \`matched_terms\`. Shorten the query before concluding
+  the topic is undocumented.
+- \`excerpt\` is the text around the first matched word, not the page's opening.
+- An exact phrase, counted, across wiki, pages, blog and KB: \`find_in_content\`.`,
   },
   {
     name: 'wiki_tags',
