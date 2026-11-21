@@ -5,13 +5,20 @@
 # modelled source, so the SSRF of 2026-11-07 is caught by the repo's own
 # guard (outbound-urls-are-public), not here. Results land under Security →
 # Code scanning. Fleet-only: forks carry their own.
+#
+# main and the weekly run only (2026-11-21). It ran on every pull request
+# too: 218 of its 351 runs in a month, each about four minutes, for a repo
+# with one committer whose PRs reach main within the hour — the alert lands
+# under Code scanning from main's run all the same. A change that only
+# touches prose (docs/, *.md) is not analysed at all.
 name: CodeQL
 
 on:
   push:
     branches: [main]
-  pull_request:
-    branches: [main]
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
   schedule:
     - cron: '17 4 * * 2'   # Tuesdays 04:17 UTC
 
