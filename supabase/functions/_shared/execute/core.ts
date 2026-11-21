@@ -137,7 +137,9 @@ async function pageLanguageVersions(
     ...((siblingRows ?? []) as SiblingHead[]).map((r) => ({ locale: r.locale, status: r.status, source: 'row', slug: r.slug })),
   ];
 }
-import { handleTranslateUiText } from '../handlers/translate-ui-text.ts';
+import { handleTranslateUiText, type UiTextCatalog } from '../handlers/translate-ui-text.ts';
+import type { TranslateSiteArgs } from '../handlers/translate-site.ts';
+import { handleTranslateSite } from '../handlers/translate-site-run.ts';
 import { handleReplyToEmail } from '../handlers/reply-to-email.ts';
 import { handler as hEnrichCompanyProfile } from '../handlers/enrich-company-profile.ts';
 import { handler as hExtractReceipt } from '../handlers/extract-receipt.ts';
@@ -286,6 +288,7 @@ const INTERNAL_HANDLERS: Record<string, InternalHandler> = {
   'internal:convert_translation_groups': ({ supabase, args }) => handleConvertTranslationGroups(supabase, args as ConvertGroupsArgs),
   'internal:list_stale_translations': ({ supabase, args }) => handleListStaleTranslations(supabase, args as ListStaleArgs),
   'internal:translate_ui_text': ({ supabase, args }) => handleTranslateUiText(supabase, args as any, bundledUiTextCatalog as any),
+  'internal:translate_site': ({ supabase, args }) => handleTranslateSite(supabase, args as TranslateSiteArgs, bundledUiTextCatalog as UiTextCatalog),
   'internal:performance_mode_status': async ({ supabase }) => {
     const { data: pm, error: pmErr } = await supabase.rpc('performance_mode_status');
     return pmErr ? { success: false, error: pmErr.message } : { success: true, ...(pm as Record<string, unknown>) };
