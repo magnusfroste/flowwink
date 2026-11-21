@@ -225,6 +225,14 @@ older answer over 1 500 characters with its beginning and a note; `NEVER_FOLD`
 out. A skill whose answer an agent must hold for many steps returns ids and
 names early in its answer — the beginning is what survives.
 
+**A read answers what the question needs (2026-11-22).** Folding reaches an
+answer only once it is two turns old; a four-step run carries its first step's
+answers almost to the end. `_shared/skills/lean-answers.ts`: `browse_blog` over
+ten posts is slug, title and date; `search_knowledge` is its three best hits
+whole and the rest previews (`cut: true`). `full: true` is the way out of both,
+and the answer says so. A new read that can return many rows or long texts
+states what a LONG answer leaves out — the generic `db:` list already does.
+
 ### The Agent Harness (platform spine)
 
 The components above plus the ReAct loop, Skill Relevance Engine, trust dial, cadence/

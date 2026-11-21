@@ -652,7 +652,11 @@ What to write NEXT is the identity's open content angles, not this list.
             },
             limit: {
               type: 'number',
-              description: 'Max results (default 5, max 100)',
+              description: 'Max results (default 5, max 100). Over 10 posts are listed by slug, title and date only.',
+            },
+            full: {
+              type: 'boolean',
+              description: 'Excerpt and image for every post of a list over 10 (default false).',
             },
           },
         },
