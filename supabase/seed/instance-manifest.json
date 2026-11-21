@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261121100001",
-      "migrations_count": 786,
+      "migration_head": "20261121110000",
+      "migrations_count": 787,
       "migrations": [
         {
           "version": "00000000000000",
@@ -3149,19 +3149,23 @@
         {
           "version": "20261121100001",
           "name": "en-aterstallning-behaller-plattformens-grunddata"
+        },
+        {
+          "version": "20261121110000",
+          "name": "partssokningen-forstar-leverantor"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:617f4685314e3443a2e152ba0e03eaff44c7574382fa759ce0d4ca613b0ee65c",
+      "seed_hash": "sha256:f4bbf9630e096911e3096618e8868bf8a26849c25f7cd4b8279c4b240581734d",
       "skill_count": 677,
       "module_count": 69
     },
     "edge_functions": {
       "count": 76,
-      "shared_hash": "sha256:61271e82896116e64dddce6b113db0df1b237ae962d2808a7ec37f485e81521c",
+      "shared_hash": "sha256:1449b2ccd23d29372f254016d22b46a20774b7343bba7ce837f098a59fe9bb54",
       "functions": {
-        "agent-execute": "sha256:1e8deae8c6a3c482f2d98be2ef3cc7e8c6d6732987e1ecc1b1ca4f0aae5d1872",
+        "agent-execute": "sha256:eb3f2c8a9a3918c6645091eaea8928e7fa9809c4bc5d7a82aec44b559b3c3962",
         "agent-operate": "sha256:4320e02dd3e6a0a1706b42dc1905b631c61e6a4cbe3556c701f474c278c89e1a",
         "ai-task": "sha256:ce3aacdef625bba758f4323da3e49104a1b94a3d3d77d800e89dacd0b803d65e",
         "automation-dispatcher": "sha256:d905660cd907c6f1ef5c7cac0a97ed44a4e4187ef4d5179089fa2714b2751443",
