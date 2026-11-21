@@ -260,6 +260,12 @@ async function main(): Promise<number> {
         done++;
         const errs = res.findings.filter((f) => f.severity === 'error').length;
         console.log(`  [${plan.role} ${done}/${visits.length}] ${errs ? 'FAIL' : 'ok  '} ${v.path} → ${res.outcome}${res.redirected ? ` (${res.finalPath})` : ''}${errs ? ` · ${errs} error(s)` : ''}`);
+        // The error itself goes in the log too (2026-11-21): the nightly proof
+        // failed on one visit of /admin/customer/:id, and what broke was only in
+        // the uploaded report, which nobody reading the run's log could see.
+        for (const f of res.findings.filter((x) => x.severity === 'error').slice(0, 3)) {
+          console.log(`      ✗ ${f.kind}: ${String(f.message ?? f.signature).replace(/\s+/g, ' ').slice(0, 300)}`);
+        }
         return res;
       });
       results.push(...roleResults);
