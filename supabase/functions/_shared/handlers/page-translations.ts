@@ -433,7 +433,7 @@ export async function handleListStaleTranslations(supabase: SupabaseClient, args
       const o = byKey.get(`${src.id}@${l}`);
       if (!o) {
         if (src.legacy) continue; // legacy sibling model — reported by the RPC below
-        if (includeMissing) findings.push({ entity, slug: src.slug, locale: l, overlay: 'none', units_total: src.units.length, missing: src.units.length, stale: 0 });
+        if (includeMissing) findings.push({ entity, id: src.id, slug: src.slug, locale: l, overlay: 'none', units_total: src.units.length, missing: src.units.length, stale: 0 });
         continue;
       }
       const d = diffOverlay(src.units, o.strings);
@@ -443,7 +443,7 @@ export async function handleListStaleTranslations(supabase: SupabaseClient, args
         ...(includeMissing ? d.missing.map((u) => ({ unit: u.unit, kind: u.kind, state: 'missing', source_text: u.kind === 'doc' ? undefined : u.text.slice(0, 120) })) : []),
       ].slice(0, Math.max(0, limit - unitsListed));
       unitsListed += list.length;
-      findings.push({ entity, slug: src.slug, locale: l, overlay: o.status, units_total: src.units.length, missing: d.missing.length, stale: d.stale.length, orphans: d.orphans.length, units: list });
+      findings.push({ entity, id: src.id, slug: src.slug, locale: l, overlay: o.status, units_total: src.units.length, missing: d.missing.length, stale: d.stale.length, orphans: d.orphans.length, units: list });
     }
   };
   const overlayMap = async (entity: ContentEntity) => {

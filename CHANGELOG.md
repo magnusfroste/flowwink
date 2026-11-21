@@ -20,6 +20,7 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
   it does not, at any width. Found by "Check widths" on its first run.
 
 ### Added
+- `translate_site(locale)`: the whole site into a language in one call — declares the language, translates and publishes every page, post, product, category and variant label that is missing or stale in it, then the interface texts (not for Swedish, which the platform speaks). Time-boxed runs; the probed automation "Finish site translations" carries on every ten minutes, and a language that cannot move (no AI provider) is marked stuck instead of retried. Adding a language under Site settings starts it, and the language shows its progress; "Translate the site" replaces the browser loop over pages.
 - The customer portal shows the customer's bookings (`/account/bookings`, and the coming ones on the overview): `my_account()` carries `bookings` — the customer's own (by `portal_email()`), the last 90 days and ahead — with the same change-or-cancel link the confirmation mail carries, only on a coming booking. The customer path checks it, and that another customer sees none.
 
 - **Another system's MCP server can be connected as a source of skills.** A

@@ -352,6 +352,21 @@ still gates visibility. Addresses: `/blog/<slug>` in the site language,
 languages: "all", publish: true)` backfills; `manage_blog_posts update` only
 re-translates stale units. See docs/architecture/page-translations.md §9.
 
+**`translate_site` — a language in one call (2026-11-20).** Adding a language
+was a checklist (enable_language, translate_page per page from the browser, then
+posts, products, attributes, translate_ui_text). `translate_site(locale)` does it:
+declares the language, lists what is missing or stale
+(`list_stale_translations`, per string by hash — a hand-polished translation is
+never redone), translates + publishes item by item through `translate_content`
+inside a time budget (default 100 s), then the interface texts once the content
+is all in (never for a language `PLATFORM_UI_TEXT` speaks). The state is the
+content; `site_settings.translation_sweep` only records `running | done | stuck`
+per language, and the automation "Finish site translations" (probe
+`translation_sweep_running`) continues with `continue: true`. Three identical
+failures in a row end a run, and a run that moves nothing is `stuck` — left for a
+person, never retried every ten minutes. Adding a language under Site settings
+starts it. Changing `site_languages.default` stays a separate launch decision.
+
 **`manage_product` / products in every language** — the same overlay model
 (§10, and Shopify's): a product is written ONCE in `products.locale`; `languages`
 (array or `"all"`) on create/update translates `name` and `description` into

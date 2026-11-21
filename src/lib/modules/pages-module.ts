@@ -1016,6 +1016,52 @@ translate_page(slug, locale) per page, translate_ui_text(locale), then
 publish_translation(slug, locale). Nothing is copied.`,
   },
   {
+    name: 'translate_site',
+    description: 'Translate the whole site into a language in one call: declares the language when needed, then translates and publishes every page, blog post, product, category and variant label that is missing or out of date in it, then the interface texts. Only what is missing or stale is touched, so a translation a person polished is never redone. Works in time-boxed runs and continues by itself (the "Finish site translations" sweep). Use when: an operator adds a language or asks to "translate the site into German"; after many edits, to bring a language up to date; to see what is left (dry_run, or status in the answer). NOT for: one page or post (translate_page, translate_content); changing which language visitors land in (manage_site_settings key site_languages — a launch decision); the admin interface (always English).',
+    category: 'content',
+    handler: 'internal:translate_site',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'translate_site',
+        description: 'Translate and publish everything missing or stale in a language — pages, posts, products, categories, variant labels, interface texts. Continues by itself until done.',
+        parameters: {
+          type: 'object',
+          properties: {
+            locale: { type: 'string', description: 'The language to translate the site into: "de", "sv", "en-GB".' },
+            dry_run: { type: 'boolean', description: 'Count what would be translated, per kind; change nothing.' },
+            continue: { type: 'boolean', description: 'The sweep\'s call: carry on with every language still being translated. Omit locale.' },
+            budget_seconds: { type: 'integer', description: 'Seconds this call may spend (default 100, at most 120).' },
+          },
+        },
+      },
+      risk: 'medium',
+      reversible: true,
+      reversal: 'publish_translation with publish: false (per item), or remove the language from site_languages.enabled',
+    },
+    instructions: `## translate_site
+
+### What one call does
+1. Declares the language (enable_language) if the site does not have it yet.
+2. Lists what is missing or stale in it (list_stale_translations — per string,
+   by hash) and translates + publishes item by item (translate_content), as
+   much as fits in the time budget.
+3. When the content is done: the interface texts (translate_ui_text) — not for
+   Swedish, which the platform already speaks.
+
+### Reading the answer
+- \`status: done\` — translated and published; the switcher offers it.
+- \`status: running\` — \`remaining\` items are left. The sweep "Finish site
+  translations" continues every ten minutes; calling again does the same.
+- \`status: stuck\` — nothing moved in the last run; \`failed[]\` says why (no
+  AI provider, say). Fix it and call translate_site again.
+
+### Not here
+Making the language the one visitors LAND in changes the addresses — a separate
+decision (site_languages.default). Ask the person.`,
+  },
+  {
     name: 'enable_language',
     description: 'Add a language to the site (site_languages.enabled). Copies nothing: a language with no translations is an empty overlay, and the switcher lists a page in it only once its overlay is published. Use when: an operator asks to "add English" or "make the site available in German"; before translate_page on a language the site does not declare yet. NOT for: translating pages (translate_page), the strings around the content (translate_ui_text), changing which language visitors land in (manage_site_settings key site_languages). dry_run reports which pages would need translating.',
     category: 'content',
@@ -1392,6 +1438,19 @@ export const pagesModule = defineModule<PageModuleInput, PageModuleOutput>({
     tables: ['page_versions', 'page_views', 'pages'],
   },
   skillSeeds: PAGES_SKILLS,
+
+  automations: [
+    {
+      name: 'Finish site translations',
+      description:
+        'While a language is being translated (translate_site), carry on every ten minutes until every page, post, product and interface text in it is translated and published. Wakes nothing when no language is in progress (work probe translation_sweep_running); a language that could not move forward is marked stuck and left for a person.',
+      trigger_type: 'cron',
+      trigger_config: { expression: '*/10 * * * *', work_probe: 'translation_sweep_running' },
+      skill_name: 'translate_site',
+      skill_arguments: { continue: true },
+      executor: 'platform',
+    },
+  ],
 
   webhookEvents: [
     { event: 'page.published', description: 'A page was published' },

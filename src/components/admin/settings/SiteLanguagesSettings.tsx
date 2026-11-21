@@ -2,7 +2,8 @@ import { useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Sparkles, Languages, Loader2, Plus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { languageCoverage, pagesToTranslate, type PageHead } from '@/lib/page-translation-state';
+import { languageCoverage, type PageHead } from '@/lib/page-translation-state';
+import { anyRunning, sweepFor, sweepLine } from '@/lib/translation-sweep';
 import { runTranslationSkill, usePageOverlays } from '@/hooks/usePageTranslations';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -62,10 +63,13 @@ export function SiteLanguagesSettings() {
   const queryClient = useQueryClient();
   const [adding, setAdding] = useState('');
 
-  // Adding a language copies nothing: a language with no translations is an
-  // empty overlay (page-translations.md §5.1). "Translate what is missing" runs
-  // translate_page per page that lacks a published version — one call per
-  // page keeps each inside the edge wall clock — then publishes the overlay.
+  // Adding a language translates the whole site into it (translate_site, on
+  // the server): pages, posts, products, categories, variant labels and the
+  // interface texts — only what is missing or stale, published as it goes. One
+  // call does what fits in the edge wall clock; the "Finish site translations"
+  // sweep carries on, so nobody keeps this tab open. Until 2026-11-20 the
+  // button looped translate_page over the pages from the browser, and posts,
+  // products and the interface were left to someone remembering them.
   const { data: pageHeads = [] } = useQuery({
     queryKey: ['pages', 'heads-for-languages'],
     queryFn: async () => {
@@ -83,26 +87,32 @@ export function SiteLanguagesSettings() {
     () => languageCoverage(pageHeads, overlays, defaultLanguage, languages),
     [pageHeads, overlays, defaultLanguage, languages],
   );
-  const [translating, setTranslating] = useState<{ locale: string; done: number; total: number } | null>(null);
-  const translateMissing = async (locale: string) => {
-    const todo = pagesToTranslate(pageHeads, overlays, defaultLanguage, locale);
-    if (!todo.length) { toast.success(`Every page already has a published ${locale.toUpperCase()} version.`); return; }
-    setTranslating({ locale, done: 0, total: todo.length });
-    let failed = 0;
-    for (const [i, page] of todo.entries()) {
-      try {
-        await runTranslationSkill('translate_page', { slug: page.slug, locale, publish: true });
-      } catch (err) {
-        failed += 1;
-        toast.error(`${page.slug}: ${(err as Error).message}`);
-      }
-      setTranslating({ locale, done: i + 1, total: todo.length });
+  const { data: sweep } = useQuery({
+    queryKey: ['translation-sweep'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('site_settings').select('value').eq('key', 'translation_sweep').maybeSingle();
+      if (error) throw error;
+      return (data?.value ?? {}) as unknown;
+    },
+    refetchInterval: (q) => (anyRunning(q.state.data) ? 15_000 : false),
+  });
+  const [translating, setTranslating] = useState<string | null>(null);
+  const translateSite = async (locale: string) => {
+    setTranslating(locale);
+    try {
+      const r = await runTranslationSkill('translate_site', { locale }) as Record<string, unknown>;
+      const status = String(r.status ?? '');
+      if (status === 'done') toast.success(`The site is translated into ${locale.toUpperCase()} and published.`);
+      else if (status === 'stuck') toast.error(`Could not translate into ${locale.toUpperCase()}: ${String((r.failed as Array<{ error?: string }> | undefined)?.[0]?.error ?? 'see the language card')}`);
+      else toast.success(`${Number(r.translated_now ?? 0)} item(s) translated into ${locale.toUpperCase()}, ${Number(r.remaining ?? 0)} left — the server carries on.`);
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setTranslating(null);
+      queryClient.invalidateQueries({ queryKey: ['translation-sweep'] });
+      queryClient.invalidateQueries({ queryKey: ['page-translations'] });
+      queryClient.invalidateQueries({ queryKey: ['pages'] });
     }
-    setTranslating(null);
-    queryClient.invalidateQueries({ queryKey: ['page-translations'] });
-    queryClient.invalidateQueries({ queryKey: ['pages'] });
-    if (failed) toast.warning(`${todo.length - failed} of ${todo.length} page(s) translated into ${locale.toUpperCase()}; ${failed} failed — see the pages list.`);
-    else toast.success(`${todo.length} page(s) translated into ${locale.toUpperCase()} and published.`);
   };
 
   // What removing a language would actually cost. A count is the difference
@@ -140,7 +150,9 @@ export function SiteLanguagesSettings() {
     }
     if (languages.includes(tag)) { setAdding(''); return; }
     setAdding('');
-    save({ default: defaultLanguage, enabled: [...languages, tag] });
+    update.mutate({ default: defaultLanguage, enabled: [...languages, tag] }, {
+      onSuccess: () => { void translateSite(tag); },
+    });
   };
 
   const remove = (tag: string) => {
@@ -189,17 +201,20 @@ export function SiteLanguagesSettings() {
                         return `${c.published} of ${c.pages} pages published${c.draft ? ` · ${c.draft} draft` : ''}`;
                       })()}
                 </span>
-                {tag !== defaultLanguage && (coverage.find((x) => x.locale === tag)?.published ?? 0) < (coverage.find((x) => x.locale === tag)?.pages ?? 0) && (
+                {tag !== defaultLanguage && sweepLine(sweepFor(sweep, tag)) && (
+                  <span className="text-xs text-muted-foreground" data-testid="translation-sweep">{sweepLine(sweepFor(sweep, tag))}</span>
+                )}
+                {tag !== defaultLanguage && sweepFor(sweep, tag)?.status !== 'running' && (
                   <button
                     type="button"
-                    onClick={() => translateMissing(tag)}
+                    onClick={() => translateSite(tag)}
                     disabled={translating !== null}
-                    title={`Translate every ${defaultLanguage.toUpperCase()} page that has no published ${tag.toUpperCase()} version, and publish it. Nothing is copied.`}
+                    title={`Translate and publish everything that is missing or out of date in ${tag.toUpperCase()} — pages, posts, products and the interface texts. What a person corrected by hand is kept.`}
                     className="inline-flex items-center gap-1 text-xs text-primary hover:underline disabled:opacity-50"
                   >
-                    {translating?.locale === tag
-                      ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> {translating.done}/{translating.total}</>
-                      : <><Sparkles className="h-3.5 w-3.5" /> Translate what is missing</>}
+                    {translating === tag
+                      ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Translating…</>
+                      : <><Sparkles className="h-3.5 w-3.5" /> Translate the site</>}
                   </button>
                 )}
                 {tag !== defaultLanguage && (
@@ -262,12 +277,14 @@ export function SiteLanguagesSettings() {
         </div>
 
         <p className="text-sm text-muted-foreground">
-          Adding a language copies nothing. A page is designed once; every other language is a
-          layer of text on top of it. <strong>Translate what is missing</strong> translates and
-          publishes every page that has no version in that language — only strings that are
+          Adding a language translates the whole site into it: pages, blog posts, products,
+          categories and the interface texts, published as they are done. It runs on the server —
+          you can close this page; the language shows how far it has come. A page is designed
+          once; every other language is a layer of text on top of it, and only strings that are
           missing or whose source changed are ever retranslated, so a translation you polished by
-          hand stays until its source changes. Each page's <em>Translations</em> view in the editor
-          shows the strings side by side.
+          hand stays until its source changes. <strong>Translate the site</strong> brings a language
+          up to date after edits. Each page's <em>Translations</em> view in the editor shows the
+          strings side by side.
         </p>
         <p className="text-sm text-muted-foreground">
           Changing the default decides which version a visitor lands on, and which language
