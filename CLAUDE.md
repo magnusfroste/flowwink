@@ -213,6 +213,18 @@ read the executor as text read `_shared/execute/core.ts`.
 - `ai-call.ts`, `ai-config.ts`, `ai-providers.ts` — AI provider abstraction
 - `token-tracking.ts`, `trace.ts`, `agent-audit.ts` — observability
 
+**A read tool answer is folded (2026-11-21).** Every ReAct step resends the
+whole conversation, and a tool's answer stayed in it whole: on the fleet's
+heartbeats one large answer early cost 5–10 000 tokens on every later step, and
+LiteIT stopped at its token budget two mornings out of four.
+`foldReadToolResults` (`_shared/pilot/fold-tool-results.ts`, called before every
+model call in `reason.ts`) keeps the last two tool turns whole and replaces an
+older answer over 1 500 characters with its beginning and a note; `NEVER_FOLD`
+(a skill's instructions, the soul, an objective) stays. Measured by replay:
+20–25 % fewer prompt tokens. `ReasonConfig.foldToolResults: false` opts a run
+out. A skill whose answer an agent must hold for many steps returns ids and
+names early in its answer — the beginning is what survives.
+
 ### The Agent Harness (platform spine)
 
 The components above plus the ReAct loop, Skill Relevance Engine, trust dial, cadence/
