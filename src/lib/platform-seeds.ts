@@ -413,6 +413,7 @@ FlowPilot objectives re-seed via auto-bootstrap on the next heartbeat. demo-cycl
         parameters: {
           type: 'object',
           properties: {
+            budget_seconds: { type: 'integer', description: 'Seconds this call may spend (default 60, at most 110). What it did is saved; `remaining` says how many strings are left — call again until it is 0.' },
             locale: { type: 'string', description: 'Target language tag, e.g. "sv"' },
             from: { type: 'string', description: "Source language (default: the site's own language, else the English in the code)" },
             overwrite: { type: 'boolean', description: 'Retranslate keys that already have a value (default false)' },

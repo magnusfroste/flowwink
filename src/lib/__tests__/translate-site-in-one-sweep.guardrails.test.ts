@@ -24,11 +24,15 @@ function fake(opts: {
   itemMs?: number;
   failSlugs?: string[];
   uiFails?: boolean;
+  uiDies?: boolean;
+  /** How many calls the interface texts take (default 1). */
+  uiPasses?: number;
   state?: SweepState;
 } = {}) {
   let clock = 0;
   let state: SweepState = opts.state ?? {};
-  const calls = { enabled: [] as string[], items: [] as string[], ui: [] as string[] };
+  const calls = { enabled: [] as string[], items: [] as string[], ui: [] as string[], uiBudgets: [] as number[] };
+  const writes: SweepState[] = [];
   let stale = [...(opts.stale ?? [])];
   const deps: TranslateSiteDeps = {
     languages: async () => ({ default: 'sv', enabled: opts.enabled ?? ['sv'] }),
@@ -41,13 +45,19 @@ function fake(opts: {
       stale = stale.filter((x) => x.slug !== f.slug);
       return { success: true };
     },
-    translateUi: async (l) => { calls.ui.push(l); clock += 5000; return opts.uiFails ? { success: false, error: 'ui failed' } : { success: true, translated: 300 }; },
+    translateUi: async (l, budget) => {
+      calls.ui.push(l); calls.uiBudgets.push(budget); clock += 5000;
+      if (opts.uiFails) return { success: false, error: 'ui failed' };
+      if (opts.uiDies) throw new Error('worker stopped');
+      const left = (opts.uiPasses ?? 1) - calls.ui.length;
+      return { success: true, translated: 300, remaining: left > 0 ? left * 300 : 0 };
+    },
     platformSpeaks: (l) => l === 'sv',
     readState: async () => JSON.parse(JSON.stringify(state)),
-    writeState: async (s) => { state = s; },
+    writeState: async (s) => { state = JSON.parse(JSON.stringify(s)); writes.push(state); },
     now: () => clock,
   };
-  return { deps, calls, get state() { return state; } };
+  return { deps, calls, writes, get state() { return state; } };
 }
 
 const items = (n: number): StaleFinding[] =>
@@ -102,6 +112,29 @@ describe('translate_site', () => {
     expect(r.status).toBe('done');
   });
 
+  it('the language is recorded as running BEFORE the work, so a stopped call is carried on', async () => {
+    // Sandbox, 2026-11-21: the platform stopped the first real run after 76 s
+    // (WORKER_RESOURCE_LIMIT). It had recorded nothing, so nothing continued.
+    const f = fake({ stale: items(2) });
+    await runTranslateSite({ locale: 'de' }, f.deps);
+    expect(f.writes[0].de.status).toBe('running');
+    expect(f.writes[0].de.remaining).toBe(2);
+    expect(f.calls.items.length).toBe(2);
+  });
+
+  it('interface texts that do not fit one call leave the language running until none are left', async () => {
+    const f = fake({ stale: items(1), uiPasses: 3 });
+    const first = await runTranslateSite({ locale: 'de' }, f.deps);
+    expect(first.status).toBe('running');
+    expect(String(first.interface_texts)).toMatch(/600 left/);
+    const second = await runTranslateSite({ continue: true }, f.deps);
+    expect(second.status).toBe('running');
+    const third = await runTranslateSite({ continue: true }, f.deps);
+    expect(third.status).toBe('done');
+    // The pass is handed the time that is left, never more than the budget.
+    expect(Math.max(...f.calls.uiBudgets)).toBeLessThanOrEqual(60);
+  });
+
   it('dry_run counts and changes nothing', async () => {
     const f = fake({ stale: items(3) });
     const r = await runTranslateSite({ locale: 'de', dry_run: true }, f.deps);
@@ -138,5 +171,16 @@ describe('the admin and the sweep', () => {
     expect(mod).toMatch(/name: 'Finish site translations'[\s\S]{0,600}work_probe: 'translation_sweep_running'[\s\S]{0,200}skill_name: 'translate_site'/);
     const sql = readdirSync(join(ROOT, 'supabase/migrations')).map((f) => read(`supabase/migrations/${f}`)).join('\n');
     expect(sql).toMatch(/FUNCTION public\.work_probe_translation_sweep_running\(\)/);
+  });
+});
+
+describe('translate_ui_text keeps what it translated', () => {
+  it('saves after every wave and answers what is left', () => {
+    const src = read('supabase/functions/_shared/handlers/translate-ui-text.ts');
+    // The save is inside the wave loop, not after it.
+    const loop = src.slice(src.indexOf('for (let w = 0; w < batches.length'), src.indexOf('const remaining = batches.slice(batchesDone)'));
+    expect(loop).toMatch(/\.upsert\(\{ key: 'ui_text'/);
+    expect(loop).toMatch(/Date\.now\(\) \+ slowestWave > deadline\) break/);
+    expect(src).toMatch(/remaining,\n\s+complete: remaining === 0/);
   });
 });

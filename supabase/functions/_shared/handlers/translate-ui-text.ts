@@ -29,7 +29,12 @@ export interface TranslateUiTextArgs {
   prefix?: string;
   dry_run?: boolean;
   context?: string;
+  /** Seconds this call may spend (default 60, at most 110). What is left is answered as `remaining`. */
+  budget_seconds?: number;
 }
+
+/** Batches sent to the model at the same time. */
+export const UI_TEXT_PARALLEL = 3;
 
 export async function handleTranslateUiText(
   supabase: any,
@@ -81,27 +86,46 @@ export async function handleTranslateUiText(
     return { success: true, locale: to, translated: 0, already_translated: Object.keys(existing).length, note: `Every key already has a ${to} translation.` };
   }
 
-  const { translations, untranslated } = await translateAll(
-    supabase, numbered,
-    { to, from, context: args.context, source: 'translate_ui_text' },
-    batches,
-  );
-
+  // In waves, saved as it goes, inside a time budget (2026-11-21). The whole
+  // catalogue is 1 300 strings — over two minutes at 60 a call — and it used to
+  // be saved once, at the end: on sandbox the worker was stopped after six
+  // batches and all 360 translated strings were lost, paid for and thrown away.
+  // A call now does what fits, keeps what it did, and says what is left.
+  const budgetMs = Math.max(5, Math.min(Number(args.budget_seconds ?? 60) || 60, 110)) * 1000;
+  const deadline = Date.now() + budgetMs;
   const overlay: Record<string, string> = { ...existing };
+  const untranslated: number[] = [];
   let written = 0;
-  todo.forEach((t, i) => {
-    const tr = translations.get(i);
-    if (tr) { overlay[t.key] = tr; written += 1; }
-  });
-  blob[`@${to}`] = overlay;
-
-  const { data: saved, error: saveErr } = await supabase
-    .from('site_settings')
-    .upsert({ key: 'ui_text', value: blob, updated_at: new Date().toISOString() }, { onConflict: 'key' })
-    .select('key')
-    .maybeSingle();
-  if (saveErr) return { success: false, error: `ui_text write failed: ${saveErr.message}` };
-  if (!saved) return { success: false, error: 'ui_text did not save.' };
+  let batchesDone = 0;
+  let slowestWave = 0;
+  for (let w = 0; w < batches.length; w += UI_TEXT_PARALLEL) {
+    if (w > 0 && Date.now() + slowestWave > deadline) break;
+    const wave = batches.slice(w, w + UI_TEXT_PARALLEL);
+    const t0 = Date.now();
+    const results = await Promise.all(wave.map((batch) =>
+      translateAll(supabase, batch, { to, from, context: args.context, source: 'translate_ui_text' }, [batch])
+        .catch((err) => ({ translations: new Map<number, string>(), untranslated: batch.map((it) => it.i), batches: 1, error: err as Error }))));
+    slowestWave = Math.max(slowestWave, Date.now() - t0);
+    const failure = results.find((r) => 'error' in r) as { error: Error } | undefined;
+    for (const r of results) {
+      for (const [i, tr] of r.translations) { overlay[todo[i].key] = tr; written += 1; }
+      untranslated.push(...r.untranslated);
+    }
+    batchesDone += wave.length;
+    blob[`@${to}`] = overlay;
+    const { data: saved, error: saveErr } = await supabase
+      .from('site_settings')
+      .upsert({ key: 'ui_text', value: blob, updated_at: new Date().toISOString() }, { onConflict: 'key' })
+      .select('key')
+      .maybeSingle();
+    if (saveErr) return { success: false, error: `ui_text write failed: ${saveErr.message}`, translated: written };
+    if (!saved) return { success: false, error: 'ui_text did not save.', translated: written };
+    // A wave that translated nothing and raised is the provider, not the text.
+    if (failure && results.every((r) => r.translations.size === 0)) {
+      return { success: false, error: failure.error.message, translated: written, remaining: todo.length - written };
+    }
+  }
+  const remaining = batches.slice(batchesDone).reduce((n, b) => n + b.length, 0);
 
   return {
     success: true,
@@ -109,8 +133,12 @@ export async function handleTranslateUiText(
     from,
     translated: written,
     untranslated: untranslated.length,
+    // Strings this call did not reach before its time ran out: call again.
+    remaining,
+    complete: remaining === 0,
     overlay_size: Object.keys(overlay).length,
-    batches: batches.length,
+    batches: batchesDone,
+    batches_total: batches.length,
     ...(enabled.length && !enabled.includes(to) ? { note: `"${to}" is not in site_languages.enabled yet — add it under Site Settings → Language & text, or the overlay is never shown.` } : {}),
     review: 'Site Settings → Language & text shows every key with its translation; correct there.',
   };
