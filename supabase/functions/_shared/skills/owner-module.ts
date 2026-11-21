@@ -23,6 +23,10 @@
  *     contract first or look at the result (optic, 2026-10-27: that is the
  *     designed workflow, and it went blind the moment the owner stopped being
  *     an admin). Whoever may edit pages may read what a page is made of.
+ *     find_in_content is the same class (optic, 2026-11-21): built for Svante's
+ *     Claude renaming a product across the site, and invisible to it, because
+ *     its owner holds sales + marketing. Whoever writes the blog may ask where
+ *     a phrase stands in the site's content.
  *
  * Access to the SOURCE object still needs its own module through RLS: an
  * override ADDS a requirement, it never replaces one. The override lives here
@@ -40,6 +44,7 @@ export const SKILL_OWNER_MODULE_OVERRIDES: Readonly<Record<string, string>> = Ob
   generate_subscription_invoice: 'invoicing', // seeded in subscriptions
   describe_blocks: 'pages',                   // platform seed; the block contract a page writer reads first
   inspect_rendered_page: 'pages',             // platform seed; what the page writer looks at afterwards
+  find_in_content: 'blog',                    // platform seed; where a phrase stands, before the writer changes it
 });
 
 /** Owning module id for authorization, or null when unmapped (⇒ admin-only). */
