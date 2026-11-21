@@ -658,6 +658,7 @@ export const SKILL_OWNER_MODULE: Readonly<Record<string, string>> = Object.freez
   "transfer_stock": "inventory",
   "translate_content": "blog",
   "translate_page": "pages",
+  "translate_site": "pages",
   "translate_site_into": "pages",
   "translate_ui_text": "platform",
   "trigger_procurement_for_mo": "manufacturing",
