@@ -6,6 +6,7 @@
 // in-process. The HTTP function (agent-execute/index.ts) is a thin wrapper:
 // parse the auth header → this → wrap in a Response. The JSON bundles stay in
 // agent-execute/ (scripts/generated-artifacts.ts writes them there).
+import { shapeBlogList, shapeKnowledgeHits } from '../skills/lean-answers.ts';
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import type { ExecuteAuth, ExecuteOutcome, ExecuteRequest } from './types.ts';
 import { blocksShapeError, normalizeBlockData, normalizeBlocks, validateBlockData } from '../normalize-blocks.ts';
@@ -9821,7 +9822,8 @@ async function executeBlogAction(
     const { data, error } = await query;
     if (error) throw new Error(`Browse blog failed: ${error.message}`);
     return {
-      posts: data || [],
+      // A long list is titles; a short one is what a visitor is shown.
+      ...shapeBlogList((data || []) as Array<Record<string, unknown>>, { full: a.full === true }),
       ...(search ? { search, searched: ['title', 'excerpt'] } : {}),
       // The pointer names an internal skill, so a visitor's chat is not given it.
       ...(search && !(data || []).length
@@ -19264,14 +19266,15 @@ async function executeSearchKnowledge(
     success: true,
     count: chunks.length,
     ranking: queryEmbedding ? 'hybrid (semantic + keyword)' : 'keyword-only (no embedding provider)',
-    results: chunks.map((c) => ({
+    // The best hits whole, the rest as previews — the ranking says which matter.
+    ...shapeKnowledgeHits(chunks.map((c) => ({
       source: c.sourceTable,
       entity_id: c.entityId,
       title: c.title,
       url: c.metadata?.url ?? null,
       content: c.content,
       score: c.score,
-    })),
+    })), { full: args.full === true }),
   };
 }
 

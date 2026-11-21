@@ -650,7 +650,11 @@ A booking event: pass \`notice\` + \`booking_id\` and the skill writes the mail 
             },
             limit: {
               type: 'number',
-              description: 'Max chunks to return (default 8, max 20)',
+              description: 'Max chunks to return (default 8, max 20). The three best are whole, the rest previews.',
+            },
+            full: {
+              type: 'boolean',
+              description: 'Every hit whole instead of previews after the third (default false).',
             },
             sources: {
               type: 'array',
