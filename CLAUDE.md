@@ -784,6 +784,13 @@ beside its payload, so an operator branches instead of guessing:
   that seeds a template redefines that function in the same file (a guard).
   The same goes for any platform configuration only a migration seeds: a wipe
   either keeps its table or can put it back.
+  **2026-11-21:** seven more were gone on sandbox (stock locations, trash
+  sources, outreach country policy, HR rule templates, statement sections,
+  cron cadence, partner titles), and `reset_site_data` took the automations —
+  which the sync never re-adds — and ten tables the sandbox wipe keeps. Both
+  KEEP lists carry them now; `resets-keep-platform-config` holds that the site
+  reset keeps everything the sandbox wipe keeps. A new table a migration seeds
+  with platform rows joins both lists in the same PR.
 - **The customer hears about their case (2026-11-18).** A support case told
   its customer nothing: no receipt, and a staff reply was "in the portal",
   where a customer entered by hand has no account. Two automations run
