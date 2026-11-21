@@ -1191,6 +1191,51 @@
       "fallback": "When"
     },
     {
+      "key": "aiAssistant.badgeText",
+      "group": "aiAssistant",
+      "fallback": "AI-Powered Shopping"
+    },
+    {
+      "key": "aiAssistant.placeholder",
+      "group": "aiAssistant",
+      "fallback": "What are you looking for?"
+    },
+    {
+      "key": "aiAssistant.subtitle",
+      "group": "aiAssistant",
+      "fallback": "Ask our AI shopping assistant anything — it knows our entire catalog."
+    },
+    {
+      "key": "aiAssistant.title",
+      "group": "aiAssistant",
+      "fallback": "Find Your Perfect Product"
+    },
+    {
+      "key": "aiFaq.askAiLabel",
+      "group": "aiFaq",
+      "fallback": "Ask AI"
+    },
+    {
+      "key": "aiFaq.emptyStateText",
+      "group": "aiFaq",
+      "fallback": "No matching answers. Try asking the assistant instead."
+    },
+    {
+      "key": "aiFaq.noResponse",
+      "group": "aiFaq",
+      "fallback": "No response."
+    },
+    {
+      "key": "aiFaq.title",
+      "group": "aiFaq",
+      "fallback": "Frequently asked questions"
+    },
+    {
+      "key": "auth.namePlaceholder",
+      "group": "auth",
+      "fallback": "Jane Doe"
+    },
+    {
       "key": "auth.session_ended",
       "group": "auth",
       "fallback": "Your previous session ended"
@@ -1261,6 +1306,11 @@
       "fallback": "Related posts"
     },
     {
+      "key": "blog.rssTitle",
+      "group": "blog",
+      "fallback": "RSS feed"
+    },
+    {
       "key": "blog.tagEmpty",
       "group": "blog",
       "fallback": "No posts with this tag yet."
@@ -1291,6 +1341,21 @@
       "fallback": "Booking calendar"
     },
     {
+      "key": "booking.checkoutFailed",
+      "group": "booking",
+      "fallback": "Checkout failed"
+    },
+    {
+      "key": "booking.confirm",
+      "group": "booking",
+      "fallback": "Confirm booking"
+    },
+    {
+      "key": "booking.confirmAndPay",
+      "group": "booking",
+      "fallback": "Confirm & pay {amount}"
+    },
+    {
       "key": "booking.email",
       "group": "booking",
       "fallback": "Email"
@@ -1299,6 +1364,11 @@
       "key": "booking.fillRequired",
       "group": "booking",
       "fallback": "Please fill in the required fields"
+    },
+    {
+      "key": "booking.formName",
+      "group": "booking",
+      "fallback": "Booking Request"
     },
     {
       "key": "booking.intake_required",
@@ -1761,6 +1831,21 @@
       "fallback": "us"
     },
     {
+      "key": "carousel.label",
+      "group": "carousel",
+      "fallback": "Featured content"
+    },
+    {
+      "key": "carousel.next",
+      "group": "carousel",
+      "fallback": "Next slide"
+    },
+    {
+      "key": "carousel.previous",
+      "group": "carousel",
+      "fallback": "Previous slide"
+    },
+    {
       "key": "cart.checkout",
       "group": "cart",
       "fallback": "Checkout"
@@ -1819,6 +1904,271 @@
       "key": "cart.total",
       "group": "cart",
       "fallback": "Total"
+    },
+    {
+      "key": "categoryNav.empty",
+      "group": "categoryNav",
+      "fallback": "No categories yet"
+    },
+    {
+      "key": "certificate.acceptanceTitle",
+      "group": "certificate",
+      "fallback": "Acceptance record"
+    },
+    {
+      "key": "certificate.accepted",
+      "group": "certificate",
+      "fallback": "Accepted"
+    },
+    {
+      "key": "certificate.amount",
+      "group": "certificate",
+      "fallback": "Amount"
+    },
+    {
+      "key": "certificate.approvalLead",
+      "group": "certificate",
+      "fallback": "Record of approval — {doc} {reference}"
+    },
+    {
+      "key": "certificate.approvedBy",
+      "group": "certificate",
+      "fallback": "Approved by {name}"
+    },
+    {
+      "key": "certificate.backToContract",
+      "group": "certificate",
+      "fallback": "Back to the agreement"
+    },
+    {
+      "key": "certificate.backToQuote",
+      "group": "certificate",
+      "fallback": "Back to the quote"
+    },
+    {
+      "key": "certificate.contract",
+      "group": "certificate",
+      "fallback": "Agreement"
+    },
+    {
+      "key": "certificate.counterparty",
+      "group": "certificate",
+      "fallback": "Counterparty"
+    },
+    {
+      "key": "certificate.coversContract",
+      "group": "certificate",
+      "fallback": "The agreement text, its value, and every appendix attached at signing."
+    },
+    {
+      "key": "certificate.coversLegacy",
+      "group": "certificate",
+      "fallback": "The quote number, title, totals, terms and validity date — but not the individual line items. This signature was recorded before line items were included in the digest, so the hash cannot evidence them. The line items themselves are unchanged by this; they are simply outside what this hash can prove."
+    },
+    {
+      "key": "certificate.coversQuote",
+      "group": "certificate",
+      "fallback": "The quote number, title, every line item with its quantity and price, the totals, the terms and the validity date."
+    },
+    {
+      "key": "certificate.declined",
+      "group": "certificate",
+      "fallback": "Declined"
+    },
+    {
+      "key": "certificate.declinedBy",
+      "group": "certificate",
+      "fallback": "Declined by {name}"
+    },
+    {
+      "key": "certificate.depositPaid",
+      "group": "certificate",
+      "fallback": "Deposit paid"
+    },
+    {
+      "key": "certificate.device",
+      "group": "certificate",
+      "fallback": "Device"
+    },
+    {
+      "key": "certificate.document",
+      "group": "certificate",
+      "fallback": "Document"
+    },
+    {
+      "key": "certificate.drawn",
+      "group": "certificate",
+      "fallback": "Drawn signature"
+    },
+    {
+      "key": "certificate.drawnAlt",
+      "group": "certificate",
+      "fallback": "Drawn signature of {name}"
+    },
+    {
+      "key": "certificate.firstPayment",
+      "group": "certificate",
+      "fallback": "first payment"
+    },
+    {
+      "key": "certificate.footer",
+      "group": "certificate",
+      "fallback": "This certificate documents a simple electronic signature."
+    },
+    {
+      "key": "certificate.footerAsRecorded",
+      "group": "certificate",
+      "fallback": "The hash is reported exactly as it was recorded; it has not been recalculated."
+    },
+    {
+      "key": "certificate.footerHash",
+      "group": "certificate",
+      "fallback": "The content hash is a SHA-256 digest, computed at the moment of signing, of the content listed under “Hash covers” above — recomputing that same content today and getting the same hash proves those parts of the document have not been altered since."
+    },
+    {
+      "key": "certificate.footerLegacy",
+      "group": "certificate",
+      "fallback": "A matching hash therefore does not, on this signature, say anything about the line items."
+    },
+    {
+      "key": "certificate.footerNoHash",
+      "group": "certificate",
+      "fallback": "No content hash was recorded for this signature, so this certificate evidences the decision, the signer and the moment — not the document’s contents."
+    },
+    {
+      "key": "certificate.footerRecorded",
+      "group": "certificate",
+      "fallback": "Timestamp, IP address, and device information were recorded when the signer submitted their decision via the private signing link."
+    },
+    {
+      "key": "certificate.hash",
+      "group": "certificate",
+      "fallback": "Content hash"
+    },
+    {
+      "key": "certificate.hashCovers",
+      "group": "certificate",
+      "fallback": "Hash covers"
+    },
+    {
+      "key": "certificate.ip",
+      "group": "certificate",
+      "fallback": "IP address"
+    },
+    {
+      "key": "certificate.loading",
+      "group": "certificate",
+      "fallback": "Loading…"
+    },
+    {
+      "key": "certificate.local",
+      "group": "certificate",
+      "fallback": "local"
+    },
+    {
+      "key": "certificate.noRecordContract",
+      "group": "certificate",
+      "fallback": "No signature record found for this agreement — the status may have been set by hand."
+    },
+    {
+      "key": "certificate.noRecordQuote",
+      "group": "certificate",
+      "fallback": "No signature record found for this quote — the status may have been set by hand."
+    },
+    {
+      "key": "certificate.onInvoice",
+      "group": "certificate",
+      "fallback": "on invoice"
+    },
+    {
+      "key": "certificate.paid",
+      "group": "certificate",
+      "fallback": "Paid"
+    },
+    {
+      "key": "certificate.paidOf",
+      "group": "certificate",
+      "fallback": "{paid} of {total} paid"
+    },
+    {
+      "key": "certificate.payment",
+      "group": "certificate",
+      "fallback": "Payment"
+    },
+    {
+      "key": "certificate.prepayment",
+      "group": "certificate",
+      "fallback": "{pct}% prepayment"
+    },
+    {
+      "key": "certificate.print",
+      "group": "certificate",
+      "fallback": "Print / Save as PDF"
+    },
+    {
+      "key": "certificate.quote",
+      "group": "certificate",
+      "fallback": "Quote"
+    },
+    {
+      "key": "certificate.signatureLead",
+      "group": "certificate",
+      "fallback": "Electronic signature evidence — {doc} {reference}"
+    },
+    {
+      "key": "certificate.signedBy",
+      "group": "certificate",
+      "fallback": "Signed by {name}"
+    },
+    {
+      "key": "certificate.status",
+      "group": "certificate",
+      "fallback": "Status"
+    },
+    {
+      "key": "certificate.timestamp",
+      "group": "certificate",
+      "fallback": "Timestamp"
+    },
+    {
+      "key": "certificate.title",
+      "group": "certificate",
+      "fallback": "Signature certificate"
+    },
+    {
+      "key": "certificate.typed",
+      "group": "certificate",
+      "fallback": "Typed signature"
+    },
+    {
+      "key": "certificate.unavailable",
+      "group": "certificate",
+      "fallback": "Certificate not available"
+    },
+    {
+      "key": "certificate.unavailableContract",
+      "group": "certificate",
+      "fallback": "This link is invalid, or the agreement has not been signed or declined yet."
+    },
+    {
+      "key": "certificate.unavailableQuote",
+      "group": "certificate",
+      "fallback": "This link is invalid, or the quote has not been signed or declined yet."
+    },
+    {
+      "key": "certificate.unknown",
+      "group": "certificate",
+      "fallback": "Unknown"
+    },
+    {
+      "key": "certificate.validUntil",
+      "group": "certificate",
+      "fallback": "Valid until"
+    },
+    {
+      "key": "certificate.version",
+      "group": "certificate",
+      "fallback": "Version"
     },
     {
       "key": "chat.assistantTitle",
@@ -2216,6 +2566,11 @@
       "fallback": "Your order"
     },
     {
+      "key": "comingSoon.siteName",
+      "group": "comingSoon",
+      "fallback": "Our website"
+    },
+    {
       "key": "comments.empty",
       "group": "comments",
       "fallback": "Be the first to comment."
@@ -2264,6 +2619,26 @@
       "key": "comparison.features",
       "group": "comparison",
       "fallback": "Features"
+    },
+    {
+      "key": "consultantMatcher.button",
+      "group": "consultantMatcher",
+      "fallback": "Find Match"
+    },
+    {
+      "key": "consultantMatcher.failed",
+      "group": "consultantMatcher",
+      "fallback": "Search failed"
+    },
+    {
+      "key": "consultantMatcher.placeholder",
+      "group": "consultantMatcher",
+      "fallback": "Paste the job description or assignment brief here..."
+    },
+    {
+      "key": "consultantMatcher.title",
+      "group": "consultantMatcher",
+      "fallback": "Find the Perfect Consultant"
     },
     {
       "key": "contact.hours",
@@ -2406,6 +2781,11 @@
       "fallback": "We use cookies"
     },
     {
+      "key": "countdown.expiredMessage",
+      "group": "countdown",
+      "fallback": "Time has expired!"
+    },
+    {
       "key": "docsign.mail.button",
       "group": "docsign",
       "fallback": "Read and sign"
@@ -2444,6 +2824,11 @@
       "key": "docsign.mail.untitled",
       "group": "docsign",
       "fallback": "Document"
+    },
+    {
+      "key": "docsign.namePlaceholder",
+      "group": "docsign",
+      "fallback": "Jane Doe"
     },
     {
       "key": "documentSign.done",
@@ -2816,6 +3201,16 @@
       "fallback": "Thank you! Your message has been sent."
     },
     {
+      "key": "handbook.empty",
+      "group": "handbook",
+      "fallback": "No handbook chapters synced yet."
+    },
+    {
+      "key": "handbook.pick",
+      "group": "handbook",
+      "fallback": "Select a chapter to start reading"
+    },
+    {
       "key": "hero.scrollDown",
       "group": "hero",
       "fallback": "Scroll down"
@@ -3116,6 +3511,56 @@
       "fallback": "Search for questions or answers..."
     },
     {
+      "key": "kbFeatured.title",
+      "group": "kbFeatured",
+      "fallback": "Frequently Asked Questions"
+    },
+    {
+      "key": "kbHub.contactButtonText",
+      "group": "kbHub",
+      "fallback": "Contact us"
+    },
+    {
+      "key": "kbHub.contactSubtitle",
+      "group": "kbHub",
+      "fallback": "Our team is happy to help with your questions"
+    },
+    {
+      "key": "kbHub.emptyStateSubtitle",
+      "group": "kbHub",
+      "fallback": "Try different search terms or browse all categories"
+    },
+    {
+      "key": "kbHub.emptyStateTitle",
+      "group": "kbHub",
+      "fallback": "No results found"
+    },
+    {
+      "key": "kbHub.searchPlaceholder",
+      "group": "kbHub",
+      "fallback": "Search for questions or answers..."
+    },
+    {
+      "key": "kbHub.subtitle",
+      "group": "kbHub",
+      "fallback": "Search our knowledge base or browse by category"
+    },
+    {
+      "key": "kbHub.title",
+      "group": "kbHub",
+      "fallback": "How can we help you?"
+    },
+    {
+      "key": "kbSearch.buttonText",
+      "group": "kbSearch",
+      "fallback": "Search"
+    },
+    {
+      "key": "kbSearch.placeholder",
+      "group": "kbSearch",
+      "fallback": "Search for answers..."
+    },
+    {
       "key": "key",
       "group": "key",
       "fallback": "fallback"
@@ -3149,6 +3594,36 @@
       "key": "maintenance.title",
       "group": "maintenance",
       "fallback": "Website is under maintenance"
+    },
+    {
+      "key": "map.blocked",
+      "group": "map",
+      "fallback": "External content blocked"
+    },
+    {
+      "key": "map.blockedBody",
+      "group": "map",
+      "fallback": "This map uses OpenStreetMap. Click to load external content."
+    },
+    {
+      "key": "map.couldNotLocate",
+      "group": "map",
+      "fallback": "Could not locate: {address}"
+    },
+    {
+      "key": "map.load",
+      "group": "map",
+      "fallback": "Load map"
+    },
+    {
+      "key": "map.loading",
+      "group": "map",
+      "fallback": "Loading map..."
+    },
+    {
+      "key": "map.notFound",
+      "group": "map",
+      "fallback": "Address not found"
     },
     {
       "key": "meet.allowInBrowser",
@@ -3746,6 +4221,11 @@
       "fallback": "Open menu"
     },
     {
+      "key": "newsletter.button",
+      "group": "newsletter",
+      "fallback": "Subscribe"
+    },
+    {
       "key": "newsletter.confirmed.body",
       "group": "newsletter",
       "fallback": "Thank you for confirming your email. You are now subscribed to our newsletter."
@@ -3759,6 +4239,26 @@
       "key": "newsletter.confirmed.title",
       "group": "newsletter",
       "fallback": "Subscription confirmed!"
+    },
+    {
+      "key": "newsletter.description",
+      "group": "newsletter",
+      "fallback": "Get the latest updates delivered to your inbox."
+    },
+    {
+      "key": "newsletter.emailPlaceholder",
+      "group": "newsletter",
+      "fallback": "Enter your email"
+    },
+    {
+      "key": "newsletter.error",
+      "group": "newsletter",
+      "fallback": "Something went wrong"
+    },
+    {
+      "key": "newsletter.failed",
+      "group": "newsletter",
+      "fallback": "Failed to subscribe"
     },
     {
       "key": "newsletter.manage.access",
@@ -3931,6 +4431,21 @@
       "fallback": "Verifying…"
     },
     {
+      "key": "newsletter.namePlaceholder",
+      "group": "newsletter",
+      "fallback": "Your name (optional)"
+    },
+    {
+      "key": "newsletter.success",
+      "group": "newsletter",
+      "fallback": "Thanks for subscribing! Please check your email to confirm."
+    },
+    {
+      "key": "newsletter.title",
+      "group": "newsletter",
+      "fallback": "Subscribe to our newsletter"
+    },
+    {
       "key": "notFound.goBack",
       "group": "notFound",
       "fallback": "Go back"
@@ -3939,6 +4454,11 @@
       "key": "notFound.title",
       "group": "notFound",
       "fallback": "Page not found"
+    },
+    {
+      "key": "notification.close",
+      "group": "notification",
+      "fallback": "Close notification"
     },
     {
       "key": "orderTracking.carrierPage",
@@ -4096,6 +4616,11 @@
       "fallback": "Total"
     },
     {
+      "key": "popup.close",
+      "group": "popup",
+      "fallback": "Close popup"
+    },
+    {
       "key": "portal.invite.accountReady",
       "group": "portal",
       "fallback": "Your account with {business} is ready"
@@ -4129,6 +4654,11 @@
       "key": "portal.invite.serviceSubject",
       "group": "portal",
       "fallback": "Access your service with {business}"
+    },
+    {
+      "key": "pricingCalculator.title",
+      "group": "pricingCalculator",
+      "fallback": "Estimate your price"
     },
     {
       "key": "quote.decline",
@@ -5851,6 +6381,16 @@
       "fallback": "My team"
     },
     {
+      "key": "stickyScroll.empty",
+      "group": "stickyScroll",
+      "fallback": "No chapters yet."
+    },
+    {
+      "key": "stickyScroll.title",
+      "group": "stickyScroll",
+      "fallback": "Sticky-scroll story"
+    },
+    {
       "key": "stock.getNotified",
       "group": "stock",
       "fallback": "Get notified when this product is back in stock"
@@ -5971,6 +6511,11 @@
       "fallback": "Updated"
     },
     {
+      "key": "theme.toggle",
+      "group": "theme",
+      "fallback": "Toggle theme"
+    },
+    {
       "key": "ticket.category.billing",
       "group": "ticket",
       "fallback": "Billing"
@@ -6079,6 +6624,26 @@
       "key": "ticket.status.waiting",
       "group": "ticket",
       "fallback": "Waiting"
+    },
+    {
+      "key": "webinar.namePlaceholder",
+      "group": "webinar",
+      "fallback": "Your name"
+    },
+    {
+      "key": "webinar.none",
+      "group": "webinar",
+      "fallback": "No webinars scheduled"
+    },
+    {
+      "key": "webinar.previous",
+      "group": "webinar",
+      "fallback": "Previous webinars"
+    },
+    {
+      "key": "webinar.recording",
+      "group": "webinar",
+      "fallback": "Recording available"
     },
     {
       "key": "youtube.defaultTitle",
