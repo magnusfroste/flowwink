@@ -138,6 +138,7 @@ async function pageLanguageVersions(
   ];
 }
 import { handleTranslateUiText, type UiTextCatalog } from '../handlers/translate-ui-text.ts';
+import { didYouMeanSlugs, nearestSlugs } from '../skills/nearest-slug.ts';
 import type { TranslateSiteArgs } from '../handlers/translate-site.ts';
 import { handleTranslateSite } from '../handlers/translate-site-run.ts';
 import { handleReplyToEmail } from '../handlers/reply-to-email.ts';
@@ -12108,7 +12109,14 @@ async function executeBlogPostsManagement(
     else throw new Error('post_id or slug required');
     const { data, error } = await query.maybeSingle();
     if (error) throw new Error(`Get post failed: ${error.message}`);
-    if (!data) return { found: false, error: `Blog post not found (${post_id ? 'id ' + post_id : 'slug ' + slug})` };
+    if (!data) {
+      const near = slug ? await nearBlogPosts(supabase, String(slug)) : [];
+      return {
+        found: false,
+        error: `Blog post not found (${post_id ? 'id ' + post_id : 'slug ' + slug}).${didYouMeanSlugs(near)}`,
+        ...(near.length ? { did_you_mean: near } : {}),
+      };
+    }
     // The post's languages, so an operator never edits blind (manage_page get does the same).
     const { rows } = await listContentOverlays(supabase, 'blog_post', { ids: [data.id], columns: 'entity_id, locale, status, coverage, slug' })
       .catch(() => ({ rows: [] as Array<{ locale: string; status: string; coverage: number | null; slug: string | null }> }));
@@ -12127,10 +12135,17 @@ async function executeBlogPostsManagement(
   // (an agent pointed at the wrong site retried eight addresses against that
   // answer, www 2026-11-11). Not found is not retryable as is.
   if (!resolvedPostId && typeof slug === 'string' && slug && ['update', 'publish', 'unpublish', 'delete'].includes(String(action))) {
+    // …and name the posts it most likely meant (2026-11-21): on www the same
+    // wrong slug was sent fifteen times in a week, each answer as empty as the
+    // last. A suggestion is never acted on — the caller sends the real slug.
+    const near = await nearBlogPosts(supabase, slug);
     return {
-      error: `No blog post with slug "${slug}" on this site — nothing was changed.`,
+      error: `No blog post with slug "${slug}" on this site — nothing was changed.${didYouMeanSlugs(near)}`,
       code: 'NOT_FOUND', retryable: false,
-      hint: 'manage_blog_posts list shows this site\'s posts with their slug and id. A translated address (/<lang>/blog/…) belongs to an overlay: pass the post\'s own slug or its post_id.',
+      ...(near.length ? { did_you_mean: near } : {}),
+      hint: near.length
+        ? 'Repeat the call with one of did_you_mean (its slug or post_id). A slug is the post\'s address, not its title shortened.'
+        : 'manage_blog_posts list shows this site\'s posts with their slug and id. A translated address (/<lang>/blog/…) belongs to an overlay: pass the post\'s own slug or its post_id.',
     };
   }
   // An id that names no post gets the same answer. Until 2026-11-12 it reached
@@ -20081,6 +20096,14 @@ function lintOne(
 // email/sms/slack/signing channels. Platform primitive — does not depend on
 // any specific module being enabled.
 // ─────────────────────────────────────────────────────────────────────────────
+/** The posts a slug that names nothing most likely meant (nearest-slug.ts). */
+async function nearBlogPosts(supabase: SupabaseClient, slug: string): Promise<Array<{ slug: string; title: string | null; post_id: string; status: string | null }>> {
+  const { data, error } = await supabase.from('blog_posts').select('id, slug, title, status').order('created_at', { ascending: false }).limit(1000);
+  if (error || !data) return [];
+  return nearestSlugs(slug, data as Array<{ id: string; slug: string; title: string | null; status: string | null }>)
+    .map((r) => ({ slug: r.slug, title: r.title ?? null, post_id: String(r.id), status: r.status ?? null }));
+}
+
 async function executeListCommunications(
   supabase: SupabaseClient,
   args: Record<string, unknown>,
@@ -20089,7 +20112,11 @@ async function executeListCommunications(
   const ALLOWED_STATUS = new Set(['sent', 'simulated', 'failed', 'skipped', 'pending']);
 
   const channel = typeof args.channel === 'string' ? args.channel.trim().toLowerCase() : '';
-  const status = typeof args.status === 'string' ? args.status.trim().toLowerCase() : '';
+  let status = typeof args.status === 'string' ? args.status.trim().toLowerCase() : '';
+  // Inbound mail lives in the same rail (direction 'inbound'). An agent asking
+  // for status "received" was refused (Nordbrygg, 2026-11): it means inbound.
+  let direction = typeof args.direction === 'string' ? args.direction.trim().toLowerCase() : '';
+  if (status === 'received' || status === 'inbound') { direction = direction || 'inbound'; status = ''; }
   const recipient = typeof args.recipient === 'string' ? args.recipient.trim() : '';
   const source = typeof args.source === 'string' ? args.source.trim() : '';
   const since = typeof args.since === 'string' ? args.since.trim() : '';
@@ -20098,7 +20125,7 @@ async function executeListCommunications(
 
   let q = supabase
     .from('outbound_communications')
-    .select('id,channel,status,provider,simulated,recipient,subject,source,error_message,created_at,sent_at')
+    .select('id,direction,channel,status,provider,simulated,recipient,subject,source,error_message,created_at,sent_at')
     .order('created_at', { ascending: false })
     .limit(limit);
 
@@ -20113,6 +20140,12 @@ async function executeListCommunications(
       return { error: `Invalid status "${status}". Allowed: ${[...ALLOWED_STATUS].join(', ')}` };
     }
     q = q.eq('status', status);
+  }
+  if (direction) {
+    if (direction !== 'inbound' && direction !== 'outbound') {
+      return { error: `Invalid direction "${direction}". Allowed: inbound, outbound`, code: 'INVALID_INPUT' };
+    }
+    q = q.eq('direction', direction);
   }
   if (recipient) q = q.ilike('recipient', `%${recipient}%`);
   if (source) q = q.ilike('source', `%${source}%`);
@@ -20131,7 +20164,7 @@ async function executeListCommunications(
     success: true,
     count: data?.length ?? 0,
     limit,
-    filters: { channel: channel || null, status: status || null, recipient: recipient || null, source: source || null, since: since || null },
+    filters: { channel: channel || null, status: status || null, direction: direction || null, recipient: recipient || null, source: source || null, since: since || null },
     communications: data ?? [],
   };
 }

@@ -262,6 +262,11 @@ Scans connected Gmail inbox for business signals — new leads, partnership inqu
               enum: ['sent', 'simulated', 'failed', 'skipped', 'pending'],
               description: 'Filter by delivery status. "simulated" = no provider configured, message logged but not actually sent.',
             },
+            direction: {
+              type: 'string',
+              enum: ['outbound', 'inbound'],
+              description: 'Sent by the business (outbound) or received from someone (inbound mail). Default: both. For "what came in", pass inbound — there is no status "received".',
+            },
             recipient: {
               type: 'string',
               description: 'Partial recipient match (case-insensitive).',
