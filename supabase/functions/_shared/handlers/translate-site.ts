@@ -71,7 +71,7 @@ export interface TranslateSiteArgs {
   continue?: boolean;
   /** Report what would be translated, change nothing. */
   dry_run?: boolean;
-  /** Seconds this call may spend translating (default 100, at most 120). */
+  /** Seconds this call may spend translating (default 60, at most 100). */
   budget_seconds?: number;
 }
 
@@ -80,7 +80,8 @@ export interface TranslateSiteDeps {
   enableLanguage(locale: string): Promise<{ success?: boolean; error?: string }>;
   listStale(locale: string): Promise<{ success?: boolean; error?: string; stale?: StaleFinding[] }>;
   translateItem(f: StaleFinding, locale: string): Promise<{ success?: boolean; error?: string; status?: string }>;
-  translateUi(locale: string): Promise<{ success?: boolean; error?: string; translated?: number }>;
+  /** Does what fits in `budgetSeconds`, keeps it, and answers what is left in `remaining`. */
+  translateUi(locale: string, budgetSeconds: number): Promise<{ success?: boolean; error?: string; translated?: number; remaining?: number }>;
   /** True where the platform's own pack carries the interface texts. */
   platformSpeaks(locale: string): boolean;
   readState(): Promise<SweepState>;
@@ -89,8 +90,8 @@ export interface TranslateSiteDeps {
 }
 
 const TAG = /^[a-z]{2,3}(-[a-z0-9]{2,8})?$/;
-/** Time the interface texts are given at most (one batched call). */
-const UI_SECONDS = 40;
+/** The interface pass is not started with less than this left. */
+const UI_MIN_SECONDS = 15;
 
 function cleanTag(raw: unknown): string | null {
   const t = String(raw ?? '').trim().toLowerCase().replace('_', '-');
@@ -99,7 +100,9 @@ function cleanTag(raw: unknown): string | null {
 
 export async function runTranslateSite(args: TranslateSiteArgs, deps: TranslateSiteDeps): Promise<Record<string, unknown>> {
   const started = deps.now();
-  const budgetMs = Math.max(10, Math.min(Number(args.budget_seconds ?? 100) || 100, 120)) * 1000;
+  // 60 by default: on sandbox a call was stopped by the platform after 76
+  // seconds (WORKER_RESOURCE_LIMIT), well inside the 150 s wall clock.
+  const budgetMs = Math.max(10, Math.min(Number(args.budget_seconds ?? 60) || 60, 100)) * 1000;
   const deadline = started + budgetMs;
   const langs = await deps.languages();
   const state = await deps.readState();
@@ -152,6 +155,20 @@ export async function runTranslateSite(args: TranslateSiteArgs, deps: TranslateS
     }
 
     const prev = state[locale];
+    // Written BEFORE the work: a call the platform stops mid-way must leave a
+    // language the sweep carries on with. On sandbox the first real run was
+    // stopped after 76 s and had recorded nothing — the content was translated,
+    // the interface texts were not, and nothing would ever have continued.
+    state[locale] = {
+      status: 'running',
+      started_at: prev && prev.status === 'running' ? prev.started_at : nowIso,
+      last_run_at: nowIso,
+      translated: prev && prev.status === 'running' ? prev.translated : 0,
+      remaining: todo.length,
+      ui_done: uiNeeded ? (prev?.ui_done ?? false) : true,
+      failed: [],
+    };
+    await deps.writeState(state);
     const failed: FailedItem[] = [];
     let translated = 0;
     let tried = 0;
@@ -184,12 +201,17 @@ export async function runTranslateSite(args: TranslateSiteArgs, deps: TranslateS
     if (!uiNeeded) uiDone = true;
     // Only once the content is all in: the interface texts are the last step,
     // and a failing provider must not read as progress.
-    else if (!uiDone && remaining === 0 && deps.now() + UI_SECONDS * 1000 <= deadline) {
+    else if (!uiDone && remaining === 0 && deps.now() + UI_MIN_SECONDS * 1000 <= deadline) {
       try {
-        const u = await deps.translateUi(locale);
+        const left = Math.floor((deadline - deps.now()) / 1000) - 5;
+        const u = await deps.translateUi(locale, Math.max(5, left));
         uiResult = u as Record<string, unknown>;
         if (u.success === false) failed.push({ entity: 'ui_text', slug: locale, error: String(u.error ?? 'failed').slice(0, 200) });
-        else { uiDone = true; translated += Number(u.translated ?? 0) > 0 ? 1 : 0; }
+        else {
+          // Done only when nothing is left; a partial pass is still progress.
+          uiDone = Number(u.remaining ?? 0) === 0;
+          translated += Number(u.translated ?? 0) > 0 ? 1 : 0;
+        }
       } catch (e) {
         failed.push({ entity: 'ui_text', slug: locale, error: (e instanceof Error ? e.message : String(e)).slice(0, 200) });
       }
@@ -212,8 +234,8 @@ export async function runTranslateSite(args: TranslateSiteArgs, deps: TranslateS
     results.push({
       locale, success: true, status,
       translated_now: translated, failed_now: failed.length, remaining,
-      interface_texts: uiNeeded ? (uiDone ? 'done' : 'after the content') : 'the platform already speaks this language',
-      ...(uiResult ? { ui_text: { translated: uiResult.translated ?? 0 } } : {}),
+      interface_texts: uiNeeded ? (uiDone ? 'done' : uiResult && Number(uiResult.remaining ?? 0) > 0 ? `${uiResult.remaining} left` : 'after the content') : 'the platform already speaks this language',
+      ...(uiResult ? { ui_text: { translated: uiResult.translated ?? 0, remaining: uiResult.remaining ?? 0 } } : {}),
       ...(failed.length ? { failed: failed.slice(0, 10) } : {}),
       next: complete
         ? `${locale} is translated and published. Visitors choose it in the language switcher.`

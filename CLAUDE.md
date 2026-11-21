@@ -398,6 +398,12 @@ per language, and the automation "Finish site translations" (probe
 failures in a row end a run, and a run that moves nothing is `stuck` — left for a
 person, never retried every ten minutes. Adding a language under Site settings
 starts it. Changing `site_languages.default` stays a separate launch decision.
+**The first real run was stopped at 76 s (sandbox, 2026-11-21,
+WORKER_RESOURCE_LIMIT):** content was done in 34 s, the 1 300 interface texts
+were not, and both savers wrote only at the end. Now the sweep row is written
+`running` BEFORE the work, `translate_ui_text` saves after every wave of three
+batches inside `budget_seconds` and answers `remaining`, and the default budget
+is 60 s. A long job on the edge saves as it goes and records that it has begun.
 
 **`manage_product` / products in every language** — the same overlay model
 (§10, and Shopify's): a product is written ONCE in `products.locale`; `languages`

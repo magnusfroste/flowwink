@@ -18,7 +18,7 @@ export async function handleTranslateSite(
     translateItem: (f, locale) => handleTranslateContent(supabase, {
       entity: f.entity, id: f.id, slug: f.id ? undefined : f.slug, locale, publish: true,
     }) as Promise<{ success?: boolean; error?: string }>,
-    translateUi: (locale) => handleTranslateUiText(supabase, { locale }, catalog) as Promise<{ success?: boolean; error?: string; translated?: number }>,
+    translateUi: (locale, budgetSeconds) => handleTranslateUiText(supabase, { locale, budget_seconds: budgetSeconds }, catalog) as Promise<{ success?: boolean; error?: string; translated?: number; remaining?: number }>,
     platformSpeaks: (locale) => !!PLATFORM_UI_TEXT[locale.split('-')[0]],
     readState: async () => {
       const { data, error } = await supabase.from('site_settings').select('value').eq('key', SWEEP_KEY).maybeSingle();
