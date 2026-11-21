@@ -245,6 +245,7 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
   automation is left alone.
 
 ### Changed
+- The reasoning loop folds a tool answer the model has already read: the answers of the last two tool turns stay whole, an older answer over 1 500 characters is replaced by its beginning and a note that the tool can be called again (a skill's instructions are never folded). Every step resends the whole conversation, so one large answer early was paid for on every later step. Replayed on four days of heartbeats: 20–25 % fewer prompt tokens on www, Nordbrygg and LiteIT, where two mornings out of four stopped at the token budget. `foldToolResults: false` keeps every answer whole.
 
 - **A sweep asks whether there is work before anything wakes.** Four
   automations fired every fifteen minutes on every instance (qualify new leads,

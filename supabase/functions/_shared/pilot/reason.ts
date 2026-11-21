@@ -67,6 +67,7 @@ import {
 import { getBuiltInTools, getDispatchTools } from './built-in-tools.ts';
 import { createTraceRecorder } from '../trace/events.ts';
 import { lessonText } from './lesson-text.ts';
+import { foldReadToolResults, type LoopMessage } from './fold-tool-results.ts';
 import { SERVICE_CALLER, type ExecuteRequest, type SkillRunner } from '../execute/types.ts';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -1236,6 +1237,16 @@ export async function reason(
       // callAi speaks Anthropic as well as the OpenAI shape, and sets
       // reasoning_effort 'none' for a gpt-5-class model given tools (the ReAct
       // loop IS tools — without it every call 400s).
+      // An answer the model read two turns ago is folded before it is sent again
+      // (fold-tool-results.ts): every step resends the whole conversation, and a
+      // large answer early was paid for on every later step.
+      if (config.foldToolResults !== false) {
+        const fold = foldReadToolResults(conversationMessages as LoopMessage[]);
+        if (fold.folded > 0) {
+          conversationMessages.splice(0, conversationMessages.length, ...(fold.messages as typeof conversationMessages));
+          console.log(`[reason] trace=${traceId} folded ${fold.folded} read tool answer(s), ~${Math.round(fold.savedChars / 4)} tokens`);
+        }
+      }
       const aiResponse = await callAiWithRetry({
         apiKey, apiUrl, model,
         messages: conversationMessages,

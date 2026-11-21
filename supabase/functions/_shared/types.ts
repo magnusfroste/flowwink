@@ -133,6 +133,12 @@ export interface ReasonConfig {
   beforeFinalAnswer?: (answer: string, iteration: number) => string | null;
   /** false: the caller already fitted the history to the model's window. */
   pruneHistory?: boolean;
+  /**
+   * Default true: a tool answer the model read two turns ago is folded to its
+   * beginning before the next call (pilot/fold-tool-results.ts). false keeps
+   * every answer whole for the whole run.
+   */
+  foldToolResults?: boolean;
   /** How the run's AI calls are logged (default source `pilot:<scope>`). */
   usage?: { source: string; userId?: string; metadata?: Record<string, unknown> };
 }
