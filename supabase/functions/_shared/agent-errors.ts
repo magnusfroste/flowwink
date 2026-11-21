@@ -59,6 +59,8 @@ export interface ClassifiedError {
 
 interface Rule { code: AgentErrorCode; retryable: boolean; test: RegExp; hint?: string }
 
+const NOT_FOUND_HINT = 'Look the record up first (a list or search skill) and use the id or slug it returns.';
+
 const RULES: Rule[] = [
   {
     code: 'PERIOD_LOCKED', retryable: false,
@@ -102,8 +104,13 @@ const RULES: Rule[] = [
   },
   {
     code: 'NOT_FOUND', retryable: false,
-    test: /\bnot found\b|\bno (such|skill|row|record|page|invoice|order|vendor|customer|template)\b|does not exist|could not find/i,
-    hint: 'Look the record up first (a list or search skill) and use the id or slug it returns.',
+    // The last alternative is the SHAPE of a lookup miss, not one more noun:
+    // "No <thing> with slug …", "No <thing> matching …", "No <thing> named …",
+    // "No <thing> found for …". The noun list before it named ten things and
+    // forty handlers say it about others ("No wiki page matches slug …" was
+    // HANDLER_ERROR on optic, 2026-11-20).
+    test: /\bnot found\b|\bno (such|skill|row|record|page|invoice|order|vendor|customer|template)\b|does not exist|could not find|^no (?:[\w-]+\s+){1,4}?(?:with|matching|matches|named|found (?:for|with))\b/i,
+    hint: NOT_FOUND_HINT,
   },
   {
     code: 'TRANSIENT', retryable: true,
@@ -133,7 +140,14 @@ export function classifyAgentError(message: string | null | undefined): Classifi
 export function stampAgentError<T extends Record<string, unknown>>(result: T): T {
   const err = (result as { error?: unknown }).error;
   if (typeof err !== 'string' || !err) return result;
-  const c = classifyAgentError(err);
+  let c = classifyAgentError(err);
+  // A handler that answers `found: false` has said what happened in its own
+  // words: it looked and nothing was there. That is the caller's miss whatever
+  // the sentence beside it says — never a fault in the skill, which three in a
+  // row would quarantine (two agents probing for a page before creating it).
+  if (c.code === 'HANDLER_ERROR' && (result as { found?: unknown }).found === false) {
+    c = { code: 'NOT_FOUND', retryable: false, hint: NOT_FOUND_HINT };
+  }
   const out: Record<string, unknown> = { ...result };
   if (typeof out.code !== 'string') out.code = c.code;
   if (typeof out.retryable !== 'boolean') out.retryable = c.retryable;
