@@ -129,6 +129,46 @@ async function run(s: Scenario): Promise<void> {
   const shown = await s.must('the listing is browsed again', 'browse_blog', { search: s.tag, limit: 10 });
   s.equal('exactly the published article is listed', ((shown.posts ?? []) as Array<{ slug: string }>).map((p) => p.slug).join(','), slug);
 
+  // One phrase, everywhere it stands — then changed where it stands.
+  // FINDING 2026-11-19 (optic): a product was renamed and an agent had no way
+  // to ask "where do we say this?" — the blog matched titles only, `query` was
+  // read by nobody, pages had no search — so it opened 17 posts one by one, and
+  // rewrote a 98 KB wiki page in four calls to change a few phrases.
+  const term = `Zephyr Colocation ${s.tag}`;
+  const wikiSlug = `BatteryTerm${s.tag.replace(/[^a-zA-Z0-9]/g, '')}`;
+  await s.must('a wiki page uses a product name twice', 'manage_wiki_page', {
+    action: 'create', slug: wikiSlug, title: `Product sheet ${s.tag}`,
+    content_md: `# Product\n\n${term} is our product.\n\nOrder ${term} today.\n\nA paragraph nobody asked to change.`,
+  });
+  type Found = { total?: number; occurrences?: number; matches?: Array<{ source: string; slug?: string; occurrences: number; fields?: string[]; snippets?: string[]; edit_with?: { skill?: string } }> };
+  const found = await s.must<Found>('the name is looked for across all content', 'find_in_content', { p_text: term.toUpperCase() });
+  const wikiHit = (found.matches ?? []).find((m) => m.source === 'wiki_page' && m.slug === wikiSlug);
+  s.equal('the wiki page is found, with both occurrences counted', `${found.total}|${wikiHit?.occurrences}|${wikiHit?.edit_with?.skill}`, '1|2|manage_wiki_page');
+  s.check('the answer shows the text around the hit', (wikiHit?.snippets ?? []).some((t) => t.includes(term)), JSON.stringify(wikiHit?.snippets));
+  const inBlog = await s.must<Found>('a phrase in the published article is looked for', 'find_in_content', { p_text: s.tag, p_sources: ['blog_post'] });
+  s.check('the article is found by what it says, with where', (inBlog.matches ?? []).some((m) => m.slug === slug && (m.fields ?? []).length > 0), JSON.stringify(inBlog.matches).slice(0, 300));
+  const byQuery = await s.must('the listing is asked with `query` instead of `search`', 'browse_blog', { query: `no such post ${s.tag}`, limit: 10 });
+  s.equal('`query` is read as the search — not answered with every post', ((byQuery.posts ?? []) as unknown[]).length, 0);
+
+  const twice = await s.skill('manage_wiki_page', { action: 'update', slug: wikiSlug, replace: [{ find: term, with: 'X' }] });
+  s.check('a phrase that stands twice is not changed by accident', !twice.ok && JSON.stringify(twice.raw).includes('INVALID_INPUT'), JSON.stringify(twice.raw).slice(0, 300));
+  const renamed = `Borealis Colocation ${s.tag}`;
+  const edit = await s.must<{ mode?: string; replaced?: number }>('the name is changed in place, everywhere on the page', 'manage_wiki_page', {
+    action: 'update', slug: wikiSlug, replace: [{ find: term, with: renamed, all: true }],
+  });
+  const after = await s.one<{ content_md: string; revisions: number }>(
+    'select w.content_md, (select count(*)::int from wiki_page_revisions r where r.slug = w.slug) as revisions from wiki_pages w where w.slug = $1', [wikiSlug]);
+  s.equal('two replacements, one revision', `${edit.mode}|${edit.replaced}|${after?.revisions}`, 'edit|2|1');
+  s.check('only the name changed — the rest of the page is as it was',
+    after?.content_md === `# Product\n\n${renamed} is our product.\n\nOrder ${renamed} today.\n\nA paragraph nobody asked to change.`, after?.content_md);
+  const gone = await s.must<Found>('the old name is looked for again', 'find_in_content', { p_text: term });
+  s.equal('it stands nowhere', gone.total, 0);
+
+  // FINDING 2026-11-20 (optic): asking whether a page exists was stored as a
+  // fault in the skill; three such questions would have switched the wiki off.
+  const absent = await s.skill('manage_wiki_page', { action: 'get', slug: `NoSuchPage${s.tag}` });
+  s.check('a page that is not there is NOT_FOUND, never a fault in the skill', JSON.stringify(absent.raw).includes('"NOT_FOUND"') && !JSON.stringify(absent.raw).includes('HANDLER_ERROR'), JSON.stringify(absent.raw).slice(0, 300));
+
   await s.must('the article is withdrawn', 'manage_blog_posts', { action: 'unpublish', slug });
   if (anon) {
     const peek = await anonGet(anon, `blog_posts?slug=eq.${slug}&select=id`);

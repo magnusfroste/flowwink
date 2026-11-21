@@ -155,6 +155,7 @@
     "fetch_image_base64",
     "find_duplicate_companies",
     "find_duplicate_leads",
+    "find_in_content",
     "flag_at_risk_subscriptions",
     "flag_invoice_variance",
     "follow_entity",

@@ -631,7 +631,7 @@ A booking event: pass \`notice\` + \`booking_id\` and the skill writes the mail 
   },
   {
     name: 'search_knowledge',
-    description: "Hybrid semantic + keyword search over the site's indexed knowledge (pages, KB articles, wiki, docs, extracted documents). Returns relevance-ranked text chunks with titles and URLs for citation. Use when: answering questions from company/site knowledge; finding which page or article covers a topic; grounding a reply in existing content. NOT for: structured or transactional rows like orders, invoices or Flowtable records (use query_flowtable or the module's list_/get_ skills); searching the public web (search_web).",
+    description: "Hybrid semantic + keyword search over the site's indexed knowledge (pages, KB articles, wiki, docs, extracted documents). Returns relevance-ranked text chunks with titles and URLs for citation. Use when: answering questions from company/site knowledge; finding which page or article covers a topic; grounding a reply in existing content. NOT for: structured or transactional rows like orders, invoices or Flowtable records (use query_flowtable or the module's list_/get_ skills); searching the public web (search_web); every place an exact phrase occurs, e.g. before renaming a term (find_in_content).",
     category: 'search',
     handler: 'internal:search_knowledge',
     scope: 'internal',
@@ -639,7 +639,7 @@ A booking event: pass \`notice\` + \`booking_id\` and the skill writes the mail 
       type: 'function',
       function: {
         name: 'search_knowledge',
-        description: "Hybrid semantic + keyword search over the site's indexed knowledge (pages, KB articles, wiki, docs, extracted documents). Returns relevance-ranked text chunks with titles and URLs for citation. Use when: answering questions from company/site knowledge; finding which page or article covers a topic; grounding a reply in existing content. NOT for: structured or transactional rows like orders, invoices or Flowtable records (use query_flowtable or the module's list_/get_ skills); searching the public web (search_web).",
+        description: "Hybrid semantic + keyword search over the site's indexed knowledge (pages, KB articles, wiki, docs, extracted documents). Returns relevance-ranked text chunks with titles and URLs for citation. Use when: answering questions from company/site knowledge; finding which page or article covers a topic; grounding a reply in existing content. NOT for: structured or transactional rows like orders, invoices or Flowtable records (use query_flowtable or the module's list_/get_ skills); searching the public web (search_web); every place an exact phrase occurs, e.g. before renaming a term (find_in_content).",
         parameters: {
           type: 'object',
           properties: {
@@ -686,6 +686,77 @@ This is the KNOWLEDGE lane — prose content. Structured/transactional data
 (orders, invoices, Flowtable rows) is the LIVE lane: use query_flowtable or
 the owning module's list_/get_ skills. Paraphrase freely: semantic ranking
 finds "how do I get my money back" → refund policy without keyword overlap.`,
+  },
+  {
+    name: 'find_in_content',
+    description: 'Find every place an exact phrase occurs in what the site says — website pages, blog posts (every status), knowledge base articles, wiki pages and the translation overlays — with a count and the text around each hit, per page or post. Case-insensitive, literal, nothing ranked away. Use when: a product, a term, a price or a name changes and every mention must be found before it is edited; checking whether a phrase or claim is still published anywhere; finding which pages, posts or articles contain a text string (full-text search across site content). NOT for: finding what the site says ABOUT a topic in other words (search_knowledge — ranked, by meaning); a page by its title or a few words (search_wiki, search_kb, browse_blog); business records such as customers, orders or tickets (global_search); where an image is used (media_find_usage).',
+    category: 'search',
+    handler: 'rpc:find_in_content',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'find_in_content',
+        description: 'Find every place an exact phrase occurs in what the site says — website pages, blog posts (every status), knowledge base articles, wiki pages and the translation overlays — with a count and the text around each hit, per page or post. Case-insensitive, literal, nothing ranked away. Use when: a product, a term, a price or a name changes and every mention must be found before it is edited; checking whether a phrase or claim is still published anywhere; finding which pages, posts or articles contain a text string (full-text search across site content). NOT for: finding what the site says ABOUT a topic in other words (search_knowledge — ranked, by meaning); a page by its title or a few words (search_wiki, search_kb, browse_blog); business records such as customers, orders or tickets (global_search); where an image is used (media_find_usage).',
+        parameters: {
+          type: 'object',
+          properties: {
+            p_text: {
+              type: 'string',
+              description: 'The phrase to find, exactly as written (case does not matter): "Edge Colocation", "99,98 %", an old product name. 2–500 characters. One phrase per call — not a list of words.',
+            },
+            p_sources: {
+              type: 'array',
+              items: {
+                type: 'string',
+                enum: ['page', 'blog_post', 'kb_article', 'wiki_page', 'translation'],
+              },
+              description: 'Only these kinds of content (default: all five).',
+            },
+            p_limit: {
+              type: 'number',
+              description: 'Most pages/posts to list (default 50, max 200). total and occurrences always count everything.',
+            },
+          },
+          required: ['p_text'],
+        },
+      },
+    },
+    instructions: `# find_in_content — every place a phrase occurs
+
+One read across the site's own words. It answers "where do we say this?",
+exhaustively: nothing is ranked away and nothing is capped before it is
+counted.
+
+## Parameters (exact names)
+- p_text: the phrase, literal, case-insensitive (required)
+- p_sources: subset of page | blog_post | kb_article | wiki_page | translation
+- p_limit: most entries to list, default 50
+
+## The answer
+\`total\` (pages/posts that contain it), \`occurrences\` (times in all),
+\`truncated\`, and \`matches[]\`, most occurrences first:
+\`{ source, id, slug, title, status, occurrences, fields, snippets, edit_with }\`.
+- \`fields\` says where in the entry (title, excerpt, content_md, answer, or
+  the block field: title, description, text …).
+- \`snippets\`: up to three, the text around the hit.
+- \`edit_with\`: the skill that changes that kind of content.
+- A \`translation\` match is the same content in another language
+  (\`entity\`, \`locale\`): a renamed term must change there too.
+
+## Changing what it found
+- Wiki: \`manage_wiki_page\` update with
+  \`replace: [{ find, with, all: true }]\` — the page is not re-sent.
+- Blog, KB, pages: read the entry, change the text, update with its own skill.
+- Run it again afterwards: \`total: 0\` is the proof the term is gone.
+
+## Boundaries
+- A phrase, not a question: for "what do we say about delivery times" use
+  search_knowledge.
+- Draft posts and unpublished articles are included (\`status\` says which);
+  pages in the bin are not.
+- Rich text is read sentence by sentence, so a phrase with one bold word in
+  it is still found; a phrase that runs across two paragraphs is not.`,
   },
   {
     name: 'scrape_url',

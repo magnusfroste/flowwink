@@ -9,6 +9,8 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
 ## [Unreleased]
 
 ### Fixed
+- The wiki search answers a long query: when no page bore every word it answered nothing, because the ranking of partial matches was given the rows of the all-words query — always none. It now asks for pages bearing any of the words, most first, says `match: "some_terms"`, and the excerpt is the text around the hit instead of the page's first 240 characters.
+- `browse_blog` reads `query` as `search` (it was read by nobody, so a search answered every post there is) and matches the excerpt as well as the title.
 - Looking for something that is not there no longer counts against the skill: an agent asking the wiki whether a page exists before creating it was answered `HANDLER_ERROR`, and three such answers in a row would have switched `manage_wiki_page` off for every agent. A handler that answers `found: false`, or a message of the shape "No <thing> with / matching / named …", is `NOT_FOUND` — the caller's miss, never a streak toward self-healing.
 - Mail to people outside the business speaks the site's language: the signature request ("Signature requested — …") and the purchase order to a vendor were English on every site. The signature request also wrote the document title and the sender's message into its HTML unescaped, and fell back to another site's address when the site had none — it now escapes both and sends nothing (422) without the site's own address.
 - The business's own notices speak the site's language: a new, moved or customer-cancelled booking, an accepted or declined quote and a signed or declined agreement were mailed to the admins in English, the booking ones with a raw UTC timestamp and a relative link. One renderer (`_shared/notices/admin-notice.ts`, texts `admin.mail.*` with Swedish lines) writes them on the business's clock with an absolute link; `email_admins` takes `notice` + `booking_id`, and quote-sign / contract-sign send through it to every admin (they mailed the first five profiles). Live automation rows move to the new arguments only while they carry the seeded text.
@@ -21,6 +23,8 @@ Release process: [docs/operators/release-process.md](docs/operators/release-proc
   it does not, at any width. Found by "Check widths" on its first run.
 
 ### Added
+- **A phrase can be found everywhere it stands, and changed where it stands.** `find_in_content` is one read across website pages, blog posts, KB articles, wiki pages and the translation overlays: the exact phrase, every occurrence counted, with the text around each hit and the skill that edits that kind of content — what a renamed product or a withdrawn claim needs. And `manage_wiki_page` update takes `replace: [{ find, with, all? }]`: the stored page is read, only the named text is changed, and it is written once — a long page is no longer sent again to change a sentence. An edit whose text is not in the page, or stands several times, is refused and nothing is written.
+
 - The customer portal shows the customer's bookings (`/account/bookings`, and the coming ones on the overview): `my_account()` carries `bookings` — the customer's own (by `portal_email()`), the last 90 days and ahead — with the same change-or-cancel link the confirmation mail carries, only on a coming booking. The customer path checks it, and that another customer sees none.
 
 - **Another system's MCP server can be connected as a source of skills.** A

@@ -634,7 +634,7 @@ What to write NEXT is the identity's open content angles, not this list.
   },
   {
     name: 'browse_blog',
-    description: 'Browse published blog posts (visitor-facing). Use when: a user asks to see latest blog articles; you need to find existing blog content to link to; displaying content on a public-facing blog page. NOT for: managing blog post drafts (manage_blog_posts); listing blog categories (manage_blog_categories).',
+    description: 'Browse published blog posts (visitor-facing). Use when: a user asks to see latest blog articles; you need to find existing blog content to link to; displaying content on a public-facing blog page. NOT for: managing blog post drafts (manage_blog_posts); listing blog categories (manage_blog_categories); finding a phrase inside post bodies (find_in_content).',
     category: 'content',
     handler: 'module:blog',
     scope: 'both',
@@ -642,17 +642,17 @@ What to write NEXT is the identity's open content angles, not this list.
       type: 'function',
       function: {
         name: 'browse_blog',
-        description: 'Browse published blog posts (visitor-facing). Use when: a user asks to see latest blog articles; you need to find existing blog content to link to; displaying content on a public-facing blog page. NOT for: managing blog post drafts (manage_blog_posts); listing blog categories (manage_blog_categories).',
+        description: 'Browse published blog posts (visitor-facing). Use when: a user asks to see latest blog articles; you need to find existing blog content to link to; displaying content on a public-facing blog page. NOT for: managing blog post drafts (manage_blog_posts); listing blog categories (manage_blog_categories); finding a phrase inside post bodies (find_in_content).',
         parameters: {
           type: 'object',
           properties: {
             search: {
               type: 'string',
-              description: 'Search term',
+              description: 'Only posts with this in the title or the excerpt. The body is not searched here — find_in_content finds a phrase inside post bodies.',
             },
             limit: {
               type: 'number',
-              description: 'Max results (default 5)',
+              description: 'Max results (default 5, max 100)',
             },
           },
         },
@@ -666,8 +666,8 @@ Browse published blog posts (visitor-facing, read-only).
 - Need to find published posts for reference
 - NOT for admin management (use manage_blog_posts)
 ### Parameters
-- **search**: Optional text search.
-- **limit**: Max results, default 5.
+- **search**: only posts with this in the title or the excerpt (\`query\` is read as \`search\`). The answer echoes \`search\` and \`searched\`.
+- **limit**: Max results, default 5, max 100.
 ### Edge cases
 - Only returns published posts. Drafts and scheduled posts are excluded.
 - Visitor-safe: no sensitive data exposed.`,
