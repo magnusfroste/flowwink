@@ -1,5 +1,5 @@
 {
-  "errors": 3075,
+  "errors": 3073,
   "warnings": 92,
   "files": {
     "scripts/agent-surface-sweep.ts": 2,
@@ -492,7 +492,7 @@
     "supabase/functions/signal-dispatcher/index.ts": 4,
     "supabase/functions/signal-ingest/index.ts": 6,
     "supabase/functions/sitemap/index.ts": 1,
-    "supabase/functions/stripe-webhook/index.ts": 10,
+    "supabase/functions/stripe-webhook/index.ts": 8,
     "supabase/functions/subscription-billing-cron/index.ts": 1,
     "supabase/functions/subscriptions/index.ts": 21,
     "supabase/functions/system-integrity-check/index.ts": 37,
