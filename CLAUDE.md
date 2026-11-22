@@ -1019,6 +1019,19 @@ restore and rename are a person's (`report_person_*` refuse the service role),
 and what a person renamed an agent's next version keeps (`kept_person_fields`).
 docs/modules/reports.md.
 
+**`manage_site_settings` — the settings catalogue (2026-11-22).** Every
+`site_settings` key is described in `_shared/settings/catalog.ts`: purpose,
+fields, module, the admin page, the skill to prefer, and `access` (`write` |
+`person` | `internal` | `secret`). `action: describe` hands it to an agent;
+`get`/`get_all` hide credential fields (`[hidden]`); `update` refuses an
+unknown key (`UNKNOWN_SETTING`, `did_you_mean`), bookkeeping
+(`SETTING_NOT_WRITABLE`), a `person` setting without a person at the keyboard
+(`PERSON_REQUIRED`) and a credential in the value (`SECRET_FIELD`). Update
+merges top-level fields only. A new setting is described in the same PR —
+`settings-catalog-covers-every-key` scans the code
+(`scripts/lib/scan-settings-keys.mjs`) and fails on an undescribed key. A
+setting an owner would ask an agent to set gets its `fields`.
+
 **`manage_kb_article` get** — accepts `article_id`, `slug` or `title` (NOT `id`). Title resolves case-insensitively (exact, then unique prefix); ambiguous titles error with guidance. Safe pattern for certainty: `list`/search first, then `get` by slug.
 
 **`upload_document`** — binary mode requires `mime_type` alongside `content_base64`; text mode uses `content_text`.

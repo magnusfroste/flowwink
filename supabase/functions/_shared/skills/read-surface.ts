@@ -131,7 +131,7 @@ export function isDryRunRead(name: string, args?: Record<string, unknown>): bool
  * instance, have no list_tickets at all, only manage_ticket({action:'list'}).
  * A name gate alone would lock the read surface out of half the platform.
  */
-const READ_ACTIONS = new Set(['list', 'get', 'search', 'view', 'check', 'status']);
+const READ_ACTIONS = new Set(['list', 'get', 'get_all', 'describe', 'search', 'view', 'check', 'status']);
 
 /**
  * Judge the CALL, not just the name. manage_* skills pass only when the action
