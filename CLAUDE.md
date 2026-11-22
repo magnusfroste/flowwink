@@ -1038,9 +1038,14 @@ nothing raised. `scripts/lib/scan-raised-events.mjs` finds every
 `emit_platform_event` name (literal, or `'<entity>.' || NEW.status` over an
 `IN` list); `offered-events-are-raised` fails an offer that is not among them.
 Surveys: `queue_event_surveys(p_event, p_entity_id)` queues per campaign,
-`send_due_surveys` mails at `send_after`. Webhooks are the other bus — fired
-from the browser only, not from platform events; joining them is the next
-step, not done.
+`send_due_surveys` mails at `send_after`. **One bus for webhooks too:**
+`event-dispatcher` hands every processed event a webhook subscribes to to
+`send-webhook` (`via: 'bus'`), which signs and delivers; a direct call
+(browser `triggerWebhook`, an edge function) puts the event ON the bus — or,
+for an event in `_shared/events/platform-raised.ts`, leaves it to the bus —
+and never runs automations itself. A function never posts to `webhooks` on its
+own (`one-event-bus`); a new `emit_platform_event` name joins that list in the
+same PR.
 
 **`manage_kb_article` get** — accepts `article_id`, `slug` or `title` (NOT `id`). Title resolves case-insensitively (exact, then unique prefix); ambiguous titles error with guidance. Safe pattern for certainty: `list`/search first, then `get` by slug.
 

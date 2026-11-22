@@ -516,29 +516,9 @@ serve(async (req: Request) => {
 
       logStep("Sandbox order created", { orderId: order.id, status: orderStatus });
 
-      // Trigger CMS webhooks for sandbox orders too
-      try {
-        const webhookEvent = orderStatus === "paid" ? "order.paid" : "order.created";
-        const { data: webhooks } = await supabase
-          .from("webhooks")
-          .select("*")
-          .eq("is_active", true)
-          .contains("events", [webhookEvent]);
+      // Order webhooks are delivered from the event bus (the order's own
+      // order.created / order.paid events) — not posted here a second time.
 
-        if (webhooks && webhooks.length > 0) {
-          for (const webhook of webhooks) {
-            fetch(webhook.url, {
-              method: "POST",
-              headers: { "Content-Type": "application/json", ...(webhook.headers || {}) },
-              body: JSON.stringify({
-                event: webhookEvent,
-                timestamp: new Date().toISOString(),
-                data: { id: order.id, total_cents: totalCents, customer_email: customerEmail, sandbox: true },
-              }),
-            }).catch(() => {});
-          }
-        }
-      } catch (_) { /* Best-effort post-checkout side effect. A failure here must not fail a paid checkout. */ }
 
       return new Response(
         JSON.stringify({

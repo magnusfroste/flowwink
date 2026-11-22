@@ -1,5 +1,5 @@
 {
-  "errors": 3080,
+  "errors": 3075,
   "warnings": 92,
   "files": {
     "scripts/agent-surface-sweep.ts": 2,
@@ -488,7 +488,7 @@
     "supabase/functions/quote-sign/index.ts": 2,
     "supabase/functions/run-autonomy-tests/index.ts": 100,
     "supabase/functions/run-platform-tests/index.ts": 4,
-    "supabase/functions/send-webhook/index.ts": 6,
+    "supabase/functions/send-webhook/index.ts": 1,
     "supabase/functions/signal-dispatcher/index.ts": 4,
     "supabase/functions/signal-ingest/index.ts": 6,
     "supabase/functions/sitemap/index.ts": 1,

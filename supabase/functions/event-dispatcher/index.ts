@@ -134,6 +134,15 @@ serve(async (req) => {
 
     if (autoErr) throw autoErr;
 
+    // The webhooks that listen: one read per run. An event any active webhook
+    // subscribes to is handed to send-webhook (via 'bus'), which signs and
+    // delivers it — every raised event reaches its webhooks, whoever raised it.
+    const { data: hooks, error: hooksErr } = await supabase
+      .from("webhooks").select("events").eq("is_active", true);
+    if (hooksErr) console.warn("event-dispatcher: webhooks unreadable, no deliveries this run:", hooksErr.message);
+    const subscribed = new Set<string>(((hooks ?? []) as Array<{ events: string[] | null }>).flatMap((h) => h.events ?? []));
+    let delivered = 0;
+
     // 3. Cache module status (avoid N queries)
     let flowpilotEnabled: boolean | null = null;
     async function isFlowpilotOn(): Promise<boolean> {
@@ -181,6 +190,20 @@ serve(async (req) => {
         .select("id");
       if (claimErr) { console.error(`event-dispatcher: claim failed for ${ev.id}:`, claimErr.message); continue; }
       if (!claimed || claimed.length === 0) continue;
+
+      if (subscribed.has(ev.event_name)) {
+        try {
+          const hook = await fetch(`${supabaseUrl}/functions/v1/send-webhook`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${serviceKey}` },
+            body: JSON.stringify({ event: ev.event_name, data: ev.payload ?? {}, via: "bus" }),
+          });
+          if (hook.ok) delivered += 1;
+          else console.error(`event-dispatcher: webhook delivery for ${ev.event_name} answered ${hook.status}`);
+        } catch (hookErr) {
+          console.error(`event-dispatcher: webhook delivery for ${ev.event_name} failed:`, hookErr instanceof Error ? hookErr.message : hookErr);
+        }
+      }
 
       // deno-lint-ignore no-explicit-any
       const runnable: any[] = [];
@@ -268,6 +291,7 @@ serve(async (req) => {
       JSON.stringify({
         processed: events.length,
         fired: totalFired,
+        webhooks_delivered: delivered,
         results,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
