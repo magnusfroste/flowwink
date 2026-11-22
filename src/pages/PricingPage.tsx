@@ -14,27 +14,32 @@ import { useStorefront } from '@/hooks/useStorefront';
 import { cn } from '@/lib/utils';
 import { useCustomerFormat } from '@/hooks/useCustomerFormat';
 import { usePricePeriodText } from '@/lib/price-period-text';
+import { useUiText } from '@/lib/ui-text';
 
-const features = {
+type T = (key: string, fallback: string) => string;
+
+// What each plan includes — visitor texts, so they follow the site's language.
+const featuresFor = (t: T) => ({
   hosting: [
-    'Cloud-based hosting',
-    'Automatic backups',
-    'SSL certificate included',
-    'CDN for fast loading',
-    'Email support',
-    'Monthly billing',
+    t('pricing.f.cloudHosting', 'Cloud-based hosting'),
+    t('pricing.f.backups', 'Automatic backups'),
+    t('pricing.f.ssl', 'SSL certificate included'),
+    t('pricing.f.cdn', 'CDN for fast loading'),
+    t('pricing.f.emailSupport', 'E-mail support'),
+    t('pricing.f.monthly', 'Monthly billing'),
   ],
   setup: [
-    'Professional installation',
-    'Domain configuration',
-    'Basic SEO setup',
-    'Content migration',
-    'Training (1 hour)',
-    'One-time cost',
+    t('pricing.f.installation', 'Professional installation'),
+    t('pricing.f.domain', 'Domain configuration'),
+    t('pricing.f.seo', 'Basic SEO setup'),
+    t('pricing.f.migration', 'Content migration'),
+    t('pricing.f.training', 'Training (1 hour)'),
+    t('pricing.f.oneTimeCost', 'One-time cost'),
   ],
-};
+});
 
 export default function PricingPage() {
+  const t = useUiText();
   const { formatPrice } = useCustomerFormat();
   const { data: products, isLoading } = useProducts({ activeOnly: true });
   const periodText = usePricePeriodText();
@@ -43,8 +48,9 @@ export default function PricingPage() {
   const { data: brandingSettings } = useBrandingSettings();
   
   // Get site title from SEO settings or branding, fallback to generic
-  const siteTitle = seoSettings?.siteTitle || brandingSettings?.organizationName || 'Website';
+  const siteTitle = seoSettings?.siteTitle || brandingSettings?.organizationName || t('pricing.siteFallback', 'Website');
   const { catalogOnly } = useStorefront();
+  const features = featuresFor(t);
 
   const hostingProduct = products?.find(p => p.type === 'recurring');
   const setupProduct = products?.find(p => p.type === 'one_time');
@@ -54,7 +60,7 @@ export default function PricingPage() {
     
     const alreadyInCart = items.some(item => item.productId === product.id);
     if (alreadyInCart) {
-      toast.info('Product is already in your cart');
+      toast.info(t('pricing.alreadyInCartToast', 'The product is already in your cart'));
       return;
     }
 
@@ -65,7 +71,7 @@ export default function PricingPage() {
       currency: product.currency,
       imageUrl: product.image_url,
     });
-    toast.success(`${product.name} has been added to your cart`);
+    toast.success(t('pricing.addedToast', '{name} has been added to your cart').replace('{name}', product.name));
   };
 
   const isInCart = (productId: string) => items.some(item => item.productId === productId);
@@ -76,8 +82,8 @@ export default function PricingPage() {
   return (
     <>
       <Helmet>
-        <title>Pricing | {siteTitle}</title>
-        <meta name="description" content={`Simple and transparent pricing for ${siteTitle}. Choose between monthly hosting or get started with professional setup.`} />
+        <title>{`${t('pricing.title', 'Pricing')} | ${siteTitle}`}</title>
+        <meta name="description" content={t('pricing.metaDescription', 'Simple and transparent pricing for {site}. Choose monthly hosting, or get started with professional setup.').replace('{site}', siteTitle)} />
       </Helmet>
       
       <PublicNavigation />
@@ -87,13 +93,13 @@ export default function PricingPage() {
         <section className="container mx-auto px-6 pt-20 pb-16 text-center">
           <Badge variant="secondary" className="mb-4">
             <Zap className="w-3 h-3 mr-1" />
-            Simple pricing
+            {t('pricing.badge', 'Simple pricing')}
           </Badge>
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-serif font-bold mb-6 tracking-tight">
-            Choose the right plan for you
+            {t('pricing.heading', 'Choose the right plan for you')}
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Transparent pricing with no hidden fees. Start with hosting and add setup if you want help getting started.
+            {t('pricing.lead', 'Transparent pricing with no hidden fees. Start with hosting and add setup if you want help getting started.')}
           </p>
         </section>
 
@@ -128,7 +134,7 @@ export default function PricingPage() {
                   <CardHeader>
                     <div className="flex items-center gap-2 mb-2">
                       <Shield className="w-5 h-5 text-primary" />
-                      <Badge variant="outline">Subscription</Badge>
+                      <Badge variant="outline">{t('pricing.subscription', 'Subscription')}</Badge>
                     </div>
                     <CardTitle className="text-2xl font-serif">{hostingProduct.name}</CardTitle>
                     <div className="flex items-baseline gap-1">
@@ -136,7 +142,7 @@ export default function PricingPage() {
                       <span className="text-muted-foreground">{periodText(hostingProduct)}</span>
                     </div>
                     <CardDescription className="text-base">
-                      {hostingProduct.description || 'Everything you need to run your website'}
+                      {hostingProduct.description || t('pricing.hostingFallback', 'Everything you need to run your website')}
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -159,7 +165,7 @@ export default function PricingPage() {
                       disabled={isInCart(hostingProduct.id)}
                     >
                       <ShoppingCart className="w-4 h-4 mr-2" />
-                      {isInCart(hostingProduct.id) ? 'Already in cart' : 'Add to cart'}
+                      {isInCart(hostingProduct.id) ? t('pricing.inCart', 'Already in cart') : t('pricing.addToCart', 'Add to cart')}
                     </Button>
                   </CardFooter>
                 </Card>
@@ -175,15 +181,15 @@ export default function PricingPage() {
                   <CardHeader>
                     <div className="flex items-center gap-2 mb-2">
                       <Headphones className="w-5 h-5 text-muted-foreground" />
-                      <Badge variant="secondary">One-time cost</Badge>
+                      <Badge variant="secondary">{t('pricing.f.oneTimeCost', 'One-time cost')}</Badge>
                     </div>
                     <CardTitle className="text-2xl font-serif">{setupProduct.name}</CardTitle>
                     <div className="flex items-baseline gap-1">
                       <span className="text-4xl font-bold">{formatPrice(setupProduct.price_cents, setupProduct.currency)}</span>
-                      <span className="text-muted-foreground">one-time</span>
+                      <span className="text-muted-foreground">{t('pricing.oneTime', 'one-time')}</span>
                     </div>
                     <CardDescription className="text-base">
-                      {setupProduct.description || 'We help you get started quickly and easily'}
+                      {setupProduct.description || t('pricing.setupFallback', 'We help you get started quickly and easily')}
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -207,7 +213,7 @@ export default function PricingPage() {
                       disabled={isInCart(setupProduct.id)}
                     >
                       <ShoppingCart className="w-4 h-4 mr-2" />
-                      {isInCart(setupProduct.id) ? 'Already in cart' : 'Add to cart'}
+                      {isInCart(setupProduct.id) ? t('pricing.inCart', 'Already in cart') : t('pricing.addToCart', 'Add to cart')}
                     </Button>
                   </CardFooter>
                 </Card>
@@ -217,24 +223,24 @@ export default function PricingPage() {
 
           {/* FAQ / Additional Info */}
           <div className="mt-16 text-center max-w-2xl mx-auto">
-            <h2 className="text-2xl font-serif font-bold mb-4">Frequently Asked Questions</h2>
+            <h2 className="text-2xl font-serif font-bold mb-4">{t('pricing.faqTitle', 'Frequently asked questions')}</h2>
             <div className="space-y-4 text-left">
               <div className="p-4 rounded-lg bg-muted/50">
-                <h3 className="font-medium mb-1">Can I cancel at any time?</h3>
+                <h3 className="font-medium mb-1">{t('pricing.faq.cancelQ', 'Can I cancel at any time?')}</h3>
                 <p className="text-sm text-muted-foreground">
-                  Yes, you can cancel your subscription at any time. You will retain access to the service until the end of your billing period.
+                  {t('pricing.faq.cancelA', 'Yes, you can cancel your subscription at any time. You keep access to the service until the end of your billing period.')}
                 </p>
               </div>
               <div className="p-4 rounded-lg bg-muted/50">
-                <h3 className="font-medium mb-1">Do I need to purchase setup?</h3>
+                <h3 className="font-medium mb-1">{t('pricing.faq.setupQ', 'Do I need to buy setup?')}</h3>
                 <p className="text-sm text-muted-foreground">
-                  No, setup is optional. It's for those who want help getting started quickly with professional installation and training.
+                  {t('pricing.faq.setupA', 'No, setup is optional. It is for those who want help getting started quickly, with professional installation and training.')}
                 </p>
               </div>
               <div className="p-4 rounded-lg bg-muted/50">
-                <h3 className="font-medium mb-1">What payment methods are accepted?</h3>
+                <h3 className="font-medium mb-1">{t('pricing.faq.payQ', 'Which payment methods are accepted?')}</h3>
                 <p className="text-sm text-muted-foreground">
-                  We accept all major cards (Visa, Mastercard, etc.) through our secure payment solution Stripe.
+                  {t('pricing.faq.payA', 'We accept all major cards (Visa, Mastercard and others) through our secure payment provider Stripe.')}
                 </p>
               </div>
             </div>
