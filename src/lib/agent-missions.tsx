@@ -22,7 +22,7 @@ export const TOOLSET_GROUP_OPTIONS: { id: string; label: string; hint: string }[
   { id: 'growth', label: 'Growth', hint: 'paid growth, attribution, social' },
   { id: 'subscriptions', label: 'Subscriptions', hint: 'plans, MRR, dunning' },
   { id: 'automation', label: 'Automation', hint: 'workflow automations' },
-  { id: 'search', label: 'Web/Search', hint: 'browser control, web search' },
+  { id: 'search', label: 'Web/Search', hint: 'web search, reading a page' },
 ];
 
 export interface MissionTemplate {

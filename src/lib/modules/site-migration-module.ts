@@ -278,7 +278,6 @@ export const siteMigrationMeta = {
     'Page observations an agent composes from (titles, headings, text, images by role)',
     'Render report: says when it read a JavaScript shell instead of the page',
     'Routing check: says when a URL served some other page\'s content',
-    'Browser relay escalation via the Chrome extension',
     'Legacy one-shot import (action=compose) with AI block generation',
   ],
 };

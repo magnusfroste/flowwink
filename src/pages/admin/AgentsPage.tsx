@@ -1,12 +1,10 @@
 import { useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ConnectedAgentsTable } from '@/components/admin/agents/ConnectedAgentsTable';
 import { ConnectAgentWizard } from '@/components/admin/agents/ConnectAgentWizard';
-import { McpActivityLog } from '@/components/admin/federation/McpActivityLog';
-import { McpFindings } from '@/components/admin/federation/McpFindings';
 import { MissionDispatchDialog } from '@/components/admin/federation/MissionDispatchDialog';
 import { useConnectedAgents } from '@/hooks/useAgents';
 import { useAuth } from '@/hooks/useAuth';
@@ -21,8 +19,9 @@ import type { AppRole } from '@/types/cms';
  * this instance.
  *
  * Two surfaces on one page, decided by the matrix: admins and roles granted
- * `federation` manage EVERYONE's agents (owner, activity, findings, OpenClaw
- * dispatch). Every other staff member gets *My agents* — their own, and the
+ * `federation` manage EVERYONE's agents (owner, OpenClaw dispatch). Every
+ * call an agent made is one feed, System → Observability → MCP activity; what
+ * a testing agent found is Developer → QA findings (2026-11-22). Every other staff member gets *My agents* — their own, and the
  * wizard to connect one — because an agent acts as its owner and never reaches
  * further (#649), so connecting your own needs no admin. Until 2026-10-27 this
  * page required `federation`, and the staff door at /account/agents sent staff
@@ -67,7 +66,6 @@ function EveryonesAgents() {
         <TabsList>
           <TabsTrigger value="agents">Connected agents</TabsTrigger>
           <TabsTrigger value="connect">Connect an agent</TabsTrigger>
-          <TabsTrigger value="activity">Activity & findings</TabsTrigger>
         </TabsList>
         <TabsContent value="agents">
           <ConnectedAgentsTable />
@@ -75,11 +73,13 @@ function EveryonesAgents() {
         <TabsContent value="connect">
           <ConnectAgentWizard mode="admin" />
         </TabsContent>
-        <TabsContent value="activity" className="space-y-6">
-          <McpActivityLog />
-          <McpFindings />
-        </TabsContent>
       </Tabs>
+      <p className="text-xs text-muted-foreground">
+        Every call an agent made is under{' '}
+        <Link to="/admin/system#observability" className="underline underline-offset-2">System → Observability → MCP activity</Link>;
+        what a testing agent reported is under{' '}
+        <Link to="/admin/developer?tab=qa-findings" className="underline underline-offset-2">Developer → QA findings</Link>.
+      </p>
       <OpenClawDispatch />
     </div>
   );
@@ -95,7 +95,7 @@ function OpenClawDispatch() {
     <Card>
       <CardHeader>
         <CardTitle className="text-base">Advanced — dispatch a mission</CardTitle>
-        <CardDescription>Hand an autonomous mission to an OpenClaw helper. Findings land under Activity & findings.</CardDescription>
+        <CardDescription>Hand an autonomous mission to an OpenClaw helper. Findings land under Developer → QA findings.</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-wrap gap-2">
         {claws.map((a) => (

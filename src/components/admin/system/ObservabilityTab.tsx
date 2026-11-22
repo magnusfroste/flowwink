@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
-import { Activity, Zap, Sparkles, LogIn, ArrowRight, AlertTriangle, CheckCircle2, Layers, Library, RefreshCw } from 'lucide-react';
+import { Activity, Sparkles, LogIn, ArrowRight, AlertTriangle, CheckCircle2, Layers, Library, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import instanceManifest from '../../../../supabase/seed/instance-manifest.json';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,8 +9,6 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { useAgentEvents } from '@/hooks/useAgentEvents';
-import { useAutomationHealth } from '@/hooks/useAutomationHealth';
 import { useKnowledgeIndexHealth, useRunKnowledgeIndexer, KNOWLEDGE_SOURCES } from '@/hooks/useKnowledgeIndex';
 import { McpActivityPanel } from '@/components/admin/developer/McpActivityPanel';
 import { InstanceReadinessChecklist } from '@/components/admin/InstanceReadinessChecklist';
@@ -38,155 +36,21 @@ function timeAgo(iso: string | null) {
   }
 }
 
-function EventBusCard() {
-  const { data, isLoading } = useAgentEvents();
-  const events = data ?? [];
-  const processed = events.filter((e) => e.processed_at).length;
-
-  return (
-    <Card>
-      <CardHeader className="flex-row items-start justify-between space-y-0">
-        <div>
-          <CardTitle className="font-serif flex items-center gap-2 text-base">
-            <Zap className="h-4 w-4 text-amber-500" />
-            Event Bus
-          </CardTitle>
-          <CardDescription>
-            {isLoading ? '…' : `${events.length} recent · ${processed} processed`}
-          </CardDescription>
-        </div>
-        <Link
-          to="/admin/automations"
-          className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
-        >
-          Open <ArrowRight className="h-3 w-3" />
-        </Link>
-      </CardHeader>
-      <CardContent>
-        {isLoading ? (
-          <div className="space-y-2">
-            {[1, 2, 3].map((i) => <Skeleton key={i} className="h-8 w-full" />)}
-          </div>
-        ) : events.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No events emitted yet.</p>
-        ) : (
-          <ul className="space-y-1.5 max-h-64 overflow-auto">
-            {events.slice(0, 8).map((ev) => (
-              <li key={ev.id} className="flex items-center justify-between gap-2 text-sm py-1">
-                <div className="min-w-0 flex-1">
-                  <code className="text-xs font-mono truncate block">{ev.event_name}</code>
-                  {ev.source && (
-                    <span className="text-[10px] text-muted-foreground">{ev.source}</span>
-                  )}
-                </div>
-                <span className="text-xs text-muted-foreground shrink-0">{timeAgo(ev.created_at)}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-function AutomationQueueCard() {
-  const { data, isLoading } = useAutomationHealth();
-
-  return (
-    <Card>
-      <CardHeader className="flex-row items-start justify-between space-y-0">
-        <div>
-          <CardTitle className="font-serif flex items-center gap-2 text-base">
-            <Activity className="h-4 w-4 text-blue-500" />
-            Automation Health
-          </CardTitle>
-          <CardDescription>
-            {isLoading
-              ? '…'
-              : `${data?.enabled ?? 0}/${data?.total ?? 0} enabled · ${data?.totalRuns7d ?? 0} logged runs (7d)`}
-          </CardDescription>
-        </div>
-        <Link
-          to="/admin/automations"
-          className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
-        >
-          Open <ArrowRight className="h-3 w-3" />
-        </Link>
-      </CardHeader>
-      <CardContent>
-        {isLoading ? (
-          <Skeleton className="h-24 w-full" />
-        ) : (
-          <>
-            <div className="grid grid-cols-4 gap-2 mb-3">
-              <Stat label="Healthy" value={data?.healthy ?? 0} tone="ok" />
-              <Stat label="Warning" value={data?.warning ?? 0} tone="warn" />
-              <Stat label="Erroring" value={data?.erroring ?? 0} tone="bad" />
-              <Stat label="Stale" value={data?.stale ?? 0} tone="muted" />
-            </div>
-            {(data?.erroring ?? 0) > 0 && (
-              <ul className="space-y-1 mt-2 border-t pt-2">
-                {data!.items
-                  .filter((i) => i.health === 'error')
-                  .slice(0, 5)
-                  .map((i) => (
-                    <li key={i.id} className="text-xs flex items-center gap-2">
-                      <AlertTriangle className="h-3 w-3 text-rose-500 shrink-0" />
-                      <span className="truncate">{i.name}</span>
-                    </li>
-                  ))}
-              </ul>
-            )}
-          </>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-function Stat({
-  label,
-  value,
-  tone,
-}: {
-  label: string;
-  value: number;
-  tone: 'ok' | 'warn' | 'bad' | 'muted';
-}) {
-  const toneCls = {
-    ok: 'text-success',
-    warn: 'text-warning',
-    bad: 'text-rose-600 dark:text-rose-400',
-    muted: 'text-muted-foreground',
-  }[tone];
-  return (
-    <div className="rounded-md border p-2 text-center">
-      <div className={`text-lg font-semibold ${toneCls}`}>{value}</div>
-      <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div>
-    </div>
-  );
-}
-
+// The Event Bus and Automation Health cards lived here too; both are the
+// Automations page's (2026-11-22). The skill counts (enabled, MCP-exposed,
+// staged, disabled) are the Skills page's — what is left is what failed.
 function SkillAuditCard() {
   // A failure of a module that is off is that module's history, not a problem to fix.
   const active = useActiveModules();
   const { data, isLoading } = useQuery({
     queryKey: ['system-skill-audit'],
     queryFn: async () => {
-      const [skillsRes, failuresRes] = await Promise.all([
-        (supabase.from('agent_skills') as any).select('id, enabled, mcp_exposed, requires_staging'),
-        (supabase.from('agent_audit_trail') as any)
-          .select('id, skill_name, success, error_message, occurred_at')
-          .eq('success', false)
-          .order('occurred_at', { ascending: false })
-          .limit(25),
-      ]);
-      const skills = (skillsRes.data ?? []) as any[];
+      const failuresRes = await (supabase.from('agent_audit_trail') as any)
+        .select('id, skill_name, success, error_message, occurred_at')
+        .eq('success', false)
+        .order('occurred_at', { ascending: false })
+        .limit(25);
       return {
-        total: skills.length,
-        enabled: skills.filter((s: any) => s.enabled).length,
-        mcpExposed: skills.filter((s: any) => s.mcp_exposed && s.enabled).length,
-        staged: skills.filter((s: any) => s.requires_staging).length,
         recentFailures: (failuresRes.data ?? []) as Array<{ id: string; skill_name: string | null; occurred_at: string }>,
       };
     },
@@ -202,11 +66,7 @@ function SkillAuditCard() {
             <Sparkles className="h-4 w-4 text-violet-500" />
             Skill Audit
           </CardTitle>
-          <CardDescription>
-            {isLoading
-              ? '…'
-              : `${data?.enabled ?? 0}/${data?.total ?? 0} enabled · ${data?.mcpExposed ?? 0} MCP-exposed`}
-          </CardDescription>
+          <CardDescription>Recent skill failures</CardDescription>
         </div>
         <Link
           to="/admin/skills"
@@ -220,17 +80,12 @@ function SkillAuditCard() {
           <Skeleton className="h-20 w-full" />
         ) : (
           <>
-            <div className="flex flex-wrap gap-2 mb-3">
-              <Badge variant="secondary">{data?.staged ?? 0} staged ops</Badge>
-              <Badge variant="secondary">{(data?.total ?? 0) - (data?.enabled ?? 0)} disabled</Badge>
-            </div>
             {(data?.recentFailures.length ?? 0) === 0 ? (
               <p className="text-sm text-success flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4" /> No recent skill failures
               </p>
             ) : (
               <div>
-                <p className="text-xs text-muted-foreground mb-1">Recent failures</p>
                 <ul className="space-y-1">
                   {data!.recentFailures.map((f: any) => (
                     <li key={f.id} className="text-xs flex items-center justify-between gap-2">
@@ -523,8 +378,6 @@ function InstanceSyncCard() {
           <div className="space-y-2">
             <LayerRow name="Schema" ok={schemaOk} detail={schemaDetail} />
             <LayerRow name="Skills" ok={skillsOk} detail={skillsDetail} />
-            <LayerRow name="Edge functions" ok={null} detail={`${expected.edge_functions.count} expected by this build — actual deploy state is CLI-verified (fleet tooling), not DB-visible`} />
-            <LayerRow name="Frontend" ok={true} detail={`this build (expects schema ${expected.schema.migration_head}, ${expected.skills.skill_count} skills)`} />
           </div>
         )}
       </CardContent>
@@ -698,11 +551,10 @@ export function ObservabilityTab() {
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">
-        Live signal from the platform — events, automations, skills and auth. Click any card to dive deeper.
+        Live signal from the platform — skills, auth, knowledge and integrations. Events and automations are on the{' '}
+        <Link to="/admin/automations" className="underline hover:text-foreground">Automations</Link> page.
       </p>
       <div className="grid gap-4 md:grid-cols-2">
-        <EventBusCard />
-        <AutomationQueueCard />
         <SkillAuditCard />
         <LoginActivityCard />
         <KnowledgeIndexCard />
