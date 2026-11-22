@@ -19,7 +19,7 @@ import { downloadCSV } from '@/lib/csv-utils';
 import { toast } from 'sonner';
 import { businessToday } from '@/lib/platform-fallbacks';
 
-const TRIGGERS = ['manual', 'order.delivered', 'order.paid', 'ticket.closed', 'contract.renewed', 'booking.completed', 'deal.won'];
+const TRIGGERS = ['manual', 'order.delivered', 'order.paid', 'ticket.resolved', 'ticket.closed', 'contract.renewed', 'booking.completed', 'deal.won'];
 
 export default function SurveysPage() {
   const { data: templates } = useSurveyTemplates();

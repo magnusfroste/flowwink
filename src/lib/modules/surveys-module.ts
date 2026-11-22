@@ -40,7 +40,7 @@ const SURVEY_SKILLS: SkillSeed[] = [
             template_id: { type: 'string', description: 'UUID of the survey_templates row' },
             trigger: {
               type: 'string',
-              enum: ['manual', 'order.delivered', 'order.paid', 'ticket.closed', 'contract.renewed', 'booking.completed', 'deal.won'],
+              enum: ['manual', 'order.delivered', 'order.paid', 'ticket.resolved', 'ticket.closed', 'contract.renewed', 'booking.completed', 'deal.won'],
             },
             delay_hours: { type: 'number', description: 'Wait N hours after trigger event before sending' },
             email_subject: { type: 'string' },
@@ -205,6 +205,43 @@ const SURVEY_SKILLS: SkillSeed[] = [
     instructions:
       'Returns { success, csv, row_count }. `csv` includes a header row. Use category="detractor" for a churn-risk export. For very large exports (>10k) paginate by narrowing `since`.',
   },
+  {
+    name: 'queue_event_surveys',
+    description: 'Queue the surveys an event asks for: every ACTIVE campaign whose trigger is this event gets one send to the customer behind the record (order, booking, ticket, contract or deal), due after the campaign\'s delay_hours — never twice for the same campaign and record. Run by the platform\'s survey automations on order.delivered, order.paid, ticket.resolved, ticket.closed, booking.completed, contract.renewed and deal.won. Use when: re-queuing the survey for one record after fixing its e-mail address. NOT for: a manual push to a list of people (send_survey); creating a campaign (create_survey_campaign).',
+    category: 'crm',
+    handler: 'rpc:queue_event_surveys',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'queue_event_surveys',
+        description: 'Queue the survey sends an event asks for.',
+        parameters: {
+          type: 'object',
+          properties: {
+            p_event: { type: 'string', enum: ['order.delivered', 'order.paid', 'ticket.resolved', 'ticket.closed', 'booking.completed', 'contract.renewed', 'deal.won'] },
+            p_entity_id: { type: 'string', format: 'uuid', description: 'The order, booking, ticket, contract or deal.' },
+          },
+          required: ['p_event', 'p_entity_id'],
+        },
+      },
+    },
+  },
+  {
+    name: 'send_due_surveys',
+    description: 'Mail the queued survey sends whose time has come (queue_event_surveys put them there with the campaign\'s delay). Each is claimed before the mail and given back when nothing went out. Run every fifteen minutes by the "Send due surveys" automation, which wakes only when a send is due. Use when: a person wants the due surveys out now. NOT for: sending a campaign to a list of people (send_survey).',
+    category: 'crm',
+    handler: 'edge:comms-send',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'send_due_surveys',
+        description: 'Mail due queued surveys.',
+        parameters: { type: 'object', properties: { limit: { type: 'integer', description: 'At most this many in one run (default 25).' } } },
+      },
+    },
+  },
 ];
 
 export const surveysModule = defineModule<Input, Output>({
@@ -219,11 +256,79 @@ export const surveysModule = defineModule<Input, Output>({
   tier: 'standard',
   inputSchema,
   outputSchema,
-  skills: ['manage_survey_template', 'create_survey_campaign', 'send_survey', 'list_survey_responses'],
+  skills: ['manage_survey_template', 'create_survey_campaign', 'send_survey', 'list_survey_responses', 'queue_event_surveys', 'send_due_surveys'],
   data: {
     tables: ['survey_responses', 'survey_sends', 'survey_campaigns', 'survey_templates'],
   },
   skillSeeds: SURVEY_SKILLS,
+
+  automations: [
+    {
+      name: 'Survey when an order is delivered',
+      description: 'When an order is delivered, queue the survey of every active campaign set to "order.delivered" for the customer behind it. Quiet when no campaign uses the event.',
+      trigger_type: 'event',
+      trigger_config: { event: 'order.delivered' },
+      skill_name: 'queue_event_surveys',
+      skill_arguments: { p_event: 'order.delivered', p_entity_id: '{{event.payload.id}}' },
+    },
+    {
+      name: 'Survey when an order is paid',
+      description: 'When an order is paid, queue the survey of every active campaign set to "order.paid" for the customer behind it. Quiet when no campaign uses the event.',
+      trigger_type: 'event',
+      trigger_config: { event: 'order.paid' },
+      skill_name: 'queue_event_surveys',
+      skill_arguments: { p_event: 'order.paid', p_entity_id: '{{event.payload.id}}' },
+    },
+    {
+      name: 'Survey when a support case is resolved',
+      description: 'When a support case is resolved, queue the survey of every active campaign set to "ticket.resolved" for the customer behind it. Quiet when no campaign uses the event.',
+      trigger_type: 'event',
+      trigger_config: { event: 'ticket.resolved' },
+      skill_name: 'queue_event_surveys',
+      skill_arguments: { p_event: 'ticket.resolved', p_entity_id: '{{event.payload.ticket_id}}' },
+    },
+    {
+      name: 'Survey when a support case is closed',
+      description: 'When a support case is closed, queue the survey of every active campaign set to "ticket.closed" for the customer behind it. Quiet when no campaign uses the event.',
+      trigger_type: 'event',
+      trigger_config: { event: 'ticket.closed' },
+      skill_name: 'queue_event_surveys',
+      skill_arguments: { p_event: 'ticket.closed', p_entity_id: '{{event.payload.id}}' },
+    },
+    {
+      name: 'Survey when a booking is marked completed',
+      description: 'When a booking is marked completed, queue the survey of every active campaign set to "booking.completed" for the customer behind it. Quiet when no campaign uses the event.',
+      trigger_type: 'event',
+      trigger_config: { event: 'booking.completed' },
+      skill_name: 'queue_event_surveys',
+      skill_arguments: { p_event: 'booking.completed', p_entity_id: '{{event.payload.id}}' },
+    },
+    {
+      name: 'Survey when a contract is renewed',
+      description: 'When a contract is renewed, queue the survey of every active campaign set to "contract.renewed" for the customer behind it. Quiet when no campaign uses the event.',
+      trigger_type: 'event',
+      trigger_config: { event: 'contract.renewed' },
+      skill_name: 'queue_event_surveys',
+      skill_arguments: { p_event: 'contract.renewed', p_entity_id: '{{event.payload.id}}' },
+    },
+    {
+      name: 'Survey when a deal is won',
+      description: 'When a deal is won, queue the survey of every active campaign set to "deal.won" for the customer behind it. Quiet when no campaign uses the event.',
+      trigger_type: 'event',
+      trigger_config: { event: 'deal.won' },
+      skill_name: 'queue_event_surveys',
+      skill_arguments: { p_event: 'deal.won', p_entity_id: '{{event.payload.id}}' },
+    },
+    {
+      name: 'Send due surveys',
+      description: 'Every fifteen minutes, mail the queued surveys whose delay has passed. Wakes nothing when none is due (work probe due_surveys).',
+      trigger_type: 'cron',
+      trigger_config: { expression: '*/15 * * * *', work_probe: 'due_surveys' },
+      skill_name: 'send_due_surveys',
+      skill_arguments: {},
+      executor: 'platform',
+    },
+  ],
 
   async publish(_input: Input): Promise<Output> {
     return { success: true };
