@@ -97,6 +97,7 @@ const SKILL_TO_KIND: Record<string, string> = {
   send_booking_confirmation: 'booking_confirmation',
   send_ticket_update: 'ticket_update',
   send_survey: 'survey_send',
+  send_due_surveys: 'survey_send',
   invite_candidate_to_interview: 'interview_invitation',
   send_interview_confirmation: 'interview_confirmation',
 };

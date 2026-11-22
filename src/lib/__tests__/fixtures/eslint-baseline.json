@@ -1,5 +1,5 @@
 {
-  "errors": 3081,
+  "errors": 3080,
   "warnings": 92,
   "files": {
     "scripts/agent-surface-sweep.ts": 2,
@@ -449,7 +449,7 @@
     "supabase/functions/comms-send/invoice_email.ts": 5,
     "supabase/functions/comms-send/order_confirmation.ts": 1,
     "supabase/functions/comms-send/quote_email.ts": 6,
-    "supabase/functions/comms-send/survey_send.ts": 5,
+    "supabase/functions/comms-send/survey_send.ts": 4,
     "supabase/functions/composio-proxy/index.ts": 11,
     "supabase/functions/composio-webhook/index.ts": 1,
     "supabase/functions/consultant-match/index.ts": 13,

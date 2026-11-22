@@ -1032,6 +1032,16 @@ merges top-level fields only. A new setting is described in the same PR —
 (`scripts/lib/scan-settings-keys.mjs`) and fails on an undescribed key. A
 setting an owner would ask an agent to set gets its `fields`.
 
+**An event offered is an event raised (2026-11-22).** A survey trigger or an
+event automation waits for a name; five of six survey triggers were names
+nothing raised. `scripts/lib/scan-raised-events.mjs` finds every
+`emit_platform_event` name (literal, or `'<entity>.' || NEW.status` over an
+`IN` list); `offered-events-are-raised` fails an offer that is not among them.
+Surveys: `queue_event_surveys(p_event, p_entity_id)` queues per campaign,
+`send_due_surveys` mails at `send_after`. Webhooks are the other bus — fired
+from the browser only, not from platform events; joining them is the next
+step, not done.
+
 **`manage_kb_article` get** — accepts `article_id`, `slug` or `title` (NOT `id`). Title resolves case-insensitively (exact, then unique prefix); ambiguous titles error with guidance. Safe pattern for certainty: `list`/search first, then `get` by slug.
 
 **`upload_document`** — binary mode requires `mime_type` alongside `content_base64`; text mode uses `content_text`.

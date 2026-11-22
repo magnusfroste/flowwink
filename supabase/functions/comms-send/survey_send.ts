@@ -21,6 +21,9 @@ interface Body {
   campaign_id: string;
   recipients: Recipient[];
   public_base_url?: string; // optional override (e.g. https://demo.flowwink.com)
+  /** send_due_surveys: mail the queued sends whose time has come (queue_event_surveys). */
+  due?: boolean;
+  limit?: number;
 }
 
 // Color ramp for NPS 0–10 (detractor red → passive amber → promoter green)
@@ -68,6 +71,23 @@ const renderHtml = (args: {
   </div>`;
 };
 
+/**
+ * The site's own address for the answer link. It read branding.public_url — a
+ * field nothing writes — and fell back to the caller's Origin header, which a
+ * sweep has none of: every link was relative. general.siteUrl is the site's
+ * address (the settings catalogue), PUBLIC_SITE_URL the deploy's.
+ */
+async function siteBase(
+  supabase: ReturnType<typeof getServiceClient>, override: string | undefined, req: Request,
+): Promise<string> {
+  if (override) return override.replace(/\/+$/, "");
+  // A missing row and an unreadable one both fall back to the deploy's address.
+  const { data } = await supabase.from("site_settings").select("value").eq("key", "general").maybeSingle();
+  const fromSettings = String((data?.value as { siteUrl?: string } | null)?.siteUrl ?? "").trim();
+  const candidate = fromSettings || Deno.env.get("PUBLIC_SITE_URL") || req.headers.get("origin") || "";
+  return candidate.replace(/\/+$/, "");
+}
+
 // Moved VERBATIM from supabase/functions/survey-send/index.ts (edge-surface B2).
 export async function handler(req: Request): Promise<Response> {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -84,6 +104,66 @@ export async function handler(req: Request): Promise<Response> {
     if (!auth.authorized) return unauthorized(corsHeaders);
 
     const body: Body = await req.json();
+    const base0 = await siteBase(supabase, body.public_base_url, req);
+
+    // The sweep: a queued send (an event asked for it) is mailed once its
+    // send_after has passed. The row already exists — it is claimed by setting
+    // sent_at first, so two sweeps never mail the same survey.
+    if (body.due === true || (body as unknown as { _skill?: string })._skill === 'send_due_surveys') {
+      const limit = Math.min(Math.max(Number(body.limit) || 25, 1), 100);
+      type DueRow = {
+        id: string; token: string; recipient_email: string; campaign_id: string;
+        survey_campaigns: {
+          name: string; email_subject: string; email_intro: string; is_active: boolean;
+          survey_templates: { kind?: string; questions?: Array<{ id?: string; type?: string; label?: string }> } | null;
+        } | null;
+      };
+      const { data: due, error: dueErr } = await supabase
+        .from("survey_sends")
+        .select("id, token, recipient_email, campaign_id, survey_campaigns(name, email_subject, email_intro, is_active, survey_templates(kind, questions))")
+        .is("sent_at", null)
+        .not("send_after", "is", null)
+        .lte("send_after", new Date().toISOString())
+        .order("send_after", { ascending: true })
+        .limit(limit);
+      if (dueErr) {
+        return new Response(JSON.stringify({ error: `Could not read the queued surveys: ${dueErr.message}` }), {
+          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      let mailed = 0;
+      const failed: Array<{ id: string; error: string }> = [];
+      for (const row of (due ?? []) as unknown as DueRow[]) {
+        const campaign = row.survey_campaigns;
+        const { data: claimed, error: claimErr } = await supabase.from("survey_sends")
+          .update({ sent_at: new Date().toISOString() }).eq("id", row.id).is("sent_at", null).select("id").maybeSingle();
+        if (claimErr) { failed.push({ id: row.id, error: claimErr.message }); continue; }
+        if (!claimed) continue;
+        if (!campaign?.is_active) continue;
+        const template = campaign.survey_templates;
+        const primary = (template?.questions ?? []).find((q) => q.type === "nps" || q.type === "csat" || q.id === "score");
+        const html = renderHtml({
+          intro: campaign.email_intro, campaign_name: campaign.name, token: row.token, base: base0,
+          kind: template?.kind ?? "nps", question: primary?.label ?? "How was your experience?",
+        });
+        const res = await fetch(`${SUPABASE_URL}/functions/v1/email-send`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${SERVICE_KEY}` },
+          body: JSON.stringify({ to: row.recipient_email, subject: campaign.email_subject, html,
+            tags: { module: "surveys", campaign_id: row.campaign_id, send_id: row.id } }),
+        });
+        if (res.ok) mailed += 1;
+        else {
+          // Nothing went out: give the send back to the next sweep.
+          const { error: backErr } = await supabase.from("survey_sends").update({ sent_at: null }).eq("id", row.id);
+          failed.push({ id: row.id, error: (await res.text()).slice(0, 200) + (backErr ? ` (and it could not be given back: ${backErr.message})` : '') });
+        }
+      }
+      return new Response(JSON.stringify({ success: true, due: (due ?? []).length, mailed, failed, work_done: mailed }), {
+        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     if (!body.campaign_id || !Array.isArray(body.recipients) || body.recipients.length === 0) {
       return new Response(JSON.stringify({ error: "campaign_id and recipients[] are required" }), {
         status: 400,
@@ -109,17 +189,7 @@ export async function handler(req: Request): Promise<Response> {
     );
     const question = primary?.label ?? "How was your experience?";
 
-    // Determine public base URL
-    let base = body.public_base_url;
-    if (!base) {
-      const { data: ss } = await supabase
-        .from("site_settings")
-        .select("value")
-        .eq("key", "branding")
-        .maybeSingle();
-      base = (ss?.value as any)?.public_url || "";
-    }
-    if (!base) base = req.headers.get("origin") || "";
+    const base = base0;
 
     const sends: any[] = [];
     const errors: any[] = [];
