@@ -1231,9 +1231,94 @@
       "fallback": "Frequently asked questions"
     },
     {
+      "key": "auth.accountCreated",
+      "group": "auth",
+      "fallback": "Account created"
+    },
+    {
+      "key": "auth.accountCreatedBody",
+      "group": "auth",
+      "fallback": "You can now sign in with your e-mail and password."
+    },
+    {
+      "key": "auth.backHome",
+      "group": "auth",
+      "fallback": "Back to the homepage"
+    },
+    {
+      "key": "auth.checkFields",
+      "group": "auth",
+      "fallback": "Check the fields"
+    },
+    {
+      "key": "auth.createAccount",
+      "group": "auth",
+      "fallback": "Create account"
+    },
+    {
+      "key": "auth.demoResets",
+      "group": "auth",
+      "fallback": "All data is reset every day at 03:00 UTC. No e-mail is sent."
+    },
+    {
+      "key": "auth.demoSignInWith",
+      "group": "auth",
+      "fallback": "Sign in with"
+    },
+    {
+      "key": "auth.demoTitle",
+      "group": "auth",
+      "fallback": "Public demo instance"
+    },
+    {
+      "key": "auth.email",
+      "group": "auth",
+      "fallback": "E-mail address"
+    },
+    {
+      "key": "auth.emailTaken",
+      "group": "auth",
+      "fallback": "A user with this email already exists"
+    },
+    {
+      "key": "auth.fullName",
+      "group": "auth",
+      "fallback": "Full name"
+    },
+    {
+      "key": "auth.invalidEmail",
+      "group": "auth",
+      "fallback": "Invalid email address"
+    },
+    {
+      "key": "auth.loginFailed",
+      "group": "auth",
+      "fallback": "Sign-in failed"
+    },
+    {
       "key": "auth.namePlaceholder",
       "group": "auth",
       "fallback": "Jane Doe"
+    },
+    {
+      "key": "auth.nameTooShort",
+      "group": "auth",
+      "fallback": "Name must be at least 2 characters"
+    },
+    {
+      "key": "auth.password",
+      "group": "auth",
+      "fallback": "Password"
+    },
+    {
+      "key": "auth.passwordHint",
+      "group": "auth",
+      "fallback": "At least 6 characters"
+    },
+    {
+      "key": "auth.passwordTooShort",
+      "group": "auth",
+      "fallback": "Password must be at least 6 characters"
     },
     {
       "key": "auth.session_ended",
@@ -1244,6 +1329,31 @@
       "key": "auth.session_ended_hint",
       "group": "auth",
       "fallback": "Sign in again. If this keeps happening, send this line to your admin."
+    },
+    {
+      "key": "auth.signIn",
+      "group": "auth",
+      "fallback": "Sign in"
+    },
+    {
+      "key": "auth.signInToContinue",
+      "group": "auth",
+      "fallback": "Sign in to continue."
+    },
+    {
+      "key": "auth.signupFailed",
+      "group": "auth",
+      "fallback": "The account could not be created"
+    },
+    {
+      "key": "auth.welcome",
+      "group": "auth",
+      "fallback": "Welcome"
+    },
+    {
+      "key": "auth.wrongCredentials",
+      "group": "auth",
+      "fallback": "Incorrect email or password"
     },
     {
       "key": "billing.interval.day",
@@ -4654,6 +4764,171 @@
       "key": "portal.invite.serviceSubject",
       "group": "portal",
       "fallback": "Access your service with {business}"
+    },
+    {
+      "key": "pricing.addedToast",
+      "group": "pricing",
+      "fallback": "{name} has been added to your cart"
+    },
+    {
+      "key": "pricing.addToCart",
+      "group": "pricing",
+      "fallback": "Add to cart"
+    },
+    {
+      "key": "pricing.alreadyInCartToast",
+      "group": "pricing",
+      "fallback": "The product is already in your cart"
+    },
+    {
+      "key": "pricing.badge",
+      "group": "pricing",
+      "fallback": "Simple pricing"
+    },
+    {
+      "key": "pricing.f.backups",
+      "group": "pricing",
+      "fallback": "Automatic backups"
+    },
+    {
+      "key": "pricing.f.cdn",
+      "group": "pricing",
+      "fallback": "CDN for fast loading"
+    },
+    {
+      "key": "pricing.f.cloudHosting",
+      "group": "pricing",
+      "fallback": "Cloud-based hosting"
+    },
+    {
+      "key": "pricing.f.domain",
+      "group": "pricing",
+      "fallback": "Domain configuration"
+    },
+    {
+      "key": "pricing.f.emailSupport",
+      "group": "pricing",
+      "fallback": "E-mail support"
+    },
+    {
+      "key": "pricing.f.installation",
+      "group": "pricing",
+      "fallback": "Professional installation"
+    },
+    {
+      "key": "pricing.f.migration",
+      "group": "pricing",
+      "fallback": "Content migration"
+    },
+    {
+      "key": "pricing.f.monthly",
+      "group": "pricing",
+      "fallback": "Monthly billing"
+    },
+    {
+      "key": "pricing.f.oneTimeCost",
+      "group": "pricing",
+      "fallback": "One-time cost"
+    },
+    {
+      "key": "pricing.f.seo",
+      "group": "pricing",
+      "fallback": "Basic SEO setup"
+    },
+    {
+      "key": "pricing.f.ssl",
+      "group": "pricing",
+      "fallback": "SSL certificate included"
+    },
+    {
+      "key": "pricing.f.training",
+      "group": "pricing",
+      "fallback": "Training (1 hour)"
+    },
+    {
+      "key": "pricing.faq.cancelA",
+      "group": "pricing",
+      "fallback": "Yes, you can cancel your subscription at any time. You keep access to the service until the end of your billing period."
+    },
+    {
+      "key": "pricing.faq.cancelQ",
+      "group": "pricing",
+      "fallback": "Can I cancel at any time?"
+    },
+    {
+      "key": "pricing.faq.payA",
+      "group": "pricing",
+      "fallback": "We accept all major cards (Visa, Mastercard and others) through our secure payment provider Stripe."
+    },
+    {
+      "key": "pricing.faq.payQ",
+      "group": "pricing",
+      "fallback": "Which payment methods are accepted?"
+    },
+    {
+      "key": "pricing.faq.setupA",
+      "group": "pricing",
+      "fallback": "No, setup is optional. It is for those who want help getting started quickly, with professional installation and training."
+    },
+    {
+      "key": "pricing.faq.setupQ",
+      "group": "pricing",
+      "fallback": "Do I need to buy setup?"
+    },
+    {
+      "key": "pricing.faqTitle",
+      "group": "pricing",
+      "fallback": "Frequently asked questions"
+    },
+    {
+      "key": "pricing.heading",
+      "group": "pricing",
+      "fallback": "Choose the right plan for you"
+    },
+    {
+      "key": "pricing.hostingFallback",
+      "group": "pricing",
+      "fallback": "Everything you need to run your website"
+    },
+    {
+      "key": "pricing.inCart",
+      "group": "pricing",
+      "fallback": "Already in cart"
+    },
+    {
+      "key": "pricing.lead",
+      "group": "pricing",
+      "fallback": "Transparent pricing with no hidden fees. Start with hosting and add setup if you want help getting started."
+    },
+    {
+      "key": "pricing.metaDescription",
+      "group": "pricing",
+      "fallback": "Simple and transparent pricing for {site}. Choose monthly hosting, or get started with professional setup."
+    },
+    {
+      "key": "pricing.oneTime",
+      "group": "pricing",
+      "fallback": "one-time"
+    },
+    {
+      "key": "pricing.setupFallback",
+      "group": "pricing",
+      "fallback": "We help you get started quickly and easily"
+    },
+    {
+      "key": "pricing.siteFallback",
+      "group": "pricing",
+      "fallback": "Website"
+    },
+    {
+      "key": "pricing.subscription",
+      "group": "pricing",
+      "fallback": "Subscription"
+    },
+    {
+      "key": "pricing.title",
+      "group": "pricing",
+      "fallback": "Pricing"
     },
     {
       "key": "pricingCalculator.title",
