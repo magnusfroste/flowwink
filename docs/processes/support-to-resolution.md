@@ -36,7 +36,7 @@ flowchart TD
     B -->|resolved| C["Conversation closes / waiting on the customer"]
     B -->|complex| D["Case created<br/>ticket_triage · email_to_ticket"]
     B -->|"urgent · could not answer · [NEEDS A PERSON]"| E["Needs a person<br/>support_assign_conversation · email draft"]
-    D --> F["A person takes over from the FlowBox row<br/>reply, transfer, close"]
+    D --> F["A person takes over from the FlowBox row<br/>reply to customer or internal note, transfer, close"]
     E --> F
     F --> G["Resolution → response back to customer"]
     G --> H["SLA monitor measures response + resolution time"]
@@ -60,7 +60,8 @@ flowchart TD
 | Ticket triage | ✅ | ✅ (`ticket_triage`) | — |
 | Email → case | — | ✅ (`email_to_ticket`, per mailbox `route_mode`) | ✅ |
 | Conversation assignment | ✅ (Transfer to… on the FlowBox row) | ✅ (`support_assign_conversation`) | ✅ |
-| Human response | ✅ (inline on the FlowBox row: email, chat, ticket, form) | — | — |
+| Human response | ✅ (inline on the FlowBox row: email, chat, ticket, form; on a case the reply box makes the person choose **Reply to customer** — mailed — or **Internal note** — never shown) | — | — |
+| Customer told by e-mail | — | ✅ Auto (`send_ticket_update` on `ticket.created` — receipt — and `ticket.replied` — the reply) | — |
 | SLA escalation | — | ✅ (SLA monitor automation) | — |
 | Feedback analysis | — | ✅ (`analyze_chat_feedback`, `support_get_feedback`) | — |
 | KB gap → new article | ✅ | ✅ (`kb_gap_analysis` + `manage_kb_article`) | — |
@@ -91,7 +92,9 @@ flowchart TD
 
 ## Webhook events
 
-(None dedicated yet — could be extended with `ticket.created`, `ticket.resolved`)
+`ticket.created`, `ticket.replied`, `ticket.resolved`, `ticket.closed`, `ticket.escalated`
+
+Two automations answer them: *Receipt to the customer on a new case* (`ticket.created`) and *Reply to the customer on a case* (`ticket.replied`), both running `send_ticket_update` — once per case / per public reply.
 
 ## Odoo comparison
 

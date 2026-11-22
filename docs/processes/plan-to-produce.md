@@ -101,7 +101,7 @@ flowchart TD
 
 ## Webhook events
 
-(None dedicated yet — candidates: `mo.created`, `mo.completed`, `stock.produced`)
+`mo.confirmed`, `mo.completed`, `mo.cancelled`, `mo.shortage_detected` (emitted by the manufacturing-order functions, migration `20260917140000`)
 
 ---
 
