@@ -86,10 +86,11 @@ flowchart TD
 | Candidate screening | ✅ | ✅ (`score_candidate`) | — |
 | Notes and ratings on a candidate | ✅ (candidate card → Notes) | ✅ (`manage_candidate_note`) | ✅ MCP-exposed |
 | Interview on video, the candidate picks the time | ✅ (candidate card → Interviews → Let them pick / Book) | ✅ (`invite_candidate_to_interview`, `schedule_interview`, `send_interview_confirmation`) | ✅ MCP-exposed |
-| **Hire bridge (app→emp+contract+onboarding)** | ✅ | ✅ (`hire_application`) | ✅ MCP-exposed |
+| Job offer (generate from a template, send, record the answer) | ✅ | ✅ (`manage_job_offer` generate / send / record_response) | ✅ MCP-exposed |
+| **Hire bridge (app→emp+contract+onboarding)** | ✅ | ✅ (`hire_application` — the draft contract is rendered from the active default template, `manage_employment_contract_template`) | ✅ MCP-exposed |
 | **Welcome guide — what is left for a new hire, why, the rule** | ✅ (HR → Start here) | ✅ (`hr_process_guide`) | ✅ MCP-exposed |
 | Employee registration | ✅ | ✅ (`manage_employee`) | ✅ MCP-exposed |
-| Employment contract for someone added directly | ✅ (HR → Contracts) | ✅ (`manage_employment_contract`, `sign_employment_contract`) | ✅ MCP-exposed |
+| Employment contract for someone added directly | ✅ (HR → Contracts) | ✅ (`manage_employment_contract`, `sign_employment_contract`; templates — body with merge fields, probation, notice — via `manage_employment_contract_template`) | ✅ MCP-exposed |
 | **Someone leaves — who, the last day, the notice the law allows** | ✅ (HR → Start here → End an employment) | ✅ (`end_employment`, approve) | ✅ MCP-exposed |
 | Offboarding steps (notice in writing, vacation left, handover, access, final salary, certificate) | ✅ (HR → Start here) | ✅ (`hr_process_guide` offboarding; access removal stays a person's) | ✅ MCP-exposed |
 | One person's vacation days | ✅ (HR → Allocations, or the guide's *Allocate*) | ✅ (`manage_leave_allocation`) | ✅ MCP-exposed |
@@ -100,7 +101,7 @@ flowchart TD
 | Goals, 1:1s and performance reviews | ✅ (HR → Performance) | ✅ (`manage_performance`: create_goal / update_goal / schedule_one_on_one / complete_one_on_one / start_review / submit_review / acknowledge_review) | — |
 | Org chart / reporting structure | ✅ (manager on the employee) | ✅ (`org_chart`, `manage_employee` `manager_id`) | — |
 | Salary revision round and salary history | ✅ (HR → Compensation) | ✅ (`manage_compensation_revision`: create / propose / exclude / summary / approve / apply / apply_due / history) | — |
-| Payroll runs | ✅ | ✅ (`create_payroll_run` → `approve_payroll_run` → `mark_payroll_paid`; `calc_sick_pay`, `apply_pension`, `list_payroll_lines`) | ✅ (admin functions, service-role verified) |
+| Payroll runs | ✅ | ✅ (`create_payroll_run` → `approve_payroll_run` → `mark_payroll_paid`; `calc_sick_pay`, `apply_sick_pay` — sjuklön as an adjustment on a draft run's line, `apply_pension`, `list_payroll_lines`) | ✅ (admin functions, service-role verified) |
 
 ---
 
@@ -121,7 +122,7 @@ flowchart TD
   an automation applies approved rounds on their date. Every salary change outside a round is logged too
   (`employee_salary_history`, hire / manual / revision). Proven in the battery (review +3 % → 43 260 kr → payroll).
 - ✅ Time-off accrual: `auto_allocate_vacation` matches `vacation_policies` (age/tenure) + capped carry-over, audit-logged per employee
-- ❌ Employment contract templates with Swedish collective agreements
+- ❌ Swedish collective agreements (kollektivavtal) — employment contract templates exist (`manage_employment_contract_template`), but no agreement's rules (salary tables, OB, notice) are carried
 
 ---
 

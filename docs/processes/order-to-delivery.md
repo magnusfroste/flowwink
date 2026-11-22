@@ -24,7 +24,7 @@ description: Orders arrive faster than the back office can track them — paid-b
 | **POS** | In-store sales channel that emits `stock.movement` events into the same fulfillment pipe |
 | **SLA** | Monitors that manual steps happen on time |
 | **Documents** | Delivery notes, shipping labels |
-| **Newsletter** | Order confirmations, delivery notifications |
+| **Email** (`comms-send`) | Order confirmation (`kind=order_confirmation`, from the Stripe webhook or the test-mode checkout) |
 
 ---
 
@@ -95,6 +95,14 @@ transition into `paid` only, so an order that was already paid when it was seede
 gets its receipt by hand. An instance that invoices in another system switches
 the automation off.
 
+**Stripe switched off is the test mode.** `create-checkout` then runs its
+sandbox: the order is born `pending`, gets its lines, and is updated to `paid` —
+so `order.paid` fires as after a real payment (receipt, picking, stock, books)
+— and the buyer is sent the order confirmation as the Stripe webhook would. The
+page after the purchase reads the order through `get_order_confirmation`
+(`p_order_id` | `p_session_id`, polled while pending), which a guest may call;
+a signed-in customer finds their orders under `/account/orders`.
+
 ---
 
 ## Agent coverage
@@ -105,10 +113,11 @@ the automation off.
 | Receipt | ✅ (*Create invoice* on the order) | ✅ Auto (`Receipt on paid order` on `order.paid`) | ✅ (`send_invoice_for_order`) |
 | Stock check / reservation | ✅ | ✅ (`manage_inventory`, `reserve_stock`) | — |
 | Cart recovery | — | ✅ (`cart_recovery_check`) | — |
-| Pick/pack/ship | ✅ | ✅ (`allocate_picking`, `confirm_pick`, `ship_picking`) | ✅ over MCP |
+| Pick/pack/ship | ✅ | ✅ (`allocate_picking` — run on every `order.paid` by the automation *Auto-allocate picking on order paid* — `confirm_pick`, `ship_picking`) | ✅ over MCP |
 | Partial fulfillment | ✅ (OrderLineFulfillment) | ✅ (`fulfill_order_line` — order ships when all lines complete) | — |
 | Order status updates | ✅ | ✅ (`manage_orders`) | — |
-| Customer notifications | ✅ | ✅ (Newsletter automation) | — |
+| Customer notifications | ✅ | ✅ Auto (order confirmation via `comms-send?kind=order_confirmation`; receipt via `Receipt on paid order`) | — |
+| Customer's view | ✅ (`/account/orders`; the page after purchase asks `get_order_confirmation`) | — | — |
 | SLA escalation | — | ✅ (SLA module) | — |
 
 ---
@@ -150,7 +159,7 @@ move belongs to the picking and there is only one such moment.
 
 ## Webhook events
 
-`order.created`, `order.paid`, `order.fulfilled`, `stock.low`, `stock.adjusted`
+`order.created`, `order.paid`, `order.cancelled`, `order.refunded`, `order.delivered`, `picking.shipped`, `stock.low`, `stock.adjusted`
 
 ---
 

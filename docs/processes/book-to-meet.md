@@ -86,7 +86,11 @@ up, or **cancelled**, which frees the slot immediately.
 picks another free time (the same times the booking block offers; the move
 meets every booking rule and is refused with `SLOT_UNAVAILABLE` otherwise) or
 cancels. A move raises `booking.rescheduled`: the customer gets a confirmation
-of the new time and the admins a note. A cancellation frees the time and offers
+of the new time and the admins a note (automations *New confirmation when the
+customer moves a booking* and *Notify admins when a customer moves a booking*);
+a cancellation raises `booking.cancelled_by_customer` and *Notify admins when a
+customer cancels a booking* mails the admins. Every new booking also mails the
+admins (*Notify admins on new booking*). A cancellation frees the time and offers
 the waiting list. A booking that has passed, or is already off, can only be
 read.
 
@@ -103,8 +107,14 @@ completed / no_show` — `no_show` added by migration `20260703151000`)
 | `no_show` | Confirmed but customer did not attend | admin / agent (`update_status`, only meaningful for past confirmed bookings — UI gates on `start_time` in the past) | Terminal; keeps the no-show on record for the customer history |
 | `cancelled` | Called off | admin / agent (`manage_bookings` `cancel` or `update_status`) | Stamps `cancelled_at` (+ optional `cancelled_reason`); the slot is freed immediately — overlap checks exclude cancelled bookings |
 
-There is no reschedule transition: reschedule = `cancel` + new
-`book_appointment_slot` (documented in the skill instructions).
+A customer moves their own booking from `/my-booking/<key>`
+(`reschedule_booking_by_token`, migration `20261119090000`): the status stays,
+the time changes under the same `booking_rules`, the confirmation and reminder
+stamps are given back and `booking.rescheduled` is raised. A customer's own
+cancellation (`cancel_booking_by_token`) raises `booking.cancelled_by_customer`
+beside `booking.cancelled`. For staff there is still no reschedule
+transition: reschedule = `cancel` + new `book_appointment_slot` (documented in
+the skill instructions).
 
 ### Who does what
 
@@ -131,7 +141,9 @@ assignment, no-show and cancellation run through `manage_bookings`
 | Service setup | ✅ (BookingServicesTab) | ✅ (`manage_booking_availability`) | — |
 | Availability check | — | ✅ (`check_availability` — free_slots) | ✅ Stage-3 verified 2026-07-04 |
 | Booking | ✅ (public block, CreateBookingDialog) | ✅ (`book_appointment_slot`, legacy `book_appointment`) | ✅ Stage-3 verified 2026-07-04 (overlap rejection incl.) |
-| Confirmation email | — | auto (`comms-send?kind=booking_confirmation` on public-block booking) | — |
+| Confirmation email | — | auto (automation *Booking confirmation to the customer* → `send_booking_confirmation` on every `booking.created`, whoever booked; again on `booking.rescheduled`) | — |
+| Admin notices | — | auto (`email_admins` on `booking.created`, `booking.rescheduled`, `booking.cancelled_by_customer`) | — |
+| Customer moves / cancels | ✅ (`/my-booking/<key>`, from the confirmation mail) | — | — |
 | Confirm / status | ✅ | ✅ (`manage_bookings` `update_status`) | ✅ |
 | Reminder | — | auto (`booking-reminders` cron → `comms-send?kind=booking_reminders`) | — |
 | Staff assignment | ✅ (BookingsPage) | ✅ (`manage_bookings` `assign_staff`) | ✅ |
@@ -145,6 +157,7 @@ assignment, no-show and cancellation run through `manage_bookings`
 ## Known gaps (missing for L4/L5)
 
 - ⚠️ Reminder sweep, staff assignment and no-show shipped 2026-07-03 — code-complete + cron-registered, not yet live-fleet-verified
+- ✅ The customer's side is proven in a browser nightly (`npm run qa:customer-path`): the confirmation mail is read out of the rail, its `/my-booking/<key>` link opened with no session, and the booking moved.
 - ✅ Per-staff calendars (2026-10-05): `booking_staff_hours`, `booking_staff_time_off`, `booking_service_staff`. A service with staff is booked per person — offered when one is free, given to the least-loaded free one; nobody is double-booked across services. One question, `booking_staff_conflict`, is asked by both the table rule and `booking_free_slots`.
 - ✅ Video meetings and intake questions (2026-10-05): a video service gives every booking its meeting link when the
   time is booked — an own WebMeet room (closed on cancel) or a fixed Zoom/Teams link — and the link rides the
@@ -164,14 +177,13 @@ assignment, no-show and cancellation run through `manage_bookings`
   queue `offered` and emits `booking.waitlist_slot_opened`.
 - ✅ **Buffer time (2026-09-19)** — `buffer_before_minutes` / `buffer_after_minutes` per service, counted
   by the table rule and the reader as the same occupied window.
-- ❌ Video-link generation and pre-booking intake forms
 - Voice IVR entry is L1 (unscored) — works through the shared skills, no dedicated scorecard yet
 
 ---
 
 ## Webhook events
 
-`booking.submitted`, `booking.created`, `booking.confirmed`, `booking.cancelled`, `booking.waitlist_slot_opened`
+`booking.submitted`, `booking.created`, `booking.confirmed`, `booking.cancelled`, `booking.rescheduled`, `booking.cancelled_by_customer`, `booking.waitlist_slot_opened`
 
 `confirmed` and `cancelled` are emitted by the TABLE (trigger on the status change), once per transition,
 whoever the writer — the admin UI, an agent skill or generic CRUD.
