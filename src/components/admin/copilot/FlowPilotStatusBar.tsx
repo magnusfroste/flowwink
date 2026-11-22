@@ -17,20 +17,19 @@ import { supabase } from '@/integrations/supabase/client';
 import {
   Activity, Target, ShieldAlert, Cpu, Zap, CircleDot,
 } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { useIsModuleEnabled } from '@/hooks/useModules';
+import { useActiveModules, skillShown } from '@/lib/module-visibility';
+
+/** Not an outcome: a refusal is a rule saying no, a pending row has not ended. */
+const NOT_AN_OUTCOME = new Set(['refused', 'pending_approval', 'pending']);
 
 interface StatusData {
   lastHeartbeat: string | null;
   activeObjectives: number;
   totalObjectives: number;
-  pendingHil: number;
-  todayActions: number;
-  todaySuccess: number;
-  todayFailed: number;
+  today: Array<{ status: string; skill_name: string | null }>;
   modeAge: number | null;
 }
 
@@ -42,7 +41,7 @@ function useFlowPilotStatus() {
       since.setHours(0, 0, 0, 0);
       const sinceIso = since.toISOString();
 
-      const [hbRes, objRes, hilRes, todayRes] = await Promise.all([
+      const [hbRes, objRes, todayRes] = await Promise.all([
         supabase
           .from('agent_activity')
           .select('created_at')
@@ -54,11 +53,7 @@ function useFlowPilotStatus() {
           .select('status'),
         supabase
           .from('agent_activity')
-          .select('id', { count: 'exact', head: true })
-          .eq('status', 'pending_approval'),
-        supabase
-          .from('agent_activity')
-          .select('status')
+          .select('status, skill_name')
           .eq('agent', 'flowpilot')
           .gte('created_at', sinceIso),
       ]);
@@ -71,10 +66,7 @@ function useFlowPilotStatus() {
         lastHeartbeat: lastHb,
         activeObjectives: objs.filter(o => o.status === 'active').length,
         totalObjectives: objs.length,
-        pendingHil: hilRes.count ?? 0,
-        todayActions: today.length,
-        todaySuccess: today.filter(a => a.status === 'success').length,
-        todayFailed: today.filter(a => a.status === 'failed').length,
+        today,
         modeAge: lastHb ? Date.now() - new Date(lastHb).getTime() : null,
       };
     },
@@ -88,6 +80,7 @@ export function FlowPilotStatusBar() {
   const { data: stagedCount } = useStagedOperationCount();
   const { data: notified } = useNotifiedActions(1);
   const flowpilotEnabled = useIsModuleEnabled('flowpilot');
+  const active = useActiveModules();
 
   const engineState: 'running' | 'idle' | 'disabled' = !flowpilotEnabled
     ? 'disabled'
@@ -102,8 +95,12 @@ export function FlowPilotStatusBar() {
   } as const;
   const ec = ENGINE_CFG[engineState];
 
-  const successRate = data && data.todayActions > 0
-    ? Math.round((data.todaySuccess / data.todayActions) * 100)
+  // A skill of a module that is off is not shown; a refusal or a run still
+  // waiting is no outcome, so neither counts against the rate.
+  const today = (data?.today ?? []).filter((a) => skillShown(a.skill_name, active));
+  const judged = today.filter((a) => !NOT_AN_OUTCOME.has(a.status));
+  const successRate = judged.length > 0
+    ? Math.round((judged.filter((a) => a.status === 'success').length / judged.length) * 100)
     : null;
 
   return (
@@ -169,7 +166,7 @@ export function FlowPilotStatusBar() {
         <div className="flex items-center gap-1.5 text-muted-foreground">
           <Zap className="h-3.5 w-3.5" />
           <span>Today</span>
-          <span className="font-medium text-foreground">{data?.todayActions ?? 0}</span>
+          <span className="font-medium text-foreground">{today.length}</span>
           {successRate !== null && (
             <span className={cn(
               'tabular-nums',
@@ -189,11 +186,6 @@ export function FlowPilotStatusBar() {
             <Cpu className="h-3.5 w-3.5" />
             <span>Behaviour</span>
           </Link>
-
-          <Badge variant="outline" className="text-[10px] gap-1">
-            <Activity className="h-3 w-3" />
-            FlowPilot
-          </Badge>
         </div>
       </div>
     </div>
