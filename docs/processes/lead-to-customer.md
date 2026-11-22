@@ -59,6 +59,8 @@ flowchart TD
 | Form capture | ✅ | ✅ (`process_signal`) | — |
 | Visitor intent scoring | — | ✅ (`score_visitor_intent` — auto: DB trigger on lead identify + 15-min cron; `get_visitor_timeline` for the per-lead journey) | — |
 | Enrichment | ✅ | ✅ (`enrich_company`, `prospect_research`) | ✅ via MCP |
+| Company / party | ✅ | ✅ (`manage_company` — B2B master data; `find_duplicate_companies` before creating one; `ensure_lead_partner` links the lead to the customer record it becomes) | ✅ via MCP |
+| Follow-up tasks | ✅ | ✅ (`crm_task_create`) | ✅ via MCP |
 | Lead scoring | ✅ | ✅ (`qualify_lead`) | — |
 | Pipeline review | ✅ | ✅ (`lead_pipeline_review`) | — |
 | Nurture sequencing | ✅ | ✅ (`lead_nurture_sequence`) | — |
@@ -77,7 +79,7 @@ flowchart TD
 - ⚠️ Multi-touch attribution — `get_attribution_report` (paidGrowth) returns campaign/source/medium over a window across leads + orders; full multi-touch weighting still basic
 - ❌ Round-robin lead assignment to reps
 - ❌ Bulk email with unsubscribe-list management (Odoo mass-mail class; overlaps Newsletter)
-- ❌ GDPR consent / preference center per contact (Odoo has consent tracking — relevant for every EU SMB)
+- ✅ GDPR consent center per contact — `manage_consent` records granted/revoked consent per e-mail and type (marketing_email, newsletter, sms, profiling, analytics) in `contact_consents`, with the full audit history; check it before outreach
 - ⚠️ Lead scoring is activity+recency; Odoo's is predictive (deliberately kept simple for now)
 
 ---

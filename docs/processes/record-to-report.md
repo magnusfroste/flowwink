@@ -64,14 +64,14 @@ flowchart TD
 | Reconciliations | ✅ | ⚠️ Partial (autonomous) — now incl. partial-match variance, petty-cash, sign-off | — |
 | Reports | ✅ | ✅ (`accounting_reports`) | — |
 | Period-end close | ✅ | ✅ (`close_accounting_period`, `reopen_accounting_period`) | — |
-| Tax reporting | ❌ Missing | — | — |
+| Tax reporting | ⚠️ Partial — the figures and the register, no submission | ✅ (`prepare_vat_return` — SKV 4700 boxes; `generate_agi_export` — AGI XML per payroll month; `manage_statutory_filing` — record what was filed) | — |
 
 ---
 
 ## Known gaps (missing for L4+)
 
 - ✅ **Period-end close workflow** — `close_accounting_period` locks JE + JE-lines + time_entries via guard triggers
-- ❌ Tax reporting (VAT, employer reports, K10) — see § The Swedish statutory tail below for the full map + borrow plan
+- ⚠️ Tax reporting — partial: `prepare_vat_return` (momsdeklaration boxes), `generate_agi_export` (AGI XML), `manage_statutory_filing` (the register of filings); no submission to Skatteverket, no K10 — see § The Swedish statutory tail below for the full map + borrow plan
 - ✅ **Correction flow for posted vouchers (storno)** — `manage_journal_entry action=void` keeps the original posted and writes a mirror entry dated today, linked through `reversed_by` / `reverses`; a correction belonging to another date is its own voucher. `delete` is for drafts only. The Journal tab shows and filters reversed entries; ❌ there is no reverse button in the admin view yet, so the reversal runs through the skill.
 - ✅ SIE export — pluggable adapters per locale pack (SE → SIE 4, generic → SAF-T + CSV)
 - ✅ Bank feed / reconciliation — `import_bank_file`, `import_bank_image` (OCR), `sync_stripe_payouts`, `auto_match_transactions`; ❌ live PSD2 bank connection (Odoo and Accounted both have feed-level sync; a `bank_feed_connections` scaffold exists but aggregator sync needs Plaid/Tink creds)
@@ -111,9 +111,9 @@ of the operational loop above. Status per step:
 | Rhythm | Obligation | FlowWink today | Borrow/learn from Accounted |
 |---|---|---|---|
 | Continuous | Löpande bokföring, sequential vouchers, gap explanations (BFNAR 2013:2) | ✅ `assign_voucher_number` + `list_voucher_gaps`/`explain_voucher_gap` | Their draft→commit split with atomic voucher RPC matches ours; parity |
-| Continuous | Voucher immutability — storno, never edit | ❌ (gap above) | `reverseEntry()`/`correctEntry()` pattern (storno-service) |
+| Continuous | Voucher immutability — storno, never edit | ✅ `manage_journal_entry action=void` writes the mirror entry (see the storno line above) | `reverseEntry()`/`correctEntry()` pattern (storno-service) |
 | Monthly/quarterly | **Momsdeklaration** — SKV 4700 ruta mapping, per-rate breakdown, EU/export handling | ⚠️ ruta mapping (`se-vat-boxes.ts`) and reverse-charge (box 30/48) booking now correct on real data; no filing/submission | Their VAT engine maps accounts → rutor declaratively; the ruta map is spec knowledge, not code — borrow freely |
-| Monthly (with employees) | **AGI** employer declaration | ❌ (payroll runs exist; no filing) | Their salary-journal report feeds it |
+| Monthly (with employees) | **AGI** employer declaration | ⚠️ `generate_agi_export` builds the AGI XML for an approved run; filing is recorded with `manage_statutory_filing`, not submitted | Their salary-journal report feeds it |
 | Quarterly (EU B2B sales) | **Periodisk sammanställning** (EU sales list) | ❌ | They export it as CSV per SKV format |
 | Yearly | **Bokslut** (K2/K3), year-end dispositions | ⚠️ `year_end_readiness` + `propose_accruals`/`propose_annual_depreciation` + `run_year_end` cover the mechanics; no K2/K3 statement pack | Their `dev_docs/bokslut` carries worked K2 examples + Bolagsverket's XBRL taxonomy for årsredovisning |
 | Yearly (AB) | **Årsredovisning** to Bolagsverket (XBRL), **INK2 + SRU** to Skatteverket | ❌ | INK2/SRU encoders exist as libs (`lib/reports/ink2`, `sru-encoding`) |

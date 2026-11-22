@@ -24,7 +24,7 @@ portal → ticket works end to end)
 ```mermaid
 flowchart TD
     A["Lead / contact"] --> B["Opportunity (deal)<br/>owner inherited from the lead"]
-    B --> C["Quote with product lines<br/>create_quote"]
+    B --> C["Quote with product lines<br/>manage_quote"]
     C --> D["Contract drafted from the quote<br/>§4 lines + §5 term carried over"]
     D --> E["Send for signature<br/>comms-send → contract_email"]
     E --> F["Customer signs on the public token page<br/>contract-sign"]
@@ -48,9 +48,10 @@ flowchart TD
 | Opportunity | crm / deals | `manage_deal` — owner inherited from the lead (see [Ownership & coverage](../architecture/ownership-and-coverage.md)) |
 | Quote | quotes | `manage_quote`; accept-behavior dial decides the customer-facing language |
 | Contract | contracts | `manage_contract`, `list_contract_templates`; the quote's agreed lines land in the agreement's §4, its term in §5 |
-| Send | contracts + email | `send_contract_for_signature`, `comms-send` handler `contract_email` (fragment wrapped in the operator's branded shell, `expects_reply: true`) |
+| Appendices | contracts | `manage_contract_appendix` — the numbered Bilagor the body references (a rendered appendix template, inline text or a file); the signature covers them, so a signed appendix can no longer be changed or removed — an amendment is a NEW appendix |
+| Send | contracts + email | `send_contract_for_signature` — issues the link AND mails the counterparty, answering `email_sent` / `email_error` (`email: false` only issues the link); `comms-send` handler `contract_email` (fragment wrapped in the operator's branded shell, `expects_reply: true`) |
 | Sign | contracts | `contract-sign` edge function — public token page, no login |
-| Service | subscriptions | `create_subscription_from_contract` (idempotent, stamps `provider='contract'`) |
+| Service | subscriptions | `create_subscription_from_contract` (idempotent, stamps `provider='contract'`); `create_service_from_contract` is the agent's repair door for a signed contract without a service |
 | Portal | account | `_shared/provision-portal-account.ts` → invite mail via `email-send` → `/account/activate` |
 | Support | tickets | Ticket carries `subscription_id`, so support sees service + contract + SLA at once |
 | Billing | contracts + invoicing | `contract-billing-cron` → `generate_contract_invoice` |
@@ -142,11 +143,14 @@ among order history and wishlists.
 
 ## Known gaps
 
-- No `create_subscription_from_contract` MCP skill yet — the chain fires on
-  signature; an agent cannot mint the service manually.
+- ✅ The chain fires on signature; for a signed, active contract that has no
+  service, an agent runs `create_service_from_contract` (idempotent, one
+  service per contract; refuses an unsigned or terminated one).
 - Service **changes** (add a line mid-term) still go through the contract, not
   through `change_subscription` — proration applies to `provider='manual'` rows.
-- Portal shows services and tickets; no self-service upgrade/termination.
+- Portal opens on an overview (what waits for the customer, what they hold) with
+  `/account/agreements`, `/account/invoices`, services and tickets; no
+  self-service upgrade/termination.
 - Cancellation of a contract does not yet close the service row automatically.
 
 ## Related

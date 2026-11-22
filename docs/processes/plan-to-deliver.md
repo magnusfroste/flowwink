@@ -107,7 +107,7 @@ Projects come in the team order — the agenda — and active projects with no c
 ## Known gaps
 
 - ⚠️ Task history before the ledger was introduced is limited to creation and completion — the digest says so per project (`coverage: partial`)
-- ❌ Workload per person across projects
+- ✅ Workload per person across projects — `resource_capacity_report`: open tasks, backlog hours, hours logged, utilization against weekly capacity and an overload flag per person, globally or for one project
 - ⚠️ A prerequisite in a project the reader may not see does not count as blocking for that reader — the verdict reads with the caller's eyes, and does not reveal a private project's existence
 
 ## Best for

@@ -11,7 +11,7 @@ description: An employee pays for something out of pocket and photographs the re
 **Problem it solves:** Receipts in a shoebox, vendor invoices matched by hand, and nobody knows what has actually been ordered — this process makes purchases and expenses flow to the ledger without manual bookkeeping.
 
 **Maturity level:** L3 — Operational (3-way match auto-approve live)
-**Status:** ✅ Happy path + auto-approve match works; lacks tiered approval thresholds
+**Status:** ✅ Happy path + auto-approve match works; multi-step PO approval chains in place — a chain is not yet chosen by amount
 
 ---
 
@@ -222,7 +222,7 @@ paid require admin trust.
   gain/loss (3960/7960), a credit memo nets the debt at the invoice's rate, and
   `revalue_open_balances` revalues the open debts (unpaid bills minus applied credits),
   not the orders. A foreign bill with no rate is refused at registration with the fix.
-- ❌ Multi-step approval based on amount thresholds
+- ⚠️ Multi-step approval — ✅ chains for `purchase_order` (`manage_approval_chain`: ordered steps, a role or any-N-of-a-group; `advance_approval_step`; a PO cannot go `draft` → `sent` until its chain is satisfied) and ✅ single-role amount thresholds (`approval_rules.amount_threshold_cents`); ❌ a chain is per entity type, not picked by amount (no "over 100 000 kr adds the CFO step")
 - ❌ Vendor portal (vendor self-service login)
 - ❌ EDI integration for large suppliers
 - ❌ **Backorder as its own document** — a short delivery is only
