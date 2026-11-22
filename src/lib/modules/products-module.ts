@@ -785,6 +785,62 @@ Manages discount codes for the storefront checkout (discount_codes table).
 - use_count increments automatically when an order with the code is placed (sandbox) or paid (Stripe webhook) — never set it manually.
 - Deactivate instead of delete so use history stays intact.`,
   },
+  {
+    name: 'manage_product_category',
+    description: 'Product categories: the groups the shop lists products under — name, address (slug), description, image, order, and the costing method for stock. Use when: organising a shop; adding, renaming, ordering or retiring a category. NOT for: a product itself (manage_product); translating a category (translate_content entity product_category).',
+    category: 'commerce',
+    handler: 'db:product_categories',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'manage_product_category',
+        description: 'CRUD on product_categories.',
+        parameters: {
+          type: 'object',
+          properties: {
+            action: { type: 'string', enum: ['list', 'get', 'create', 'update', 'delete'] },
+            product_category_id: { type: 'string', format: 'uuid', description: 'The row (get, update, delete).' },
+            name: { type: 'string' },
+            slug: { type: 'string', description: 'Unique address; derived from the name when omitted.' },
+            description: { type: 'string' },
+            image_url: { type: 'string' },
+            sort_order: { type: 'integer' },
+            is_active: { type: 'boolean' },
+            costing_method: { type: 'string', enum: ['fifo', 'average'], description: 'How stock in this category is valued.' },
+          },
+          required: ['action'],
+          'x-action-required': { create: ['name'], update: ['product_category_id'] },
+        },
+      },
+    },
+    instructions: 'A product points at a category by its id (manage_product category_id). Retire a category with is_active false.',
+  },
+  {
+    name: 'manage_uom_category',
+    description: 'Unit-of-measure categories: the families units belong to (Weight, Length, Time …) so a unit converts only within its family. Use when: setting up units for products or manufacturing; adding a family. NOT for: the units themselves (manage_uom).',
+    category: 'commerce',
+    handler: 'db:uom_categories',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'manage_uom_category',
+        description: 'CRUD on uom_categories.',
+        parameters: {
+          type: 'object',
+          properties: {
+            action: { type: 'string', enum: ['list', 'get', 'create', 'update'] },
+            uom_category_id: { type: 'string', format: 'uuid', description: 'The row (get, update, delete).' },
+            name: { type: 'string' },
+          },
+          required: ['action'],
+          'x-action-required': { create: ['name'], update: ['uom_category_id'] },
+        },
+      },
+    },
+    instructions: 'Create the family first, then its units with manage_uom.',
+  },
 ];
 
 // A paid order's receipt is its paid invoice, sent when the money arrives.
@@ -812,7 +868,7 @@ export const productsModule = defineModule<ProductModuleInput, ProductModuleOutp
   inputSchema: productModuleInputSchema,
   outputSchema: productModuleOutputSchema,
 
-  skills: [
+  skills: [ 'manage_product_category', 'manage_uom_category',
     'browse_products',
     'manage_product',
     'manage_variant',

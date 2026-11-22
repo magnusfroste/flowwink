@@ -171,6 +171,38 @@ const QUOTES_SKILLS: SkillSeed[] = [
     },
     instructions: 'Sweep RPC — idempotent per schedule: a quote already generated for the current period is skipped, so re-running is safe. Returns counts of what was generated.',
   },
+  {
+    name: 'manage_quote_template',
+    description: 'Quote templates: a named starting point for a new quote — intro and terms text, default currency, how many days it is valid, and preset lines. Use when: setting up quoting for a business; adding, renaming or retiring a template; reading what a new quote starts from. NOT for: writing or sending a quote (manage_quote); contract templates (manage_contract_template).',
+    category: 'commerce',
+    handler: 'db:quote_templates',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'manage_quote_template',
+        description: 'CRUD on quote_templates.',
+        parameters: {
+          type: 'object',
+          properties: {
+            action: { type: 'string', enum: ['list', 'get', 'create', 'update', 'delete'] },
+            quote_template_id: { type: 'string', format: 'uuid', description: 'The row (get, update, delete).' },
+            name: { type: 'string' },
+            description: { type: 'string' },
+            currency: { type: 'string', description: 'ISO 4217; defaults to the business currency.' },
+            default_valid_days: { type: 'integer', description: 'Days a quote made from it is valid.' },
+            intro_text: { type: 'string', description: 'Shown above the lines on the customer\'s page.' },
+            terms_text: { type: 'string', description: 'The terms the customer accepts.' },
+            items: { type: 'array', items: { type: 'object' }, description: 'Preset lines: [{description, quantity, unit_price_cents, tax_rate?, product_id?}].' },
+            is_active: { type: 'boolean', description: 'false hides it from New Quote without deleting it.' },
+          },
+          required: ['action'],
+          'x-action-required': { create: ['name'], update: ['quote_template_id'] },
+        },
+      },
+    },
+    instructions: 'A template is what New Quote starts from — retire one with is_active false rather than deleting it.',
+  },
 ];
 
 const QUOTES_AUTOMATIONS: AutomationSeed[] = [
@@ -196,7 +228,7 @@ export const quotesModule = defineModule<QuotesInput, QuotesOutput>({
   tier: 'standard',
   inputSchema: quotesInputSchema,
   outputSchema: quotesOutputSchema,
-  skills: ['manage_quote', 'send_quote_expiry_reminders', 'run_recurring_quotes'],
+  skills: [ 'manage_quote_template','manage_quote', 'send_quote_expiry_reminders', 'run_recurring_quotes'],
   data: {
     tables: ['quote_items', 'quote_signatures', 'quote_versions', 'quotes', 'quote_templates'],
   },

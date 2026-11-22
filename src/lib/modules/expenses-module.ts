@@ -391,6 +391,40 @@ const EXPENSE_SKILLS: SkillSeed[] = [
     },
     instructions: 'The expense must be draft or submitted and have a rate if foreign (fx_rate_source ≠ missing). The claim is the expense NET in the base currency (base_amount_cents − base_vat_cents) against purchase_orders.subtotal_cents minus po_invoiced_value_cents — the same reader the vendor-invoice match and the payment gate use, which now counts matched expenses too. A refusal names remaining / baseline / already claimed: unlink the other claim, correct the amount, or p_force. The status is recomputed when the expense amount changes.',
   },
+  {
+    name: 'manage_expense_rate',
+    description: 'Expense rates: the fixed amounts a claim is paid at — mileage per km, per diem per day, and other rates — with unit, currency, the account they are booked to and the date they apply from. Use when: setting up expenses for a business; a rate changes at the turn of a year (add a new row with valid_from, keep the old one). NOT for: a claim (manage_expense); spending rules (manage_expense_policy).',
+    category: 'commerce',
+    handler: 'db:expense_rate_tables',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'manage_expense_rate',
+        description: 'CRUD on expense_rate_tables.',
+        parameters: {
+          type: 'object',
+          properties: {
+            action: { type: 'string', enum: ['list', 'get', 'create', 'update'] },
+            expense_rate_table_id: { type: 'string', format: 'uuid', description: 'The row (get, update, delete).' },
+            code: { type: 'string', description: 'Stable key, e.g. mileage_car.' },
+            kind: { type: 'string', description: 'mileage | per_diem | other.' },
+            label: { type: 'string' },
+            rate_cents: { type: 'integer' },
+            unit: { type: 'string', description: 'km, day …' },
+            currency: { type: 'string' },
+            account_code: { type: 'string', description: 'The ledger account the cost is booked to.' },
+            valid_from: { type: 'string', format: 'date' },
+            active: { type: 'boolean' },
+            notes: { type: 'string' },
+          },
+          required: ['action'],
+          'x-action-required': { create: ['code', 'kind', 'label', 'rate_cents', 'unit'], update: ['expense_rate_table_id'] },
+        },
+      },
+    },
+    instructions: 'A rate is never edited back in time: add a row with a new valid_from so old claims keep the rate they were paid at.',
+  },
 ];
 
 const EXPENSE_AUTOMATIONS: AutomationSeed[] = [
@@ -419,7 +453,7 @@ export const expensesModule = defineModule<ExpensesInput, ExpensesOutput>({
   // Full record-to-report coverage. All skills below have full SkillSeed
   // definitions in EXPENSE_SKILLS so module reset re-installs them cleanly.
   // See mem://erp/expense-procure-to-pay-loop.
-  skills: [
+  skills: [ 'manage_expense_rate',
     'manage_expenses',
     'analyze_receipt',
     'generate_monthly_expense_report',

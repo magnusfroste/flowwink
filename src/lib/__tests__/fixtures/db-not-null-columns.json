@@ -26,6 +26,9 @@
       "candidate_name",
       "job_posting_id"
     ],
+    "bank_accounts": [
+      "name"
+    ],
     "booking_services": [
       "name"
     ],
@@ -56,6 +59,9 @@
     "crm_tasks": [
       "title"
     ],
+    "deal_templates": [
+      "name"
+    ],
     "documents": [
       "file_name",
       "file_url",
@@ -75,6 +81,13 @@
       "employee_id",
       "start_date",
       "title"
+    ],
+    "expense_rate_tables": [
+      "code",
+      "kind",
+      "label",
+      "rate_cents",
+      "unit"
     ],
     "expenses": [
       "user_id"
@@ -126,6 +139,10 @@
     "pricelists": [
       "name"
     ],
+    "product_categories": [
+      "name",
+      "slug"
+    ],
     "project_tasks": [
       "project_id",
       "title"
@@ -137,6 +154,9 @@
       "po_number",
       "vendor_id"
     ],
+    "quote_templates": [
+      "name"
+    ],
     "quotes": [
       "quote_number"
     ],
@@ -146,6 +166,10 @@
     "returns": [
       "rma_number",
       "order_id"
+    ],
+    "role_module_access": [
+      "module_id",
+      "role"
     ],
     "saved_views": [
       "name",
@@ -193,6 +217,10 @@
     ],
     "vendors": [
       "name"
+    ],
+    "webhooks": [
+      "name",
+      "url"
     ]
   },
   "_skill_auto_filled_columns": {
@@ -306,6 +334,12 @@
       "conversation_id",
       "role",
       "content"
+    ],
+    "manage_tag": [
+      "slug"
+    ],
+    "manage_product_category": [
+      "slug"
     ]
   }
 }
