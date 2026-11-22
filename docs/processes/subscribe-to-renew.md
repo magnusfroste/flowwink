@@ -76,7 +76,8 @@ holds the offer to bring them back.
 |---|---|---|---|
 | `active` | Billing on cycle | admin / agent (`create_manual_subscription`) or Stripe checkout | Manual create sets price, terms, and `next_invoice_date`. Each cycle the billing cron calls `generate_subscription_invoice`: creates the `SUB-…` invoice (draft, or `sent` when `auto_finalize`), advances the period + `next_invoice_date`. `change_subscription` (active only): upgrade → prorated draft adjustment invoice (`SUB-ADJ-…`), downgrade → credit recorded on the subscription for next cycle |
 | `canceled` | Terminated | admin (`cancel_manual_subscription`) or Stripe | Stamps `canceled_at`/`ended_at`, clears `next_invoice_date` (no more cycle invoices), emits a churn event — the moment to `record_churn_reason` |
-| `trialing`, `past_due`, `paused`, `unpaid`, `incomplete`, `incomplete_expired` | Card-subscription states | Stripe webhooks (mirrored) | No local transition writes these for manual subscriptions; `past_due`/low health flips `at_risk = true` via the `flag_at_risk_subscriptions` sweep |
+| `trialing` | In a trial period | admin / agent (`create_manual_subscription` with trial days, or a plan's `trial_days`) or Stripe | The first invoice is pushed to the trial end; the daily *Trial Conversion* automation (`run_trial_conversions`, 05:00 — before billing at 05:30) flips an ended trial to `active` and billing starts |
+| `past_due`, `paused`, `unpaid`, `incomplete`, `incomplete_expired` | Card-subscription states | Stripe webhooks (mirrored) | No local transition writes these for manual subscriptions; `past_due`/low health flips `at_risk = true` via the `flag_at_risk_subscriptions` sweep |
 
 **`dunning_sequences.status`** (card subscriptions; one ladder per failed payment)
 
@@ -142,15 +143,17 @@ agreement.
 
 ## Known gaps (tracked in parity scorecards)
 
-- `subscriptions.proration` — engine shipped + Stage-3-verified; admin UI for
-  qty/price change pending (→ done after UI).
+- ✅ `subscriptions.proration` — engine shipped + Stage-3-verified; the admin
+  changes quantity/price from the subscription (`ChangePlanDialog` on the
+  Subscriptions page, running `change_subscription`).
 - `invoicing.recurring` — recurring engine exists for subscription-billed
   invoices; standalone recurring invoices (no subscription) not yet.
 - ✅ **Plan templates shipped** — `subscription_plans` (reusable name/price/interval/
   features); a subscription can be created from a plan_id that fills
   product_name/unit_amount_cents/billing_interval.
-- ✅ **Trial → paid conversion** — `trial_end` + `status='trialing'`; a conversion
-  action flips to active and starts billing (trial days-remaining shown in the list).
+- ✅ **Trial → paid conversion** — `trial_end` + `status='trialing'`; the daily
+  *Trial Conversion* automation (`run_trial_conversions`) flips an ended trial to
+  active and starts billing (trial days-remaining shown in the list).
 - ✅ **Commitment / lock-in periods** — `commitment_months`/`commitment_end`;
   cancellation before term end is flagged as early-termination with remaining commitment.
 - ✅ **Usage-based billing shipped (2026-09-19)** — a subscription carries METERS

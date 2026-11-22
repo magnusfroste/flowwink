@@ -73,7 +73,7 @@ flowchart TD
 ## Known gaps (missing for L5)
 
 - ✅ A/B testing of headlines/CTAs — `manage_page_experiment` (two-version page split test)
-- ✅ Multi-language content management — `manage_page_translation` (multi-language pages)
+- ✅ Multi-language content management — a page, post or product is written once and translated into overlays (`content_translations`): `translate_site` adds a language in one call (`enable_language`, then everything missing or stale), `translate_content` per item, `set_translation` / `publish_translation` / `list_stale_translations` by hand; `manage_page_translation` is the LEGACY sibling-page model
 - ✅ UTM / attribution tracking — `get_attribution_report` (campaign/source/medium over a window, leads + orders)
 - ✅ **Conversion goals and per-page conversion (2026-09-20)** — `manage_conversion_goal` says what counts
   (a lead, a booking, a paid order, an accepted quote, a subscription, or a page being reached, with what
@@ -111,7 +111,7 @@ flowchart TD
 
 ## Webhook events
 
-`blog.published`, `newsletter.sent`
+`blog_post.published`, `newsletter.subscribed`, `newsletter.unsubscribed`
 
 ---
 

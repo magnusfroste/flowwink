@@ -1,6 +1,6 @@
 ---
 title: "Acquire-to-Retire"
-description: Impairment/revaluation, IFRS 16 leases, component tracking, schedule report — see docs/parity/capabilities/fixed-assets.json.
+description: Fixed-asset lifecycle — capitalize, depreciate, impair/revalue, dispose; open gap IFRS 16 leases — see docs/parity/capabilities/fixed-assets.json.
 category: processes
 ---
 
@@ -48,5 +48,7 @@ flowchart TD
 
 ## Known gaps (parity scorecards)
 
-Impairment/revaluation, IFRS 16 leases, component tracking, schedule report —
-see `docs/parity/capabilities/fixed-assets.json`.
+IFRS 16 leases — see `docs/parity/capabilities/fixed-assets.json`.
+(Impairment and its reversal are `revalue_fixed_asset`; components are
+`update_fixed_asset`'s parent asset; the forward schedule is
+`get_depreciation_schedule`.)

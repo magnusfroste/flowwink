@@ -97,11 +97,11 @@ the `paid_amount_cents` running total
 
 | Status | Meaning | Moved forward by | What the transition does |
 |---|---|---|---|
-| `draft` | Created — from a quote acceptance, timesheets, or a subscription cycle | system / admin / agent | — |
-| `sent` | Issued to the customer | admin / agent | Stamps `sent_at`; the invoice is now watched by the overdue sweep |
+| `draft` | Created — from a quote acceptance, timesheets, or a subscription cycle | system / admin / agent | Numbered from one series, `INV-YYYY-NNNNN` (`next_document_number`, one counter per business year) whoever creates it; trigger `a_invoices_born_right` gives an invoice for a lead the lead's name and e-mail where it has none. New Quote / New Invoice take a new customer in place (`CustomerPicker` — the contact is made with the draft) |
+| `sent` | Issued to the customer | admin / agent (`manage_invoice` `send`) | Stamps `sent_at`; a missing due date is counted from the payment terms (`a_invoices_born_right`); mails the customer and answers `email_sent` / `email_error` (`email: false` only issues). The invoice page and PDF name the seller (legal name, org/VAT number) and how to pay (bankgiro/IBAN/BIC, reference = invoice number); the customer also finds it under `/account/invoices`. The invoice is now watched by the overdue sweep |
 | `overdue` | Past due date, unpaid | dunning sweep (`send_dunning_reminders`) | Flips `sent` → `overdue` and logs a reminder step by days overdue: <7 d pre-reminder, 7 d friendly, 14 d formal, 30 d final notice |
 | `paid` | Fully settled | `record_invoice_payment` — called by the Stripe webhook, reconciliation, or manually | **Each payment ADDS to `paid_amount_cents`** (over-payment rejected); status flips to `paid` only when the total is reached — a prepayment deposit leaves the invoice partially paid and still open. Stamps `paid_at`; a sign-and-pay payment also stamps `paid_at` on the quote |
-| `cancelled` | Voided | admin | Payments against a cancelled invoice are refused |
+| `cancelled` | Voided | admin / agent (`manage_invoice` `cancel`) | Payments against a cancelled invoice are refused; an invoice with payments on it cannot be cancelled — credit it (`create_credit_note`) |
 
 Credit notes: `create_credit_note` issues a negative invoice
 (`invoice_type = credit_note`, numbered `{original}-CNn`, born `sent`) that
@@ -166,7 +166,7 @@ the public page; approval sign-off requires an admin/approver.
 
 ## Webhook events
 
-`deal.won`, `project.created`, `task.completed`, `timesheet.submitted`, `invoice.created`, `invoice.paid`, `invoice.overdue`
+`deal.won`, `project.created`, `task.completed`, `timesheet.period_locked`, `quote.accepted`, `invoice.created`, `invoice.finalized`, `invoice.paid`, `invoice.overdue`
 
 ---
 
