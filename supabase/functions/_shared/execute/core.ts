@@ -6,6 +6,7 @@
 // in-process. The HTTP function (agent-execute/index.ts) is a thin wrapper:
 // parse the auth header → this → wrap in a Response. The JSON bundles stay in
 // agent-execute/ (scripts/generated-artifacts.ts writes them there).
+import { describeSettings, judgeSettingWrite, redactSetting, SETTINGS_CATALOG } from '../settings/catalog.ts';
 import { shapeBlogList, shapeKnowledgeHits } from '../skills/lean-answers.ts';
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import type { ExecuteAuth, ExecuteOutcome, ExecuteRequest } from './types.ts';
@@ -60,7 +61,7 @@ import { hslTripletToHex } from '../email-shell.ts';
 import { screeningQuestionsOf } from '../recruitment/application-intake.ts';
 import { planFormDelivery } from '../forms/delivery-plan.ts';
 import { invoiceAmountsFromOrder, orderIsPaid } from '../invoice-from-order.ts';
-import { isModuleEnabled } from '../modules.ts';
+import { isModuleEnabled, loadEnabledModules } from '../modules.ts';
 import {
   type AuditContext,
   ACCOUNTING_AUDIT_TABLES,
@@ -12640,12 +12641,21 @@ async function executeDbAction(
 
       const { action = 'update', key, value } = args as any;
 
+      // What the platform can be set to — every setting, its fields and who
+      // may change it (_shared/settings/catalog.ts). Read it before writing.
+      if (action === 'describe') {
+        const on = await loadEnabledModules(supabase).catch(() => null);
+        return describeSettings(typeof key === 'string' && key ? key : undefined, (m) => (on ? on(m) : true));
+      }
+
+      // Credentials never leave in an answer: a secret setting reads "[hidden]",
+      // and a field that names a key, token or password inside one does too.
       if (action === 'get_all') {
         const { data, error } = await supabase.from('site_settings').select('key, value');
         if (error) throw new Error(`Get settings failed: ${error.message}`);
         const settings: Record<string, unknown> = {};
-        for (const row of (data || [])) settings[row.key] = row.value;
-        return { settings };
+        for (const row of (data || [])) settings[row.key] = redactSetting(row.key, row.value);
+        return { settings, note: 'manage_site_settings action: "describe" says what each setting and field means.' };
       }
 
       if (action === 'get') {
@@ -12653,11 +12663,20 @@ async function executeDbAction(
         const { data, error } = await supabase.from('site_settings')
           .select('key, value').eq('key', key).maybeSingle();
         if (error) throw new Error(`Get setting failed: ${error.message}`);
-        return data || { key, value: null, exists: false };
+        if (!data) {
+          const known = Boolean(SETTINGS_CATALOG[key]);
+          return { key, value: null, exists: false, ...(known ? { setting: describeSettings(key).setting } : judgeSettingWrite(key, null, true)) };
+        }
+        return { key: data.key, value: redactSetting(data.key, data.value), setting: describeSettings(data.key).setting };
       }
 
       // update (default)
       if (!key) throw new Error('key is required for update');
+      // Unknown keys, the platform's bookkeeping, credentials and the security
+      // dials without a person at the keyboard are refused — before anything
+      // is read or written. An agent wrote `site_name`, which nothing reads.
+      const verdict = judgeSettingWrite(String(key), value, Boolean((args as Record<string, unknown>)._attended));
+      if (!verdict.ok) return { status: 'refused', code: verdict.code, retryable: false, hint: verdict.hint, ...(verdict.did_you_mean ? { did_you_mean: verdict.did_you_mean } : {}) };
       // An object setting is a dial board (chat, branding, store, …): update
       // MERGES the given keys into what is stored, so flipping one flag never
       // wipes the rest — {key:'chat', value:{toolCallingEnabled:true}} used to

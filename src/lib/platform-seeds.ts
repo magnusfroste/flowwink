@@ -990,7 +990,7 @@ Three facts are stored: country, currency, time zone. Everything else is derived
   },
   {
     name: 'manage_site_settings',
-    description: 'Read and update site settings including module configuration, site name, theme, etc. `update` MERGES the given keys into the stored object — flip one flag (e.g. chat.toolCallingEnabled) without resending the rest; replace: true writes the value as given. Use when: retrieving global configurations; changing website name. NOT for: switching modules on or off (manage_modules — writing the modules row here leaves their skills and automations running); updating site branding (site_branding_update); managing global blocks (manage_global_blocks).',
+    description: 'Every setting the platform has — the site address, SEO, cookie banner, maintenance mode, chat, AI provider, store, customer portal, blog, languages, integrations and more. `describe` lists each setting with what it decides, its fields and who may change it; `get` / `get_all` read (credentials hidden); `update` MERGES the given fields into the stored setting. Use when: finding which setting controls something; reading or changing a platform setting; setting a site up without the admin. NOT for: switching modules on or off (manage_modules); the look of the site (site_branding_update); adding a language (translate_site); global blocks (manage_global_blocks).',
     category: 'system',
     handler: 'db:site_settings',
     scope: 'internal',
@@ -998,21 +998,23 @@ Three facts are stored: country, currency, time zone. Everything else is derived
       type: 'function',
       function: {
         name: 'manage_site_settings',
-        description: 'Read and update site settings including module configuration, site name, theme, etc. `update` MERGES the given keys into the stored object — flip one flag (e.g. chat.toolCallingEnabled) without resending the rest; replace: true writes the value as given. Use when: retrieving global configurations; changing website name. NOT for: switching modules on or off (manage_modules — writing the modules row here leaves their skills and automations running); updating site branding (site_branding_update); managing global blocks (manage_global_blocks).',
+        description: 'Every setting the platform has — the site address, SEO, cookie banner, maintenance mode, chat, AI provider, store, customer portal, blog, languages, integrations and more. `describe` lists each setting with what it decides, its fields and who may change it; `get` / `get_all` read (credentials hidden); `update` MERGES the given fields into the stored setting. Use when: finding which setting controls something; reading or changing a platform setting; setting a site up without the admin. NOT for: switching modules on or off (manage_modules); the look of the site (site_branding_update); adding a language (translate_site); global blocks (manage_global_blocks).',
         parameters: {
           type: 'object',
           properties: {
             action: {
               type: 'string',
               enum: [
+                'describe',
                 'get',
                 'get_all',
                 'update',
               ],
+              description: 'describe = what each setting means (start here); get / get_all = read; update = change.',
             },
             key: {
               type: 'string',
-              description: 'Settings key to read/update',
+              description: 'The setting, e.g. general, seo, chat, store, maintenance. describe without a key lists them all.',
             },
             value: {
               type: 'object',
@@ -1034,27 +1036,39 @@ Three facts are stored: country, currency, time zone. Everything else is derived
     },
     instructions: `## manage_site_settings
 ### What
-Reads and updates site settings including module configuration, site name, theme, AI config, chat config.
-### When to use
-- Admin asks to change site settings
-- System configuration queries
-- Module enable/disable
-### Parameters
-- **action**: Required. get, get_all, update.
-- **key**: Settings key (modules, site_name, theme, ai_config, chat_config, etc.).
-- **value**: New value for update.
-### Edge cases
-- Some settings changes require page reload to take effect.
-- ai_config controls which AI provider FlowPilot uses.
-- Be careful with module toggles — disabling a module hides its UI.
+Every setting the platform has, behind one key each in \`site_settings\`. The
+catalogue says what exists — never guess a key.
+### Start here
+\`{ action: "describe" }\` lists every setting: \`purpose\`, \`fields\` (with
+allowed values), \`module\`, \`admin\` (where a person changes it),
+\`prefer_skill\` and \`access\`. \`{ action: "describe", key: "chat" }\` gives one.
+### Writing
+- \`update\` MERGES top-level fields: send only what changes —
+  \`{ action: "update", key: "maintenance", value: { enabled: true } }\`.
+- A NESTED object you send replaces that nested object (e.g. one provider under
+  \`integrations\`, an \`@en\` overlay under \`ui_text\`): \`get\` it first and send
+  it whole. \`replace: true\` writes the whole value as given.
+- Where \`prefer_skill\` is named, use it: modules → manage_modules, branding →
+  site_branding_update, languages → translate_site, company identity →
+  update_company_profile, country/currency/time zone → set_business_home.
+- Refusals (status "refused", never retried as is): \`UNKNOWN_SETTING\` (with
+  \`did_you_mean\`), \`SETTING_NOT_WRITABLE\` (the platform's bookkeeping),
+  \`PERSON_REQUIRED\` (security dials, injected scripts, the mail guard, log
+  retention, demo/sandbox flags — tell the owner what you would change),
+  \`SECRET_FIELD\` (API keys and tokens are set as secrets under Integrations,
+  never here).
+### Reading
+\`get\` answers the value and the setting's description; credential fields
+read "[hidden]".
 
 ### Translating the visitor-facing chrome (\`ui_text\`)
 \`ui_text\` holds the strings AROUND the blocks — buttons, empty states,
 "Back to homepage" — the text a page editor cannot reach. Block content is not
 here; that lives on the page.
 
-The map has two layers, and \`update\` REPLACES the whole value, so always
-\`get\` first and send the merged object back:
+The map has two layers. \`update\` merges top-level keys, but an \`@<locale>\`
+overlay you send replaces that whole overlay — so \`get\` first and send the
+merged overlay back:
 
 \`\`\`json
 {
