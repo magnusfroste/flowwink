@@ -423,16 +423,14 @@ serve(async (req: Request) => {
           .limit(1);
 
         if (orders && orders.length > 0) {
-          const { data: order, error: refundErr } = await supabase
+          const { error: refundErr } = await supabase
             .from("orders")
             .update({ status: "refunded" })
             .eq("id", orders[0].id)
-            .select()
+            .select("id")
             .single();
           if (refundErr) throw new Error(`order refund update failed: ${refundErr.message}`);
-
-          if (order) {
-          }
+          // order.refunded is raised by the row; its webhook comes from the bus.
         }
         break;
       }
@@ -448,16 +446,13 @@ serve(async (req: Request) => {
           .limit(1);
 
         if (orders && orders.length > 0) {
-          const { data: order, error: failedErr } = await supabase
+          const { error: failedErr } = await supabase
             .from("orders")
             .update({ status: "failed" })
             .eq("id", orders[0].id)
-            .select()
+            .select("id")
             .single();
           if (failedErr) throw new Error(`order failure update failed: ${failedErr.message}`);
-
-          if (order) {
-          }
         }
         break;
       }
