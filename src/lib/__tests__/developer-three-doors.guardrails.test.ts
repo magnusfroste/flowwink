@@ -14,7 +14,8 @@ const read = (p: string) => readFileSync(p, 'utf8');
 describe('Developer: three doors', () => {
   it('MCP Keys, Content API, Webhooks — each introduced by who it is for; the old skills link still lands', () => {
     const dev = read('src/pages/admin/DeveloperPage.tsx');
-    expect(dev).toMatch(/const TABS = \['mcp-keys', 'api', 'webhooks'\] as const;/);
+    // QA findings joined as a fourth tab (2026-11-22), moved off Agents.
+    expect(dev).toMatch(/const TABS = \['mcp-keys', 'api', 'webhooks', 'qa-findings'\] as const;/);
     expect(dev).toMatch(/const INTRO: Record<Tab, string>/);
     expect(dev).toMatch(/if \(requested === 'mcp-skills'\) return <Navigate to="\/admin\/skills\?tab=manage" replace \/>;/);
     expect(dev).not.toMatch(/DevToolsContent|McpSkillsPanel|devtools/);

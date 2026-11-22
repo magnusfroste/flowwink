@@ -228,8 +228,8 @@ export default function CopilotPage() {
                   <div>
                     <h2 className="text-sm font-semibold">How it improves itself</h2>
                     <p className="text-xs text-muted-foreground max-w-2xl">
-                      Patterns FlowPilot noticed in its own work and proposes to turn into skills, and the changes it has
-                      made to its own instructions. Nothing here changes behaviour until it is approved.
+                      Patterns FlowPilot noticed in its own work and proposes to turn into skills, and the skills it has
+                      created itself. Nothing here changes behaviour until it is approved.
                     </p>
                   </div>
                   <DistilledProposalsPanel />

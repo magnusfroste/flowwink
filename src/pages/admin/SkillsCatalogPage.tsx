@@ -10,11 +10,15 @@
  * ONE skills page (2026-11-06): Browse is the catalogue, Manage the control —
  * it used to be a tab on Developer, which made three places that listed the
  * same skills. What agents may do is the operator's question, not a developer's.
+ *
+ * No count tiles (2026-11-22): totals are not a task, and "Missing
+ * instructions" in amber read a valid choice as a fault — about a quarter of
+ * the skills rely on a good description alone (Law 2). The filter stays.
  */
 
 import { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Search, Cpu, Filter, FileWarning, BookOpen, SlidersHorizontal } from 'lucide-react';
+import { Search, Cpu, Filter, BookOpen, SlidersHorizontal } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { Input } from '@/components/ui/input';
@@ -80,15 +84,6 @@ export default function SkillsCatalogPage() {
       .filter(m => m.skills.length > 0);
   }, [modules, search, statusFilter]);
 
-  // Aggregate stats
-  const stats = useMemo(() => {
-    const total = allSkills.length;
-    const enabled = allSkills.filter(s => s.enabled).length;
-    const exposed = allSkills.filter(s => s.mcp_exposed).length;
-    const noInstructions = allSkills.filter(s => !(s.instructions ?? '').trim()).length;
-    return { total, enabled, exposed, noInstructions, modules: modules.length };
-  }, [allSkills, modules]);
-
   return (
     <AdminLayout>
       <div className="space-y-6">
@@ -113,21 +108,6 @@ export default function SkillsCatalogPage() {
         </AdminPageHeader>
 
         {tab === 'manage' ? <McpSkillsPanel /> : (<>
-        {/* Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-          <StatCard label="Total skills" value={stats.total} />
-          <StatCard label="Enabled" value={stats.enabled} accent="text-green-600" />
-          <StatCard label="Exposed via MCP" value={stats.exposed} accent="text-primary" />
-          <StatCard
-            label="Missing instructions"
-            value={stats.noInstructions}
-            accent={stats.noInstructions > 0 ? 'text-amber-600' : undefined}
-            onClick={() => setStatusFilter(statusFilter === 'no-instructions' ? 'all' : 'no-instructions')}
-            active={statusFilter === 'no-instructions'}
-          />
-          <StatCard label="Modules with skills" value={stats.modules} />
-        </div>
-
         {/* Search + filter */}
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
@@ -149,13 +129,10 @@ export default function SkillsCatalogPage() {
               <TabsTrigger value="disabled" className="text-xs">Disabled</TabsTrigger>
               <TabsTrigger value="mcp" className="text-xs gap-1">
                 <Cpu className="h-3 w-3" />
-                MCP
+                Shared with agents
               </TabsTrigger>
-              <TabsTrigger value="ai-task" className="text-xs">ai-task</TabsTrigger>
-              <TabsTrigger value="no-instructions" className="text-xs gap-1 data-[state=active]:text-amber-600">
-                <FileWarning className="h-3 w-3" />
-                Missing instructions
-              </TabsTrigger>
+              <TabsTrigger value="ai-task" className="text-xs">AI task</TabsTrigger>
+              <TabsTrigger value="no-instructions" className="text-xs">No instructions</TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
@@ -209,33 +186,5 @@ export default function SkillsCatalogPage() {
         </>)}
       </div>
     </AdminLayout>
-  );
-}
-
-function StatCard({
-  label,
-  value,
-  accent,
-  onClick,
-  active,
-}: {
-  label: string;
-  value: number;
-  accent?: string;
-  onClick?: () => void;
-  active?: boolean;
-}) {
-  const Wrapper: any = onClick ? 'button' : 'div';
-  return (
-    <Wrapper
-      onClick={onClick}
-      type={onClick ? 'button' : undefined}
-      className={`rounded-lg border bg-card p-3 text-left transition-colors ${
-        onClick ? 'hover:bg-accent/40 cursor-pointer' : ''
-      } ${active ? 'ring-2 ring-amber-500/60' : ''}`}
-    >
-      <div className={`text-2xl font-bold ${accent ?? ''}`}>{value}</div>
-      <div className="text-xs text-muted-foreground">{label}</div>
-    </Wrapper>
   );
 }
