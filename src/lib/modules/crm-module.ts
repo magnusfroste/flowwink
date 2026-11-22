@@ -998,6 +998,35 @@ Use this to find email addresses and contact information for people at a company
     instructions:
       'Model detail: P(win) prior × likelihood ratio per feature (source, free vs corporate email domain, has_phone, has_company, activity-count bucket), Laplace-smoothed. factors[] explains each feature\'s direction — use it to tell the user WHY the lead scored high/low. model=heuristic_fallback means <10 closed leads exist yet; the score is attribute-based until history accumulates. Complements qualify_lead (engagement points): qualify_lead measures activity, this predicts outcome.',
   },
+  {
+    name: 'manage_tag',
+    description: 'Tags: the shared labels put on contacts, companies, deals and other records — name, address, colour, what they are for. Use when: setting up how records are labelled; adding, renaming or retiring a tag. NOT for: putting a tag on a record (tag_entity).',
+    category: 'crm',
+    handler: 'db:tags',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'manage_tag',
+        description: 'CRUD on tags.',
+        parameters: {
+          type: 'object',
+          properties: {
+            action: { type: 'string', enum: ['list', 'get', 'create', 'update', 'delete'] },
+            tag_id: { type: 'string', format: 'uuid', description: 'The row (get, update, delete).' },
+            name: { type: 'string' },
+            slug: { type: 'string', description: 'Unique; derived from the name when omitted.' },
+            color: { type: 'string', description: 'Hex colour.' },
+            scope: { type: 'string', description: 'What it is meant for, e.g. contact, deal; empty = anything.' },
+            description: { type: 'string' },
+          },
+          required: ['action'],
+          'x-action-required': { create: ['name'], update: ['tag_id'] },
+        },
+      },
+    },
+    instructions: 'Look for an existing tag (list with search) before creating one: two tags with one meaning split every list.',
+  },
 ];
 
 export const crmModule = defineModule<CRMLeadInput, CRMLeadOutput>({
@@ -1012,7 +1041,7 @@ export const crmModule = defineModule<CRMLeadInput, CRMLeadOutput>({
   inputSchema: crmLeadInputSchema,
   outputSchema: crmLeadOutputSchema,
 
-  skills: [
+  skills: [ 'manage_tag',
     'add_lead',
     'manage_leads',
     'lead_pipeline_review',

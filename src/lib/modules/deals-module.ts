@@ -143,6 +143,38 @@ is already past the contact's lead. Adding "a new lead" is add_lead, never a dea
     },
     instructions: 'Find deals stuck in a stage. Suggest follow-up or re-engagement strategies.',
   },
+  {
+    name: 'manage_deal_template',
+    description: 'Deal templates: a preset for a new deal — default product, stage, value, currency, notes and team. Use when: setting up a sales pipeline; adding or retiring a template sales picks when they open a deal. NOT for: a deal itself (manage_deal); pipeline stages (manage_pipeline_stage).',
+    category: 'crm',
+    handler: 'db:deal_templates',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'manage_deal_template',
+        description: 'CRUD on deal_templates.',
+        parameters: {
+          type: 'object',
+          properties: {
+            action: { type: 'string', enum: ['list', 'get', 'create', 'update', 'delete'] },
+            deal_template_id: { type: 'string', format: 'uuid', description: 'The row (get, update, delete).' },
+            name: { type: 'string' },
+            description: { type: 'string' },
+            default_product_id: { type: 'string', format: 'uuid' },
+            default_stage: { type: 'string', description: 'The stage a deal from it starts in.' },
+            default_value_cents: { type: 'integer' },
+            default_currency: { type: 'string' },
+            default_notes: { type: 'string' },
+            is_active: { type: 'boolean' },
+          },
+          required: ['action'],
+          'x-action-required': { create: ['name'], update: ['deal_template_id'] },
+        },
+      },
+    },
+    instructions: 'Retire a template with is_active false.',
+  },
 ];
 
 export const dealsModule = defineModule<DealModuleInput, DealModuleOutput>({
@@ -157,7 +189,7 @@ export const dealsModule = defineModule<DealModuleInput, DealModuleOutput>({
   inputSchema: dealModuleInputSchema,
   outputSchema: dealModuleOutputSchema,
 
-  skills: [
+  skills: [ 'manage_deal_template',
     'manage_deal',
     'deal_stale_check',
   ],

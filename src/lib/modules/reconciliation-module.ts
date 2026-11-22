@@ -309,6 +309,40 @@ const RECONCILIATION_SKILLS: SkillSeed[] = [
     instructions:
       'One call = the whole chain; do NOT hand-walk apply_reconciliation_rules → auto_match_transactions → propose_bookkeeping → manage_journal_entry yourself. Only confidence ≥95 ("auto") proposals are booked; "propose" and "escalate" are left in the review queue — report their counts. Safe to re-run any time (idempotent). Returns { rules_tagged, auto_matched, scanned, auto_booked, queued_for_review, escalated, book_errors? }.',
   },
+  {
+    name: 'manage_bank_account',
+    description: "The business's own bank accounts: name, account number, currency, the ledger account it maps to, which is the default. Use when: setting up the books or bank reconciliation; adding an account; marking the default; archiving a closed account. NOT for: bank transactions (the reconciliation skills); a supplier's or customer's bank details (partners).",
+    category: 'commerce',
+    handler: 'db:bank_accounts',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      risk: 'high',
+      reversible: true,
+      reversal: 'update the account back, or archived: true; a bank account with transactions is never deleted.',
+      function: {
+        name: 'manage_bank_account',
+        description: 'CRUD on bank_accounts.',
+        parameters: {
+          type: 'object',
+          properties: {
+            action: { type: 'string', enum: ['list', 'get', 'create', 'update'] },
+            bank_account_id: { type: 'string', format: 'uuid', description: 'The row (get, update, delete).' },
+            name: { type: 'string' },
+            account_number: { type: 'string' },
+            currency: { type: 'string' },
+            gl_account: { type: 'string', description: 'The ledger account, e.g. 1930.' },
+            is_default: { type: 'boolean' },
+            archived: { type: 'boolean', description: 'true for a closed account; never delete one with transactions.' },
+            notes: { type: 'string' },
+          },
+          required: ['action'],
+          'x-action-required': { create: ['name', 'currency'], update: ['bank_account_id'] },
+        },
+      },
+    },
+    instructions: 'A change of account number is a change of where money goes: an agent with nobody at the keyboard waits for a person to approve it. Archive a closed account; never delete one.',
+  },
 ];
 
 const RECONCILIATION_AUTOMATIONS: AutomationSeed[] = [
@@ -352,7 +386,7 @@ export const reconciliationModule = defineModule<Input, Output>({
   // All listed skills are seeded elsewhere (sync_stripe_payouts, import_bank_file,
   // auto_match_transactions seeded via legacy bootstrap; import_bank_image via skillSeeds).
   // list_unmatched is exposed only as a publish() action, not as a standalone skill.
-  skills: [
+  skills: [ 'manage_bank_account',
     'sync_stripe_payouts',
     'import_bank_file',
     'import_bank_image',

@@ -17405,11 +17405,20 @@ async function executeFlowtableField(
 // (found live 2026-07-05) — any whitelisted table with credential/secret
 // columns MUST get an explicit safe column list here.
 const TABLE_SELECT_MASKS: Record<string, string> = {
+  // The signing secret is written, never read back (manage_webhook).
+  webhooks:
+    'id, name, url, events, is_active, headers, created_at, updated_at, created_by, last_triggered_at, failure_count',
   support_agents:
     'id, user_id, status, current_conversations, max_conversations, last_seen_at, supported_channels, voice_enabled, voice_routing_mode, created_at, updated_at',
 };
 
 const GENERIC_CRUD_TABLES = new Set([
+  // Configuration an owner sets in the admin, reachable by an agent too
+  // (2026-11-22): quote and deal templates, product categories, expense rates,
+  // bank accounts, outgoing webhooks and the role → module matrix. Each has a
+  // skill that says what it is (manage_quote_template … manage_role_access).
+  'quote_templates', 'product_categories', 'deal_templates', 'expense_rate_tables',
+  'bank_accounts', 'webhooks', 'role_module_access',
   'employees', 'leave_requests', 'projects', 'project_tasks',
   'time_entries', 'contracts', 'contract_documents',
   'expenses', 'expense_reports', 'expense_attachments', 'expense_payments',
@@ -17613,6 +17622,16 @@ function stripInternalFields(data: Record<string, unknown>): Record<string, unkn
     if (!key.startsWith('_')) out[key] = val;
   }
   return out;
+}
+
+/** Tables whose unique, required `slug` is made from `name` when a create omits it. */
+const SLUG_FROM_NAME = new Set(['product_categories', 'tags']);
+
+/** A row as an answer: a write-only column (a webhook's signing secret) says only that it is set. */
+function withoutWriteOnly(table: string, row: unknown): unknown {
+  if (table !== 'webhooks' || !row || typeof row !== 'object') return row;
+  const { secret, ...rest } = row as Record<string, unknown>;
+  return { ...rest, has_secret: typeof secret === 'string' && secret.length > 0 };
 }
 
 async function executeGenericCrud(
@@ -18060,6 +18079,10 @@ async function executeGenericCrud(
       case 'create': {
         const { limit: _l, offset: _o, order_by: _ob, ascending: _a, filters: _f, ...insertData } = fields;
         const cleanInsert = stripInternalFields(insertData);
+        // A table whose address is unique and required gets one from the name.
+        if (SLUG_FROM_NAME.has(table) && !cleanInsert.slug && typeof cleanInsert.name === 'string') {
+          cleanInsert.slug = slugify(cleanInsert.name);
+        }
         if ((insertData as any)._caller_user_id && !cleanInsert.created_by) {
           cleanInsert.created_by = (insertData as any)._caller_user_id;
         }
@@ -18109,7 +18132,7 @@ async function executeGenericCrud(
             before: null, after: createdItem, success: true,
           });
         }
-        return { created: true, item: createdItem, table };
+        return { created: true, item: withoutWriteOnly(table, createdItem), table };
       }
 
       case 'update': {
@@ -18157,7 +18180,7 @@ async function executeGenericCrud(
             request_payload: auditPayload, before, after: updatedItem, success: true,
           });
         }
-        return { updated: true, item: updatedItem, table };
+        return { updated: true, item: withoutWriteOnly(table, updatedItem), table };
       }
 
       case 'delete': {
