@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261122090000",
-      "migrations_count": 788,
+      "migration_head": "20261123180000",
+      "migrations_count": 789,
       "migrations": [
         {
           "version": "00000000000000",
@@ -3157,6 +3157,10 @@
         {
           "version": "20261122090000",
           "name": "enkaten-gar-ut-nar-det-hander"
+        },
+        {
+          "version": "20261123180000",
+          "name": "det-oppna-som-inte-skulle-vara-oppet"
         }
       ]
     },
@@ -3167,9 +3171,9 @@
     },
     "edge_functions": {
       "count": 76,
-      "shared_hash": "sha256:615394f08d3e261171b10fb5e251aebc9cffd4bdd6a5567a550928e7d8736049",
+      "shared_hash": "sha256:55398a3ee5fead74420bcc7ebb5ce804eee7acfc81cdc8dbc14148884c4758a1",
       "functions": {
-        "agent-execute": "sha256:0bacfc5e88aa09a3c6d568a798d77be1ec6308191464ed4f13495270a5c3682b",
+        "agent-execute": "sha256:dc871d09bd6de61a87f2936b0e698f008210a43058730c7124232160e064956f",
         "agent-operate": "sha256:4320e02dd3e6a0a1706b42dc1905b631c61e6a4cbe3556c701f474c278c89e1a",
         "ai-task": "sha256:ce3aacdef625bba758f4323da3e49104a1b94a3d3d77d800e89dacd0b803d65e",
         "automation-dispatcher": "sha256:d905660cd907c6f1ef5c7cac0a97ed44a4e4187ef4d5179089fa2714b2751443",
@@ -3216,7 +3220,7 @@
         "mcp-server": "sha256:f743de810d4050191a498343a0614f68ea54bd24b511f4ef00de88ec399a556d",
         "media-optimize": "sha256:ddaa5868b1f154561a900e133ab64c6ffd0ebef9751098b2a42c03684c34d496",
         "migrate-page": "sha256:207e7ebc86270867bd58d8e566886310459a630285fddd5b09aeb24b08fe340c",
-        "newsletter": "sha256:524490f73afc21291fa4162bf154626eba583bae279b6f79677186b83342896e",
+        "newsletter": "sha256:7babd212e8c35fcc18be44cce2ab1b51324a9b9cea7027891d98ab1e42475103",
         "openclaw-responses": "sha256:4ad7e760a6dd64626addb30104c7b70fa35df059d3c7dfb96b94d0b6d0218001",
         "process-image": "sha256:bf09d628182acb86f5bd2656803bba828ed0897726ac971bbd5597dc4036dcab",
         "process-job-application": "sha256:00dc3927da3901fcad6066cb0b7b965a8cad288733e0c9d4f11519eb41b16856",

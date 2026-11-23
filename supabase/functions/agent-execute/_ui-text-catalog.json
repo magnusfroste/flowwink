@@ -4476,6 +4476,26 @@
       "fallback": "If this email is registered, you will receive a verification link to access your data."
     },
     {
+      "key": "newsletter.manage.mail.button",
+      "group": "newsletter",
+      "fallback": "Manage my subscription"
+    },
+    {
+      "key": "newsletter.manage.mail.ignore",
+      "group": "newsletter",
+      "fallback": "If you did not ask for this, you can ignore this email. Nothing happens unless the link is opened."
+    },
+    {
+      "key": "newsletter.manage.mail.lead",
+      "group": "newsletter",
+      "fallback": "You asked to see or remove the data we hold about your newsletter subscription. Open the link below to continue."
+    },
+    {
+      "key": "newsletter.manage.mail.subject",
+      "group": "newsletter",
+      "fallback": "Your link to manage your subscription"
+    },
+    {
       "key": "newsletter.manage.name",
       "group": "newsletter",
       "fallback": "Name"
