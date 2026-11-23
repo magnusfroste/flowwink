@@ -1310,6 +1310,14 @@ managed-ledger lessons still apply to every fork's Supabase integration:
   executable by authenticated, body without `service_role` / `has_role(` /
   `can_access_module(` / `is_staff(` / `auth.uid() =` — then check pg_policy,
   invoker-side functions, views, defaults and constraints before revoking.
+- **An address is not a credential (2026-11-23).** A link about an e-mail
+  address — unsubscribe, "manage my data" — carries `addressToken(email)`
+  (`_shared/email/address-token.ts`, HMAC with the service key, derived and
+  never stored) and the handler checks it with `addressTokenMatches` before it
+  reads or writes. The key leaves the platform only inside a mail to that
+  address, never in an answer: `newsletter/gdpr` returned it "for development"
+  and anyone who knew an address could read and delete that subscriber. A new
+  public action keyed by an address signs its link the same way.
 - **The logs are thinned; a change never is (2026-11-15).** `prune_logs()` runs
   nightly (pg_cron `prune-logs`, bounded per night). What a row of
   `agent_activity` PROVES decides how long it lives: a change is kept whole; a

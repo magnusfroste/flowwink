@@ -6,6 +6,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getServiceClient } from '../_shared/supabase-clients.ts';
 import { readAllRows } from '../_shared/read-all-rows.ts';
 import { plainTextFromHtml } from "../_shared/email/newsletter-content.ts";
+import { addressToken } from '../_shared/email/address-token.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -255,9 +256,12 @@ export async function sendNewsletterCore(
           trackingPixel = `<img src="${trackingBaseUrl}?t=${trackingRecord.tracking_id}" width="1" height="1" alt="" style="display:none;" />`;
         }
       }
+      // The link carries the address AND its key (address-token.ts): the
+      // address alone let anyone who knew it take a subscriber off the list.
+      const leaveQuery = `action=unsubscribe&email=${encodeURIComponent(subscriber.email)}&t=${await addressToken(subscriber.email)}`;
       const personalUnsubscribe = siteUrl
-        ? `${siteUrl}/newsletter/manage?action=unsubscribe&email=${encodeURIComponent(subscriber.email)}`
-        : `${supabaseUrl}/functions/v1/newsletter/subscribe?action=unsubscribe&email=${encodeURIComponent(subscriber.email)}`;
+        ? `${siteUrl}/newsletter/manage?${leaveQuery}`
+        : `${supabaseUrl}/functions/v1/newsletter/subscribe?${leaveQuery}`;
 
       const contentHtml = (newsletter as any).content_html || "<p>No content</p>";
       const processedContent = await rewriteLinksForTracking(contentHtml, newsletter_id, subscriber.email);
