@@ -1,6 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { getServiceClient } from '../_shared/supabase-clients.ts';
 import { requireServiceOrRole, unauthorized } from '../_shared/edge-auth.ts';
+import { PLATFORM_RAISED_EVENTS } from '../_shared/events/platform-raised.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -196,8 +197,9 @@ Deno.serve(async (req) => {
     const auth = await requireServiceOrRole(req, supabase, 'admin')
     if (!auth.authorized) return unauthorized(corsHeaders)
 
-    const { event, data } = await req.json()
-    
+    const body = await req.json()
+    const { event, data } = body as { event?: string; data?: Record<string, unknown>; via?: string }
+
     if (!event || !data) {
       return new Response(
         JSON.stringify({ error: 'Missing event or data' }),
@@ -205,9 +207,50 @@ Deno.serve(async (req) => {
       )
     }
 
-    console.log(`[send-webhook] Processing event: ${event}`)
+    // One bus (2026-11-22). A webhook used to go out only when the BROWSER
+    // called this function, and this function ran the event's automations
+    // itself, with untemplated arguments. Events raised by the database (an
+    // order paid through Stripe, a booking an agent made, an invoice sent)
+    // never reached a webhook, and an event both raised and called ran its
+    // automations twice. Now:
+    //   • via 'bus' — event-dispatcher hands over an event it has processed:
+    //     deliver it to the subscribed webhooks, nothing else;
+    //   • otherwise — a direct call (the browser, an edge function): an event
+    //     the platform raises itself is left to the bus (delivered once from
+    //     there); any other is put ON the bus, where the dispatcher runs its
+    //     automations and delivers its webhooks.
+    if (body.via !== 'bus') {
+      if (PLATFORM_RAISED_EVENTS.has(event)) {
+        return new Response(
+          JSON.stringify({ event, queued: false, note: 'The platform raises this event itself; it is delivered from the event bus.' }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+      const { data: eventId, error: emitErr } = await supabase.rpc('emit_platform_event', {
+        _event_name: event, _payload: data, _source: 'direct',
+      })
+      if (emitErr) {
+        return new Response(
+          JSON.stringify({ error: `Could not put ${event} on the event bus: ${emitErr.message}` }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+      // Signal automations read their own lane.
+      try {
+        await fetch(`${supabaseUrl}/functions/v1/signal-dispatcher`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseServiceKey}` },
+          body: JSON.stringify({ signal: event, data, context: { entity_type: event.split('.')[0] } }),
+        })
+      } catch (signalErr) {
+        console.error('[send-webhook] Signal dispatch error (non-blocking):', signalErr)
+      }
+      return new Response(
+        JSON.stringify({ event, queued: true, event_id: eventId }),
+        { status: 202, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
 
-    // Find all active webhooks subscribed to this event
     const { data: webhooks, error: webhooksError } = await supabase
       .from('webhooks')
       .select('id, name, url, secret, headers, failure_count')
@@ -215,195 +258,32 @@ Deno.serve(async (req) => {
       .contains('events', [event])
 
     if (webhooksError) {
-      // webhooks.events is webhook_event[] — an ENUM of 31 CMS/commerce names.
-      // Any event outside it (email.received, vendor.created, purchase_order.*,
-      // every custom event) makes PostgREST reject the cast, and this used to
-      // `throw webhooksError` — a plain object, not an Error, so the top-level
-      // catch answered 500 "Unknown error" BEFORE the automations lane ran.
-      // Event automations accept arbitrary event names by design; only outbound
-      // webhooks are enum-gated. Treat the failed lookup as "no webhooks
-      // subscribed" and keep going.
-      console.warn(`[send-webhook] Webhooks lookup failed for "${event}" (likely non-enum event name) — continuing to automations:`, webhooksError.message ?? webhooksError)
-    }
-
-    if (webhooksError || !webhooks || webhooks.length === 0) {
-      console.log(`[send-webhook] No webhooks registered for event: ${event}`)
-      
-      // Still check for event automations even if no webhooks
-      let automationsDispatched = 0
-      try {
-        const { data: eventAutomations } = await supabase
-          .from('agent_automations')
-          .select('id, name, skill_id, skill_name, skill_arguments, trigger_config')
-          .eq('enabled', true)
-          .eq('trigger_type', 'event')
-
-        const matching = (eventAutomations || []).filter((a: any) => {
-          // Seeds and the admin UI write {event: ...}; older docs said
-          // {event_name: ...} — accept both, same fix event-dispatcher already
-          // carries. Before this, NO seeded event automation ever matched here.
-          const cfg = a.trigger_config as any
-          const cfgEvent = cfg?.event_name ?? cfg?.event
-          return cfgEvent === event
-        })
-
-        for (const auto of matching) {
-          try {
-            const mergedArgs = { ...auto.skill_arguments, event_data: data }
-            await fetch(`${supabaseUrl}/functions/v1/agent-execute`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${supabaseServiceKey}`,
-              },
-              body: JSON.stringify({
-                skill_id: auto.skill_id,
-                skill_name: auto.skill_name,
-                arguments: mergedArgs,
-                agent_type: 'flowpilot',
-              }),
-            })
-            const { data: current, error: countErr } = await supabase.from('agent_automations').select('run_count').eq('id', auto.id).single()
-            if (countErr) throw new Error(`run_count read failed: ${countErr.message}`) // annars skrivs 0+1 över ett riktigt värde
-            await supabase.from('agent_automations').update({ 
-              last_triggered_at: new Date().toISOString(), 
-              run_count: (current?.run_count || 0) + 1 
-            }).eq('id', auto.id)
-            automationsDispatched++
-          } catch (err) {
-            console.error(`[send-webhook] Automation ${auto.name} failed:`, err)
-            await supabase.from('agent_automations').update({ last_error: err instanceof Error ? err.message : 'Unknown error' }).eq('id', auto.id)
-          }
-        }
-      } catch (autoErr) {
-        console.error('[send-webhook] Event automation check error:', autoErr)
-      }
-
       return new Response(
-        JSON.stringify({ message: 'No webhooks registered for this event', event, automations_dispatched: automationsDispatched }),
+        JSON.stringify({ error: `Webhooks lookup failed for ${event}: ${webhooksError.message}` }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+    if (!webhooks || webhooks.length === 0) {
+      return new Response(
+        JSON.stringify({ event, webhooks_triggered: 0 }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    console.log(`[send-webhook] Found ${webhooks.length} webhook(s) for event: ${event}`)
-
-    const payload: WebhookPayload = {
-      event,
-      data,
-      timestamp: new Date().toISOString()
-    }
-
-    // Send to all webhooks in parallel with retry
+    const payload: WebhookPayload = { event, data, timestamp: new Date().toISOString() }
     const results = await Promise.all(
       webhooks.map((webhook: Webhook) => sendWebhookWithRetry(webhook, payload, supabase))
     )
-
     const successful = results.filter((r: { success: boolean }) => r.success).length
-    const failed = results.filter((r: { success: boolean }) => !r.success).length
-
-    // ── Event-triggered automations ──────────────────────────────────────
-    let automationsDispatched = 0
-    try {
-      const { data: eventAutomations } = await supabase
-        .from('agent_automations')
-        .select('id, name, skill_id, skill_name, skill_arguments, trigger_config')
-        .eq('enabled', true)
-        .eq('trigger_type', 'event')
-
-      const matching = (eventAutomations || []).filter((a: any) => {
-        // Seeds and the admin UI write {event: ...}; older docs said
-        // {event_name: ...} — accept both, same fix event-dispatcher already
-        // carries. Before this, NO seeded event automation ever matched here.
-        const cfg = a.trigger_config as any
-        const cfgEvent = cfg?.event_name ?? cfg?.event
-        return cfgEvent === event
-      })
-
-      if (matching.length > 0) {
-        console.log(`[send-webhook] Found ${matching.length} event automation(s) for: ${event}`)
-        
-        await Promise.all(matching.map(async (auto: any) => {
-          try {
-            // Merge event data into skill arguments
-            const mergedArgs = { ...auto.skill_arguments, event_data: data }
-            
-            await fetch(`${supabaseUrl}/functions/v1/agent-execute`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${supabaseServiceKey}`,
-              },
-              body: JSON.stringify({
-                skill_id: auto.skill_id,
-                skill_name: auto.skill_name,
-                arguments: mergedArgs,
-                agent_type: 'flowpilot',
-              }),
-            })
-
-            // Update automation metadata
-            await supabase
-              .from('agent_automations')
-              .update({
-                last_triggered_at: new Date().toISOString(),
-                // run_count handled below via separate query
-              })
-              .eq('id', auto.id)
-
-            // Increment run_count
-            const { data: current, error: countErr } = await supabase
-              .from('agent_automations')
-              .select('run_count')
-              .eq('id', auto.id)
-              .single()
-            if (countErr) throw new Error(`run_count read failed: ${countErr.message}`)
-            
-            await supabase
-              .from('agent_automations')
-              .update({ run_count: (current?.run_count || 0) + 1 })
-              .eq('id', auto.id)
-
-            automationsDispatched++
-          } catch (err) {
-            console.error(`[send-webhook] Automation ${auto.name} failed:`, err)
-            await supabase
-              .from('agent_automations')
-              .update({ last_error: err instanceof Error ? err.message : 'Unknown error' })
-              .eq('id', auto.id)
-          }
-        }))
-      }
-    } catch (autoErr) {
-      console.error('[send-webhook] Event automation dispatch error:', autoErr)
-    }
-
-    // ── Also dispatch as a signal for signal-type automations ─────────
-    try {
-      await fetch(`${supabaseUrl}/functions/v1/signal-dispatcher`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${supabaseServiceKey}`,
-        },
-        body: JSON.stringify({
-          signal: event, // e.g. "form.submitted", "booking.submitted"
-          data,
-          context: { entity_type: event.split('.')[0] },
-        }),
-      })
-    } catch (signalErr) {
-      console.error('[send-webhook] Signal dispatch error (non-blocking):', signalErr)
-    }
-
-    console.log(`[send-webhook] Completed: ${successful} successful, ${failed} failed, ${automationsDispatched} automations`)
+    const failed = results.length - successful
+    console.log(`[send-webhook] ${event}: ${successful} delivered, ${failed} failed`)
 
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         event,
         webhooks_triggered: webhooks.length,
         successful,
         failed,
-        automations_dispatched: automationsDispatched,
         results: results.map((r: { success: boolean; status?: number; error?: string; duration: number; attempts: number }, i: number) => ({
           webhook: webhooks[i].name,
           ...r

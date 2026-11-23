@@ -9,98 +9,10 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// Helper to trigger CMS webhooks
-async function triggerOrderWebhook(
-  supabase: any,
-  event: "order.created" | "order.paid" | "order.cancelled" | "order.refunded",
-  order: any
-) {
-  try {
-    const { data: webhooks } = await supabase
-      .from("webhooks")
-      .select("*")
-      .eq("is_active", true)
-      .contains("events", [event]);
-
-    if (!webhooks || webhooks.length === 0) return;
-
-    for (const webhook of webhooks) {
-      try {
-        const payload = {
-          event,
-          timestamp: new Date().toISOString(),
-          data: {
-            id: order.id,
-            customer_email: order.customer_email,
-            customer_name: order.customer_name,
-            total_cents: order.total_cents,
-            currency: order.currency,
-            status: order.status,
-          },
-        };
-
-        const headers: Record<string, string> = {
-          "Content-Type": "application/json",
-          ...(webhook.headers || {}),
-        };
-
-        // Add signature if secret is configured
-        if (webhook.secret) {
-          const encoder = new TextEncoder();
-          const key = await crypto.subtle.importKey(
-            "raw",
-            encoder.encode(webhook.secret),
-            { name: "HMAC", hash: "SHA-256" },
-            false,
-            ["sign"]
-          );
-          const signature = await crypto.subtle.sign(
-            "HMAC",
-            key,
-            encoder.encode(JSON.stringify(payload))
-          );
-          headers["X-Webhook-Signature"] = Array.from(new Uint8Array(signature))
-            .map((b) => b.toString(16).padStart(2, "0"))
-            .join("");
-        }
-
-        const startTime = Date.now();
-        const response = await fetch(webhook.url, {
-          method: "POST",
-          headers,
-          body: JSON.stringify(payload),
-        });
-        const duration = Date.now() - startTime;
-
-        // Log webhook call
-        await supabase.from("webhook_logs").insert({
-          webhook_id: webhook.id,
-          event,
-          payload,
-          response_status: response.status,
-          success: response.ok,
-          duration_ms: duration,
-          response_body: await response.text().catch(() => null),
-        });
-
-        // Update webhook stats
-        await supabase
-          .from("webhooks")
-          .update({
-            last_triggered_at: new Date().toISOString(),
-            failure_count: response.ok ? 0 : (webhook.failure_count || 0) + 1,
-          })
-          .eq("id", webhook.id);
-
-        console.log(`Webhook ${webhook.name} triggered for ${event}:`, response.status);
-      } catch (err) {
-        console.error(`Failed to trigger webhook ${webhook.name}:`, err);
-      }
-    }
-  } catch (err) {
-    console.error("Error triggering webhooks:", err);
-  }
-}
+// Order webhooks are delivered from the event bus: the database raises
+// order.created / order.paid / order.cancelled / order.refunded on the row
+// itself, and event-dispatcher hands each to send-webhook (2026-11-22). This
+// function delivered them a second time, unsigned.
 
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -475,7 +387,6 @@ serve(async (req: Request) => {
             }
 
             // Trigger order.paid webhook
-            await triggerOrderWebhook(supabase, "order.paid", order);
             
             // Send order confirmation email
             try {
@@ -512,17 +423,14 @@ serve(async (req: Request) => {
           .limit(1);
 
         if (orders && orders.length > 0) {
-          const { data: order, error: refundErr } = await supabase
+          const { error: refundErr } = await supabase
             .from("orders")
             .update({ status: "refunded" })
             .eq("id", orders[0].id)
-            .select()
+            .select("id")
             .single();
           if (refundErr) throw new Error(`order refund update failed: ${refundErr.message}`);
-
-          if (order) {
-            await triggerOrderWebhook(supabase, "order.refunded", order);
-          }
+          // order.refunded is raised by the row; its webhook comes from the bus.
         }
         break;
       }
@@ -538,17 +446,13 @@ serve(async (req: Request) => {
           .limit(1);
 
         if (orders && orders.length > 0) {
-          const { data: order, error: failedErr } = await supabase
+          const { error: failedErr } = await supabase
             .from("orders")
             .update({ status: "failed" })
             .eq("id", orders[0].id)
-            .select()
+            .select("id")
             .single();
           if (failedErr) throw new Error(`order failure update failed: ${failedErr.message}`);
-
-          if (order) {
-            await triggerOrderWebhook(supabase, "order.cancelled", order);
-          }
         }
         break;
       }

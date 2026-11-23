@@ -22,8 +22,10 @@ const read = (p: string) => readFileSync(resolve(__dirname, '../../..', p), 'utf
 // rows with trigger_type='event'. Grep for `trigger_type', 'event'` /
 // `trigger_type", "event"` under supabase/functions to find candidates when
 // adding one.
+// send-webhook left the list on 2026-11-22: it runs no automations any more —
+// a direct call puts the event on the bus, and event-dispatcher is the one
+// matcher (one-event-bus.guardrails.test.ts).
 const DISPATCHERS = [
-  'supabase/functions/send-webhook/index.ts',
   'supabase/functions/event-dispatcher/index.ts',
 ];
 
@@ -58,33 +60,13 @@ describe('event-automation key parity across dispatchers', () => {
     expect(hits.length, 'no module seed writes trigger_config {event: ...} any more').toBeGreaterThan(0);
   });
 
-  it('the webhooks lookup cannot gate the automations lane', () => {
-    // webhooks.events is an ENUM array (webhook_event, 31 CMS/commerce names).
-    // Any event outside it — email.received, vendor.created, every custom
-    // event — fails the PostgREST cast. send-webhook used to `throw
-    // webhooksError` (a plain object, so the top catch said 500 "Unknown
-    // error") BEFORE reaching automations: kill switch #3, found live on optic
-    // when a selftest event 500'd with the #148 matcher fix already deployed.
-    // Automations accept arbitrary event names by design; only outbound
-    // webhooks are enum-gated. The lookup failure must degrade to "no
-    // webhooks", never crash the request.
+  it('a webhooks lookup can no longer gate an automation: send-webhook runs none', () => {
+    // The lane this pinned (a non-enum event 500'ing before automations ran,
+    // found live on optic) is gone: automations are matched by event-dispatcher
+    // alone, and send-webhook only delivers.
     const src = read('supabase/functions/send-webhook/index.ts');
-    expect(
-      /^\s*throw\s+webhooksError/m.test(src),
-      'send-webhook throws on the webhooks lookup again — any non-enum event name 500s before automations dispatch',
-    ).toBe(false);
-    expect(
-      /webhooksError\s*\|\|\s*!webhooks/.test(src),
-      'a failed webhooks lookup must fall through to the no-webhooks path so automations still run',
-    ).toBe(true);
+    expect(src).not.toMatch(/from\('agent_automations'\)/);
+    expect(src).not.toMatch(/^\s*throw\s+webhooksError/m);
   });
 
-  it('send-webhook has both matchers fixed, not just one', () => {
-    // The file matches event automations in TWO places (the no-webhooks early
-    // path and the main path). Half-fixing it is this bug all over again.
-    const src = read('supabase/functions/send-webhook/index.ts');
-    const matcherCount = (src.match(/trigger_type',\s*'event'/g) || []).length;
-    const dualKeyCount = (src.match(new RegExp(DUAL_KEY.source, 'g')) || []).length;
-    expect(dualKeyCount, `send-webhook filters event automations ${matcherCount}x but carries the dual-key read only ${dualKeyCount}x`).toBeGreaterThanOrEqual(matcherCount);
-  });
 });

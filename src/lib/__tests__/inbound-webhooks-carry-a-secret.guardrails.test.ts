@@ -55,6 +55,6 @@ describe('send-webhook is the platform\'s to call', () => {
     const src = read('supabase/functions/send-webhook/index.ts');
     const gate = src.indexOf("requireServiceOrRole(req, supabase, 'admin')");
     expect(gate).toBeGreaterThan(-1);
-    expect(gate).toBeLessThan(src.indexOf('const { event, data } = await req.json()'));
+    expect(gate).toBeLessThan(src.indexOf('await req.json()'));
   });
 });
