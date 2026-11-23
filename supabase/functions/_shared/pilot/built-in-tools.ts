@@ -217,12 +217,12 @@ const DISPATCH_TOOLS = [
   {
     type: 'function', function: {
       name: 'search_skills',
-      description: 'Discover the most relevant skills for what you want to do. Returns ranked skills with their FULL contract (name, description, input_schema incl. required args). Use when: you need a capability beyond the built-in meta-tools (write/research content, CRM, commerce, comms, analytics, …). Then call execute_skill with the chosen name. NOT for: running a skill — use execute_skill.',
+      description: 'Discover the most relevant skills for what you want to do. Returns up to 10 ranked skills: the best 3 with their FULL contract (description and input_schema incl. required args), the rest named with one line — search again with a skill\'s exact name to get its contract. Search once per need; a second search for the same thing costs the same again. Use when: you need a capability beyond the built-in meta-tools (write/research content, CRM, commerce, comms, analytics, …). Then call execute_skill with the chosen name. NOT for: running a skill — use execute_skill.',
       parameters: {
         type: 'object',
         properties: {
           query: { type: 'string', description: 'Natural-language description of the task you want to accomplish.' },
-          limit: { type: 'number', description: 'Max results (default 20, max 40).' },
+          limit: { type: 'number', description: 'Max results (default 10, max 40).' },
         },
         required: ['query'],
       },

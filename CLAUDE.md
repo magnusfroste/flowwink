@@ -232,6 +232,11 @@ ten posts is slug, title and date; `search_knowledge` is its three best hits
 whole and the rest previews (`cut: true`). `full: true` is the way out of both,
 and the answer says so. A new read that can return many rows or long texts
 states what a LONG answer leaves out — the generic `db:` list already does.
+**FlowPilot's own `search_skills` (2026-11-23)** answers `PILOT_SEARCH_LIMIT`
+(10) hits, the first `PILOT_FULL_CONTRACTS` (3) whole and the rest one line with
+`contract` saying how to get it; a search by exact name answers that skill
+whole (`buildSkillCatalog(..., { fullContracts })`, `_shared/skills/dispatch.ts`).
+The gateway calls it without the option and keeps every contract.
 
 ### The Agent Harness (platform spine)
 
