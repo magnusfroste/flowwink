@@ -22,7 +22,7 @@ import { logAiUsage } from '../ai-usage-logger.ts';
 import { scoreSkillsByIntent, loadRecentUsageCounts, rankableDef } from '../skills/intent-scorer.ts';
 import { hasCoreBusinessIdentity } from '../domains/business-identity-block.ts';
 import { readAllRows } from '../read-all-rows.ts';
-import { buildSkillCatalog, DISPATCH_SEARCH_DEFAULT_LIMIT, DISPATCH_SEARCH_MAX_LIMIT } from '../skills/dispatch.ts';
+import { buildSkillCatalog, DISPATCH_SEARCH_MAX_LIMIT, PILOT_FULL_CONTRACTS, PILOT_SEARCH_LIMIT } from '../skills/dispatch.ts';
 import { SKILL_CATEGORY_MODULES, isCategoryActive, loadActiveModuleIds } from '../mcp/groups.ts';
 import { skillModuleOn } from '../skills/module-gate.ts';
 import {
@@ -1457,7 +1457,7 @@ export async function reason(
             // dispatch mode — it ranks via the shared engine and returns FULL
             // contracts, so the model never calls a skill with the wrong args.
             result = fnName === 'search_skills'
-              ? buildSkillCatalog(dispatchDefs, String(argsToUse?.query || ''), usageBoost, Math.min(Number(argsToUse?.limit) || DISPATCH_SEARCH_DEFAULT_LIMIT, DISPATCH_SEARCH_MAX_LIMIT))
+              ? buildSkillCatalog(dispatchDefs, String(argsToUse?.query || ''), usageBoost, Math.min(Number(argsToUse?.limit) || PILOT_SEARCH_LIMIT, DISPATCH_SEARCH_MAX_LIMIT), { fullContracts: PILOT_FULL_CONTRACTS })
               : await executeBuiltInTool(supabase, supabaseUrl, serviceKey, fnName, argsToUse, traceId, skillOpts);
           } catch (err) {
             result = { error: err instanceof Error ? err.message : String(err) };
