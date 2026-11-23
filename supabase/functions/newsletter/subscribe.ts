@@ -2,6 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getServiceClient } from '../_shared/supabase-clients.ts';
 import { loadEmailShell } from '../_shared/email-shell.ts';
 import { cleanLanguageTag, renderMailTemplate } from '../_shared/email/mail-template.ts';
+import { addressTokenMatches } from '../_shared/email/address-token.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -176,6 +177,14 @@ export async function handle(req: Request): Promise<Response> {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
+      // Only a link out of a mail we sent to this address takes it off the
+      // list. The address alone used to be enough — for anyone who knew it.
+      if (!(await addressTokenMatches(email, url.searchParams.get("t")))) {
+        return new Response(JSON.stringify({ error: "Invalid unsubscribe link", code: "INVALID_LINK" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
 
       const { error } = await supabase
         .from("newsletter_subscribers")
@@ -183,10 +192,14 @@ export async function handle(req: Request): Promise<Response> {
           status: "unsubscribed",
           unsubscribed_at: new Date().toISOString(),
         })
-        .eq("email", email);
+        .eq("email", email.toLowerCase().trim());
 
       if (error) {
         console.error("[newsletter-subscribe] Unsubscribe error:", error);
+        return new Response(JSON.stringify({ error: "Could not unsubscribe" }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
 
       console.log(`[newsletter-subscribe] Unsubscribed: ${email}`);

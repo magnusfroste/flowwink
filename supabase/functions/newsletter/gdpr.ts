@@ -1,5 +1,10 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getServiceClient } from '../_shared/supabase-clients.ts';
+import { loadEmailShell } from '../_shared/email-shell.ts';
+import { cleanLanguageTag } from '../_shared/email/mail-template.ts';
+import { resolveUiText } from '../_shared/locale/ui-text.ts';
+import { loadUiText } from '../_shared/locale/load-ui-text.ts';
+import { addressToken, addressTokenMatches } from '../_shared/email/address-token.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -10,6 +15,8 @@ interface GdprRequest {
   action: "request" | "verify" | "export" | "delete";
   email?: string;
   token?: string;
+  /** The visitor's language — the verification mail is written in it. */
+  lang?: string;
 }
 
 export async function handle(req: Request): Promise<Response> {
@@ -29,51 +36,79 @@ export async function handle(req: Request): Promise<Response> {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
         const supabase = getServiceClient();
 
-    const { action, email, token }: GdprRequest = await req.json();
+    const { action, email, token, lang }: GdprRequest = await req.json();
 
     console.log(`[newsletter-gdpr] Action: ${action}`);
 
-    // Action: Request verification (sends email with token)
+    // Action: Request verification — the link is MAILED to the address. It
+    // used to come back in this answer ("for development"), so anyone who
+    // knew an address could read and delete that subscriber's data.
     if (action === "request" && email) {
-      // Find subscriber
-      const { data: subscriber, error: subError } = await supabase
-        .from("newsletter_subscribers")
-        .select("id, email, confirmation_token")
-        .eq("email", email.toLowerCase().trim())
-        .single();
-
-      if (subError || !subscriber) {
-        // Don't reveal if email exists or not for security
-        return new Response(JSON.stringify({
-          success: true,
-          message: "If this email is registered, you will receive a verification link."
-        }), {
-          status: 200,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-
-      // Resolve site origin (env → site_settings.general). Self-hosted: no Lovable fallback.
-      let siteOrigin = Deno.env.get("PUBLIC_SITE_URL") || "";
-      if (!siteOrigin) {
-        const { data: gs } = await supabase.from("site_settings")
-          .select("value").eq("key", "general").maybeSingle();
-        const v = (gs?.value as any) || {};
-        siteOrigin = v.siteUrl || v.site_url || v.public_url || v.publicUrl || "";
-      }
-      siteOrigin = (siteOrigin || "").replace(/\/$/, "");
-      const verificationUrl = `${siteOrigin}/newsletter/manage?token=${subscriber.confirmation_token}&email=${encodeURIComponent(email)}`;
-
-      console.log(`[newsletter-gdpr] Verification URL generated for: ${email}`);
-
-      // In production, send email here. For now, return success message
-      return new Response(JSON.stringify({
+      const address = email.toLowerCase().trim();
+      const sameAnswer = () => new Response(JSON.stringify({
         success: true,
         message: "If this email is registered, you will receive a verification link.",
-        // For development, include token (remove in production)
-        _dev_token: subscriber.confirmation_token,
-      }), {
-        status: 200,
+      }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+      const { data: subscriber, error: subError } = await supabase
+        .from("newsletter_subscribers")
+        .select("id")
+        .eq("email", address)
+        .maybeSingle();
+      if (subError) console.error("[newsletter-gdpr] could not read the subscriber:", subError.message);
+      // The same answer whether or not the address is on the list.
+      if (!subscriber) return sameAnswer();
+
+      let siteOrigin = Deno.env.get("PUBLIC_SITE_URL") || "";
+      if (!siteOrigin) {
+        const { data: gs, error: gsError } = await supabase.from("site_settings")
+          .select("value").eq("key", "general").maybeSingle();
+        if (gsError) console.error("[newsletter-gdpr] could not read the site address:", gsError.message);
+        const v = (gs?.value ?? {}) as Record<string, string | undefined>;
+        siteOrigin = v.siteUrl || v.site_url || v.public_url || v.publicUrl || "";
+      }
+      siteOrigin = siteOrigin.replace(/\/+$/, "");
+      if (!siteOrigin) {
+        // No address for the site: there is no page to link to. Say nothing
+        // different to the visitor; the log tells the operator.
+        console.error("[newsletter-gdpr] no site URL (general.siteUrl) — the verification link was not sent");
+        return sameAnswer();
+      }
+      const verificationUrl = `${siteOrigin}/newsletter/manage?token=${await addressToken(address)}&email=${encodeURIComponent(address)}`;
+
+      const texts = await loadUiText(supabase);
+      const t = resolveUiText(texts.map, cleanLanguageTag(lang) ?? texts.siteLang, texts.siteLang);
+      const shell = await loadEmailShell(supabase);
+      const subject = t('newsletter.manage.mail.subject', 'Your link to manage your subscription');
+      const lead = t('newsletter.manage.mail.lead', 'You asked to see or remove the data we hold about your newsletter subscription. Open the link below to continue.');
+      const button = t('newsletter.manage.mail.button', 'Manage my subscription');
+      const ignore = t('newsletter.manage.mail.ignore', 'If you did not ask for this, you can ignore this email. Nothing happens unless the link is opened.');
+      const { data: sendData, error: sendErr } = await supabase.functions.invoke("email-send", {
+        body: {
+          to: address,
+          subject,
+          html: `
+            <p>${lead}</p>
+            <p style="margin:24px 0;">
+              <a href="${verificationUrl}" style="display:inline-block;padding:12px 24px;background-color:${shell.primaryHex};color:#ffffff;text-decoration:none;border-radius:6px;font-weight:600;">${button}</a>
+            </p>
+            <p style="color:#666666;font-size:13px;">${ignore}</p>`,
+          text: `${lead}\n\n${verificationUrl}\n\n${ignore}`,
+          source: "newsletter-manage",
+          tags: { source: "newsletter-manage" },
+        },
+      });
+      if (sendErr || !(sendData as { success?: boolean } | null)?.success) {
+        console.error("[newsletter-gdpr] verification mail failed:", sendErr ?? (sendData as { error?: string } | null)?.error);
+      }
+      return sameAnswer();
+    }
+
+    // Every other action proves the address with the key from that mail.
+    if ((action === "verify" || action === "export" || action === "delete") && email
+        && !(await addressTokenMatches(email, token))) {
+      return new Response(JSON.stringify({ error: "Invalid or expired token" }), {
+        status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -84,7 +119,6 @@ export async function handle(req: Request): Promise<Response> {
         .from("newsletter_subscribers")
         .select("id, email, name, status, created_at, confirmed_at, unsubscribed_at")
         .eq("email", email.toLowerCase().trim())
-        .eq("confirmation_token", token)
         .single();
 
       if (subError || !subscriber) {
@@ -118,7 +152,6 @@ export async function handle(req: Request): Promise<Response> {
         .from("newsletter_subscribers")
         .select("*")
         .eq("email", email.toLowerCase().trim())
-        .eq("confirmation_token", token)
         .single();
 
       if (subError || !subscriber) {
@@ -172,7 +205,6 @@ export async function handle(req: Request): Promise<Response> {
         .from("newsletter_subscribers")
         .select("id")
         .eq("email", email.toLowerCase().trim())
-        .eq("confirmation_token", token)
         .single();
 
       if (subError || !subscriber) {

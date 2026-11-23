@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import { Shield, Download, Trash2, Mail, CheckCircle, AlertTriangle, Loader2 } from "lucide-react";
 import { useCustomerFormat } from "@/hooks/useCustomerFormat";
 import { businessToday } from '@/lib/platform-fallbacks';
-import { useUiText } from '@/lib/ui-text';
+import { useUiText, useUiTextLanguage } from '@/lib/ui-text';
 
 interface SubscriberData {
   email: string;
@@ -26,6 +26,8 @@ interface SubscriberData {
 
 export default function NewsletterManagePage() {
   const t = useUiText();
+  const { lang: uiLang, siteLang } = useUiTextLanguage();
+  const visitorLang = uiLang ?? siteLang;
   const { formatDateTime } = useCustomerFormat();
   const [searchParams] = useSearchParams();
   const [email, setEmail] = useState("");
@@ -42,9 +44,8 @@ export default function NewsletterManagePage() {
     const urlEmail = searchParams.get("email");
     const action = searchParams.get("action");
     
-    // Handle direct unsubscribe from email link (no token required)
     if (action === "unsubscribe" && urlEmail) {
-      handleDirectUnsubscribe(urlEmail);
+      handleDirectUnsubscribe(urlEmail, searchParams.get("t"));
       return;
     }
     
@@ -55,16 +56,23 @@ export default function NewsletterManagePage() {
     }
   }, [searchParams]);
 
-  // Handle direct unsubscribe from email link
-  const handleDirectUnsubscribe = async (emailToUnsubscribe: string) => {
+  // The link in a newsletter carries the address and its key (`t`). An older
+  // mail's link carries the address alone: that no longer takes anyone off
+  // the list — the address is mailed a link instead, and says so.
+  const handleDirectUnsubscribe = async (emailToUnsubscribe: string, key: string | null) => {
     setIsLoading(true);
     setEmail(emailToUnsubscribe);
     try {
-      const { error } = await supabase
-        .rpc("unsubscribe_newsletter_by_email", { p_email: emailToUnsubscribe });
-
-      if (error) {
-        logger.error("Unsubscribe error:", error);
+      if (!key) {
+        await requestLink(emailToUnsubscribe);
+        return;
+      }
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/newsletter/subscribe?action=unsubscribe&email=${encodeURIComponent(emailToUnsubscribe)}&t=${encodeURIComponent(key)}`,
+        { headers: { Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` } },
+      );
+      if (!response.ok) {
+        logger.error("Unsubscribe error:", response.status);
         toast.error(t('newsletter.manage.unsubscribeFailed', 'Could not unsubscribe. Please try again.'));
       } else {
         setIsDeleted(true); // Reuse the deleted state to show success message
@@ -76,6 +84,14 @@ export default function NewsletterManagePage() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const requestLink = async (address: string) => {
+    const { error } = await supabase.functions.invoke("newsletter/gdpr", {
+      body: { action: "request", email: address, lang: visitorLang },
+    });
+    if (error) throw error;
+    setRequestSent(true);
   };
 
   const verifyToken = async (emailToVerify: string, tokenToVerify: string) => {
@@ -105,19 +121,7 @@ export default function NewsletterManagePage() {
 
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("newsletter/gdpr", {
-        body: { action: "request", email: email.trim() },
-      });
-
-      if (error) throw error;
-      
-      setRequestSent(true);
-      
-      // For development: auto-verify if token is returned
-      if (data._dev_token) {
-        setToken(data._dev_token);
-        await verifyToken(email.trim(), data._dev_token);
-      }
+      await requestLink(email.trim());
     } catch (caught) {
       toast.error((caught as Error).message || t('newsletter.manage.requestFailed', 'The request failed'));
     } finally {

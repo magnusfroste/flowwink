@@ -1,5 +1,5 @@
 {
-  "errors": 3073,
+  "errors": 3072,
   "warnings": 92,
   "files": {
     "scripts/agent-surface-sweep.ts": 2,
@@ -480,7 +480,7 @@
     "supabase/functions/migrate-page/index.ts": 1,
     "supabase/functions/newsletter/dispatch-scheduled.ts": 3,
     "supabase/functions/newsletter/export.ts": 1,
-    "supabase/functions/newsletter/gdpr.ts": 2,
+    "supabase/functions/newsletter/gdpr.ts": 1,
     "supabase/functions/newsletter/send.ts": 13,
     "supabase/functions/newsletter/subscribe.ts": 5,
     "supabase/functions/openclaw-responses/index.ts": 10,
