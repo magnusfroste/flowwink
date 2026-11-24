@@ -1316,6 +1316,14 @@ managed-ledger lessons still apply to every fork's Supabase integration:
   executable by authenticated, body without `service_role` / `has_role(` /
   `can_access_module(` / `is_staff(` / `auth.uid() =` — then check pg_policy,
   invoker-side functions, views, defaults and constraints before revoking.
+- **A customer is not staff (2026-11-24).** Customers have accounts since
+  #1087, so `authenticated` includes them: a policy for staff asks
+  `is_staff(auth.uid())`, never `auth.uid() IS NOT NULL` or `true`. An
+  approval is decided only by `resolve_approval` / `advance_approval_step`;
+  the row's guard (`approval_requests_guard`) takes the deciding role from the
+  rule, refuses a browser's decision and refuses anyone but an admin approving
+  his own request. A secret column (a meeting password) is left out of the
+  column grant, not filtered in the page.
 - **An address is not a credential (2026-11-23).** A link about an e-mail
   address — unsubscribe, "manage my data" — carries `addressToken(email)`
   (`_shared/email/address-token.ts`, HMAC with the service key, derived and
