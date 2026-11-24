@@ -12,6 +12,10 @@ import { join } from 'node:path';
 // security log. setup-database asked for the service key and never compared
 // it, so the first caller on a new instance could make the first admin.
 //
+// public-functions-verify-their-caller asked the same question, but only of the
+// functions config.toml marks verify_jwt = false — and the fleet deploys every
+// function with --no-verify-jwt, so four of the six were outside its view.
+//
 // The guard discovers, it does not enumerate: a function that shows none of
 // the shapes of a caller check must be named below with why it is open. A new
 // function either asks, or says why it does not.
