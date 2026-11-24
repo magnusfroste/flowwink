@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261124090000",
-      "migrations_count": 790,
+      "migration_head": "20261124100000",
+      "migrations_count": 791,
       "migrations": [
         {
           "version": "00000000000000",
@@ -3165,6 +3165,10 @@
         {
           "version": "20261124090000",
           "name": "ett-abonnemang-en-handelse"
+        },
+        {
+          "version": "20261124100000",
+          "name": "en-kund-ar-inte-personal"
         }
       ]
     },
