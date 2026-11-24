@@ -93,9 +93,13 @@ export async function executeCustomer360(
       select: string,
       emailColumn: string | null,
       hasPartner = true,
+      // orders and bookings carry no lead_id: asking for it was a 400, which
+      // the strict read below turns into a crash of the whole customer page
+      // (view sweep, 2026-11-24 — every contact with a lead id).
+      hasLead = true,
     ) => {
       const queries: Array<PromiseLike<any>> = [];
-      if (leadId) {
+      if (leadId && hasLead) {
         queries.push(admin.from(table).select(select).eq("lead_id", leadId));
       }
       if (email && emailColumn) {
@@ -159,12 +163,16 @@ export async function executeCustomer360(
         "orders",
         "id, total_cents, status, fulfillment_status, created_at",
         "customer_email",
+        true,
+        false,
       ),
       // bookings used to select title/start_at — neither exists.
       fetchByLeadOrEmail(
         "bookings",
         "id, customer_name, start_time, end_time, status, customer_email, created_at",
         "customer_email",
+        true,
+        false,
       ),
       email
         ? (await admin
