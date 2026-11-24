@@ -51,10 +51,13 @@ export function ChatFeedback({
 
       // Update KB article feedback counts if negative (RPC instead of edge function)
       if (rating === 'negative' && contextKbArticles.length > 0) {
+        // One vote per chat session and article: the function counts this
+        // session's feedback row above, so the session is part of the vote.
         await supabase.rpc('bump_kb_article_feedback', {
           p_slugs: contextKbArticles,
           p_rating: rating,
-        });
+          p_session_id: sessionId ?? '',
+        } as never);
       }
 
       setSubmitted(rating);

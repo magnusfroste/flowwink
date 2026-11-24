@@ -238,7 +238,7 @@ row per language per group, the same rail pages and email templates ride.
       },
     },
     instructions:
-      'needs_improvement is auto-set by the public feedback RPC when an article gets >=3 negatives or >30% negative ratio (min 5 votes). Typical loop: list_flagged → rewrite the article (manage_kb_article update) → clear_flag. negative_ratio in report is the key sort signal.',
+      'needs_improvement is auto-set by the public feedback RPC when an article gets >=3 negatives or >30% negative ratio (min 5 votes); a vote counts once per chat session and article. The votes come from anonymous visitors, so a flag is a lead, not a verdict: before rewriting, read what the visitors asked (chat_feedback rows citing the article: user_question, ai_response) and change the article only where those questions show it is wrong, unclear or missing something. No readable questions behind the flag → clear_flag and leave the text. Typical loop: list_flagged → read the questions → rewrite (manage_kb_article update) → clear_flag. negative_ratio in report is the key sort signal.',
   },
   {
     name: 'knowledge_gap_report',
