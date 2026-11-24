@@ -89,6 +89,7 @@ const EVENT_TONE: Record<string, { label: string; cls: string }> = {
   not_retried: { label: 'Error', cls: 'text-destructive' },
   error_loop_stopped: { label: 'Guard', cls: 'text-destructive' },
   budget_stop: { label: 'Budget', cls: 'text-warning' },
+  prompt_sizes: { label: 'Size', cls: 'text-muted-foreground' },
 };
 
 function WhyList({ events }: { events: TraceEvent[] }) {
