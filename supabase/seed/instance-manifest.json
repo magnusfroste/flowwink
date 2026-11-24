@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261124100000",
-      "migrations_count": 791,
+      "migration_head": "20261124110000",
+      "migrations_count": 792,
       "migrations": [
         {
           "version": "00000000000000",
@@ -3169,11 +3169,15 @@
         {
           "version": "20261124100000",
           "name": "en-kund-ar-inte-personal"
+        },
+        {
+          "version": "20261124110000",
+          "name": "en-rost-per-samtal"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:8642dd1685fb59d46b686226a8bfe84af98834805d391131ffc0a66821f053a3",
+      "seed_hash": "sha256:2d619b547e95821da901b527853b42a80e72745708d06b1f85a2168694d8efa8",
       "skill_count": 689,
       "module_count": 69
     },
@@ -3181,7 +3185,7 @@
       "count": 76,
       "shared_hash": "sha256:38d9273d143156a9517046f117e4a470e93d0738837535037a964ad0b4625d08",
       "functions": {
-        "agent-execute": "sha256:311aa9452cda6a24e159702c3ba50b4269e28fcd32149e3dee09848619d7d1a9",
+        "agent-execute": "sha256:e4bdb483bd9f0e8e33e305f4b3963c3f7392d416d62989fb55f947fb71ec113a",
         "agent-operate": "sha256:4320e02dd3e6a0a1706b42dc1905b631c61e6a4cbe3556c701f474c278c89e1a",
         "ai-task": "sha256:ce3aacdef625bba758f4323da3e49104a1b94a3d3d77d800e89dacd0b803d65e",
         "automation-dispatcher": "sha256:d905660cd907c6f1ef5c7cac0a97ed44a4e4187ef4d5179089fa2714b2751443",
