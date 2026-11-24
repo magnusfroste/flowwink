@@ -25,7 +25,8 @@ export type TraceEventKind =
   | 'budget_stop'
   | 'auto_chained'
   | 'answer_returned'
-  | 'final_answer';
+  | 'final_answer'
+  | 'prompt_sizes';
 
 export interface TraceEvent {
   seq: number;
