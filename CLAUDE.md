@@ -1323,6 +1323,13 @@ managed-ledger lessons still apply to every fork's Supabase integration:
   database function judges, a webhook its signature. `every-door-asks` finds
   a function with none of these and fails unless `OPEN_BY_DESIGN` names it
   with why. A function never takes the account it acts for from the body.
+- **A skill the agent writes reaches no further than the platform
+  (2026-11-24).** `skill_create` / `skill_update` take a prompt (`ai-task:`)
+  or the exact handler of an existing platform skill
+  (`_shared/skills/agent-made-skills.ts`); only a prompt may be `external` /
+  `both`; a platform skill's handler is never rewritten from a conversation.
+  A new reach into the data is a platform change in a PR, never a skill an
+  agent writes. The `webhook:` handler is retired.
 - **A customer is not staff (2026-11-24).** Customers have accounts since
   #1087, so `authenticated` includes them: a policy for staff asks
   `is_staff(auth.uid())`, never `auth.uid() IS NOT NULL` or `true`. An

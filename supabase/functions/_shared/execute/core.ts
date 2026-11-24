@@ -1455,7 +1455,11 @@ export async function executeSkillRequest(input: ExecuteRequest, auth: ExecuteAu
         result = await executeDbAction(supabase, table, skill.name, args, auditCtx);
 
       } else if (handler.startsWith('webhook:')) {
-        result = await executeWebhook(supabase, args);
+        // Retired 2026-11-24: it posted the arguments, unsigned, to whichever
+        // active webhook came first, whatever the event. A webhook goes out for
+        // an event on the bus (event-dispatcher → send-webhook); no skill
+        // carried this handler on the fleet.
+        result = { status: 'refused', code: 'HANDLER_RETIRED', retryable: false, hint: 'The webhook: handler is retired. Webhooks go out for platform events (Developer → Webhooks); raise the event instead.' };
 
       } else if (handler.startsWith('mcp:')) {
         // A tool of an external MCP server an admin connected (#862): one
@@ -18634,34 +18638,6 @@ async function executeAnalyticsAction(
   }
 }
 
-
-async function executeWebhook(
-  supabase: SupabaseClient,
-  args: Record<string, unknown>,
-): Promise<unknown> {
-  // Get active webhooks, find one matching the event
-  const { data: webhooks } = await supabase.from('webhooks')
-    .select('*').eq('is_active', true).limit(10);
-
-  if (!webhooks?.length) return { error: 'No active webhooks configured' };
-
-  // Fire to first webhook (can be refined to match by event type)
-  const webhook = webhooks[0];
-  const response = await fetch(webhook.url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(webhook.headers || {}),
-    },
-    body: JSON.stringify(args),
-  });
-
-  return {
-    webhook_id: webhook.id,
-    status: response.status,
-    success: response.ok,
-  };
-}
 
 // =============================================================================
 // OpenResponses — direct LLM calls to OpenClaw via POST /v1/responses

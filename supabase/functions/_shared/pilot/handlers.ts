@@ -15,6 +15,7 @@ import { loadHomeCached } from '../locale/load-home.ts';
 import { cadenceRefusal } from './cadence.ts';
 import { hideSkills, selfHealCandidates } from '../skills/skill-visibility.ts';
 import { isReadCall } from '../skills/read-surface.ts';
+import { agentSkillScope, judgeAgentSkillHandler } from '../skills/agent-made-skills.ts';
 
 /**
  * How the loop called a built-in that runs skills on its behalf. With
@@ -1117,17 +1118,37 @@ export async function runSelfHealing(supabase: any): Promise<string> {
 
 // ─── Skill CRUD ───────────────────────────────────────────────────────────────
 
+/** The handlers platform (non-agent) skills carry that equal `handler` — empty when none does. */
+type HandlerLookup = {
+  from: (table: 'agent_skills') => {
+    select: (cols: string) => { eq: (col: string, v: string) => { limit: (n: number) => PromiseLike<{ data: unknown; error: { message: string } | null }> } };
+  };
+};
+async function platformHandlersMatching(supabase: HandlerLookup, handler: unknown): Promise<Set<string>> {
+  if (typeof handler !== 'string' || !handler) return new Set();
+  const { data, error } = await supabase.from('agent_skills').select('handler, origin').eq('handler', handler).limit(20);
+  // A failed lookup proves nothing: no platform handler, so the rule refuses.
+  if (error) { console.warn('[skill_create] platform handler lookup failed:', error.message); return new Set(); }
+  return new Set(((data || []) as Array<{ handler: string; origin: string | null }>)
+    .filter((r) => r.origin !== 'agent').map((r) => r.handler));
+}
+
 export async function handleSkillCreate(supabase: any, args: any) {
   const { data: existing } = await supabase
     .from('agent_skills').select('id').eq('name', args.name).maybeSingle();
   if (existing) return { status: 'error', error: `Skill "${args.name}" already exists` };
+
+  // A skill the agent writes may use a prompt or a handler the platform already
+  // uses, and only a prompt leaves the inside (agent-made-skills.ts).
+  const verdict = judgeAgentSkillHandler(args.handler, await platformHandlersMatching(supabase, args.handler));
+  if (!verdict.ok) return { status: 'refused', code: verdict.code, retryable: false, hint: verdict.hint };
 
   const { data, error } = await supabase.from('agent_skills').insert({
     name: args.name,
     description: args.description,
     handler: args.handler,
     category: args.category || 'automation',
-    scope: args.scope || 'internal',
+    scope: agentSkillScope(args.handler, args.scope),
     trust_level: args.trust_level || 'approve',
     enabled: true,
     tool_definition: args.tool_definition,
@@ -1145,6 +1166,31 @@ export async function handleSkillUpdate(supabase: any, args: { skill_name: strin
     if (safeFields.includes(k)) filtered[k] = v;
   }
   if (Object.keys(filtered).length === 0) return { status: 'error', error: 'No valid fields to update' };
+
+  // The handler and the reach of a skill: a platform skill's handler is the
+  // platform's; an agent-made skill keeps to a prompt or a platform handler,
+  // and only a prompt leaves the inside (agent-made-skills.ts).
+  if ('handler' in filtered || 'scope' in filtered) {
+    const { data: target, error: targetErr } = await supabase
+      .from('agent_skills').select('handler, origin, scope').eq('name', args.skill_name).maybeSingle();
+    if (targetErr) return { status: 'error', error: targetErr.message };
+    if (!target) return { status: 'error', error: `Skill "${args.skill_name}" not found`, found: false };
+    if ('handler' in filtered && filtered.handler !== target.handler) {
+      if (target.origin !== 'agent') {
+        return { status: 'refused', code: 'HANDLER_NOT_ALLOWED', retryable: false, hint: `"${args.skill_name}" is a platform skill; its handler is not changed from a conversation. Write a skill of your own with skill_create.` };
+      }
+      const verdict = judgeAgentSkillHandler(filtered.handler, await platformHandlersMatching(supabase, filtered.handler));
+      if (!verdict.ok) return { status: 'refused', code: verdict.code, retryable: false, hint: verdict.hint };
+    }
+    if (target.origin === 'agent') {
+      const handler = 'handler' in filtered ? filtered.handler : target.handler;
+      const scope = agentSkillScope(handler, 'scope' in filtered ? filtered.scope : target.scope);
+      if ('scope' in filtered && scope !== filtered.scope) {
+        return { status: 'refused', code: 'HANDLER_NOT_ALLOWED', retryable: false, hint: 'A skill you wrote reaches the visitor chat or the gateway only as a prompt (`ai-task:`); this one stays internal.' };
+      }
+      if (scope !== target.scope) filtered.scope = scope;
+    }
+  }
   filtered.updated_at = new Date().toISOString();
 
   const { data, error } = await supabase
