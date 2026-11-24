@@ -1316,6 +1316,13 @@ managed-ledger lessons still apply to every fork's Supabase integration:
   executable by authenticated, body without `service_role` / `has_role(` /
   `can_access_module(` / `is_staff(` / `auth.uid() =` — then check pg_policy,
   invoker-side functions, views, defaults and constraints before revoking.
+- **Every door asks who is calling (2026-11-24).** Every edge function is
+  deployed `--no-verify-jwt`, so each decides for itself: a scheduled or
+  admin function calls `requireScheduledCaller` (role `admin` when it changes
+  the platform), a public AI door `publicAiLimit`, a link page a token a
+  database function judges, a webhook its signature. `every-door-asks` finds
+  a function with none of these and fails unless `OPEN_BY_DESIGN` names it
+  with why. A function never takes the account it acts for from the body.
 - **A customer is not staff (2026-11-24).** Customers have accounts since
   #1087, so `authenticated` includes them: a policy for staff asks
   `is_staff(auth.uid())`, never `auth.uid() IS NOT NULL` or `true`. An

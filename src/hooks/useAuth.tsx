@@ -173,13 +173,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
 
-  const trackAuthEvent = (
+  // The account an event belongs to is the session's: the function reads it
+  // from the token and ignores user_id (anyone could write a sign-in for any
+  // account into the security log). `accessToken` is passed where the session
+  // is about to go (sign-out); otherwise the current one is read.
+  const trackAuthEvent = async (
     event_type: string,
     user_id: string | null,
     email: string | null,
     metadata: Record<string, unknown> = {},
+    accessToken?: string | null,
   ) => {
     try {
+      const token = accessToken ?? (await supabase.auth.getSession()).data.session?.access_token ?? null;
       const ua = navigator.userAgent;
       const device_type = /tablet|ipad|playbook|silk/i.test(ua)
         ? 'tablet'
@@ -190,7 +196,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         : ua.includes('Safari') ? 'Safari' : 'Other';
       fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/track-auth-event`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify({ event_type, user_id, email, user_agent: ua, device_type, browser, metadata }),
       }).catch(() => { /* silent */ });
     } catch (_) { /* silent */ }
@@ -249,9 +255,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signIn = async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
-      trackAuthEvent('failed_login', null, email, { reason: error.message });
+      void trackAuthEvent('failed_login', null, email, { reason: error.message });
     } else {
-      trackAuthEvent('sign_in', data.user?.id ?? null, data.user?.email ?? email);
+      void trackAuthEvent('sign_in', data.user?.id ?? null, data.user?.email ?? email, {}, data.session?.access_token);
     }
     return { error: error as Error | null };
   };
@@ -271,7 +277,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
     });
     if (!error) {
-      trackAuthEvent('sign_up', data.user?.id ?? null, data.user?.email ?? email);
+      void trackAuthEvent('sign_up', data.user?.id ?? null, data.user?.email ?? email, {}, data.session?.access_token);
     }
     return { error: error as Error | null };
   };
@@ -279,8 +285,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     const currentUserId = user?.id ?? null;
     const currentEmail = user?.email ?? null;
+    const currentToken = (await supabase.auth.getSession()).data.session?.access_token ?? null;
     await supabase.auth.signOut();
-    trackAuthEvent('sign_out', currentUserId, currentEmail);
+    void trackAuthEvent('sign_out', currentUserId, currentEmail, {}, currentToken);
     setUser(null);
     setSession(null);
     setProfile(null);

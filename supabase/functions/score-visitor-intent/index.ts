@@ -11,6 +11,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { nextScore } from '../_shared/scoring.ts';
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
+import { requireScheduledCaller } from '../_shared/edge-auth.ts';
 
 interface Rule {
   id: string;
@@ -35,6 +36,10 @@ Deno.serve(async (req) => {
     Deno.env.get('SUPABASE_URL')!,
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
   );
+
+  // It scores every identified lead: the scheduler, the platform or staff.
+  const refused = await requireScheduledCaller(req, supabase, 'score-visitor-intent', corsHeaders);
+  if (refused) return refused;
 
   try {
     const body = await req.json().catch(() => ({}));
