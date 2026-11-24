@@ -1,5 +1,5 @@
 {
-  "errors": 3072,
+  "errors": 3071,
   "warnings": 92,
   "files": {
     "scripts/agent-surface-sweep.ts": 2,
@@ -425,7 +425,7 @@
     "supabase/functions/_shared/pilot/handlers.ts": 127,
     "supabase/functions/_shared/pilot/prompt-compiler.ts": 22,
     "supabase/functions/_shared/pilot/reason.ts": 68,
-    "supabase/functions/_shared/provision-portal-account.ts": 2,
+    "supabase/functions/_shared/provision-portal-account.ts": 1,
     "supabase/functions/_shared/read-all-rows.ts": 5,
     "supabase/functions/_shared/sales-context.ts": 3,
     "supabase/functions/_shared/skill-aliases.ts": 1,

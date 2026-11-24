@@ -101,6 +101,7 @@ import { executeReconciliation } from '../handlers/reconciliation.ts';
 // B1b admin-tool handlers — kept VERBATIM as Request→Response functions and
 // adapted through callResponseHandler below (zero body changes on the move).
 import { handleEmailAdmins as hEmailAdmins } from '../handlers/email-admins.ts';
+import { handleInviteCustomerToPortal } from '../handlers/portal-invite.ts';
 import { handleDraftEmailReply } from '../handlers/draft-email-reply.ts';
 import { handleTranslatePage } from '../handlers/translate-page.ts';
 import { classifyCall, isDryRunRead } from '../skills/read-surface.ts';
@@ -255,6 +256,8 @@ const INTERNAL_HANDLERS: Record<string, InternalHandler> = {
   // call died on "Cannot read properties of undefined (reading 'subject')"
   // (skill smoke, 2026-10-01). It never delivered a single admin mail.
   'internal:email_admins': ({ supabase, args }) => hEmailAdmins(supabase, args),
+  'internal:invite_customer_to_portal': ({ supabase, args, attendedUserId }) =>
+    handleInviteCustomerToPortal(supabase, args as { subscription_id?: string; lead_id?: string; email?: string; name?: string }, { attended: Boolean(attendedUserId) }),
   'internal:verify_email': ({ supabase, args }) => executeVerifyEmail(supabase, args),
   'internal:contact_finder': ({ args }) => executeContactFinder(args),
   'internal:manage_service_order': ({ supabase, args }) => executeManageServiceOrder(supabase, args),

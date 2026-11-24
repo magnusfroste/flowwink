@@ -238,8 +238,8 @@ describe('the customer portal shows what the customer has', () => {
     for (const path of ['orders', 'invoices', 'agreements']) expect(app, path).toMatch(new RegExp(`\\{ path: "${path}", element: <`));
     // What a customer holds comes before what a shop sells.
     const nav = layout.slice(layout.indexOf('...overviewNav'), layout.indexOf('...profileNav'));
-    expect(nav.indexOf('servicesNav')).toBeLessThan(nav.indexOf('commerceNav'));
-    expect(nav.indexOf('invoicesNav')).toBeLessThan(nav.indexOf('commerceNav'));
+    expect(nav.indexOf('servicesNav')).toBeLessThan(nav.indexOf('ordersNav'));
+    expect(nav.indexOf('invoicesNav')).toBeLessThan(nav.indexOf('ordersNav'));
   });
 
   it('one rule says which rows are the customer\'s: the confirmed e-mail and their companies', () => {

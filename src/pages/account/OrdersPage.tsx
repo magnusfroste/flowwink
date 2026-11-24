@@ -8,6 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import { Package, ChevronDown, ChevronUp, ShoppingBag } from 'lucide-react';
 import { useCustomerFormat } from '@/hooks/useCustomerFormat';
 import { useUiText } from '@/lib/ui-text';
+import { useStorefront } from '@/hooks/useStorefront';
 
 const statusVariant: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
   paid: 'default',
@@ -113,6 +114,7 @@ function OrderRow({ order }: { order: CustomerOrder }) {
 
 export default function CustomerOrdersPage() {
   const { data: orders = [], isLoading } = useCustomerOrders();
+  const { selling } = useStorefront();
   const t = useUiText();
 
   if (isLoading) {
@@ -125,9 +127,11 @@ export default function CustomerOrdersPage() {
         <ShoppingBag className="h-16 w-16 mx-auto text-muted-foreground/30" />
         <h2 className="text-xl font-semibold">{t('account.orders.empty', 'No orders yet')}</h2>
         <p className="text-muted-foreground">{t('account.orders.emptyHint', 'When you place an order, it will appear here.')}</p>
-        <Button asChild>
-          <Link to="/shop">{t('account.browseProducts', 'Browse products')}</Link>
-        </Button>
+        {selling && (
+          <Button asChild>
+            <Link to="/shop">{t('account.browseProducts', 'Browse products')}</Link>
+          </Button>
+        )}
       </div>
     );
   }

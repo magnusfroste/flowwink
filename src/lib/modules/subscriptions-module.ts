@@ -548,6 +548,14 @@ const SUBSCRIPTIONS_SKILLS: SkillSeed[] = [
 
 const SUBSCRIPTIONS_AUTOMATIONS: AutomationSeed[] = [
   {
+    name: 'Portal invitation for a new service',
+    description: 'When a service is created by hand for a customer, invite the customer to the portal so they can see it, its invoices and their agreements. Once per address: a customer who already has an account is mailed nothing, a cancelled service invites nobody. A signed agreement invites its customer itself.',
+    trigger_type: 'event',
+    trigger_config: { event: 'subscription.created' },
+    skill_name: 'invite_customer_to_portal',
+    skill_arguments: { subscription_id: '{{event.payload.subscription_id}}' },
+  },
+  {
     name: 'Trial Conversion',
     description: 'Every day at 05:00, convert trial subscriptions whose trial period has ended into active subscriptions.',
     trigger_type: 'cron',
