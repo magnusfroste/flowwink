@@ -1057,6 +1057,10 @@ for an event in `_shared/events/platform-raised.ts`, leaves it to the bus —
 and never runs automations itself. A function never posts to `webhooks` on its
 own (`one-event-bus`); a new `emit_platform_event` name joins that list in the
 same PR.
+**The row raises it (2026-11-24):** publish, deal, record-created, subscriber
+and form events are triggers (`20261124130000`), not the admin's save; an
+offered webhook event is raised by the platform or sits on the shrinking
+`ADMIN_ONLY` list (`a-webhook-event-goes-out-whoever-did-it`).
 
 **`manage_kb_article` get** — accepts `article_id`, `slug` or `title` (NOT `id`). Title resolves case-insensitively (exact, then unique prefix); ambiguous titles error with guidance. Safe pattern for certainty: `list`/search first, then `get` by slug.
 
