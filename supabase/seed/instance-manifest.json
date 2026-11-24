@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261124110000",
-      "migrations_count": 792,
+      "migration_head": "20261124120000",
+      "migrations_count": 793,
       "migrations": [
         {
           "version": "00000000000000",
@@ -3173,6 +3173,10 @@
         {
           "version": "20261124110000",
           "name": "en-rost-per-samtal"
+        },
+        {
+          "version": "20261124120000",
+          "name": "hinkarna-har-tak"
         }
       ]
     },
