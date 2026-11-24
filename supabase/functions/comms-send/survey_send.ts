@@ -3,6 +3,11 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getServiceClient } from '../_shared/supabase-clients.ts';
 import { requireServiceOrModule, unauthorized } from '../_shared/edge-auth.ts';
+import { resolveUiText } from '../_shared/locale/ui-text.ts';
+import { loadUiText } from '../_shared/locale/load-ui-text.ts';
+
+/** The mail's own words, in the site's language (visitor texts survey.*). */
+type Words = (key: string, english: string) => string;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -48,11 +53,13 @@ const renderHtml = (args: {
   base: string;
   kind: string;
   question: string;
+  t: Words;
 }) => {
+  const t = args.t;
   const buttons =
     args.kind === "nps"
       ? NPS_TABLE(args.token, args.base)
-      : `<a href="${args.base}/s/${args.token}" style="background:#0f172a;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-family:system-ui,sans-serif">Give feedback</a>`;
+      : `<a href="${args.base}/s/${args.token}" style="background:#0f172a;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-family:system-ui,sans-serif">${t("survey.mail.giveFeedback", "Give feedback")}</a>`;
 
   return `<div style="font-family:system-ui,-apple-system,sans-serif;max-width:560px;margin:0 auto;padding:32px 16px;color:#0f172a">
     <h2 style="margin:0 0 16px;font-size:20px">${args.campaign_name}</h2>
@@ -62,12 +69,12 @@ const renderHtml = (args: {
     ${
       args.kind === "nps"
         ? `<table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:8px auto 0;width:100%;max-width:460px"><tr>
-            <td align="left" style="font-size:12px;color:#94a3b8;font-family:system-ui,sans-serif">Not at all likely</td>
-            <td align="right" style="font-size:12px;color:#94a3b8;font-family:system-ui,sans-serif">Extremely likely</td>
+            <td align="left" style="font-size:12px;color:#94a3b8;font-family:system-ui,sans-serif">${t("survey.notLikely", "Not at all likely")}</td>
+            <td align="right" style="font-size:12px;color:#94a3b8;font-family:system-ui,sans-serif">${t("survey.veryLikely", "Extremely likely")}</td>
           </tr></table>`
         : ""
     }
-    <p style="margin:32px 0 0;font-size:12px;color:#94a3b8;text-align:center">Tap a number to submit. Or <a href="${args.base}/s/${args.token}" style="color:#475569">open the survey</a>.</p>
+    <p style="margin:32px 0 0;font-size:12px;color:#94a3b8;text-align:center">${t("survey.mail.tapToSubmit", "Tap a number to submit. Or")} <a href="${args.base}/s/${args.token}" style="color:#475569">${t("survey.mail.openSurvey", "open the survey")}</a>.</p>
   </div>`;
 };
 
@@ -105,6 +112,12 @@ export async function handler(req: Request): Promise<Response> {
 
     const body: Body = await req.json();
     const base0 = await siteBase(supabase, body.public_base_url, req);
+    // The words around the question are the platform's, in the site's language
+    // (they were English on every Swedish site); the question, intro and
+    // subject are the campaign's own.
+    const texts = await loadUiText(supabase);
+    const t: Words = resolveUiText(texts.map, texts.siteLang, texts.siteLang);
+    const defaultQuestion = t("survey.mail.defaultQuestion", "How was your experience?");
 
     // The sweep: a queued send (an event asked for it) is mailed once its
     // send_after has passed. The row already exists — it is claimed by setting
@@ -144,7 +157,7 @@ export async function handler(req: Request): Promise<Response> {
         const primary = (template?.questions ?? []).find((q) => q.type === "nps" || q.type === "csat" || q.id === "score");
         const html = renderHtml({
           intro: campaign.email_intro, campaign_name: campaign.name, token: row.token, base: base0,
-          kind: template?.kind ?? "nps", question: primary?.label ?? "How was your experience?",
+          kind: template?.kind ?? "nps", question: primary?.label ?? defaultQuestion, t,
         });
         const res = await fetch(`${SUPABASE_URL}/functions/v1/email-send`, {
           method: "POST",
@@ -187,7 +200,7 @@ export async function handler(req: Request): Promise<Response> {
     const primary = (template?.questions ?? []).find((q: any) =>
       q.type === "nps" || q.type === "csat" || q.id === "score"
     );
-    const question = primary?.label ?? "How was your experience?";
+    const question = primary?.label ?? defaultQuestion;
 
     const base = base0;
 
@@ -222,6 +235,7 @@ export async function handler(req: Request): Promise<Response> {
         base,
         kind: template?.kind ?? "nps",
         question,
+        t,
       });
 
       const emailRes = await fetch(`${SUPABASE_URL}/functions/v1/email-send`, {
