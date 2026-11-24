@@ -10,6 +10,8 @@ import { Package, LayoutDashboard, ShoppingBag, MapPin, Heart, User, LogOut, Loa
 import { useEmployeeSelf } from '@/hooks/useEmployeeSelf';
 import { useIsManager } from '@/hooks/useTeam';
 import { useIsModuleEnabled, useModules } from '@/hooks/useModules';
+import { useStorefront } from '@/hooks/useStorefront';
+import { useMyAccount } from '@/hooks/useMyAccount';
 import { BuildBadge } from '@/components/BuildBadge';
 import { useAuth } from '@/hooks/useAuth';
 import { useUiText } from '@/lib/ui-text';
@@ -26,8 +28,11 @@ const overviewNav = [
   { to: '/account', label: (t: Words) => t('account.nav.overview', 'Overview'), icon: LayoutDashboard, exact: true },
 ];
 
-const commerceNav = [
+const ordersNav = [
   { to: '/account/orders', label: (t: Words) => t('account.nav.orders', 'Orders'), icon: ShoppingBag },
+];
+// What only a shop has: where to ship, what to buy later.
+const shopNav = [
   { to: '/account/addresses', label: (t: Words) => t('account.nav.addresses', 'Addresses'), icon: MapPin },
   { to: '/account/wishlist', label: (t: Words) => t('account.nav.wishlist', 'Wishlist'), icon: Heart },
 ];
@@ -88,6 +93,14 @@ export default function AccountLayout() {
   const { isEmployee } = useEmployeeSelf();
   const { isManager } = useIsManager();
   const ecommerceEnabled = useIsModuleEnabled('ecommerce');
+  // The e-commerce module is the product catalogue too, so a service business
+  // keeps it on with the shop off (store.storefront: false). The portal follows
+  // the shop, not the module: orders when the customer has bought something or
+  // the site sells, addresses and wishlist only where the site sells (optic,
+  // 2026-11-24: a fibre customer was offered a wishlist).
+  const { selling } = useStorefront();
+  const { data: account } = useMyAccount();
+  const hasOrders = (account?.recent_orders?.length ?? 0) > 0;
   const subscriptionsEnabled = useIsModuleEnabled('subscriptions');
   const quotesEnabled = useIsModuleEnabled('quotes');
   const invoicingEnabled = useIsModuleEnabled('invoicing');
@@ -112,7 +125,8 @@ export default function AccountLayout() {
     ...(contractsEnabled ? agreementsNav : []),
     ...(bookingsEnabled ? bookingsNav : []),
     ...(quotesEnabled ? quotesNav : []),
-    ...(ecommerceEnabled ? commerceNav : []),
+    ...(ecommerceEnabled && (selling || hasOrders) ? ordersNav : []),
+    ...(selling ? shopNav : []),
     ...assistantNav,
     ...(isEmployee ? employeeNav : []),
     ...(isManager ? managerNav : []),

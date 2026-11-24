@@ -209,6 +209,7 @@
     "inventory_valuation_report",
     "invite_candidate_to_interview",
     "invite_colleague",
+    "invite_customer_to_portal",
     "invite_peer_agent",
     "invoice_from_timesheets",
     "invoice_overdue_check",

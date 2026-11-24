@@ -14,7 +14,7 @@ import {
   useSubscriptions, useSubscriptionMetrics, useSubscriptionAction,
   openCustomerPortal, type SubscriptionStatus, type Subscription,
 } from '@/hooks/useSubscriptions';
-import { ExternalLink, MoreHorizontal, RefreshCw, XCircle, ArrowUpDown, PlayCircle, FileText, Truck, Gauge } from 'lucide-react';
+import { ExternalLink, MoreHorizontal, RefreshCw, XCircle, ArrowUpDown, PlayCircle, FileText, Truck, Gauge, UserPlus } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageContainer } from '@/components/admin/AdminPageContainer';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
@@ -156,6 +156,19 @@ export default function SubscriptionsPage() {
                         }}
                         onResume={() => action.mutate({ action: 'resume', subscriptionId: s.id })}
                         onPortal={() => openCustomerPortal(s.id)}
+                        onInvite={async () => {
+                          const { data, error } = await supabase.functions.invoke('agent-execute', {
+                            body: { skill_name: 'invite_customer_to_portal', arguments: { subscription_id: s.id }, agent_type: 'flowpilot' },
+                          });
+                          const r = ((data as { result?: Record<string, unknown> } | null)?.result ?? data) as Record<string, unknown> | null;
+                          if (error || !r || r.error) { toast.error(String(r?.error ?? error?.message ?? 'Could not invite the customer')); return; }
+                          if (r.status === 'invited') toast.success(`Invitation sent to ${s.customer_email}`);
+                          else if (r.status === 'existing') toast.info(`${s.customer_email} already has an account — they can sign in and see the service`);
+                          else if (r.status === 'invited_no_mail') {
+                            toast.warning('No e-mail provider: the account exists, but no mail went out. The link has been copied — send it to the customer.');
+                            if (typeof r.action_link === 'string') void navigator.clipboard?.writeText(r.action_link);
+                          } else toast.error(String(r.hint ?? r.reason ?? 'Not invited'));
+                        }}
                         onDeliver={async () => {
                           const { error } = await supabase.rpc('mark_service_delivered' as never, {
                             p_subscription_id: s.id,
@@ -203,13 +216,14 @@ function MetricCard({ label, value, hint }: { label: string; value: string; hint
 }
 
 function SubscriptionRow({
-  sub, onCancel, onResume, onPortal, onDeliver,
+  sub, onCancel, onResume, onPortal, onDeliver, onInvite,
 }: {
   sub: Subscription;
   onCancel: () => void;
   onResume: () => void;
   onPortal: () => void;
   onDeliver: () => void;
+  onInvite: () => void;
 }) {
   const { formatCurrency, formatDate } = usePlatformFormat();
   const status = STATUS_LABEL[sub.status];
@@ -310,6 +324,13 @@ function SubscriptionRow({
                 </Link>
               </DropdownMenuItem>
             ) : null}
+            {/* The customer sees the service in their portal once they have an
+                account; a service made by hand gave them none. */}
+            {sub.customer_email && sub.status !== 'canceled' && (
+              <DropdownMenuItem onClick={() => onInvite()}>
+                <UserPlus className="h-4 w-4 mr-2" />Invite to the portal
+              </DropdownMenuItem>
+            )}
             {sub.status === 'trialing' && (
               <DropdownMenuItem onClick={() => convertTrial.mutate(sub.id)}>
                 <PlayCircle className="h-4 w-4 mr-2" />Convert trial → active

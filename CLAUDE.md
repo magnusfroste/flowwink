@@ -878,7 +878,13 @@ beside its payload, so an operator branches instead of guessing:
   already carried, opening the same public page the mail linked to. A new
   portal page reads `my_account()` or asks `portal_email()` — never
   `auth.jwt() ->> 'email'` (unproven) or `profiles.email` (the holder's own to
-  edit). The last five readers of those (subscriptions, contracts, `my_quotes`,
+  edit). **A customer who holds something gets a way in (2026-11-24):**
+  `invite_customer_to_portal` (subscription, contact or address; once per
+  address) runs on `subscription.created`, and a signed agreement invites
+  through `contract-sign` — both through `provisionPortalAccount`. The portal's
+  shop entries (orders, addresses, wishlist) follow `useStorefront()`, never
+  the e-commerce module alone: that module is the product catalogue a service
+  business keeps on with `store.storefront: false`. The last five readers of those (subscriptions, contracts, `my_quotes`,
   `create_ticket_from_portal`, webinar registrations) moved 2026-11-19; a guard
   scans every later migration for both shapes.
 - **The customer changes their own booking (2026-11-19).** The confirmation

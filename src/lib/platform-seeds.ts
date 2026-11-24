@@ -885,6 +885,34 @@ Three facts are stored: country, currency, time zone. Everything else is derived
 - Design: docs/architecture/locale-and-formatting.md.`,
   },
   {
+    name: 'invite_customer_to_portal',
+    description: 'Give a CUSTOMER a login to the customer portal: an account is made for the address and the customer is mailed an invitation to set their own password, then signs in and sees what they hold. An address that already has an account is given the customer role and mailed nothing. Pass subscription_id (the service\'s customer), lead_id (a contact) or email. Use when: a service was set up by hand and the customer should see it in the portal; a customer says they cannot sign in to the portal; the owner asks to give a customer portal access. Runs by itself when a service is created (automation "Portal invitation for a new service"); a signed agreement invites its customer itself. NOT for: creating a quote, an invoice or an agreement (manage_quote, manage_invoice, manage_contract); colleagues and staff (invite_colleague); a customer who has an account and forgot the password (they use "Forgot password" on the sign-in page).',
+    category: 'crm',
+    handler: 'internal:invite_customer_to_portal',
+    scope: 'internal',
+    trust_level: 'auto',
+    instructions: 'One of subscription_id, lead_id or email. The answer is status invited | existing (already had an account, nothing mailed) | invited_no_mail (no mail provider: the account exists; a person at the keyboard gets action_link to pass on) | skipped (subscription_canceled), or a refusal: INVALID_INPUT (the record has no e-mail — add it, do not guess one), PORTAL_DISABLED. What the customer then sees is decided by the portal\'s own rule: rows whose customer_email is the account\'s confirmed address, or that belong to a company the person is an active contact of. Never invite an address the owner did not give or the record does not carry.',
+    tool_definition: {
+      type: 'function',
+      risk: 'medium',
+      reversible: true,
+      reversal: 'Remove the account under Users; an invitation not yet accepted simply expires.',
+      function: {
+        name: 'invite_customer_to_portal',
+        description: 'Invite a customer to the customer portal by e-mail (once per address). Pass subscription_id, lead_id or email.',
+        parameters: {
+          type: 'object',
+          properties: {
+            subscription_id: { type: 'string', description: 'UUID of a service (subscription) — its customer_email is invited.' },
+            lead_id: { type: 'string', description: 'UUID of a contact (lead) — its e-mail is invited.' },
+            email: { type: 'string', description: 'The customer\'s address, when there is no record to point at. Only one the owner gave.' },
+            name: { type: 'string', description: 'Shown in the invitation. Default: the record\'s name.' },
+          },
+        },
+      },
+    },
+  },
+  {
     name: 'invite_colleague',
     description: 'Invite a colleague to this instance by e-mail with the functional role they need (admin, sales, hr, accounting, support, warehouse, marketing, purchasing, projects): Supabase Auth mails the invitation, they set their own password, and the role is granted on first sign-in; an e-mail that already has an account is granted the role and mailed nothing. action "reset_password" mails an existing user a reset link. Human approval is required (trust approve) — a person decides who joins. Use when: a ticket or a visit has nobody to go to (check_operations `assignable` is empty, or the owner names someone to add); the owner asks to add a technician, a bookkeeper or a seller; a colleague cannot sign in. NOT for: listing who exists (users_list); changing roles of an existing user (the Users page); customers (they register in the portal).',
     category: 'system',

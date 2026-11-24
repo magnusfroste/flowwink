@@ -37,9 +37,13 @@ describe('account portal access', () => {
     expect(nav).not.toMatch(/accountEnabled && <CartIndicator/);
   });
 
-  it('commerce portal sections follow the ecommerce module, not identity', () => {
+  it('commerce portal sections follow the shop, not identity', () => {
     const layout = read('src/pages/account/AccountLayout.tsx');
-    expect(layout).toMatch(/\.\.\.\(ecommerceEnabled \? commerceNav : \[\]\)/);
+    // The e-commerce module is the product catalogue too (2026-11-24): orders
+    // where the site sells or the customer has bought, addresses and wishlist
+    // only where the site sells.
+    expect(layout).toMatch(/\.\.\.\(ecommerceEnabled && \(selling \|\| hasOrders\) \? ordersNav : \[\]\)/);
+    expect(layout).toMatch(/\.\.\.\(selling \? shopNav : \[\]\)/);
     // Employee self-service stays identity-gated — modules and identity are
     // different axes.
     expect(layout).toMatch(/\.\.\.\(isEmployee \? employeeNav : \[\]\)/);

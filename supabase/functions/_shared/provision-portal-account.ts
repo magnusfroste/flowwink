@@ -27,6 +27,25 @@ const escapeHtml = (s: string): string =>
   String(s ?? "").replace(/[&<>"']/g, (c) =>
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
 
+type AccountLister = {
+  auth: { admin: { listUsers(o: { page: number; perPage: number }): Promise<{ data: { users?: Array<{ id: string; email?: string | null }> } | null; error: unknown }> } };
+};
+
+/** The account id for an address; null when there is none, undefined when the look-up failed. */
+async function findAccount(admin: AccountLister, email: string): Promise<string | null | undefined> {
+  // Every page, not the first 200: past that an existing customer was not
+  // found and the invite failed with "already registered".
+  for (let page = 1; page <= 50; page++) {
+    const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 200 });
+    if (error) return undefined;
+    const users = data?.users ?? [];
+    const hit = users.find((u) => u.email?.toLowerCase() === email);
+    if (hit) return hit.id;
+    if (users.length < 200) return null;
+  }
+  return null;
+}
+
 export async function provisionPortalAccount(
   // deno-lint-ignore no-explicit-any
   admin: any,
@@ -52,16 +71,16 @@ export async function provisionPortalAccount(
   if (!portalEnabled) return { status: "portal_disabled" };
 
   // Already has an account — ensure the customer role, do not re-invite.
-  const { data: existing } = await admin.auth.admin.listUsers({ page: 1, perPage: 200 });
-  const found = existing?.users?.find(
-    // deno-lint-ignore no-explicit-any
-    (u: any) => u.email?.toLowerCase() === email,
-  );
-  if (found) {
+  const existingAccount = async (): Promise<ProvisionResult | null> => {
+    const found = await findAccount(admin, email);
+    if (found === undefined) return { status: "error", reason: "Could not look up accounts." };
+    if (!found) return null;
     await admin.from("user_roles")
-      .upsert({ user_id: found.id, role: "customer" }, { onConflict: "user_id,role" });
-    return { status: "existing", user_id: found.id };
-  }
+      .upsert({ user_id: found, role: "customer" }, { onConflict: "user_id,role" });
+    return { status: "existing", user_id: found };
+  };
+  const already = await existingAccount();
+  if (already) return already;
 
   const siteUrl = (opts.siteUrl ?? "").replace(/\/+$/, "");
   // Land the invite on the activation page, not /account. /account bounces an
@@ -75,6 +94,11 @@ export async function provisionPortalAccount(
     options: { data: { full_name: opts.name || email, signup_type: "customer" }, redirectTo },
   });
   if (linkErr || !linkData?.user) {
+    // Two callers for one address at once (a contract signed while a service
+    // is created): the other one made the account between our look-up and
+    // this call. That is an account, not a failure.
+    const raced = await existingAccount();
+    if (raced && raced.status === "existing") return raced;
     return { status: "error", reason: linkErr?.message ?? "Could not create the portal account." };
   }
   const userId = linkData.user.id as string;
