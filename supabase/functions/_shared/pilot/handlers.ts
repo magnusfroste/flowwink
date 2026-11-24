@@ -1121,12 +1121,14 @@ export async function runSelfHealing(supabase: any): Promise<string> {
 /** The handlers platform (non-agent) skills carry that equal `handler` — empty when none does. */
 type HandlerLookup = {
   from: (table: 'agent_skills') => {
-    select: (cols: string) => { eq: (col: string, v: string) => { limit: (n: number) => PromiseLike<{ data: unknown }> } };
+    select: (cols: string) => { eq: (col: string, v: string) => { limit: (n: number) => PromiseLike<{ data: unknown; error: { message: string } | null }> } };
   };
 };
 async function platformHandlersMatching(supabase: HandlerLookup, handler: unknown): Promise<Set<string>> {
   if (typeof handler !== 'string' || !handler) return new Set();
-  const { data } = await supabase.from('agent_skills').select('handler, origin').eq('handler', handler).limit(20);
+  const { data, error } = await supabase.from('agent_skills').select('handler, origin').eq('handler', handler).limit(20);
+  // A failed lookup proves nothing: no platform handler, so the rule refuses.
+  if (error) { console.warn('[skill_create] platform handler lookup failed:', error.message); return new Set(); }
   return new Set(((data || []) as Array<{ handler: string; origin: string | null }>)
     .filter((r) => r.origin !== 'agent').map((r) => r.handler));
 }
@@ -1169,8 +1171,9 @@ export async function handleSkillUpdate(supabase: any, args: { skill_name: strin
   // platform's; an agent-made skill keeps to a prompt or a platform handler,
   // and only a prompt leaves the inside (agent-made-skills.ts).
   if ('handler' in filtered || 'scope' in filtered) {
-    const { data: target } = await supabase
+    const { data: target, error: targetErr } = await supabase
       .from('agent_skills').select('handler, origin, scope').eq('name', args.skill_name).maybeSingle();
+    if (targetErr) return { status: 'error', error: targetErr.message };
     if (!target) return { status: 'error', error: `Skill "${args.skill_name}" not found`, found: false };
     if ('handler' in filtered && filtered.handler !== target.handler) {
       if (target.origin !== 'agent') {
