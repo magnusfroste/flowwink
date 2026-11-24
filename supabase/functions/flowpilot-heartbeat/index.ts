@@ -708,16 +708,21 @@ serve(async (req) => {
       });
     } catch { /* best effort checkpoint */ }
 
-    await supabase.from("agent_activity").insert({
+    // 'failed' — agent_activity.status is an enum without 'timeout'; the row
+    // said "timeout" until 2026-11-24 and Postgres refused it, so every
+    // timed-out heartbeat left no journal row at all (liteit 11-12, 11-24).
+    // Whether it was the clock is output.was_timeout.
+    const { error: journalError } = await supabase.from("agent_activity").insert({
       agent: "flowpilot",
       skill_name: "heartbeat",
       input: { trigger: "scheduled", trace_id: traceId },
       output: { checkpoint: true, was_timeout: isTimeout, partial_run: true },
-      status: isTimeout ? "timeout" : "failed",
+      status: "failed",
       error_message: (err.message || "Unknown error").slice(0, 500),
       duration_ms: duration,
       token_usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
     });
+    if (journalError) console.error(`[heartbeat] trace=${traceId} could not journal the failed run:`, journalError.message);
 
     return new Response(
       JSON.stringify({ error: err.message || "Internal error", trace_id: traceId }),
