@@ -215,6 +215,7 @@ export const SKILL_OWNER_MODULE: Readonly<Record<string, string>> = Object.freez
   "inventory_valuation_report": "inventory",
   "invite_candidate_to_interview": "recruitment",
   "invite_colleague": "platform",
+  "invite_customer_to_portal": "platform",
   "invite_peer_agent": "federation",
   "invoice_from_timesheets": "invoicing",
   "invoice_overdue_check": "invoicing",
