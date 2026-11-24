@@ -47,6 +47,10 @@ export type AgentErrorCode =
   // slot, a full webinar, a bill not yet approved. The skill did its job; the
   // request does not fit the state. Never a reason to quarantine the skill.
   | 'RULE_REFUSED'
+  // A skill FlowPilot writes may use a prompt or a platform handler only
+  // (_shared/skills/agent-made-skills.ts); a retired handler answers the same way.
+  | 'HANDLER_NOT_ALLOWED'
+  | 'HANDLER_RETIRED'
   | 'TRANSIENT'
   | 'HANDLER_ERROR';
 
