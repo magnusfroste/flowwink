@@ -12,7 +12,9 @@
 // One account per address: provisionPortalAccount finds an existing account
 // and only makes sure it carries the customer role — it never sends a second
 // invitation. A cancelled service invites nobody.
-import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.87.1';
+// The executor's own client type (core.ts imports @2): a pinned version here
+// is another type, and the executor's call would not typecheck.
+import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { provisionPortalAccount } from '../provision-portal-account.ts';
 
 type Args = {
