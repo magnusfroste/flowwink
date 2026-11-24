@@ -4,10 +4,10 @@
 // under `<folder>/variants/`, and records them on `media_assets.variants`.
 
 import "https://deno.land/std@0.224.0/dotenv/load.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { decode, Image } from "https://deno.land/x/imagescript@1.3.0/mod.ts";
 import { requireScheduledCaller } from '../_shared/edge-auth.ts';
+import { getServiceClient } from '../_shared/supabase-clients.ts';
 
 interface Body {
   storage_path?: string;
@@ -22,10 +22,7 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-    );
+    const supabase = getServiceClient();
     // Staff or the platform: it reads and writes storage as the service role.
     const refused = await requireScheduledCaller(req, supabase, "media-optimize", corsHeaders);
     if (refused) return refused;
