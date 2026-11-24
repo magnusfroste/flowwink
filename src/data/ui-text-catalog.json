@@ -6756,6 +6756,26 @@
       "fallback": "Your answer could not be saved. Please try again."
     },
     {
+      "key": "survey.mail.defaultQuestion",
+      "group": "survey",
+      "fallback": "How was your experience?"
+    },
+    {
+      "key": "survey.mail.giveFeedback",
+      "group": "survey",
+      "fallback": "Give feedback"
+    },
+    {
+      "key": "survey.mail.openSurvey",
+      "group": "survey",
+      "fallback": "open the survey"
+    },
+    {
+      "key": "survey.mail.tapToSubmit",
+      "group": "survey",
+      "fallback": "Tap a number to submit. Or"
+    },
+    {
       "key": "survey.notLikely",
       "group": "survey",
       "fallback": "Not at all likely"
