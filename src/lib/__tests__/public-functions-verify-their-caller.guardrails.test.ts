@@ -21,6 +21,12 @@
  * either visitor-facing by design (with the reason) or known-ungated (a ratchet
  * that may only shrink). A tenth cannot be born unclassified.
  *
+ * It reads config.toml's verify_jwt, but the fleet deploys EVERY function with
+ * --no-verify-jwt (scripts/deploy-fleet.sh): system-integrity-check,
+ * media-optimize, chat-stt and setup-database were "verify_jwt = true" here
+ * and open in production (2026-11-24). every-door-asks scans all functions
+ * whatever the toml says; this guard keeps its ratchet and its idioms.
+ *
  * Fixing one: adopt `requireServiceOrRole` — AND move its cron registration to
  * the vault service key in the same PR. Fourteen registrations still call edge
  * functions with `Bearer <anon key>`; a gate added without that breaks the cron.
@@ -82,12 +88,11 @@ export const PUBLIC_BY_DESIGN: Record<string, string> = {
   'sitemap':                 'crawl surface served to search engines',
   'llms-txt':                'crawl surface served to AI crawlers',
   'track-page-view':         'analytics beacon fired from the public page',
-  'track-auth-event':        'auth analytics beacon fired from the public login page',
-  'score-visitor-intent':    'visitor-intent scoring beacon fired from the public page',
   'customer-signup':         'public signup form — creates the caller\'s own account',
   'process-job-application': 'public careers form — the applicant has no account yet',
   'create-checkout':         'public storefront checkout — a Stripe session is the outcome, inputs validated server-side',
   'consultant-match':        'public matching form on the consultants block',
+  'chat-stt':                'speech to text for the visitor chat; the service client counts calls for publicAiLimit (per visitor and per hour)',
   'content-api':             'public content API; the service client is for the public feedback board alone, whose posters and instance pings have no account (anon-client-never-calls-a-revoked-function pins it to that branch)',
 };
 

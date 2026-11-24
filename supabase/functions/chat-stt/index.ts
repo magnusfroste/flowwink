@@ -9,6 +9,8 @@
 // Public — verify_jwt = false (used from anonymous chat widget).
 
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
+import { publicAiLimit } from '../_shared/rate-limit.ts';
+import { getServiceClient } from '../_shared/supabase-clients.ts';
 
 const MAX_BYTES = 25 * 1024 * 1024; // 25 MiB
 
@@ -136,6 +138,12 @@ async function transcribeGemini(file: File, language?: string): Promise<string> 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (req.method !== 'POST') return err(405, 'Method not allowed');
+  // Every call is paid on the instance's own speech key, and the visitor
+  // chat calls it with the publishable key: the same per-visitor and hourly
+  // ceiling as the other public AI doors. The platform's own call (the
+  // phone line's voicemail) is not counted.
+  const limited = await publicAiLimit(req, getServiceClient(), 'chat-stt', corsHeaders);
+  if (limited) return limited;
 
   let form: FormData;
   try {

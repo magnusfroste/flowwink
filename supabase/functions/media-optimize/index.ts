@@ -4,9 +4,10 @@
 // under `<folder>/variants/`, and records them on `media_assets.variants`.
 
 import "https://deno.land/std@0.224.0/dotenv/load.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { decode, Image } from "https://deno.land/x/imagescript@1.3.0/mod.ts";
+import { requireScheduledCaller } from '../_shared/edge-auth.ts';
+import { getServiceClient } from '../_shared/supabase-clients.ts';
 
 interface Body {
   storage_path?: string;
@@ -21,18 +22,21 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
+    const supabase = getServiceClient();
+    // Staff or the platform: it reads and writes storage as the service role.
+    const refused = await requireScheduledCaller(req, supabase, "media-optimize", corsHeaders);
+    if (refused) return refused;
+
     const body = (await req.json().catch(() => ({}))) as Body;
+    // The public images only. The caller chose the bucket, and the service
+    // role reaches every bucket — the private documents too.
     const bucket = body.bucket || "cms-images";
+    if (bucket !== "cms-images") return json({ ok: false, error: "Only the cms-images bucket is optimised" }, 400);
     const storagePath = body.storage_path;
 
     if (!storagePath || typeof storagePath !== "string") {
       return json({ ok: false, error: "storage_path required" }, 400);
     }
-
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-    );
 
     // Download original.
     const { data: dl, error: dlErr } = await supabase.storage.from(bucket).download(storagePath);

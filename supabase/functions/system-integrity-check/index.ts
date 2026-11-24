@@ -2,6 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getServiceClient } from '../_shared/supabase-clients.ts';
 import { readAllRows } from '../_shared/read-all-rows.ts';
 import { hideSkills } from '../_shared/skills/skill-visibility.ts';
+import { requireScheduledCaller } from '../_shared/edge-auth.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -26,7 +27,11 @@ Deno.serve(async (req) => {
   }
 
   try {
-            const sb = getServiceClient();
+    const sb = getServiceClient();
+    // It disables skills and automations: an admin, the platform or the
+    // scheduler — never whoever finds the URL (it asked nobody before).
+    const refused = await requireScheduledCaller(req, sb, "system-integrity-check", corsHeaders, { role: "admin" });
+    if (refused) return refused;
 
     // ═══════════════════════════════════════════
     // HANDLE FIX ACTIONS (POST with action body)

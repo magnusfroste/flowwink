@@ -1,4 +1,4 @@
-import { getServiceClient } from '../_shared/supabase-clients.ts';
+import { getServiceClient, getUserClient } from '../_shared/supabase-clients.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -48,14 +48,31 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Whose event it is comes from the session, never the body: anyone could
+    // write "signed in from another country" for any account into the
+    // security log. Without a session only what happens before one is
+    // recorded (a failed sign-in, a reset asked for, a sign-up), tied to no
+    // account.
+    const authHeader = req.headers.get('Authorization');
+    const userClient = authHeader ? getUserClient(authHeader) : null;
+    const { data: who } = userClient ? await userClient.auth.getUser() : { data: { user: null } };
+    const user = who?.user ?? null;
+    const NO_SESSION_EVENTS = new Set(['failed_login', 'password_reset', 'sign_up']);
+    if (!user && !NO_SESSION_EVENTS.has(body.event_type)) {
+      return new Response(JSON.stringify({ error: 'This event needs the signed-in session' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const ip = getClientIp(req);
     const geo = await getGeo(ip);
     const supabase = getServiceClient();
 
     const { error } = await supabase.from('auth_events').insert({
       event_type: body.event_type,
-      user_id: body.user_id ?? null,
-      email: body.email ?? null,
+      user_id: user?.id ?? null,
+      email: user?.email ?? body.email ?? null,
       ip_address: ip || null,
       user_agent: body.user_agent ?? null,
       device_type: body.device_type ?? null,

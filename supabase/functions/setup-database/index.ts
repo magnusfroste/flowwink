@@ -290,6 +290,16 @@ Deno.serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+    // The key is the proof that the caller installs THIS project. It was
+    // asked for and never compared, so on a new instance whoever came first
+    // could make the first admin account.
+    const ownKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+    if (!ownKey || service_role_key !== ownKey) {
+      return new Response(
+        JSON.stringify({ error: 'The service role key is not this project\'s' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // Use provided URL or fall back to environment
     const url = supabase_url || Deno.env.get('SUPABASE_URL');
