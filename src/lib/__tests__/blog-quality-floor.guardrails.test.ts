@@ -102,10 +102,26 @@ describe('the identity carries the editorial plan and the ruled-out claims', () 
       claims_to_avoid: ['100 % datakontroll'],
     } };
     const wide = composeIdentityBlock(map, 'narrative').block;
-    expect(wide.indexOf('OPEN [angle b2]: Open one — for: CIO — proof: wiki/loggflode')).toBeLessThan(wide.indexOf('WRITTEN (/blog/written-one) [angle a1]: Written one'));
+    expect(wide.indexOf('OPEN [angle b2]: Open one — for: CIO — proof: wiki/loggflode')).toBeLessThan(wide.indexOf('WRITTEN (/blog/written-one): Written one'));
     expect(wide).toMatch(/Claims the company has ruled out[^\n]*"100 % datakontroll"/);
     const core = composeIdentityBlock(map, 'core').block;
     expect(core).not.toContain('Content angles');
     expect(core).toMatch(/Claims the company has ruled out/);
+  });
+
+  it('a written angle is named, not briefed again; a long description keeps its first sentences (2026-11-25)', () => {
+    const longThesis = 'A thesis that runs on and on '.repeat(10);
+    const longDesc = 'First sentence of what we do. ' + 'More detail that a writer can live without. '.repeat(20);
+    const map = { company_profile: {
+      company_name: 'Nordbrygg', services: [{ name: 'Fibre', description: longDesc }],
+      content_angles: [{ id: 'w1', thesis: longThesis, audience: 'CFO '.repeat(30), proof: 'p '.repeat(50), covered_by: 'done-post' }],
+    } };
+    const wide = composeIdentityBlock(map, 'narrative').block;
+    const written = wide.split('\n').find((l) => l.includes('WRITTEN')) ?? '';
+    expect(written.length).toBeLessThan(140);
+    expect(written).not.toMatch(/for: CFO/);
+    const service = wide.split('\n').find((l) => l.includes('Fibre —')) ?? '';
+    expect(service).toMatch(/First sentence of what we do\./);
+    expect(service.length).toBeLessThan(300);
   });
 });
