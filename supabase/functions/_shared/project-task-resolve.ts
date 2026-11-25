@@ -47,7 +47,7 @@ export interface TaskCandidate {
 }
 
 export type ResolvedTask =
-  | { ok: true; id: string; task: TaskCandidate; matched_by: 'id' | 'title' }
+  | { ok: true; id: string; task: TaskCandidate; matched_by: 'id' | 'title' | 'near_id'; corrected_from?: string }
   | {
       ok: false;
       error: string;
@@ -84,6 +84,17 @@ function likeLiteral(s: string): string {
 
 export function isUuid(value: string): boolean {
   return UUID_RE.test(value);
+}
+
+/** How many characters a near miss may differ in, position for position (2026-11-25). */
+export const NEAR_MISS_MAX_CHARS = 2;
+
+/** Characters that differ between two ids of the same length, position for position; Infinity when lengths differ. */
+export function idDistance(a: string, b: string): number {
+  if (a.length !== b.length) return Infinity;
+  let d = 0;
+  for (let i = 0; i < a.length; i++) if (a[i].toLowerCase() !== b[i].toLowerCase()) d++;
+  return d;
 }
 
 /**
@@ -186,13 +197,15 @@ export function didYouMeanError(
  *  - no task_id, task_title given → ok ONLY when exactly one open task carries
  *    that title (`allowTitle`); several → listed; none → NOT_FOUND.
  *
- * It never acts on a guess: the only `ok` answers are an exact id hit and an
- * unambiguous title.
+ * It never acts on a guess: the `ok` answers are an exact id hit, an
+ * unambiguous title, and — only with `correctNearMiss` — a copy one or two
+ * characters off the single task under the same 13-character prefix, which
+ * answers `corrected_from` so the caller can say what it did.
  */
 export async function resolveProjectTask(
   supabase: TaskQueryClient,
   args: { task_id?: unknown; task_title?: unknown },
-  opts: { allowTitle?: boolean } = {},
+  opts: { allowTitle?: boolean; correctNearMiss?: boolean } = {},
 ): Promise<ResolvedTask> {
   const sentId = String(args.task_id ?? '').trim();
   const sentTitle = String(args.task_title ?? '').trim();
@@ -224,6 +237,16 @@ export async function resolveProjectTask(
       return { ok: true, id: task.id, task, matched_by: 'id' };
     }
     let candidates = await findTasksByIdPrefix(supabase, sentId);
+    // A copy that is off by a character or two, with the first 13 right and
+    // exactly one task there, IS that task (correctNearMiss). Nordbrygg,
+    // Sep–Nov 2026: the heartbeat read …-4682-… from the portfolio brief and
+    // sent …-4687-… every time; it never re-sent from the "did you mean", so
+    // the comment never reached the card. Two ids 1–2 characters apart under
+    // one 13-character prefix are not two tasks anyone means — a uuid's tail
+    // is random. Further off, or several candidates, is still a question.
+    if (opts.correctNearMiss && candidates.length === 1 && idDistance(sentId, candidates[0].id) <= NEAR_MISS_MAX_CHARS) {
+      return { ok: true, id: candidates[0].id, task: candidates[0], matched_by: 'near_id', corrected_from: sentId };
+    }
     if (!candidates.length && sentTitle) candidates = await findTasksByTitle(supabase, sentTitle);
     return didYouMeanError(sentId, candidates, 'not_found');
   }

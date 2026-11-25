@@ -400,7 +400,7 @@ async function executeCommentOnTask(
   // meant instead of `no task <id>`, and an invalid uuid never
   // reaches Postgres. task_title is accepted only when it names
   // exactly one open task. See _shared/project-task-resolve.ts.
-  const resolved = await resolveProjectTask(supabase, args as any, { allowTitle: true });
+  const resolved = await resolveProjectTask(supabase, args as any, { allowTitle: true, correctNearMiss: true });
   if (!resolved.ok) {
     const { ok: _ok, ...failure } = resolved;
     return { success: false, ...failure };
@@ -461,6 +461,7 @@ async function executeCommentOnTask(
   return {
     success: true, comment_id: row.id, task_id: taskId, task_title: resolved.task.title, kind,
     ...(resolved.matched_by === 'title' ? { matched_by: 'title', resolution_note: 'Resolved by task_title; send task_id next time.' } : {}),
+    ...(resolved.matched_by === 'near_id' ? { matched_by: 'near_id', id_corrected: { from: resolved.corrected_from, to: taskId }, resolution_note: `The id you sent was a character or two off ${taskId}; the comment went there. Use ${taskId} next time.` } : {}),
     last_agent_comment_at: after.last_agent_comment_at,
     open_question: after.open_question,
     note: author.attended
