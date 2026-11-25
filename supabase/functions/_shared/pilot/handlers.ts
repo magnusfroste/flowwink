@@ -13,7 +13,7 @@ import { isOpenAiReasoningModel } from '../ai-providers.ts';
 import { calculateNextRun, isSupportedCron, readCronExpression, readCronTimeZone } from '../cron/next-run.ts';
 import { loadHomeCached } from '../locale/load-home.ts';
 import { cadenceRefusal } from './cadence.ts';
-import { hideSkills, selfHealCandidates } from '../skills/skill-visibility.ts';
+import { hideSkills, NOT_A_SKILL_FAULT, selfHealCandidates } from '../skills/skill-visibility.ts';
 import { isReadCall } from '../skills/read-surface.ts';
 import { agentSkillScope, judgeAgentSkillHandler } from '../skills/agent-made-skills.ts';
 
@@ -1449,18 +1449,23 @@ export async function handleReflect(supabase: any, args: { focus?: string; full?
 
   const { data: recentActivity } = await supabase
     .from('agent_activity')
-    .select('skill_name, status, duration_ms, error_message, created_at')
+    .select('skill_name, status, duration_ms, error_message, created_at, code:output->>code')
     .gte('created_at', since.toISOString())
     .order('created_at', { ascending: false })
     .limit(100);
 
   const activities = recentActivity || [];
+  // A miss, a refusal or a caller's mistake is not the skill failing
+  // (NOT_A_SKILL_FAULT — the rule self-healing reads). Nordbrygg: a miscopied
+  // task id answered NOT_FOUND, and every reflection wrote "comment_on_task
+  // fails frequently" into memory for two months, which the next heartbeat
+  // read back and re-sent.
   const skillStats: Record<string, { count: number; errors: number; avg_ms: number; last_error?: string }> = {};
   for (const a of activities) {
     const name = a.skill_name || 'unknown';
     if (!skillStats[name]) skillStats[name] = { count: 0, errors: 0, avg_ms: 0 };
     skillStats[name].count++;
-    if (a.status === 'failed') {
+    if (a.status === 'failed' && !(a.code && NOT_A_SKILL_FAULT.has(a.code))) {
       skillStats[name].errors++;
       skillStats[name].last_error = a.error_message ? String(a.error_message).slice(0, 200) : a.error_message;
     }

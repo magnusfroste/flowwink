@@ -54,6 +54,18 @@ describe('a reflection is a summary', () => {
   });
 });
 
+describe('a reflection judges faults, not misses', () => {
+  it('a NOT_FOUND or a refusal is not "fails frequently"', async () => {
+    const rows = Array.from({ length: 6 }, () => ({ skill_name: 'comment_on_task', status: 'failed', code: 'NOT_FOUND', error_message: 'no task a498a636-8f75-4687-92f1-e5c14a3e218c', duration_ms: 50, created_at: new Date().toISOString() }));
+    const real = Array.from({ length: 4 }, () => ({ skill_name: 'send_email', status: 'failed', code: 'HANDLER_ERROR', error_message: 'smtp 550', duration_ms: 50, created_at: new Date().toISOString() }));
+    const db = fakeDb({ agent_activity: [...rows, ...real], agent_skills: [], agent_automations: [], agent_objectives: [] });
+    const r = await handleReflect(db, {}) as { skill_usage: Record<string, { errors: number }>; suggestions: string[] };
+    expect(r.skill_usage.comment_on_task.errors).toBe(0);
+    expect(r.skill_usage.send_email.errors).toBe(4);
+    expect(r.suggestions.join(' ')).not.toMatch(/comment_on_task" has \d+ failures/);
+  });
+});
+
 describe('the heartbeat says what its instructions are made of', () => {
   it('its journal row carries the size of each part', () => {
     const src = readFileSync(join(process.cwd(), 'supabase/functions/flowpilot-heartbeat/index.ts'), 'utf8');
