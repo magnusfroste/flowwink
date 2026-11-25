@@ -1440,7 +1440,10 @@ export async function handleAutomationDelete(supabase: any, args: { automation_i
 
 // ─── Reflection ───────────────────────────────────────────────────────────────
 
-export async function handleReflect(supabase: any, args: { focus?: string }) {
+/** How many automations / objectives a reflection lists by name (the rest are counted). */
+export const REFLECT_LIST_LIMIT = 15;
+
+export async function handleReflect(supabase: any, args: { focus?: string; full?: boolean }) {
   const since = new Date();
   since.setDate(since.getDate() - 7);
 
@@ -1459,7 +1462,7 @@ export async function handleReflect(supabase: any, args: { focus?: string }) {
     skillStats[name].count++;
     if (a.status === 'failed') {
       skillStats[name].errors++;
-      skillStats[name].last_error = a.error_message;
+      skillStats[name].last_error = a.error_message ? String(a.error_message).slice(0, 200) : a.error_message;
     }
     if (a.duration_ms) {
       skillStats[name].avg_ms = Math.round(
@@ -1498,19 +1501,42 @@ export async function handleReflect(supabase: any, args: { focus?: string }) {
     }, { onConflict: 'key' });
   }
 
+  // A reflection is read by the model at the end of a heartbeat, so it is
+  // never folded: it answered every registered skill (~650 rows, ~80 000
+  // characters, ~20 000 tokens) and every automation and objective whole —
+  // a third of the run's budget, on the step that writes the summary
+  // (prompt_sizes on www and nordbrygg, 2026-11-25). It answers counts, the
+  // skills it judged, and the first REFLECT_LIST_LIMIT automations and
+  // objectives in one line each; `full: true` is the way to the whole lists.
+  type SkillRow = { enabled?: boolean };
+  type AutomationRow = { name?: string; enabled?: boolean; skill_name?: string; run_count?: number };
+  type ObjectiveRow = { goal?: string; status?: string };
+  const enabledSkills = ((allSkills || []) as SkillRow[]).filter((s) => s.enabled);
+  const compactAutomations = ((automations || []) as AutomationRow[]).map((a) => ({
+    name: a.name, enabled: a.enabled, skill: a.skill_name, runs: a.run_count,
+  }));
+  const compactObjectives = ((objectives || []) as ObjectiveRow[]).map((o) => ({
+    goal: String(o.goal ?? '').slice(0, 140), status: o.status,
+  }));
+  const lean = !args.full;
   return {
     period: '7 days',
     total_actions: activities.length,
     skill_usage: skillStats,
     registered_skills: allSkills?.length || 0,
+    enabled_skills: enabledSkills.length,
+    unused_enabled_skills: unusedSkills.length,
     active_automations: automations?.filter((a: any) => a.enabled).length || 0,
     total_automations: automations?.length || 0,
     active_objectives: objectives?.filter((o: any) => o.status === 'active').length || 0,
-    skills: allSkills || [],
-    automations: automations || [],
-    objectives: objectives || [],
+    automations: lean ? compactAutomations.slice(0, REFLECT_LIST_LIMIT) : automations || [],
+    objectives: lean ? compactObjectives.slice(0, REFLECT_LIST_LIMIT) : objectives || [],
+    ...(lean ? {} : { skills: allSkills || [] }),
     suggestions,
     auto_persisted_learnings: learnings.length,
+    ...(lean && ((automations?.length || 0) > REFLECT_LIST_LIMIT || (objectives?.length || 0) > REFLECT_LIST_LIMIT || (allSkills?.length || 0) > 0)
+      ? { note: `Counts and the first ${REFLECT_LIST_LIMIT} automations and objectives; the registered skills are counted, not listed. reflect({ full: true }) answers every list whole.` }
+      : {}),
   };
 }
 

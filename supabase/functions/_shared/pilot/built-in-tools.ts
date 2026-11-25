@@ -45,7 +45,7 @@ const SELF_MOD_TOOLS = [
 ];
 
 const REFLECT_TOOL = [
-  { type: 'function', function: { name: 'reflect', description: 'Analyze your performance over the past week. Auto-persists learnings.', parameters: { type: 'object', properties: { focus: { type: 'string', description: 'Focus area: errors, usage, automations, objectives' } } } } },
+  { type: 'function', function: { name: 'reflect', description: 'Analyze your performance over the past week: skill usage and failures, counts of skills, automations and objectives, suggestions. Auto-persists learnings. Answers counts and short lists; full: true lists every skill, automation and objective whole (large — only when you need the lists).', parameters: { type: 'object', properties: { focus: { type: 'string', description: 'Focus area: errors, usage, automations, objectives' }, full: { type: 'boolean', description: 'Every skill, automation and objective whole (large).' } } } } },
 ];
 
 const SOUL_TOOL = [
