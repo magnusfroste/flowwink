@@ -173,15 +173,40 @@ export async function loadMemories(supabase: any): Promise<string> {
     .select('key, value, category')
     .not('key', 'in', '("soul","identity","agents","heartbeat_state","heartbeat_protocol","tool_policy","expected_skill_hash")')
     .order('updated_at', { ascending: false })
-    .limit(20);
+    .limit(MEMORY_FETCH);
 
-  if (!data || data.length === 0) return '';
-  const lines = data.map((m: any) => {
+  const picked = pickMemoriesForPrompt((data || []) as MemoryRow[]);
+  if (!picked.length) return '';
+  const lines = picked.map((m) => {
     const val = typeof m.value === 'string' ? m.value : JSON.stringify(m.value);
     const truncated = val.length > 150 ? val.slice(0, 150) + '…' : val;
     return `- [${m.category}] ${m.key}: ${truncated}`;
   });
   return `\n\nMemory (use memory_read for full values):\n${lines.join('\n')}`;
+}
+
+// What a heartbeat is shown of its memory (2026-11-25). The list was the 20
+// rows touched last, and most rows are written by the platform each run — an
+// outcome per scored action, the run's flush, the daily reflection. On liteit
+// the notes the agent wrote itself ("staged_blog_…_READY",
+// "cadence_window_is_not_monday") fell off the list within two days; on
+// nordbrygg 17 of the 20 were the journal. The agent's own notes come first
+// now, and the journal keeps a few places for the latest runs.
+export type MemoryRow = { key: string; value: unknown; category?: string | null };
+export const MEMORY_FETCH = 80;
+export const MEMORY_NOTES_SHOWN = 14;
+export const MEMORY_JOURNAL_SHOWN = 4;
+const JOURNAL_KEY = /^(outcome_(success|learning):|heartbeat_flush_|heartbeat_\d{4}-|lesson:reflect_)/;
+
+export function isJournalMemory(key: string): boolean {
+  return JOURNAL_KEY.test(key);
+}
+
+/** Rows newest first in; the agent's own notes first out, then the newest journal rows. */
+export function pickMemoriesForPrompt(rows: readonly MemoryRow[]): MemoryRow[] {
+  const notes = rows.filter((r) => !isJournalMemory(r.key)).slice(0, MEMORY_NOTES_SHOWN);
+  const journal = rows.filter((r) => isJournalMemory(r.key)).slice(0, MEMORY_JOURNAL_SHOWN);
+  return [...notes, ...journal];
 }
 
 // The cadence quota lives in ./cadence.ts so the plan, workflow, automation
