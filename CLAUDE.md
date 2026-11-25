@@ -1342,6 +1342,9 @@ managed-ledger lessons still apply to every fork's Supabase integration:
   rule, refuses a browser's decision and refuses anyone but an admin approving
   his own request. A secret column (a meeting password) is left out of the
   column grant, not filtered in the page.
+  A definer function that reads the service key (vault) and asks nobody who
+  is calling carries no EXECUTE for a session — `qa:open-access` fails the
+  night on one (2026-11-25, `dispatch_automation_event`).
 - **An address is not a credential (2026-11-23).** A link about an e-mail
   address — unsubscribe, "manage my data" — carries `addressToken(email)`
   (`_shared/email/address-token.ts`, HMAC with the service key, derived and
