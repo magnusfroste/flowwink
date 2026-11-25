@@ -85,7 +85,6 @@ export type NavGroup = {
   adminOnly?: boolean;
   /** Functional roles allowed to see this group. Admin always sees everything. */
   allowedRoles?: AppRole[];
-  collapsible?: boolean;
 };
 
 export const navigationGroups: NavGroup[] = [
@@ -327,7 +326,6 @@ export const navigationGroups: NavGroup[] = [
     // System (platform-level: modules, integrations, developer, templates).
     label: "Admin",
     adminOnly: true,
-    collapsible: true,
     items: [
       { name: "Site Settings", href: "/admin/settings", icon: Settings },
       { name: "Branding", href: "/admin/branding", icon: Image },
@@ -338,7 +336,6 @@ export const navigationGroups: NavGroup[] = [
   {
     label: "System",
     adminOnly: true,
-    collapsible: true,
     items: [
       { name: "Modules", href: "/admin/modules", icon: Puzzle },
       // Modules switch capabilities on; Skills switch the actions within them
