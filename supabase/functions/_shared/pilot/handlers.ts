@@ -1856,7 +1856,7 @@ export async function handleEvaluateOutcomes(supabase: any, args: {
 
   const correlationContext = {
     total_page_views_7d: viewsResult.data?.length || 0,
-    top_pages: Object.entries(pageViewCounts).sort((a, b) => b[1] - a[1]).slice(0, 10),
+    top_pages: Object.entries(pageViewCounts).sort((a, b) => b[1] - a[1]).slice(0, 5),
     new_leads_7d: leadsResult.data?.length || 0,
     new_subscribers_7d: subscriberResult.count || 0,
     lead_sources: [...new Set((leadsResult.data || []).map((l: any) => l.source))],
@@ -1906,13 +1906,27 @@ export async function handleEvaluateOutcomes(supabase: any, args: {
     .order('created_at', { ascending: false })
     .limit(10);
 
-  const recentLearnings = (learnings || []).map((l: any) => ({
-    skill: l.value?.skill,
-    outcome: l.value?.outcome,
-    lesson: l.value?.lesson,
-    data: l.value?.data,
-    date: l.created_at?.slice(0, 10),
-  }));
+  // What the model is asked to judge is these activities (2026-11-25). The
+  // answer carried the scorecard of every skill scored lately (23–32 on the
+  // fleet) and ten learnings with the model's own outcome_data inside — about
+  // 12 600 characters at the heartbeat's first step, resent on every step
+  // until folded. The scorecard and the learnings now speak of the skills
+  // being judged, plus any skill flagged as underperforming; a learning is
+  // its lesson, not the data it was written from.
+  const judged = new Set(enrichedActivities.map((a: { skill_name: string }) => a.skill_name));
+  const relevantScorecard = Object.fromEntries(
+    Object.entries(scorecard).filter(([name]) => judged.has(name) || underperformingSkills.includes(name)),
+  );
+  type LearningRow = { created_at?: string; value?: { skill?: string; outcome?: string; lesson?: string } | null };
+  const recentLearnings = ((learnings || []) as LearningRow[])
+    .filter((l) => typeof l.value?.skill === 'string' && judged.has(l.value.skill))
+    .slice(0, 5)
+    .map((l) => ({
+      skill: l.value?.skill,
+      outcome: l.value?.outcome,
+      lesson: l.value?.lesson,
+      date: l.created_at?.slice(0, 10),
+    }));
 
   return {
     status: 'pending_evaluation',
@@ -1921,7 +1935,7 @@ export async function handleEvaluateOutcomes(supabase: any, args: {
     escalated_skills: escalatedSkills.length > 0 ? escalatedSkills : undefined,
     activities: enrichedActivities,
     correlation_data: correlationContext,
-    skill_scorecard: scorecard,
+    skill_scorecard: relevantScorecard,
     underperforming_skills: underperformingSkills.length > 0 ? underperformingSkills : undefined,
     recent_learnings: recentLearnings.length ? recentLearnings : undefined,
     eval_window_hours: EVAL_WINDOW_HOURS,
