@@ -528,9 +528,10 @@ serve(async (req) => {
     console.log(`[heartbeat] trace=${traceId} Site maturity: ${siteMaturity.isFresh ? 'FRESH' : 'mature'}, budget: ${TOKEN_BUDGET}${customProtocol ? ', custom protocol' : ''}`);
 
     // 2. Build system prompt via prompt compiler
+    const workspacePrompt = buildWorkspacePrompt(soul, identity, agents, tools, user, bootstrap);
     const systemPrompt = buildSystemPrompt({
       mode: 'heartbeat',
-      soulPrompt: buildWorkspacePrompt(soul, identity, agents, tools, user, bootstrap),
+      soulPrompt: workspacePrompt,
       agents,
       memoryContext: memoryCtx,
       objectiveContext: objectiveCtx,
@@ -547,6 +548,30 @@ serve(async (req) => {
       businessIdentityContext: businessIdentityCtx,
       dispatchMode,
     });
+
+    // What the instructions are made of, in characters, before each section's
+    // cut (prompt-compiler.ts truncates per section): every step resends them,
+    // and the run's prompt_sizes event says only their total (2026-11-25).
+    const len = (v: unknown) => (typeof v === 'string' ? v.length : 0);
+    const promptParts: Record<string, number> = {
+      total: systemPrompt.length,
+      workspace: len(workspacePrompt),
+      business_identity: len(businessIdentityCtx),
+      memory: len(memoryCtx),
+      objectives: len(objectiveCtx),
+      activity: len(activityCtx),
+      automations: len(automationCtx),
+      stats: len(statsCtx),
+      cross_module: len(crossModuleCtx),
+      integrity: len(integrityContext),
+      cron_health: len(cronHealthContext),
+      follow_through: len(followThroughCtx),
+      resume: len(resumeCtx),
+      healing: len(healingReport),
+      cms_schema: len(cmsSchemaCtx),
+      state: len(heartbeatStateCtx),
+      protocol: len(customProtocol ?? ''),
+    };
 
     // 3. Delegate to the shared reason() loop — NO duplicated tool loop
     //    Wall-clock guard: wrap in a timeout to prevent runaway (OpenClaw #3181)
@@ -667,7 +692,7 @@ serve(async (req) => {
       agent: "flowpilot",
       skill_name: "heartbeat",
       input: { trigger: "scheduled", actions: result.actionsExecuted, trace_id: traceId, directive },
-      output: { summary: (isIdle ? 'Idle — no actions needed' : cleanContent).slice(0, 2000) },
+      output: { summary: (isIdle ? 'Idle — no actions needed' : cleanContent).slice(0, 2000), prompt_parts: promptParts },
       // The run's header row: in the trace_id COLUMN, so the Trace tab's read
       // model groups it with the run's steps (it used to sit in input only).
       trace_id: traceId,
