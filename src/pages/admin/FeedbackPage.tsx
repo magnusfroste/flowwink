@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { daysBehind } from '@/lib/fleet-behind';
 import { toast } from 'sonner';
 import { MessageSquarePlus, Send, Radio, Inbox, ExternalLink } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
@@ -186,6 +187,7 @@ function isLocalSite(url: string | null): boolean {
 function InstancesCard({ receiving }: { receiving: boolean }) {
   const { data, isLoading } = useFeedbackInstances();
   const rows = data?.instances ?? [];
+  const behind = daysBehind(rows);
   return (
     <Card>
       <CardHeader>
@@ -199,6 +201,11 @@ function InstancesCard({ receiving }: { receiving: boolean }) {
           <div><span className="text-2xl font-semibold">{data?.total ?? 0}</span> <span className="text-muted-foreground">instances</span></div>
           <div><span className="text-2xl font-semibold">{data?.active_7d ?? 0}</span> <span className="text-muted-foreground">active last 7 days</span></div>
           <div><span className="text-2xl font-semibold">{Object.keys(data?.versions ?? {}).length}</span> <span className="text-muted-foreground">versions</span></div>
+          {behind.size > 0 && (
+            <div title="Their schema is more than two days older than the newest one seen this week: their deploy is not arriving.">
+              <span className="text-2xl font-semibold text-destructive">{behind.size}</span> <span className="text-muted-foreground">behind</span>
+            </div>
+          )}
         </div>
         {isLoading ? <p className="text-sm text-muted-foreground">Loading…</p> : rows.length === 0 ? <p className="text-sm text-muted-foreground">No pings yet.</p> : (
           <div className="overflow-x-auto">
@@ -215,7 +222,14 @@ function InstancesCard({ receiving }: { receiving: boolean }) {
                       </div>
                     </td>
                     <td className="py-1 pr-3"><code className="text-xs">{r.skills_sha ?? '—'}</code></td>
-                    <td className="py-1 pr-3"><code className="text-xs">{r.migration_head ?? '—'}</code></td>
+                    <td className="py-1 pr-3">
+                      <code className="text-xs">{r.migration_head ?? '—'}</code>
+                      {behind.has(r.instance_id) && (
+                        <Badge variant="destructive" className="ml-1.5 text-[10px]" title="Its deploy is not arriving: the schema is this much older than the newest instance's.">
+                          {behind.get(r.instance_id)} days behind
+                        </Badge>
+                      )}
+                    </td>
                     <td className="py-1 pr-3">{r.module_count}</td>
                     <td className="py-1 pr-3">{new Date(r.first_seen_at).toLocaleDateString()}</td>
                     <td className="py-1 pr-3">{new Date(r.last_seen_at).toLocaleDateString()}</td>
