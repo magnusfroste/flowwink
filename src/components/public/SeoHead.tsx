@@ -1,6 +1,7 @@
 import { Helmet } from 'react-helmet-async';
 import { useSeoSettings, usePerformanceSettings, useCustomScriptsSettings, useAeoSettings, useSiteLanguages } from '@/hooks/useSiteSettings';
 import { renderToHtml } from '@/lib/tiptap-utils';
+import { searchConsoleToken } from '@/lib/seo-shell';
 import { buildJobPostingSchema, jobDescriptionHtml, type JobPostingMeta } from '@/lib/job-posting-schema';
 
 interface ContentBlock {
@@ -353,6 +354,7 @@ export function SeoHead({
   // That used to be read off platform_locale, which governs number format and
   // was only ever an inference.
   const htmlLang = (lang || defaultLanguage || 'en').trim() || 'en';
+  const gscToken = searchConsoleToken(seoSettings?.googleSiteVerification);
 
   return (
     <Helmet htmlAttributes={{ lang: htmlLang }}>
@@ -365,9 +367,7 @@ export function SeoHead({
       <meta name="robots" content={robotsContent} />
       
       {/* Google Verification */}
-      {seoSettings?.googleSiteVerification && (
-        <meta name="google-site-verification" content={seoSettings.googleSiteVerification} />
-      )}
+      {gscToken && <meta name="google-site-verification" content={gscToken} />}
 
       {/* Open Graph */}
       <meta property="og:title" content={finalTitle} />
