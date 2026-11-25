@@ -31,7 +31,6 @@ import {
   Zap,
   Megaphone,
   Code2,
-  ChevronRight,
   Video,
   Target,
   Pin,
@@ -59,11 +58,6 @@ import {
   SidebarSeparator,
   useSidebar,
 } from "@/components/ui/sidebar";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 import { supabase } from "@/integrations/supabase/client";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -242,66 +236,8 @@ export function AdminSidebar() {
         <SidebarContent ref={sidebarScrollRef} className="px-2 pt-1 pb-2 group-data-[collapsible=icon]:px-0">
 
           {filteredGroups.map((group, index) => {
-            const hasActiveItem = group.items.some(item => isItemActive(item.href));
-
-            if (group.collapsible && !isCollapsed) {
-              return (
-                <div key={group.label}>
-                  {index > 0 && <SidebarSeparator className="my-2" />}
-                  <Collapsible defaultOpen={hasActiveItem}>
-                    <SidebarGroup>
-                      <CollapsibleTrigger className="flex items-center w-full group/collapsible">
-                        <SidebarGroupLabel className="text-[10px] text-sidebar-foreground/40 uppercase tracking-widest font-normal mb-1 transition-colors hover:text-sidebar-foreground/60 flex-1 text-left cursor-pointer">
-                          {group.label}
-                        </SidebarGroupLabel>
-                        <ChevronRight className="h-3 w-3 text-sidebar-foreground/40 transition-transform group-data-[state=open]/collapsible:rotate-90 mr-1" />
-                      </CollapsibleTrigger>
-                      <CollapsibleContent>
-                        <SidebarGroupContent>
-                          <SidebarMenu>
-                            {group.items.map((item) => {
-                              const isActive = isItemActive(item.href);
-                              const pinned = isPinned(item.href);
-                              return (
-                                <SidebarMenuItem key={item.name} className="group/pin">
-                                  <SidebarMenuButton asChild isActive={isActive} tooltip={item.name}>
-                                     <Link to={item.href} onMouseEnter={() => prefetchRoute(item.href)} onFocus={() => prefetchRoute(item.href)}>
-                                      <item.icon className="h-4 w-4" />
-                                      <span>{item.name}</span>
-                                      <SidebarBadge href={item.href} />
-                                    </Link>
-                                  </SidebarMenuButton>
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      if (pinned) {
-                                        removePin(item.href);
-                                      } else {
-                                        addPin({ href: item.href, name: item.name, icon: item.icon.displayName || item.icon.name || 'FileText' });
-                                      }
-                                    }}
-                                    className="absolute right-1 top-1/2 -translate-y-1/2 opacity-0 group-hover/pin:opacity-100 transition-opacity p-1 rounded hover:bg-sidebar-accent"
-                                    title={pinTitle(pinned)}
-                                    aria-disabled={!pinned && isFull}
-                                  >
-                                    {pinned ? (
-                                      <PinOff className="h-3 w-3 text-sidebar-foreground/60" />
-                                    ) : (
-                                      <Pin className={isFull ? 'h-3 w-3 text-sidebar-foreground/20' : 'h-3 w-3 text-sidebar-foreground/40'} />
-                                    )}
-                                  </button>
-                                </SidebarMenuItem>
-                              );
-                            })}
-                          </SidebarMenu>
-                        </SidebarGroupContent>
-                      </CollapsibleContent>
-                    </SidebarGroup>
-                  </Collapsible>
-                </div>
-              );
-            }
-
+            // Every group is open (2026-11-25): Admin and System were folded, and
+            // opening them on every visit was a chore.
             return (
               <div key={group.label}>
                 {index > 0 && <SidebarSeparator className="my-2" />}
