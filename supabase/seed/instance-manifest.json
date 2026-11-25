@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261124130000",
-      "migrations_count": 794,
+      "migration_head": "20261125010000",
+      "migrations_count": 795,
       "migrations": [
         {
           "version": "00000000000000",
@@ -3181,6 +3181,10 @@
         {
           "version": "20261124130000",
           "name": "handelsen-gar-ut-vem-som-an-gjorde-det"
+        },
+        {
+          "version": "20261125010000",
+          "name": "fyra-dorrar-till-for-kunder"
         }
       ]
     },
