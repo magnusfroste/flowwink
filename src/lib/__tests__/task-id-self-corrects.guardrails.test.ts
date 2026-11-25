@@ -5,7 +5,7 @@ import {
   didYouMeanError,
   findTasksByIdPrefix,
   isUuid,
-  resolveProjectTask,
+  resolveProjectTask, idDistance,
   TASK_ID_PREFIX_LENGTH,
   type ResolvedTask,
   type TaskQueryClient,
@@ -217,7 +217,8 @@ describe('task-id self-corrects — no silent action on a guess', () => {
     const start = HANDLER.indexOf('async function executeCommentOnTask(');
     expect(start).toBeGreaterThan(0);
     const block = HANDLER.slice(start, HANDLER.indexOf('\n}\n', start));
-    expect(block).toMatch(/resolveProjectTask\(supabase, args as any, \{ allowTitle: true \}\)/);
+    expect(block).toMatch(/resolveProjectTask\(supabase, args as any, \{ allowTitle: true, correctNearMiss: true \}\)/);
+    expect(block).toMatch(/id_corrected: \{ from: resolved\.corrected_from, to: taskId \}/);
     expect(block).not.toMatch(/`no task \$\{taskId\}`/);
     // The write is the paced insert (task-thread-nudges-once-a-day): still only past the resolver's refusal.
     const insertAt = block.indexOf('writePacedComment(supabase');
@@ -234,6 +235,36 @@ describe('task-id self-corrects — no silent action on a guess', () => {
     expect(gate![1]).toMatch(/if \(!resolved\.ok\)[\s\S]*return \{/);
     // The gate sits before the switch that reads or writes the row.
     expect(HANDLER.indexOf("if (table === 'project_tasks' && (action === 'get'")).toBeLessThan(HANDLER.indexOf("case 'get': {"));
+  });
+});
+
+describe('task-id self-corrects — a copy off by a character or two (nordbrygg, 2026-11-25)', () => {
+  const ONE_OFF = REAL.slice(0, 17) + (REAL[17] === '1' ? '2' : '1') + REAL.slice(18);
+  const THREE_OFF = REAL.slice(0, 30) + 'zzz'.replace(/z/g, (_, i) => (REAL[30 + i] === '0' ? '1' : '0')) + REAL.slice(33);
+
+  it('one character off, the right prefix, one task: the comment goes there and says so', async () => {
+    const r = await resolveProjectTask(fakeClient(opticDb), { task_id: ONE_OFF }, { correctNearMiss: true });
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.id).toBe(REAL);
+    expect(r.matched_by).toBe('near_id');
+    expect(r.corrected_from).toBe(ONE_OFF);
+  });
+
+  it('without the option it is still the question it always was', async () => {
+    const r = await resolveProjectTask(fakeClient(opticDb), { task_id: ONE_OFF });
+    expect(r.ok).toBe(false);
+  });
+
+  it('three characters off is a question, not a correction', async () => {
+    expect(idDistance(THREE_OFF, REAL)).toBe(3);
+    const r = await resolveProjectTask(fakeClient(opticDb), { task_id: THREE_OFF }, { correctNearMiss: true });
+    expect(r.ok).toBe(false);
+  });
+
+  it('the garbled tail from optic (many characters off) is still never acted on', async () => {
+    const r = await resolveProjectTask(fakeClient(opticDb), { task_id: SENT }, { correctNearMiss: true });
+    expect(r.ok).toBe(false);
   });
 });
 
