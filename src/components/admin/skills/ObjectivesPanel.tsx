@@ -7,6 +7,8 @@ import { GOAL_OPTIONS } from '@/lib/flowpilot-starter-goals';
 import { Link } from 'react-router-dom';
 import { Plus, Target, Trash2, CheckCircle2, PauseCircle, XCircle, Play, Info } from 'lucide-react';
 import { isHeldForBusinessIdentity } from '@/lib/business-identity-gate';
+import { readObjectiveRules, writeObjectiveRules, criteriaToRows, rowsToCriteria, type ObjectiveRules, type CriterionRow } from '@/lib/objective-rules';
+import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -283,16 +285,17 @@ function ObjectiveEditorSheet({
   onSave: (data: Partial<AgentObjective> & { goal: string }) => void;
 }) {
   const [goal, setGoal] = useState('');
-  const [constraintsText, setConstraintsText] = useState('');
-  const [criteriaText, setCriteriaText] = useState('');
+  const [rules, setRules] = useState<ObjectiveRules>(() => readObjectiveRules({}));
+  const [rows, setRows] = useState<CriterionRow[]>([]);
+  const [restText, setRestText] = useState('');
 
   useEffect(() => {
     if (open) {
       setGoal(objective?.goal ?? '');
-      const c = objective?.constraints ? JSON.stringify(objective.constraints, null, 2) : '';
-      const s = objective?.success_criteria ? JSON.stringify(objective.success_criteria, null, 2) : '';
-      setConstraintsText(c === '{}' ? '' : c);
-      setCriteriaText(s === '{}' ? '' : s);
+      const r = readObjectiveRules(objective?.constraints);
+      setRules(r);
+      setRows(criteriaToRows(objective?.success_criteria));
+      setRestText(Object.keys(r.rest).length ? JSON.stringify(r.rest, null, 2) : '');
     }
   }, [open, objective]);
 
@@ -300,25 +303,33 @@ function ObjectiveEditorSheet({
     if (!isOpen) onClose();
   };
 
+  const patch = (p: Partial<ObjectiveRules>) => setRules((r) => ({ ...r, ...p }));
+  const cadence = rules.cadence;
+
   const handleSave = () => {
-    // Invalid JSON used to be dropped without a word, so an admin's limits
-    // silently became "no limits". Refuse the save and say which field.
-    let constraints = {};
-    let success_criteria = {};
-    try { constraints = JSON.parse(constraintsText || '{}'); } catch {
-      toast.error('Constraints is not valid JSON — nothing was saved.');
-      return;
+    // The keys the form does not edit stay as they were; if a person edited
+    // them by hand and broke the JSON, refuse rather than drop them silently.
+    let rest: Record<string, unknown> = {};
+    if (restText.trim()) {
+      try {
+        const parsed = JSON.parse(restText);
+        if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('not an object');
+        rest = parsed;
+      } catch {
+        toast.error('Other settings is not valid JSON — nothing was saved.');
+        return;
+      }
     }
-    try { success_criteria = JSON.parse(criteriaText || '{}'); } catch {
-      toast.error('Success criteria is not valid JSON — nothing was saved.');
+    if (cadence && !cadence.counts.trim()) {
+      toast.error('Say which skill counts as one delivery, or switch the rhythm off.');
       return;
     }
 
     onSave({
       ...(objective?.id ? { id: objective.id } : {}),
       goal,
-      constraints,
-      success_criteria,
+      constraints: writeObjectiveRules({ ...rules, rest }),
+      success_criteria: rowsToCriteria(rows),
       status: objective?.status ?? 'active',
       progress: objective?.progress ?? {},
     });
@@ -332,7 +343,7 @@ function ObjectiveEditorSheet({
           <SheetTitle>{objective ? 'Edit Objective' : 'New Objective'}</SheetTitle>
         </SheetHeader>
 
-        <div className="space-y-4 py-4">
+        <div className="space-y-5 py-4">
           <div className="space-y-2">
             <Label htmlFor="goal">Goal</Label>
             <Textarea
@@ -344,35 +355,113 @@ function ObjectiveEditorSheet({
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="constraints">Constraints (JSON)</Label>
-            <Textarea
-              id="constraints"
-              value={constraintsText}
-              onChange={(e) => setConstraintsText(e.target.value)}
-              placeholder={'{\n  "max_posts_per_day": 1,\n  "token_budget": 50000,\n  "excluded_skills": ["newsletter_send"],\n  "deadline": "2026-04-30"\n}'}
-              rows={6}
-              className="font-mono text-xs"
-            />
-            <p className="text-xs text-muted-foreground">
-              Guardrails that limit FlowPilot — e.g. daily limits, token budgets, skill exclusions, deadlines.
-            </p>
+          <div className="space-y-3 rounded-md border border-border p-3">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <Label htmlFor="rhythm">Limit how often</Label>
+                <p className="text-xs text-muted-foreground">
+                  A rhythm written in the goal is not binding; this one is. FlowPilot counts what it delivered and pauses the goal until the period is over.
+                </p>
+              </div>
+              <Switch
+                id="rhythm"
+                checked={!!cadence}
+                onCheckedChange={(on) => patch({ cadence: on ? { max: 1, per: 'week', every: 1, counts: 'write_blog_post' } : null })}
+              />
+            </div>
+            {cadence && (
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label htmlFor="cad-max" className="text-xs">At most</Label>
+                  <Input id="cad-max" type="number" min={1} value={cadence.max}
+                    onChange={(e) => patch({ cadence: { ...cadence, max: Number(e.target.value) || 1 } })} />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Per</Label>
+                  <Select value={cadence.per} onValueChange={(v) => patch({ cadence: { ...cadence, per: v === 'day' ? 'day' : 'week' } })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="day">Day</SelectItem>
+                      <SelectItem value="week">Week</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="cad-every" className="text-xs">Every (1 = every period, 2 = every other …)</Label>
+                  <Input id="cad-every" type="number" min={1} value={cadence.every}
+                    onChange={(e) => patch({ cadence: { ...cadence, every: Number(e.target.value) || 1 } })} />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="cad-counts" className="text-xs">Counted skill</Label>
+                  <Input id="cad-counts" value={cadence.counts} placeholder="write_blog_post"
+                    onChange={(e) => patch({ cadence: { ...cadence, counts: e.target.value } })} />
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <Label htmlFor="needs-identity">Needs the business profile</Label>
+              <p className="text-xs text-muted-foreground">
+                The goal waits until the business profile has a company name and a service, so nothing is written about a company FlowPilot does not know yet.
+              </p>
+            </div>
+            <Switch id="needs-identity" checked={rules.requiresIdentity} onCheckedChange={(on) => patch({ requiresIdentity: on })} />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <Label className="text-xs">Priority</Label>
+              <Select value={rules.priority || 'none'} onValueChange={(v) => patch({ priority: v === 'none' ? '' : v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Not set</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="low">Low</SelectItem>
+                  {rules.priority && !['high', 'medium', 'low'].includes(rules.priority) && (
+                    <SelectItem value={rules.priority}>{rules.priority}</SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="deadline" className="text-xs">Deadline</Label>
+              <Input id="deadline" type="date" value={rules.deadline} onChange={(e) => patch({ deadline: e.target.value })} />
+            </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="criteria">Success Criteria (JSON)</Label>
-            <Textarea
-              id="criteria"
-              value={criteriaText}
-              onChange={(e) => setCriteriaText(e.target.value)}
-              placeholder={'{\n  "posts_published": 3,\n  "leads_generated": 10,\n  "avg_response_time_seconds": 30\n}'}
-              rows={5}
-              className="font-mono text-xs"
-            />
+            <Label>Success criteria</Label>
             <p className="text-xs text-muted-foreground">
-              Measurable targets — FlowPilot marks the objective complete when these are met.
+              Measurable targets FlowPilot reads to judge when the goal is met — e.g. posts_published 3, leads_generated 10.
             </p>
+            {rows.map((row, i) => (
+              <div key={i} className="flex gap-2">
+                <Input value={row.name} placeholder="posts_published" aria-label="Target"
+                  onChange={(e) => setRows(rows.map((r, j) => (j === i ? { ...r, name: e.target.value } : r)))} />
+                <Input value={row.value} placeholder="3" aria-label="Value" className="w-28"
+                  onChange={(e) => setRows(rows.map((r, j) => (j === i ? { ...r, value: e.target.value } : r)))} />
+                <Button variant="ghost" size="icon" aria-label="Remove target" onClick={() => setRows(rows.filter((_, j) => j !== i))}>
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+            <Button variant="outline" size="sm" onClick={() => setRows([...rows, { name: '', value: '' }])}>
+              <Plus className="h-4 w-4 mr-1" /> Add target
+            </Button>
           </div>
+
+          {restText.trim() !== '' && (
+            <div className="space-y-2">
+              <Label htmlFor="rest">Other settings</Label>
+              <Textarea id="rest" value={restText} onChange={(e) => setRestText(e.target.value)} rows={4} className="font-mono text-xs" />
+              <p className="text-xs text-muted-foreground">
+                Set by a template or an agent; kept as it is unless you change it here.
+              </p>
+            </div>
+          )}
 
           {objective?.id && <ObjectiveHistory objectiveId={objective.id} />}
         </div>
