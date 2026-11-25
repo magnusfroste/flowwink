@@ -4,7 +4,7 @@ export const config = { runtime: 'edge' };
 import { blogPostPath, pagePath, postAlternates, postVersions, splitLanguagePrefix } from '../src/lib/language-path';
 import { resolveOgImage } from '../src/lib/og-card';
 import { blogCoverStyle, blogShareImage } from '../src/lib/blog-cover';
-import { injectHead, shellCacheControl } from '../src/lib/seo-shell';
+import { injectHead, searchConsoleToken, shellCacheControl } from '../src/lib/seo-shell';
 
 declare const process: { env: Record<string, string | undefined> };
 
@@ -412,9 +412,12 @@ export default async function handler(req: Request): Promise<Response> {
   // summary_large_image without an image renders as a bare link on X/Twitter.
   const twitterCard = image ? (usingLogo ? 'summary' : 'summary_large_image') : 'summary';
 
+  const gscToken = searchConsoleToken((byKeyOuter.seo || {}).googleSiteVerification);
   const tags = [
     `<title>${esc(fullTitle)}</title>`,
     description && `<meta name="description" content="${esc(description)}">`,
+    // Search Console verifies by reading this document, never the hydrated one.
+    gscToken && `<meta name="google-site-verification" content="${gscToken}">`,
     // Dev mode promises "hidden from search engines", but the client-side tag
     // only reaches JS-running crawlers — the prerendered head must carry it too.
     (byKeyOuter.seo || {}).developmentMode === true

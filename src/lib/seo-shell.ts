@@ -49,6 +49,21 @@ export function iconTags(href: string): string[] {
   return tags;
 }
 
+/**
+ * The Search Console token from Site settings → SEO. Google's HTML-tag check
+ * reads the served document, not the hydrated one, so the shell must carry
+ * the tag (until 2026-11-24 only react-helmet wrote it, after JavaScript ran,
+ * and the setting could not verify a site). Accepts the bare token or the
+ * whole `<meta name="google-site-verification" content="…">` Google hands
+ * out; anything that is not a token answers null and no tag is written.
+ */
+export function searchConsoleToken(raw: unknown): string | null {
+  if (typeof raw !== 'string') return null;
+  const pasted = /content\s*=\s*["']([^"']*)["']/i.exec(raw);
+  const token = (pasted ? pasted[1] : raw).trim();
+  return /^[A-Za-z0-9_-]{10,100}$/.test(token) ? token : null;
+}
+
 /** Mark a head element as Helmet-managed so hydration replaces it, never duplicates it. */
 export function helmetOwned(tag: string): string {
   if (tag.includes('data-rh=')) return tag;

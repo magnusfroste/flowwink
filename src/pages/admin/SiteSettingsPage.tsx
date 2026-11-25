@@ -656,6 +656,9 @@ export default function SiteSettingsPage() {
                       onChange={(e) => setSeoData(prev => ({ ...prev, googleSiteVerification: e.target.value }))}
                       placeholder="Verification code"
                     />
+                    <p className="text-xs text-muted-foreground">
+                      In Search Console choose URL prefix → HTML tag, and paste the code or the whole tag. Save before you press Verify.
+                    </p>
                   </div>
                 </CardContent>
               </Card>

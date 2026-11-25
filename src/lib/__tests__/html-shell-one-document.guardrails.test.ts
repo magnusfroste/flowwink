@@ -122,3 +122,20 @@ describe('the shell carries the customer\'s favicon, not the platform\'s', () =>
     expect(out).toMatch(/favicon\.ico/);
   });
 });
+
+describe('the Search Console tag is in the served document', () => {
+  it('reads a bare token or the whole tag Google hands out, and nothing else', async () => {
+    const { searchConsoleToken } = await import('@/lib/seo-shell');
+    expect(searchConsoleToken('h0-6p9AbCdEfGh_123')).toBe('h0-6p9AbCdEfGh_123');
+    expect(searchConsoleToken('<meta name="google-site-verification" content="h0-6p9AbCdEfGh_123" />')).toBe('h0-6p9AbCdEfGh_123');
+    for (const bad of ['', '   ', 'short', '"><script>alert(1)</script>', null, undefined, 42]) {
+      expect(searchConsoleToken(bad), String(bad)).toBeNull();
+    }
+  });
+
+  it('api/html.ts writes the tag from seo.googleSiteVerification, not only the hydrated SPA', () => {
+    const html = read('api/html.ts');
+    expect(html).toMatch(/searchConsoleToken\(\(byKeyOuter\.seo \|\| \{\}\)\.googleSiteVerification\)/);
+    expect(html).toMatch(/<meta name="google-site-verification" content="\$\{gscToken\}">/);
+  });
+});
