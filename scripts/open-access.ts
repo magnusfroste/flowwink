@@ -10,7 +10,9 @@
  * public bucket serves any object by its path. Each of those is a decision;
  * this check makes it a written one. Every open policy and public bucket must
  * stand in OPEN_BY_DESIGN with the reason it is open — a new one turns the
- * night red, and one that closed must leave the list.
+ * night red, and one that closed must leave the list. So must a definer
+ * function a session may call that reads the service key and asks nobody who
+ * is calling (2026-11-25).
  *
  * Text-parsing the migrations cannot answer this (policies are dropped in
  * loops and dynamic SQL); a fresh install from zero can, so it runs there.
@@ -43,6 +45,18 @@ async function main(): Promise<number> {
       const buckets = [...r.expr.matchAll(/bucket_id = '([^']+)'/g)].map((m) => m[1]);
       for (const b of buckets.length ? buckets : ['<any bucket>']) found.add(`storage.objects ${r.cmd} ${b}`);
     }
+    // A definer function a session may call that reads the vault (the service
+    // key) and asks nobody who is calling: whoever calls it acts with the
+    // platform's own key. dispatch_automation_event was one (2026-11-25).
+    const keyed = await db.query<{ name: string }>(`
+      select p.proname as name
+        from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+       where n.nspname = 'public' and p.prosecdef
+         and p.prosrc ~* '(decrypted_secrets|service_role_key)'
+         and p.prosrc !~ '(service_role''|has_role\\(|is_staff\\(|can_access_module\\()'
+         and (has_function_privilege('anon', p.oid, 'EXECUTE')
+              or has_function_privilege('authenticated', p.oid, 'EXECUTE'))`);
+    for (const r of keyed.rows) found.add(`function ${r.name} (reads the service key)`);
     const buckets = await db.query<{ id: string }>(`select id from storage.buckets where public`).catch(() => ({ rows: [] as Array<{ id: string }> }));
     for (const r of buckets.rows) found.add(`bucket ${r.id}`);
 
