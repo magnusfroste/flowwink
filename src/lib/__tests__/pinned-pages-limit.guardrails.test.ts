@@ -35,10 +35,12 @@ describe('the pin limit', () => {
     expect(hook).toMatch(/isFull: pins\.length >= MAX_PINS/);
   });
 
-  it('the sidebar button says so too, on both of its pin sites', () => {
+  // One pin site since 2026-11-25: the folded groups (Admin, System) had their
+  // own copy of the menu item; every group renders the same way now.
+  it('the sidebar button says so too', () => {
     const sidebar = read('src/components/admin/AdminSidebar.tsx');
-    expect(sidebar.match(/title=\{pinTitle\(pinned\)\}/g)?.length).toBe(2);
-    expect(sidebar.match(/aria-disabled=\{!pinned && isFull\}/g)?.length).toBe(2);
+    expect(sidebar.match(/title=\{pinTitle\(pinned\)\}/g)?.length).toBe(1);
+    expect(sidebar.match(/aria-disabled=\{!pinned && isFull\}/g)?.length).toBe(1);
     expect(sidebar).toMatch(/Header is full \(\$\{maxPins\}\/\$\{maxPins\}\)/);
     expect(sidebar).not.toMatch(/title=\{pinned \? 'Unpin from header' : 'Pin to header'\}/);
   });
