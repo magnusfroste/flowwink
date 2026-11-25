@@ -181,7 +181,12 @@ function renderContentAngles(value: unknown, _depth: IdentityDepth): string {
       if (text(o.proof)) parts.push(`proof: ${text(o.proof)}`);
       const covered = text(o.covered_by);
       const id = text(o.id);
-      return `- ${covered ? `WRITTEN (/blog/${covered})` : 'OPEN'}${id ? ` [angle ${id.slice(0, 8)}]` : ''}: ${parts.join(' — ')}`;
+      // A WRITTEN angle is named, not briefed again: its audience and proof
+      // went into the post, and write_blog_post refuses a re-worded title
+      // (DUPLICATE_CONTENT) on its own. www carried 17 angles, 6 000
+      // characters, on every heartbeat step (2026-11-25).
+      if (covered) return `- WRITTEN (/blog/${covered}): ${clip(thesis, ANGLE_WRITTEN_CHARS)}`;
+      return `- OPEN${id ? ` [angle ${id.slice(0, 8)}]` : ''}: ${parts.join(' — ')}`;
     })
     .filter(Boolean);
   if (!rows.length) return '';
@@ -199,6 +204,21 @@ function renderContentAngles(value: unknown, _depth: IdentityDepth): string {
  * is truthy in JS: an instance with `differentiators: []` emitted exactly that
  * empty heading.
  */
+/** How much of a written angle's thesis, and of an item's description, the block carries. */
+export const ANGLE_WRITTEN_CHARS = 90;
+export const ITEM_DESCRIPTION_CHARS = 240;
+
+/** The start of a text, cut at a sentence (else a word) at or before `max`, with an ellipsis when cut. */
+export function clip(value: string, max: number): string {
+  const t = value.trim();
+  if (t.length <= max) return t;
+  const head = t.slice(0, max);
+  const sentence = head.lastIndexOf('. ');
+  if (sentence >= max * 0.5) return head.slice(0, sentence + 1);
+  const word = head.lastIndexOf(' ');
+  return `${(word > 0 ? head.slice(0, word) : head).trimEnd()}…`;
+}
+
 function text(value: unknown): string {
   if (typeof value === 'string') return value.trim();
   if (typeof value === 'number') return Number.isFinite(value) ? String(value) : '';
@@ -234,7 +254,10 @@ function renderNamedItems(value: unknown, depth: IdentityDepth): string {
       const o = item as { name?: unknown; description?: unknown };
       const name = text(o.name);
       if (!name) return '';
-      const description = depth === 'narrative' ? text(o.description) : '';
+      // The description is the material a writer needs — its first sentences
+      // are; nordbrygg's five services were 2 400 characters on every
+      // heartbeat step (2026-11-25).
+      const description = depth === 'narrative' ? clip(text(o.description), ITEM_DESCRIPTION_CHARS) : '';
       return description ? `${name} — ${description}` : name;
     })
     .filter(Boolean);
