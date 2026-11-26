@@ -3,8 +3,8 @@
   "schema_version": 1,
   "layers": {
     "schema": {
-      "migration_head": "20261125010000",
-      "migrations_count": 795,
+      "migration_head": "20261125200000",
+      "migrations_count": 796,
       "migrations": [
         {
           "version": "00000000000000",
@@ -3185,19 +3185,23 @@
         {
           "version": "20261125010000",
           "name": "fyra-dorrar-till-for-kunder"
+        },
+        {
+          "version": "20261125200000",
+          "name": "ett-avslaget-utlagg-gar-att-ratta"
         }
       ]
     },
     "skills": {
-      "seed_hash": "sha256:2d619b547e95821da901b527853b42a80e72745708d06b1f85a2168694d8efa8",
-      "skill_count": 689,
+      "seed_hash": "sha256:1fb01f41a00816fe16b20b801b322f7e150fc1f5f65687635cfbc4dee9e5ab77",
+      "skill_count": 690,
       "module_count": 69
     },
     "edge_functions": {
       "count": 76,
-      "shared_hash": "sha256:913ec56d3d9f8ed3791ad3fc6b76e72af5da09706ca5c922a6a228f6ff452f0c",
+      "shared_hash": "sha256:27ff2fd28c35f352f316277d9626e6897bcdd40d333b4df04981aa780f12787e",
       "functions": {
-        "agent-execute": "sha256:943ad86260d7a239c5d3b1fb59c1ee1475dcd6a11febf5f005a40296da0f2fc7",
+        "agent-execute": "sha256:b57d6b903f39bd17fe4ba100bc4ac232cc893ac524a550d50e988f87b7c76800",
         "agent-operate": "sha256:4320e02dd3e6a0a1706b42dc1905b631c61e6a4cbe3556c701f474c278c89e1a",
         "ai-task": "sha256:ce3aacdef625bba758f4323da3e49104a1b94a3d3d77d800e89dacd0b803d65e",
         "automation-dispatcher": "sha256:d905660cd907c6f1ef5c7cac0a97ed44a4e4187ef4d5179089fa2714b2751443",
@@ -3252,7 +3256,7 @@
         "quote-pay": "sha256:eac676922cee4e9ebe19650afd1ec708a48c2b3efd8d56d0f77654d21a272c00",
         "quote-sign": "sha256:efcc488ed630f2e861be848ef6e951bddd0ab43ae0ef98b67b8f5d6061ffc541",
         "run-autonomy-tests": "sha256:53426062cbb9c3c6963f6c807c77176ca89f56aea35b7bfab3e84e4dff087cd2",
-        "run-platform-tests": "sha256:2a959463dabd7107a17bd21114108e286332728efeb77a6fa20ca5b076fd5ad3",
+        "run-platform-tests": "sha256:e93d33edbd2e5ec84d54ecc18e22c1dc23b451a7eddaeb5aa8472ec400d0d325",
         "score-visitor-intent": "sha256:738f28de67a80a134e6f6c9402ecbe6bf544614e2be2a9302d0ba9825c139c89",
         "send-webhook": "sha256:74cc6afea0a1395dd562aaa2667c9daf9ed8c7dabf8768c59f88836cf89b44bc",
         "setup-database": "sha256:8073c508db4d8dcb71fa9949b06a50068125c4a3e86d6d5c33334840bf4f91da",

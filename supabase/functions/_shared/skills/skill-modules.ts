@@ -541,6 +541,7 @@ export const SKILL_OWNER_MODULE: Readonly<Record<string, string>> = Object.freez
   "register_vendor_invoice": "purchasing",
   "register_webinar": "webinars",
   "reindex_consultants": "consultants",
+  "reject_expense_report": "expenses",
   "reject_pending_operation": "approvals",
   "reject_procurement_suggestion": "inventory",
   "render_pos_receipt": "pos",
