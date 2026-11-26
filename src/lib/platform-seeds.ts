@@ -1174,21 +1174,23 @@ for the second language; the base layer stays as it is.`,
     description:
       'Report the real health of this instance\'s scheduled jobs — the truth pg_cron\'s own status hides. Use when: verifying scheduled work actually runs (newsletters, bookkeeping sweeps, page publishing, reminders); investigating "X never happened"; a routine health check. Flags jobs pointing at the WRONG instance (foreign_host), jobs that never ran, stale last-run times, and recent HTTP errors from cron-dispatched calls. NOT for: application error logs; skill failures (run_skill_curator).',
     category: 'system',
-    handler: 'rpc:cron_health_report',
+    handler: 'internal:cron_health_report',
     scope: 'internal',
     tool_definition: {
       type: 'function',
       function: {
         name: 'cron_health_report',
-        description: 'Health of scheduled (pg_cron) jobs: per-job foreign_host/never_ran/last_status/last_run_age + recent HTTP errors. Read-only, no args.',
+        description: 'Health of scheduled (pg_cron) jobs, judged as the platform judges them: the jobs with something to say (red, failed, disabled, not run yet, module off) with their reasons; the healthy ones counted. Read-only.',
         parameters: {
           type: 'object',
-          properties: {},
+          properties: {
+            full: { type: 'boolean', description: 'List every job, the healthy ones too.' },
+          },
         },
       },
     },
     instructions:
-      'Read-only, takes no arguments. Returns { self_host, jobs: [{jobname, schedule, active, target_host, foreign_host, never_ran, last_status, last_run, last_run_age_seconds}], http_errors_recent: [{status_code, url, created, error}], flags: {jobs_total, jobs_never_ran, jobs_foreign_host, http_errors_24h} }. THE KEY SIGNAL is foreign_host=true — the job targets a different <ref>.supabase.co than this instance (a hardcoded-URL bug: it fires against another instance, not its own). last_status="succeeded" only means pg_cron DISPATCHED the command — an HTTP 404/401 still reads as succeeded there, so cross-check http_errors_recent. Anything in flags > 0 (except jobs_total) warrants a look; report the offending jobnames. If cron_available=false the instance has no pg_cron. never_ran on a weekly or monthly job is expected until its first slot — read the schedule before calling it broken. A defect in the platform itself (foreign_host, a job that fails on every run, an HTTP 4xx from a platform function) is reported upstream with submit_feedback (board bug: jobname, schedule, the error) — the endpoint\'s maintainer fixes it for every instance.',
+      'Read-only; `full: true` lists every job. Returns { self_host, jobs: [{jobname, schedule, active, target_host, foreign_host, never_ran, last_status, last_run, last_run_age_seconds, red, last_failed, reasons, module_off?}] — only the jobs with something to say unless full — healthy_jobs, http_errors_recent: [{status_code, url, created, error}], flags: {jobs_total, jobs_never_ran, jobs_foreign_host, http_errors_24h, jobs_failed, jobs_red, pulse_starved_hours_24h}, pulse, red_count }. `red` and `reasons` are the platform\'s own verdict (a job of a module that is off is never red; a weekly or monthly job is not called stranded before the run history covers its schedule). THE KEY SIGNAL is foreign_host=true — the job targets a different <ref>.supabase.co than this instance (a hardcoded-URL bug: it fires against another instance, not its own). last_status="succeeded" only means pg_cron DISPATCHED the command — an HTTP 404/401 still reads as succeeded there, so cross-check http_errors_recent. Anything in flags > 0 (except jobs_total) warrants a look; report the offending jobnames. If cron_available=false the instance has no pg_cron. never_ran on a weekly or monthly job is expected until its first slot — read the schedule before calling it broken. A defect in the platform itself (foreign_host, a job that fails on every run, an HTTP 4xx from a platform function) is reported upstream with submit_feedback (board bug: jobname, schedule, the error) — the endpoint\'s maintainer fixes it for every instance.',
   },
 
   {
