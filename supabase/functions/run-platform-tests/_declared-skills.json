@@ -539,6 +539,7 @@
     "register_vendor_invoice",
     "register_webinar",
     "reindex_consultants",
+    "reject_expense_report",
     "reject_pending_operation",
     "reject_procurement_suggestion",
     "render_pos_receipt",

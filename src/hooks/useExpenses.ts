@@ -289,29 +289,28 @@ export function useApproveExpenseReport() {
 }
 
 /**
- * Reject a submitted expense report. There's no server RPC for this yet, so
- * we write the status directly and stash the reason in `notes`. RLS restricts
- * this to admins.
+ * Reject a submitted or approved expense report through reject_expense_report:
+ * the reason is added to the notes (never replacing them) and the expenses go
+ * back to draft, so the employee can correct them and submit again.
  */
+async function rejectOne(reportId: string, reason: string): Promise<void> {
+  // Not in the generated types until they are regenerated; the cast keeps `this` (called on supabase).
+  type Rpc = (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }>;
+  const { data, error } = await (supabase.rpc as unknown as Rpc)('reject_expense_report', { p_report_id: reportId, p_reason: reason || null });
+  if (error) throw new Error(error.message);
+  const result = data as { success?: boolean; error?: string } | null;
+  if (result && result.success === false) throw new Error(result.error || 'Could not reject the report');
+}
+
 export function useRejectExpenseReport() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   return useMutation({
-    mutationFn: async (input: { reportId: string; reason: string }) => {
-      const { error } = await supabase
-        .from('expense_reports')
-        .update({
-          status: 'rejected',
-          notes: input.reason ? `Rejected: ${input.reason}` : 'Rejected',
-        })
-        .eq('id', input.reportId)
-        .eq('status', 'submitted');
-      if (error) throw error;
-    },
+    mutationFn: async (input: { reportId: string; reason: string }) => rejectOne(input.reportId, input.reason),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expense-reports'] });
       queryClient.invalidateQueries({ queryKey: ['expenses'] });
-      toast({ title: 'Report rejected' });
+      toast({ title: 'Report rejected', description: 'The expenses are back in draft for the employee to correct.' });
     },
     onError: (err: Error) => {
       toast({ title: 'Reject failed', description: err.message, variant: 'destructive' });
@@ -346,35 +345,30 @@ export function useBulkApproveReports() {
   });
 }
 
-/** Bulk reject — direct table update guarded by RLS. */
+/** Bulk reject — the same rejection, once per report; counts what went through. */
 export function useBulkRejectReports() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   return useMutation({
     mutationFn: async (input: { ids: string[]; reason: string }) => {
-      const { error, count } = await supabase
-        .from('expense_reports')
-        .update(
-          { status: 'rejected', notes: input.reason ? `Rejected: ${input.reason}` : 'Rejected' },
-          { count: 'exact' },
-        )
-        .in('id', input.ids)
-        .eq('status', 'submitted');
-      if (error) throw error;
-      return { count: count ?? 0 };
+      const results = await Promise.allSettled(input.ids.map((id) => rejectOne(id, input.reason)));
+      const failed = results.filter((r) => r.status === 'rejected').length;
+      return { count: input.ids.length - failed, failed };
     },
-    onSuccess: ({ count }) => {
+    onSuccess: ({ count, failed }) => {
       queryClient.invalidateQueries({ queryKey: ['expense-reports'] });
       queryClient.invalidateQueries({ queryKey: ['expenses'] });
-      toast({ title: `Rejected ${count} report(s)` });
+      toast({
+        title: `Rejected ${count} report(s)`,
+        description: failed > 0 ? `${failed} could not be rejected` : undefined,
+        variant: failed > 0 ? 'destructive' : 'default',
+      });
     },
     onError: (err: Error) => {
       toast({ title: 'Bulk reject failed', description: err.message, variant: 'destructive' });
     },
   });
 }
-
-
 
 export function useBookExpenseReport() {
   const queryClient = useQueryClient();
