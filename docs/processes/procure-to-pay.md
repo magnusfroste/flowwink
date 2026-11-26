@@ -83,7 +83,7 @@ Two coupled entities carry status. The **report** drives the process; each
 | `approved` | Manager signed off | admin / agent (`approve_expense_report`) | Marks all included expenses `approved` |
 | `booked` | In the ledger | admin / agent (`book_expense_report`) | Posts the journal entry — **Dt cost account (net) + Dt 2641 input VAT / Cr 2890 owed-to-employee** — and stores `journal_entry_id` on the report |
 | `paid` | Employee reimbursed | admin / agent (`mark_expense_report_paid`) | Posts **Dt 2890 / Cr 1930 (bank)** and creates an `expense_payments` row (amount, method, reference, who recorded it) |
-| `rejected` | — | ⚠️ in schema, **transition not yet wired** (no function or UI path exists) | — |
+| `rejected` | Sent back to the employee | admin / agent (`reject_expense_report`, from submitted or approved) | Adds the reason to the report's notes, returns its expenses to `draft`; the employee corrects them and `submit_expense_report` takes the report again |
 
 **`expenses.status`** (individual receipts) — same value set; individual
 expenses are moved by their report's transitions, never independently once

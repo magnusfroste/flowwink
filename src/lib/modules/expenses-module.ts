@@ -172,6 +172,30 @@ const EXPENSE_SKILLS: SkillSeed[] = [
     },
   },
   {
+    name: 'reject_expense_report',
+    description: 'Sends a submitted or approved (not yet booked) expense report back to the employee: the report becomes rejected, the reason is added to its notes, and its expenses return to draft so they can be corrected and the report submitted again. Use when: a manager rejects a report / "avslå utlägg" / a receipt is missing or wrong. NOT for: a booked or paid report (correct it with a mirror entry in the ledger), deleting expenses (manage_expenses).',
+    category: 'commerce',
+    handler: 'rpc:reject_expense_report',
+    scope: 'internal',
+    trust_level: 'approve',
+    tool_definition: {
+      "risk":"low", "reversible":true, "reversal":"the employee submits the report again (submit_expense_report)",
+      type: 'function',
+      function: {
+        name: 'reject_expense_report',
+        description: 'Reject a submitted or approved expense report, with a reason the employee reads',
+        parameters: {
+          type: 'object',
+          required: ['p_report_id'],
+          properties: {
+            p_report_id: { type: 'string', format: 'uuid' },
+            p_reason: { type: 'string', description: 'Why — shown to the employee in the report notes' },
+          },
+        },
+      },
+    },
+  },
+  {
     name: 'book_expense_report',
     requires_staging: true, // ledger perimeter: trust 'approve' and the staged envelope are ONE dial for accounting skills
     description:

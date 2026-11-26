@@ -252,6 +252,17 @@ async function run(s: Scenario): Promise<void> {
   s.equal('submitting locks the receipts', (await s.one<{ n: string }>(`select count(*) as n from expenses where report_id = $1 and status = 'submitted'`, [reportId]))?.n, 2);
   await s.mustRefuse('a submitted report cannot be paid', 'mark_expense_report_paid', { p_report_id: reportId }, /only booked/i);
 
+  // The manager sends it back once, the employee corrects and submits again (2026-11-25:
+  // a rejected report used to be a dead end — receipts locked, resubmission refused).
+  await s.must('the manager rejects: the train receipt lacks a ticket', 'reject_expense_report', { p_report_id: reportId, p_reason: 'Attach the train ticket' });
+  const rejected = await s.one<{ status: string; notes: string | null }>('select status, notes from expense_reports where id = $1', [reportId]);
+  s.equal('the report is rejected', rejected?.status, 'rejected');
+  s.check('the reason is in the notes', /Attach the train ticket/.test(String(rejected?.notes)), String(rejected?.notes));
+  s.equal('rejecting reopens the receipts', (await s.one<{ n: string }>(`select count(*) as n from expenses where report_id = $1 and status = 'draft'`, [reportId]))?.n, 2);
+  await s.mustRefuse('a rejected report cannot be approved', 'approve_expense_report', { p_report_id: reportId }, /only submitted/i);
+  const resubmitted = await s.must('the employee submits the corrected report', 'submit_expense_report', { p_report_id: reportId });
+  s.equal('the resubmitted report totals 1 780 kr', resubmitted.total_cents, 178_000);
+
   await s.must('the manager approves', 'approve_expense_report', { p_report_id: reportId });
   s.check('approval waited for a human', s.handshakes.some((h) => h.skill === 'approve_expense_report' && h.gate === 'human'),
     `handshakes: ${JSON.stringify(s.handshakes)}`);
