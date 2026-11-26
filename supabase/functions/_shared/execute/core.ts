@@ -62,6 +62,7 @@ import { hslTripletToHex } from '../email-shell.ts';
 import { screeningQuestionsOf } from '../recruitment/application-intake.ts';
 import { planFormDelivery } from '../forms/delivery-plan.ts';
 import { invoiceAmountsFromOrder, orderIsPaid } from '../invoice-from-order.ts';
+import { executeCronHealthReport } from '../handlers/cron-health-report.ts';
 import { isModuleEnabled, loadEnabledModules } from '../modules.ts';
 import {
   type AuditContext,
@@ -328,6 +329,7 @@ const INTERNAL_HANDLERS: Record<string, InternalHandler> = {
   'internal:build_site_step': ({ supabase, args }) => executeCopilotAction(supabase, args),
   // Multi-skill: get_company_profile / update_company_profile
   'internal:company_profile': ({ supabase, args, skill }) => executeCompanyProfile(supabase, args, skill.name),
+  'internal:cron_health_report': ({ supabase, args }) => executeCronHealthReport(supabase, args),
   'internal:get_customer_360': ({ supabase, args }) => executeCustomer360(supabase, args),
   // Multi-skill router: dispatches on the skill name (the edge function
   // used the _skill field the edge: dispatch injected for the same purpose).
