@@ -335,6 +335,12 @@ A colleague's agent reaches it through `blog` (`SKILL_OWNER_MODULE_OVERRIDES`):
 a platform seed with no owner module is admin-only for an agent whose owner
 is not an admin, and the agent it was built for (owner: sales + marketing)
 never saw it. A new platform read meant for staff agents gets its module there.
+`search_knowledge` followed (2026-11-26): gated on `wiki` (every staff role),
+and its handler judges each SOURCE by its own module for the caller
+(`_shared/skills/knowledge-reach.ts`, `can_access_module`) — it runs on the
+service client, so an owner module alone would have opened every document and
+handbook chapter. What is not searched is named in `left_out`. An override for a
+read that spans modules narrows by source the same way.
 
 **`manage_company`** — B2B master data lives on `companies`: `org_number`, `vat_number`, `parent_company_id` (subsidiary hierarchy; self-parent rejected), `employee_count`, `annual_revenue_cents`, `credit_limit_cents`, `account_owner`, `tags` (text[]). Use `find_duplicate_companies` before creating a company that might already exist (identical domain scores 1.0).
 
