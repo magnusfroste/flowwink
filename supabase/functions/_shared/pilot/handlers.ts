@@ -107,7 +107,33 @@ export async function handleMemoryWrite(supabase: any, args: { key: string; valu
   return { status: 'saved', key, has_embedding: !!embedding };
 }
 
+// What a memory search answers (2026-11-26). It answered ten rows with their
+// values whole; on liteit a stored blog draft made one answer 24 800
+// characters, resent on every later step (www 11 400). A search now answers a
+// long value as its beginning and `cut: true`; one memory by its exact key is
+// whole — the beginning says what it is, the key fetches the rest.
+export const MEMORY_VALUE_PREVIEW_CHARS = 600;
+
+type MemoryHit = { key: string; value: unknown; category?: string; [k: string]: unknown };
+
+export function leanMemoryHits<T extends MemoryHit>(hits: readonly T[]): Array<T & { cut?: true }> {
+  return hits.map((h) => {
+    const raw = typeof h.value === 'string' ? h.value : JSON.stringify(h.value ?? null);
+    if (raw.length <= MEMORY_VALUE_PREVIEW_CHARS) return h;
+    return { ...h, value: raw.slice(0, MEMORY_VALUE_PREVIEW_CHARS) + '…', cut: true as const };
+  });
+}
+
+const MEMORY_CUT_NOTE = 'Long values are cut to their beginning (cut: true). Read one whole with memory_read({ key: "<the exact key>" }).';
+
 export async function handleMemoryRead(supabase: any, args: { key?: string; category?: string; semantic_query?: string }) {
+  // One memory by its exact key is answered whole.
+  if (args.key && !args.semantic_query) {
+    const { data: exact, error: exactErr } = await supabase
+      .from('agent_memory').select('key, value, category, updated_at').eq('key', args.key).maybeSingle();
+    if (!exactErr && exact) return { memories: [exact], search_type: 'exact' };
+  }
+
   const searchText = args.semantic_query || args.key || '';
   
   if (searchText) {
@@ -122,13 +148,11 @@ export async function handleMemoryRead(supabase: any, args: { key?: string; cate
     });
 
     if (!error && hybridResults?.length) {
-      return {
-        memories: hybridResults.map((r: any) => ({
-          key: r.key, value: r.value, category: r.category, 
-          similarity: r.similarity, search_type: r.search_type,
-        })),
-        search_type: 'hybrid',
-      };
+      const memories = leanMemoryHits(hybridResults.map((r: any) => ({
+        key: r.key, value: r.value, category: r.category,
+        similarity: r.similarity, search_type: r.search_type,
+      })));
+      return { memories, search_type: 'hybrid', ...(memories.some((m) => m.cut) ? { note: MEMORY_CUT_NOTE } : {}) };
     }
 
     if (embedding) {
@@ -140,12 +164,10 @@ export async function handleMemoryRead(supabase: any, args: { key?: string; cate
       });
 
       if (semanticResults?.length) {
-        return {
-          memories: semanticResults.map((r: any) => ({
-            key: r.key, value: r.value, category: r.category, similarity: r.similarity,
-          })),
-          search_type: 'semantic',
-        };
+        const memories = leanMemoryHits(semanticResults.map((r: any) => ({
+          key: r.key, value: r.value, category: r.category, similarity: r.similarity,
+        })));
+        return { memories, search_type: 'semantic', ...(memories.some((m) => m.cut) ? { note: MEMORY_CUT_NOTE } : {}) };
       }
     }
   }
@@ -154,7 +176,8 @@ export async function handleMemoryRead(supabase: any, args: { key?: string; cate
   if (args.key) q = q.ilike('key', `%${args.key}%`);
   if (args.category) q = q.eq('category', args.category);
   const { data } = await q.order('updated_at', { ascending: false }).limit(10);
-  return { memories: data || [], search_type: 'keyword' };
+  const memories = leanMemoryHits((data || []) as MemoryHit[]);
+  return { memories, search_type: 'keyword', ...(memories.some((m) => m.cut) ? { note: MEMORY_CUT_NOTE } : {}) };
 }
 
 export async function handleMemoryDelete(supabase: any, args: { key: string }) {

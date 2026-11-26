@@ -32,7 +32,8 @@ import { executeSkillRequest } from "../_shared/execute/core.ts";
 import { tryAcquireLock, releaseLock } from "../_shared/concurrency.ts";
 import { generateTraceId } from "../_shared/trace.ts";
 import { loadContentMemoryBlock } from "../_shared/domains/content-memory.ts";
-import { loadBusinessIdentityBlock } from "../_shared/domains/business-identity-block.ts";
+import { loadBusinessIdentityBlock, identityDepthForObjectives } from "../_shared/domains/business-identity-block.ts";
+import { partitionByCadence } from "../_shared/pilot/cadence.ts";
 import { ensureFlowPilotSoul } from "../_shared/pilot/ensure-soul.ts";
 import type { TokenUsage } from "../_shared/types.ts";
 import { isDueLocalHour } from '../_shared/locale/local-hour-gate.ts';
@@ -280,6 +281,24 @@ async function runCronHealthGate(supabase: any): Promise<string> {
 
 // ─── Main handler ─────────────────────────────────────────────────────────────
 
+/**
+ * 'narrative' when an objective this run may still deliver writes for the
+ * public, else 'core' (identityDepthForObjectives). An objective whose cadence
+ * is already met this period cannot write, so it does not widen the block.
+ * Any failure reads wide: a thinner identity on a writing run is the worse error.
+ */
+async function identityDepthForRun(supabase: unknown): Promise<'core' | 'narrative'> {
+  try {
+    const db = supabase as { from(t: string): { select(c: string): { eq(c: string, v: string): PromiseLike<{ data: Array<{ goal?: unknown; constraints?: unknown }> | null; error: unknown }> } } };
+    const { data, error } = await db.from('agent_objectives').select('goal, constraints').eq('status', 'active');
+    if (error) return 'narrative';
+    const { actionable } = await partitionByCadence(supabase, data || []);
+    return identityDepthForObjectives(actionable);
+  } catch {
+    return 'narrative';
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -509,7 +528,14 @@ serve(async (req) => {
       // is watched least, passed nothing. 'narrative' because this loop authors
       // blog posts and campaigns unattended, and ~900 tokens against a
       // 120-180k budget is under 1% of one cycle.
-      loadBusinessIdentityBlock(supabase, 'narrative'),
+      // 2026-11-26: the narrative block grew to 6-8k characters (proof points,
+      // testimonials, angles) and is resent on every step, while most runs write
+      // nothing — nordbrygg's twice-daily stock check never does. The wide one
+      // goes only to a run that has a content objective to deliver (the class
+      // that declares requires_business_identity); every other run gets the
+      // core: who we are, what we sell, the rules. The writer is the model
+      // here, not write_blog_post, so a writing run keeps the wide one.
+      identityDepthForRun(supabase).then((depth) => loadBusinessIdentityBlock(supabase, depth)),
     ]);
 
     // 1. Token budget — give fresh sites more room to work

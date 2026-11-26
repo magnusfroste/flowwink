@@ -345,9 +345,17 @@ describe('bredden sätts av anroparen, statiskt per yta (Law 1)', () => {
     ['agent-operate/index.ts', 'FlowChat-operatören'],
     // content_proposal + social_post.
     ['ai-task/tasks.ts', 'ai-task'],
-    // Skriver blogg och kampanjer obevakat, dygnet runt.
-    ['flowpilot-heartbeat/index.ts', 'heartbeat'],
   ];
+
+  // Hjärtslaget (2026-11-26): bredden följer körningens STRUKTUR, inte en
+  // tolkning av texten — 'narrative' när ett mål som får leverera i perioden
+  // skriver för en läsare (requires_business_identity, eller en takt som räknar
+  // en publicerande skill), annars 'core'. Ett fel läser brett.
+  it("heartbeat begär 'narrative' när körningen kan skriva, annars 'core'", () => {
+    const src = read('flowpilot-heartbeat/index.ts');
+    expect(src).toMatch(/identityDepthForRun\(supabase\)\.then\(\(depth\) => loadBusinessIdentityBlock\(supabase, depth\)\)/);
+    expect(src).toMatch(/return identityDepthForObjectives\(actionable\)/);
+  });
 
   for (const [file, why] of WRITERS) {
     it(`${why} begär 'narrative' — den skriver utåtriktat`, () => {
