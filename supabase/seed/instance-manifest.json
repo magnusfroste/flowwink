@@ -3199,7 +3199,7 @@
     },
     "edge_functions": {
       "count": 76,
-      "shared_hash": "sha256:27ff2fd28c35f352f316277d9626e6897bcdd40d333b4df04981aa780f12787e",
+      "shared_hash": "sha256:50e4305743bfc3a9aa15669f4a35b8ba85ca575a15154da16593dbab3765bc15",
       "functions": {
         "agent-execute": "sha256:b57d6b903f39bd17fe4ba100bc4ac232cc893ac524a550d50e988f87b7c76800",
         "agent-operate": "sha256:4320e02dd3e6a0a1706b42dc1905b631c61e6a4cbe3556c701f474c278c89e1a",
@@ -3233,7 +3233,7 @@
         "event-dispatcher": "sha256:76c874f968faf15771dad8a67b1f49fb1e45f21c2fcf3c38f3d57f70853d2a2f",
         "extract-pdf-text": "sha256:fb2e1a10f79fb0b150cd547a08fc3b1e11b79c09771f2d13d748c08b4e93f34c",
         "federation-invite-peer": "sha256:475817522c4d1b7a2faed2a0a4fbe03ac5f340479eb246febe0456f3d0596b21",
-        "flowpilot-heartbeat": "sha256:e8ed5cccbe3195607541336148c611b4b9a0dfcc2e653ae11c6d9c5cc4f214ba",
+        "flowpilot-heartbeat": "sha256:28a5690bb04a67a7406c1c732b0d51d98c0c276807974cd860095fef621b7bf2",
         "flowpilot-lifecycle": "sha256:dfaa3e933957a65712d535071db0a4a7389de20418fb725a186039a462b22ee8",
         "gatewayapi-ingest": "sha256:d6f74c384f0baac936737762d330c470636502afcc9af418b1c43db26134e4fe",
         "generate-invoice-pdf": "sha256:e339f734b02238e900c1a4160b9645e8e24867c2aaf03af7768b07dd62546312",
