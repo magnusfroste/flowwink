@@ -7,7 +7,7 @@
 // parse the auth header → this → wrap in a Response. The JSON bundles stay in
 // agent-execute/ (scripts/generated-artifacts.ts writes them there).
 import { describeSettings, judgeSettingWrite, redactSetting, SETTINGS_CATALOG } from '../settings/catalog.ts';
-import { shapeBlogList, shapeKnowledgeHits } from '../skills/lean-answers.ts';
+import { shapeBlogList, shapeKnowledgeHits, auditPostList } from '../skills/lean-answers.ts';
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import type { ExecuteAuth, ExecuteOutcome, ExecuteRequest } from './types.ts';
 import { blocksShapeError, normalizeBlockData, normalizeBlocks, validateBlockData } from '../normalize-blocks.ts';
@@ -9724,7 +9724,7 @@ async function executeBlogAction(
   // cleans up with calls instead of judgement, and the heartbeat sees when the
   // blog thins out.
   if (skillName === 'audit_blog') {
-    const { limit = 200, include_drafts = true } = args as any;
+    const { limit = 200, include_drafts = true, full = false } = args as any;
     const lim = Math.min(Math.max(Number(limit) || 200, 1), 500);
     let q = supabase.from('blog_posts')
       .select('id, title, slug, status, locale, published_at, created_at, content_json, featured_image, featured_image_alt, meta_json')
@@ -9803,7 +9803,10 @@ async function executeBlogAction(
       },
       findings,
       duplicate_clusters: clusters,
-      posts: perPost,
+      // A clean post is counted, not described (2026-11-26): liteit's audit
+      // listed all its posts with their measures, 12 400 characters, to say
+      // there was nothing to fix. `full: true` lists them all.
+      ...auditPostList(perPost, findings, full === true),
       hint: findings.length
         ? 'Each finding names its fix. Order: duplicates to draft (keep the first), then the thin and wrong-language posts rewritten with manage_blog_posts update (content in markdown — a body under the floor is refused there too), then the images. The identity\'s content angles say what to write NEXT; audit_blog says what to fix FIRST.'
         : 'Nothing to fix: every post clears the floor, no re-worded titles, no ruled-out claims.',
