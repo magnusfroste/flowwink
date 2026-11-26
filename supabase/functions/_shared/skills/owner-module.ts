@@ -27,6 +27,12 @@
  *     Claude renaming a product across the site, and invisible to it, because
  *     its owner holds sales + marketing. Whoever writes the blog may ask where
  *     a phrase stands in the site's content.
+ *     search_knowledge followed (optic, 2026-11-26): the same agent wrote nine
+ *     KB articles and was refused the search over them. It is gated on `wiki`,
+ *     which every staff role holds, because the handler judges each SOURCE by
+ *     its own module (knowledge-reach.ts) — it runs on the service client, so
+ *     without that the override would have opened every document and handbook
+ *     chapter to every colleague's agent.
  *
  * Access to the SOURCE object still needs its own module through RLS: an
  * override ADDS a requirement, it never replaces one. The override lives here
@@ -45,6 +51,7 @@ export const SKILL_OWNER_MODULE_OVERRIDES: Readonly<Record<string, string>> = Ob
   describe_blocks: 'pages',                   // platform seed; the block contract a page writer reads first
   inspect_rendered_page: 'pages',             // platform seed; what the page writer looks at afterwards
   find_in_content: 'blog',                    // platform seed; where a phrase stands, before the writer changes it
+  search_knowledge: 'wiki',                   // platform seed; each source then judged by its own module (knowledge-reach.ts)
 });
 
 /** Owning module id for authorization, or null when unmapped (⇒ admin-only). */

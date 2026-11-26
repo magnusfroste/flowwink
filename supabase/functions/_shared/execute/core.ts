@@ -8,6 +8,7 @@
 // agent-execute/ (scripts/generated-artifacts.ts writes them there).
 import { describeSettings, judgeSettingWrite, redactSetting, SETTINGS_CATALOG } from '../settings/catalog.ts';
 import { shapeBlogList, shapeKnowledgeHits, auditPostList } from '../skills/lean-answers.ts';
+import { KNOWLEDGE_SOURCE_MODULE, narrowKnowledgeSources } from '../skills/knowledge-reach.ts';
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import type { ExecuteAuth, ExecuteOutcome, ExecuteRequest } from './types.ts';
 import { blocksShapeError, normalizeBlockData, normalizeBlocks, validateBlockData } from '../normalize-blocks.ts';
@@ -19284,12 +19285,39 @@ async function executeSearchKnowledge(
     }
   }
 
+  // A person's agent searches what the person may open (knowledge-reach.ts):
+  // the service client sees every source, so the module question is asked here.
+  const callerUserId = typeof args._caller_user_id === 'string' && args._caller_user_id ? args._caller_user_id : null;
+  let leftOut: string[] = [];
+  if (callerUserId) {
+    const candidates = sources ?? SEARCHABLE_KNOWLEDGE_SOURCES;
+    const verdict = new Map<string, boolean>();
+    for (const mod of new Set(candidates.map((s) => KNOWLEDGE_SOURCE_MODULE[s]).filter(Boolean))) {
+      const { data, error } = await supabase.rpc('can_access_module', { _user_id: callerUserId, _module_id: mod });
+      if (error) console.error('search_knowledge: can_access_module failed — source left out', mod, error.message);
+      verdict.set(mod, !error && data === true);
+    }
+    const narrowed = narrowKnowledgeSources(candidates, (mod) => verdict.get(mod) === true);
+    leftOut = narrowed.left_out;
+    if (!narrowed.sources.length) {
+      return {
+        success: true,
+        count: 0,
+        results: [],
+        left_out: leftOut,
+        note: 'The person this agent acts for has access to none of these knowledge sources. An admin grants them under Users → Role Permissions.',
+      };
+    }
+    sources = narrowed.sources;
+  }
+
   const queryEmbedding = await embedQuery(supabase, query); // null → text-only (Law 4)
   const chunks = await retrieve(supabase, { query, k, tokenBudget: 6000, sources, queryEmbedding });
 
   return {
     success: true,
     count: chunks.length,
+    ...(leftOut.length ? { left_out: leftOut } : {}),
     ranking: queryEmbedding ? 'hybrid (semantic + keyword)' : 'keyword-only (no embedding provider)',
     // The best hits whole, the rest as previews — the ranking says which matter.
     ...shapeKnowledgeHits(chunks.map((c) => ({

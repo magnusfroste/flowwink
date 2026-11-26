@@ -40,6 +40,9 @@ describe('one owner-module table for every surface that offers or runs a skill',
     // and admin-only for it until it had a module to be authorized by.
     expect(SKILL_OWNER_MODULE['find_in_content']).toBe('platform');
     expect(ownerModuleOf('find_in_content')).toBe('blog');
+    // 2026-11-26: the same agent, refused the search over the articles it wrote.
+    expect(SKILL_OWNER_MODULE['search_knowledge']).toBe('platform');
+    expect(ownerModuleOf('search_knowledge')).toBe('wiki');
     expect(SKILL_OWNER_MODULE['generate_contract_invoice']).toBe('contracts');
     expect(ownerModuleOf('generate_contract_invoice')).toBe('invoicing');
     expect(ownerModuleOf('manage_page')).toBe('pages');
