@@ -605,6 +605,10 @@ Manages blog categories and tags: list, create, delete.
               type: 'boolean',
               description: 'Audit drafts too (default true). false = published only.',
             },
+            full: {
+              type: 'boolean',
+              description: 'List every post with its measures. Default: only the posts that have a finding; the clean ones are counted.',
+            },
           },
         },
       },
