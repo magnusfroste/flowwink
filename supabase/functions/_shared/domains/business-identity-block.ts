@@ -530,3 +530,29 @@ export function hasCoreBusinessIdentity(profile: unknown): boolean {
   if (services && typeof services === 'object') return Object.keys(services).length > 0;
   return false;
 }
+
+/** Skills whose output a reader sees: a run that can deliver one writes for the public. */
+export const PUBLIC_WRITING_SKILLS: ReadonlySet<string> = new Set([
+  'write_blog_post', 'generate_social_post', 'social_post_batch', 'schedule_social_post',
+  'send_newsletter', 'execute_newsletter_send', 'manage_newsletters',
+]);
+
+/**
+ * How wide the heartbeat's identity block is (2026-11-26). Pass the objectives
+ * the run may still act on — cadence-satisfied ones already removed — and the
+ * narrative block goes only when one of them writes for the public: it
+ * declares `requires_business_identity`, or its cadence counts a public-writing
+ * skill. Structure only, never the goal's wording (Law 1). A run that writes
+ * nothing a reader sees gets the core.
+ */
+export function identityDepthForObjectives(objectives: ReadonlyArray<{ constraints?: unknown }>): IdentityDepth {
+  return objectives.some((o) => {
+    const c = (o.constraints ?? null) as { requires_business_identity?: unknown; cadence?: { counts?: unknown } | null } | null;
+    if (!c) return false;
+    if (c.requires_business_identity === true) return true;
+    const counts = c.cadence?.counts;
+    return typeof counts === 'string' && PUBLIC_WRITING_SKILLS.has(counts);
+  })
+    ? 'narrative'
+    : 'core';
+}
