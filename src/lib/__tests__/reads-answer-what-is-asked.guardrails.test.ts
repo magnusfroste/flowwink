@@ -112,3 +112,20 @@ describe('the skills use the rule and declare the way out', () => {
     expect(seeds.slice(at, at + 2600)).toMatch(/full: \{\s+type: 'boolean'/);
   });
 });
+
+describe('the admin blog list (manage_blog_posts list)', () => {
+  it('keeps id and status, drops excerpt and image on a long list (liteit, 2026-11-27: 19 000 chars for 25 posts)', async () => {
+    const { shapeAdminBlogList } = await import('../../../supabase/functions/_shared/skills/lean-answers');
+    const many = Array.from({ length: 25 }, (_, i) => ({ ...post(i), status: 'published', updated_at: '2026-11-20T06:00:00Z' }));
+    const r = shapeAdminBlogList(many);
+    expect(r.compact).toBe(true);
+    expect(Object.keys(r.posts[0]).sort()).toEqual(['id', 'published_at', 'slug', 'status', 'title', 'updated_at']);
+    expect(shapeAdminBlogList(many, { full: true }).posts[0]).toHaveProperty('excerpt');
+    expect(shapeAdminBlogList(many.slice(0, 5)).compact).toBeUndefined();
+  });
+  it('the handler reads p_limit as the limit and shapes its list', () => {
+    const core = read('supabase/functions/_shared/execute/core.ts');
+    expect(core).toMatch(/if \(args\.p_limit !== undefined && args\.limit === undefined\)/);
+    expect(core).toMatch(/return shapeAdminBlogList\(\(data \|\| \[\]\)/);
+  });
+});

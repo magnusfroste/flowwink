@@ -71,3 +71,18 @@ export function auditPostList<P extends { slug: string }>(
     ? { posts: listed, clean_posts: clean, note: `${clean} post(s) with no finding are counted, not listed. Every post with its measures: full: true.` }
     : { posts: listed };
 }
+
+/**
+ * manage_blog_posts list (2026-11-27): the admin's listing keeps id and status,
+ * and over BLOG_LIST_WHOLE_UP_TO posts it drops the excerpt and the image
+ * address, as browse_blog does. `full: true` keeps them; `get` is one post whole.
+ */
+export function shapeAdminBlogList(posts: Row[], opts: { full?: boolean } = {}): { posts: Row[]; compact?: true; note?: string } {
+  if (opts.full || posts.length <= BLOG_LIST_WHOLE_UP_TO) return { posts };
+  const day = (v: unknown) => (typeof v === 'string' ? v.slice(0, 10) : v);
+  return {
+    posts: posts.map((p) => ({ id: p.id, slug: p.slug, title: p.title, status: p.status, published_at: day(p.published_at), updated_at: day(p.updated_at) })),
+    compact: true,
+    note: `Over ${BLOG_LIST_WHOLE_UP_TO} posts are listed by id, slug, title, status and dates. Excerpt and image: a limit of ${BLOG_LIST_WHOLE_UP_TO} or less, or full: true. One post whole: action get with its slug.`,
+  };
+}

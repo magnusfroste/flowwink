@@ -7,7 +7,7 @@
 // parse the auth header → this → wrap in a Response. The JSON bundles stay in
 // agent-execute/ (scripts/generated-artifacts.ts writes them there).
 import { describeSettings, judgeSettingWrite, redactSetting, SETTINGS_CATALOG } from '../settings/catalog.ts';
-import { shapeBlogList, shapeKnowledgeHits, auditPostList } from '../skills/lean-answers.ts';
+import { shapeBlogList, shapeKnowledgeHits, auditPostList, shapeAdminBlogList } from '../skills/lean-answers.ts';
 import { KNOWLEDGE_SOURCE_MODULE, narrowKnowledgeSources } from '../skills/knowledge-reach.ts';
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import type { ExecuteAuth, ExecuteOutcome, ExecuteRequest } from './types.ts';
@@ -12096,7 +12096,7 @@ function blogPublishedAt(value: unknown): string | null {
 // Every argument manage_blog_posts reads — the tool_definition's properties,
 // one for one (blog-post-update.guardrails.test.ts holds the two together).
 // Anything else is named back as `ignored`, never swallowed into "updated".
-const MANAGE_BLOG_POSTS_ARGS = new Set(['action', 'post_id', 'slug', 'status', 'scheduled_at', 'title', 'excerpt', 'content', 'content_json', 'featured_image', 'featured_image_alt', 'category', 'published_at', 'locale', 'retranslate', 'force', 'limit', 'seo_title', 'meta_description', 'og_image', 'meta_json', 'new_slug']);
+const MANAGE_BLOG_POSTS_ARGS = new Set(['action', 'post_id', 'slug', 'status', 'scheduled_at', 'title', 'excerpt', 'content', 'content_json', 'featured_image', 'featured_image_alt', 'category', 'published_at', 'locale', 'retranslate', 'force', 'limit', 'seo_title', 'meta_description', 'og_image', 'meta_json', 'new_slug', 'full']);
 
 async function executeBlogPostsManagement(
   supabase: SupabaseClient,
@@ -12109,16 +12109,26 @@ async function executeBlogPostsManagement(
     const { id, ...rest } = args;
     args = { ...rest, post_id: id };
   }
+  // `p_limit` is what an agent used to the rpc skills sends: liteit's Hermes
+  // asked for 6 and was answered 20 (2026-11-26). It is the limit.
+  if (args.p_limit !== undefined && args.limit === undefined) {
+    const { p_limit, ...rest } = args;
+    args = { ...rest, limit: p_limit };
+  }
   const { action = 'list', post_id, slug, new_slug, status, title, excerpt, content, content_json, featured_image, featured_image_alt, category, published_at, locale, retranslate, seo_title, meta_description, og_image, meta_json, limit = 20 } = args as any;
 
   if (action === 'list') {
+    // Capped at 100, and a long list is ids, slugs, titles, status and dates —
+    // the excerpt and image are what `get` answers (shapeAdminBlogList; liteit,
+    // 2026-11-27: 19 000 characters for 25 posts).
+    const lim = Math.min(Math.max(Number(limit) || 20, 1), 100);
     let query = supabase.from('blog_posts')
       .select('id, title, slug, status, excerpt, featured_image, created_at, updated_at, published_at')
-      .order('updated_at', { ascending: false }).limit(limit);
+      .order('updated_at', { ascending: false }).limit(lim);
     if (status) query = query.eq('status', status);
     const { data, error } = await query;
     if (error) throw new Error(`List posts failed: ${error.message}`);
-    return { posts: data || [] };
+    return shapeAdminBlogList((data || []) as Array<Record<string, unknown>>, { full: args.full === true });
   }
 
   if (action === 'get') {
