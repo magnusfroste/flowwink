@@ -62,6 +62,7 @@ import { hslTripletToHex } from '../email-shell.ts';
 import { screeningQuestionsOf } from '../recruitment/application-intake.ts';
 import { planFormDelivery } from '../forms/delivery-plan.ts';
 import { invoiceAmountsFromOrder, orderIsPaid } from '../invoice-from-order.ts';
+import { leanBoardPosts, leanInstances, LEAN_BOARD_NOTE } from '../feedback/lean-board.ts';
 import { executeCronHealthReport } from '../handlers/cron-health-report.ts';
 import { isModuleEnabled, loadEnabledModules } from '../modules.ts';
 import {
@@ -5865,8 +5866,9 @@ async function executeFeedbackAction(
     }
 
     case 'manage_feedback': {
-      const a = args as { action?: string; post_id?: string; board?: string; status?: string; origin_site_url?: string; note?: string; limit?: number };
+      const a = args as { action?: string; post_id?: string; board?: string; status?: string; origin_site_url?: string; note?: string; limit?: number; full?: boolean };
       const action = String(a.action ?? 'list');
+      const fullListing = a.full === true;
       if (action === 'instances') {
         const { data, error } = await supabase.from('feedback_instances')
           .select('instance_id, site_url, site_name, app, skills_sha, migration_head, modules_enabled, module_count, first_seen_at, last_seen_at, ping_count')
@@ -5876,7 +5878,7 @@ async function executeFeedbackAction(
         const weekAgo = Date.now() - 7 * 86400000;
         const versions: Record<string, number> = {};
         for (const r of rows) versions[r.skills_sha ?? 'unknown'] = (versions[r.skills_sha ?? 'unknown'] ?? 0) + 1;
-        return { instances: rows, total: rows.length, active_7d: rows.filter((r) => Date.parse(r.last_seen_at) >= weekAgo).length, versions };
+        return { instances: leanInstances(rows as unknown as Array<Record<string, unknown>>, fullListing), total: rows.length, active_7d: rows.filter((r) => Date.parse(r.last_seen_at) >= weekAgo).length, versions, ...(fullListing ? {} : { note: LEAN_BOARD_NOTE }) };
       }
       if (action === 'list') {
         const lim = Math.min(Math.max(Number(a.limit) || 50, 1), 200);
@@ -5888,7 +5890,7 @@ async function executeFeedbackAction(
         if (a.origin_site_url) q = q.eq('origin_site_url', String(a.origin_site_url));
         const { data, error } = await q;
         if (error) throw new Error(`Feedback list failed: ${error.message}`);
-        return { posts: data ?? [], count: (data ?? []).length };
+        return { posts: leanBoardPosts((data ?? []) as Array<Record<string, unknown>>, fullListing), count: (data ?? []).length, ...(fullListing ? {} : { note: LEAN_BOARD_NOTE }) };
       }
       if (action === 'clusters') {
         // Triage: the same defect from several instances is one problem.

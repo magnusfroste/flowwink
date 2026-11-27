@@ -123,6 +123,7 @@ const FEEDBACK_SKILLS: SkillSeed[] = [
             origin_site_url: { type: 'string', description: 'list filter: posts from one instance' },
             note: { type: 'string', description: 'set_status / comment: the staff reply the reporter sees.' },
             limit: { type: 'number', description: 'list / clusters: default 50, max 200' },
+            full: { type: 'boolean', description: 'list / instances: carry each instance\'s module list (left out by default; module_count says how many)' },
           },
           required: ['action'],
         },
