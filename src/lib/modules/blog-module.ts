@@ -489,7 +489,11 @@ publish: true). Correct a post's source language first if it is wrong
             },
             limit: {
               type: 'number',
-              description: 'Max results (default 20)',
+              description: 'list: max results (default 20, max 100). Over 10 posts are listed by id, slug, title, status and dates.',
+            },
+            full: {
+              type: 'boolean',
+              description: 'list: keep the excerpt and image on a long list.',
             },
           },
           required: [
